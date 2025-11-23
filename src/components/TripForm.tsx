@@ -1,5 +1,10 @@
 import { useState, FormEvent } from 'react'
+import { motion } from 'framer-motion'
 import { CreateTripInput, TrackingMode } from '@/types/trip'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { fadeInUp } from '@/lib/animations'
 
 interface TripFormProps {
   onSubmit: (input: CreateTripInput) => Promise<void>
@@ -14,17 +19,19 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (!name.trim()) {
-      alert('Please enter a trip name')
+      setError('Please enter a trip name')
       return
     }
 
     if (new Date(endDate) < new Date(startDate)) {
-      alert('End date must be after start date')
+      setError('End date must be on or after start date')
       return
     }
 
@@ -36,111 +43,133 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
         end_date: endDate,
         tracking_mode: trackingMode
       })
+    } catch (err) {
+      setError('Failed to save trip. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Trip Name
-        </label>
-        <input
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-6 bg-card p-6 rounded-lg soft-shadow"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Trip Name</Label>
+        <Input
           type="text"
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          placeholder="e.g., Summer Vacation 2024"
+          placeholder="e.g., Summer Vacation 2025"
           required
           disabled={loading}
         />
       </div>
 
-      <div>
-        <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Start Date
-        </label>
-        <input
-          type="date"
-          id="start_date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          End Date
-        </label>
-        <input
-          type="date"
-          id="end_date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          min={startDate}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Tracking Mode
-        </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="flex items-center">
+          <Label htmlFor="start_date">Start Date</Label>
+          <Input
+            type="date"
+            id="start_date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="end_date">End Date</Label>
+          <Input
+            type="date"
+            id="end_date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            min={startDate}
+            required
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label>Tracking Mode</Label>
+        <div className="space-y-3">
+          <label className="flex items-start p-4 rounded-lg border-2 border-border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
             <input
               type="radio"
               name="trackingMode"
               value="individuals"
               checked={trackingMode === 'individuals'}
               onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
-              className="mr-2"
+              className="mt-0.5 mr-3 text-primary focus:ring-primary"
               disabled={loading}
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Individuals only</span>
+            <div>
+              <div className="font-medium text-foreground">Individuals only</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Track expenses per person
+              </div>
+            </div>
           </label>
-          <label className="flex items-center">
+
+          <label className="flex items-start p-4 rounded-lg border-2 border-border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
             <input
               type="radio"
               name="trackingMode"
               value="families"
               checked={trackingMode === 'families'}
               onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
-              className="mr-2"
+              className="mt-0.5 mr-3 text-primary focus:ring-primary"
               disabled={loading}
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Individuals + Families</span>
+            <div>
+              <div className="font-medium text-foreground">Individuals + Families</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Track at family level with individual breakdowns
+              </div>
+            </div>
           </label>
         </div>
       </div>
 
-      <div className="flex gap-3 pt-4">
-        <button
+      <div className="flex gap-3 pt-2">
+        <Button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-neutral text-white px-4 py-2 rounded-lg hover:bg-neutral-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
+          size="lg"
         >
           {loading ? 'Saving...' : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="outline"
+            size="lg"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
-    </form>
+    </motion.form>
   )
 }
