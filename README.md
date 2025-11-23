@@ -164,63 +164,188 @@ trip-splitter-pro/
 └── CLAUDE.md           # Instructions for Claude Code
 ```
 
-## Features
+## What is Trip Splitter Pro?
 
-**Current Status:** Phases 1-7 + UI Overhaul Complete ✅ | See `STATUS.md` for quick overview | `DEVELOPMENT_PLAN.md` for full roadmap
+Trip Splitter Pro is a **collaborative expense tracking and trip planning app** designed for group trips with families and friends. Instead of complicated spreadsheets or awkward "who owes whom" conversations, get instant clarity on shared costs with smart splitting, automatic balance calculations, and fair settlement recommendations.
 
-### ✅ Implemented Features (Modern UI with shadcn/ui)
+### The Problem We Solve
 
-**Trip Management**
-- Create and manage multiple trips with date ranges
-- Switch between trips with header dropdown
-- Two tracking modes: Individuals only or Individuals + Families
+Planning group trips with multiple families or friends creates financial complexity:
+- Who paid for groceries? Who covered the rental car?
+- Should we split costs equally, or account for family sizes?
+- At trip's end, who owes money to whom—and how much?
+- How do we track meal planning and shopping for a group?
 
-**Participant & Family Setup**
-- Add individual participants or family groups
-- Track adults and children counts per family
-- Flexible setup that adapts to tracking mode
+Trip Splitter Pro handles all of this automatically, letting you focus on enjoying the trip instead of managing spreadsheets.
 
-**Expense Tracking**
-- Mobile-optimized expense entry with smart distribution
-- Filter and search expenses
-- Support for individuals, families, or mixed distributions
-- Smart payer suggestion based on current balances
+### How It Works
 
-**Balance & Settlements**
-- Real-time balance calculation (who owes whom)
-- Optimal settlement algorithm (minimize transactions)
-- Custom settlement payment recording
-- Dedicated settlements page with history
+**1. Create a Trip & Get a Shareable Link**
+- Create a trip and get a unique shareable URL (e.g., `split.xtian.me/t/beach-trip-a3x9k2`)
+- No signup required—just share the link with your group
+- Everyone with the link can access and collaborate in real-time
 
-**Meal Planning**
-- Calendar grid view (breakfast/lunch/dinner per day)
-- Assign meals to specific dates and times
-- Assign responsible participants to meals
-- Mobile-first responsive design
+**2. Set Up Your Group**
+- Choose your tracking mode:
+  - **Individuals Only**: Split costs per person (e.g., friends on a road trip)
+  - **Families Mode**: Track expenses by family units with automatic individual breakdowns
+- Add participants or family groups with adult/child counts
 
-**Shopping List**
-- Real-time collaborative shopping list
-- Optimistic UI updates for instant feedback
-- Category organization (produce, dairy, meat, etc.)
-- Multiple view modes (all, by category, by meal, general)
-- Check off items as you shop
+**3. Track Expenses as They Happen**
+- Log expenses with smart distribution options:
+  - Split equally among everyone
+  - Split among specific people or families
+  - Custom percentage or amount splits
+- Instant balance updates show who's ahead and who owes money
+- Smart payer suggestion recommends who should pay next
 
-**Modern UI/UX (Completed Nov 2025)**
-- Complete redesign with shadcn/ui components
-- Lucide React icons throughout
-- Framer Motion animations
-- Consistent design system (colors, typography, spacing)
-- Professional, accessible interface
-- 22 files redesigned (forms, cards, pages)
+**4. Settle Up Fair & Simple**
+- Automatic settlement optimization minimizes the number of transactions
+- Example: Instead of 6 people making 15 payments, get down to 3-4 optimized transfers
+- Record settlements to update balances in real-time
 
-### 📋 Upcoming Features
+**5. Bonus: Meal Planning & Shopping**
+- Plan meals on a calendar (breakfast, lunch, dinner)
+- Assign cooking responsibilities
+- Create collaborative shopping lists with real-time sync
+- Link ingredients to specific meals for organized shopping
 
-See `DEVELOPMENT_PLAN.md` for the complete phased implementation plan:
-- Phase 8: Meal-shopping integration (link ingredients to meals)
-- Phase 9: Dashboard analytics with charts
-- Phase 10: Enhanced settlement features
-- Phase 11: Export to PDF and Excel
-- Phase 12-13: Performance optimizations and accessibility
+---
+
+## Core Features
+
+### 🎫 Smart Trip Management
+- **Multiple trips**: Manage several trips simultaneously, switch between them instantly
+- **Shareable links**: Each trip gets a unique URL—no accounts or logins needed
+- **Date tracking**: Set trip duration to organize meals and expenses by day
+- **Two modes**: Choose individual or family tracking based on your group composition
+
+### 👥 Flexible Participant Setup
+- **Individual tracking**: Perfect for friends splitting costs equally
+- **Family groups**: Track families as units while seeing individual breakdowns
+- **Mixed mode**: Some expenses split by family, others by specific individuals
+- **Adult/child tracking**: Account for different costs (e.g., kids eat free)
+
+### 💰 Intelligent Expense Tracking
+- **Mobile-optimized entry**: Add expenses quickly with touch-friendly forms
+- **Smart distribution**:
+  - Equal split (divide evenly among selected people/families)
+  - Percentage split (custom percentages for each participant)
+  - Amount split (specify exact amounts per person)
+- **Mixed participants**: Split one expense among families AND specific individuals
+- **Smart payer suggestions**: App suggests who should pay next based on current balances
+- **Search & filter**: Find expenses by description, category, or date
+- **Category tracking**: Organize by Food, Transport, Accommodation, Activities, Training, Other
+
+**Example Use Cases:**
+- Groceries split equally among all families
+- Rental car paid by one person, split among adults only
+- Restaurant bill split among specific people who attended
+- Kids' activities paid by participating families only
+
+### 📊 Real-Time Balance Tracking
+- **Instant calculations**: See who's ahead and who owes money after each expense
+- **Visual indicators**: Green (owed money) / Red (owes money) / Neutral
+- **Running totals**: Track cumulative spending vs. fair share per person/family
+- **Balance history**: See how balances evolved throughout the trip
+
+### 💸 Optimal Settlement Algorithm
+- **Minimize transactions**: Complex debts simplified to fewest possible payments
+- **Example**: 5 people with various debts → 3-4 optimized transfers instead of 10+
+- **Settlement recording**: Mark payments as completed to update balances
+- **Settlement history**: Track who paid whom and when
+- **Fair distribution**: Mathematically guaranteed fair settlements
+
+**How Settlement Works:**
+1. Trip ends with 5 people having various positive/negative balances
+2. Algorithm calculates optimal payment plan (e.g., "Alice pays Bob €50, Charlie pays Alice €30")
+3. Record settlements as payments happen
+4. Balances update automatically until everyone's at zero
+
+### 🍽️ Meal Planning & Calendar
+- **Visual calendar**: Plan meals across your trip duration (breakfast, lunch, dinner)
+- **Meal scheduling**: Assign meals to specific dates and times
+- **Cooking assignments**: Designate who's responsible for each meal
+- **Ingredient tracking**: See ingredient completion status (e.g., "3/5 items ready")
+- **Mobile-responsive**: Works beautifully on phones at the grocery store
+
+### 🛒 Collaborative Shopping List
+- **Real-time sync**: Everyone sees updates instantly across all devices
+- **Optimistic updates**: Changes appear immediately—no waiting, no page refreshes
+- **Category organization**: Organize by produce, dairy, meat, pantry, frozen, etc.
+- **Multiple views**:
+  - All items (full list)
+  - By category (organized shopping)
+  - By meal (ingredients for specific meals)
+  - General items (not linked to meals)
+- **Check-off items**: Mark items complete as you shop
+- **Meal integration**: Link shopping items to specific meals for organization
+
+**Workflow Example:**
+1. Plan "Pasta Night" meal for Tuesday dinner
+2. Click "Add Ingredient" on meal card
+3. Add "Fresh Basil" to shopping list (auto-linked to Pasta Night)
+4. At grocery store, everyone sees the list in real-time
+5. Check off items as you shop
+6. Meal card shows "4/5 ingredients ready"
+
+### 📈 Dashboard Analytics
+- **Expense breakdown**: Visual pie chart showing spending by category
+- **Cost per participant**: Bar chart comparing costs across people/families
+- **Top expenses**: See biggest expenses at a glance
+- **Export capabilities**: Download reports as Excel or PDF
+
+### 🎨 Modern, Accessible UI
+- **Mobile-first design**: Optimized for use on phones during the trip
+- **shadcn/ui components**: Professional, consistent design system
+- **Smooth animations**: Framer Motion micro-interactions for delightful UX
+- **Dark mode support**: Easy on the eyes in all lighting conditions
+- **Touch-friendly**: Large tap targets, swipe gestures, intuitive navigation
+- **Responsive**: Works perfectly on phones, tablets, and desktops
+
+---
+
+## Key Differentiators
+
+✅ **No signup required** - Share a link, start tracking immediately
+✅ **Family-aware splitting** - Handles family groups intelligently, not just individuals
+✅ **Mixed splitting** - One expense can split among families AND specific individuals
+✅ **Real-time collaboration** - Shopping lists sync instantly across devices
+✅ **Smart settlements** - Minimize transactions with optimization algorithm
+✅ **Meal planning integrated** - Not just expenses—plan meals and shopping too
+✅ **Optimistic UI** - Instant feedback, no waiting for server responses
+✅ **Mobile-optimized** - Built for use during the trip, not just after
+✅ **Privacy-focused** - No accounts, no tracking, just your trip data
+
+---
+
+## Use Cases
+
+**Family Beach Week**
+- 3 families sharing a beach house for a week
+- Split groceries, dining out, rental costs, and activities
+- Plan meals with cooking rotation
+- Collaborative shopping list for group grocery runs
+- Fair settlement at trip's end
+
+**Friends Ski Trip**
+- 8 friends renting a cabin
+- Track lift tickets, gas, food, equipment rentals
+- Some expenses split equally, others for specific participants
+- Quick settlement before heading home
+
+**Multi-Family Camping**
+- Several families on a camping trip
+- Track campsite fees, firewood, communal food
+- Kids vs. adults pricing for activities
+- Meal planning for group dinners
+- Shopping list for grocery runs
+
+**Work Retreat / Team Offsite**
+- Team trip with mixed personal and shared expenses
+- Track who paid for what
+- Fair split at the end without spreadsheets
+- Meal planning for team dinners
 
 ## Contributing
 
