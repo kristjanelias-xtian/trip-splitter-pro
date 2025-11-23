@@ -7,8 +7,9 @@ A modern, mobile-first web application for splitting costs among groups on trips
 - **Frontend:** React 18+ with TypeScript
 - **Build Tool:** Vite
 - **Styling:** Tailwind CSS
-- **State Management:** Zustand
+- **State Management:** React Context API
 - **Database:** Supabase (PostgreSQL)
+- **Real-time:** Supabase Subscriptions (shopping list)
 - **Deployment:** Cloudflare Pages
 
 ## Getting Started
@@ -77,27 +78,42 @@ npm run type-check
 
 The application uses Supabase for the database. The schema includes:
 
-- **trips** - Trip metadata with tracking mode (individuals/families)
+### Core Tables
+- **trips** - Trip metadata with start_date, end_date, tracking_mode
 - **families** - Family groups with adults and children counts
 - **participants** - Individual participants linked to families or standalone
 - **expenses** - Expense records with distribution logic
-- **settlements** - Payment transfers between participants/families
+- **settlements** - Payment transfers between participants
+
+### Feature Tables
 - **meals** - Meal planning with calendar grid (breakfast/lunch/dinner)
 - **shopping_items** - Shopping list items with category and completion status
 - **meal_shopping_items** - Junction table linking meals to shopping items
 
 ### Running Migrations
 
-To set up the database schema:
+**Option 1: Supabase CLI (Recommended)**
+```bash
+# Link to your Supabase project
+supabase link --project-ref your-project-ref
 
+# Apply all migrations
+supabase db push
+
+# Regenerate TypeScript types
+supabase gen types typescript --linked > src/lib/database.types.generated.ts
+```
+
+**Option 2: Manual via Dashboard**
 1. Open your Supabase project dashboard
 2. Go to SQL Editor
-3. Copy and paste the contents of `supabase/migrations/001_initial_schema.sql`
-4. Run the SQL
+3. Run migrations in order: `001_initial_schema.sql`, `002_fix_expenses_schema.sql`, etc.
+
+**Current Migrations:** 4 applied, 1 pending (see STATUS.md for details)
 
 ### Real-time Features
 
-The shopping list uses Supabase real-time subscriptions. Make sure to enable real-time for the `shopping_items` table in your Supabase project settings.
+The shopping list uses Supabase real-time subscriptions. Real-time is enabled for the `shopping_items` table.
 
 ## Deployment
 
@@ -118,39 +134,75 @@ The app will automatically deploy on push to the main branch.
 ```
 trip-splitter-pro/
 ├── src/
-│   ├── components/     # Reusable components
-│   ├── pages/          # Page components
-│   ├── lib/            # Utilities and configurations
-│   ├── store/          # State management
+│   ├── components/     # Reusable components (forms, cards, etc.)
+│   ├── contexts/       # React Context providers (Trip, Expense, Meal, etc.)
+│   ├── pages/          # Page components (Dashboard, Expenses, Meals, etc.)
+│   ├── services/       # Business logic (balance calculator, settlement optimizer)
+│   ├── types/          # TypeScript type definitions
+│   ├── lib/            # Supabase client and utilities
 │   ├── App.tsx         # Main app component
 │   ├── main.tsx        # App entry point
 │   └── routes.tsx      # Route definitions
 ├── supabase/
-│   └── migrations/     # Database migrations
+│   └── migrations/     # Database migrations (001-005)
+├── docs/
+│   └── phases/         # Phase completion summaries
+├── .claude/            # Claude Code configuration
 ├── public/             # Static assets
-└── DEVELOPMENT_PLAN.md # Phased development plan
+├── STATUS.md           # Quick project status reference
+├── DEVELOPMENT_PLAN.md # Phased development roadmap
+└── CLAUDE.md           # Instructions for Claude Code
 ```
 
 ## Features
 
-See `DEVELOPMENT_PLAN.md` for the complete phased implementation plan.
+**Current Status:** Phases 1-6 Complete ✅ | See `STATUS.md` for quick overview | `DEVELOPMENT_PLAN.md` for full roadmap
 
-### Current Phase: Phase 1 - Foundation
+### ✅ Implemented Features
 
-- ✅ Project scaffolding
-- ✅ Database schema
-- ✅ Basic routing and navigation
-- ✅ State management setup
+**Trip Management**
+- Create and manage multiple trips with date ranges
+- Switch between trips with header dropdown
+- Two tracking modes: Individuals only or Individuals + Families
 
-### Upcoming Phases
+**Participant & Family Setup**
+- Add individual participants or family groups
+- Track adults and children counts per family
+- Flexible setup that adapts to tracking mode
 
-- Phase 2: Trip Management
-- Phase 3: Trip Setup Flow
-- Phase 4: Expense Entry & Management
-- Phase 5: Balance Calculation
-- Phase 6: Meal Planner
-- Phase 7: Shopping List
-- And more...
+**Expense Tracking**
+- Mobile-optimized expense entry with smart distribution
+- Filter and search expenses
+- Support for individuals, families, or mixed distributions
+- Smart payer suggestion based on current balances
+
+**Balance & Settlements**
+- Real-time balance calculation (who owes whom)
+- Optimal settlement algorithm (minimize transactions)
+- Custom settlement payment recording
+- Dedicated settlements page with history
+
+**Meal Planning**
+- Calendar grid view (breakfast/lunch/dinner per day)
+- Assign meals to specific dates and times
+- Assign responsible participants to meals
+- Mobile-first responsive design
+
+**Shopping List**
+- Real-time collaborative shopping list
+- Optimistic UI updates for instant feedback
+- Category organization (produce, dairy, meat, etc.)
+- Multiple view modes (all, by category, by meal, general)
+- Check off items as you shop
+
+### 📋 Upcoming Features
+
+See `DEVELOPMENT_PLAN.md` for the complete phased implementation plan:
+- Phase 8: Meal-shopping integration (link ingredients to meals)
+- Phase 9: Dashboard analytics with charts
+- Phase 10: Enhanced settlement features
+- Phase 11: Export to PDF and Excel
+- Phase 12: Performance optimizations and accessibility
 
 ## Contributing
 

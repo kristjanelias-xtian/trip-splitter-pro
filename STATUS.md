@@ -1,0 +1,226 @@
+# Project Status - Trip Splitter Pro
+
+**Last Updated:** November 23, 2025
+
+---
+
+## Quick Overview
+
+**Production URL:** https://split.xtian.me
+**Repository:** https://github.com/kristjanelias-xtian/trip-splitter-pro
+**Supabase Project:** `kojngcoxywrhpxokkuuv`
+
+**Latest Build:** ✅ Passing (450KB bundle, TypeScript clean)
+
+---
+
+## Development Phase Status
+
+### ✅ Completed Phases (1-6)
+
+#### Phase 1: Foundation & Infrastructure ✅
+- Project scaffolding (Vite + React + TypeScript)
+- Tailwind CSS configuration
+- Database schema deployed to Supabase
+- Navigation shell (mobile bottom nav, desktop sidebar)
+- Deployed to Cloudflare Pages
+
+#### Phase 2: Trip Management Core ✅
+- Trip CRUD operations with Supabase integration
+- Trip context provider
+- Trip creation and edit forms
+- Trip listing page with card layout
+- Trip selector dropdown in header
+
+#### Phase 3: Trip Setup Flow ✅
+- Participant and Family types
+- ParticipantContext provider with full CRUD
+- Individuals-only setup flow
+- Families setup flow with adults/children validation
+- Auto-navigate to setup after trip creation
+
+#### Phase 4: Expense Entry & Management ✅
+- Mobile-optimized expense entry form
+- Smart split selection (individuals/families/mixed)
+- Expense list view with filtering and search
+- Edit/delete expense functionality
+- Form validation with proper error handling
+
+#### Phase 5: Balance Tracking & Settlements ✅
+- Balance calculation algorithm (totalPaid - totalShare)
+- Smart payer suggestion in expense form
+- Settlement tracking with full CRUD
+- Optimal settlement algorithm (minimize transactions)
+- Dedicated settlements page
+- Settlement history display
+
+#### Phase 6: Meal Planning & Shopping List ✅
+- Meal calendar grid view (breakfast/lunch/dinner)
+- Meal CRUD operations
+- Shopping list with real-time Supabase subscriptions
+- Multiple view modes (all, by category, by meal, general)
+- Optimistic UI updates for shopping items
+- Trip date range support (start_date, end_date)
+
+**Documentation:** See `docs/phases/PHASE_*.md` for detailed summaries
+
+---
+
+## ⚠️ Pending Items
+
+### High Priority
+
+1. **Migration 005 Not Applied**
+   - File: `supabase/migrations/005_remove_legacy_date.sql`
+   - Issue: Supabase CLI hanging on `db push`
+   - Workaround: Apply manually via Supabase SQL Editor
+   - SQL: `ALTER TABLE trips DROP COLUMN IF EXISTS date;`
+   - Impact: None (code already updated, legacy column unused)
+
+2. **Meal-Shopping Integration Incomplete**
+   - Junction table exists but no UI to link ingredients to meals
+   - Cannot add ingredients from meal form
+   - Ingredient completion tracking prepared but not displayed
+   - Filter shopping list by meal UI missing
+
+### Medium Priority
+
+3. **Edit Meal Functionality**
+   - Create and delete work, edit shows "Not implemented yet"
+   - MealForm exists but not wired to edit flow
+
+4. **Edit Shopping Item**
+   - Can only add and delete, no edit after creation
+   - Users must delete and recreate items
+
+5. **Debug Logs Still Active**
+   - Console logs in contexts (MealContext, ShoppingContext, ExpenseContext)
+   - Minor performance impact
+
+### Low Priority
+
+6. **Hard-coded Currency** - EUR hard-coded throughout
+7. **Alert() Dialogs** - Using native dialogs instead of custom modals
+8. **No Loading States** - Some operations lack spinners/skeletons
+
+---
+
+## 📋 Next Phases (7-12)
+
+### Phase 7: Complete Meal-Shopping Integration
+- Add ingredients from meal form → linked shopping items
+- Display ingredient list in MealCard with completion status
+- Filter shopping list by meal
+- Aggregate duplicate ingredients across meals
+
+### Phase 8: Dashboard Analytics
+- Total trip cost visualization
+- Expense breakdown by category (pie chart)
+- Cost per participant/family (bar chart)
+- Top 5 biggest expenses list
+- Lazy load charts for performance
+
+### Phase 9: Settlement Summary Enhancements
+- Currently have optimal algorithm and manual entry
+- Could add settlement suggestions based on real-world constraints
+- Export settlement plan to PDF
+
+### Phase 10: Export & Sharing
+- PDF export with jsPDF (trip summary)
+- Excel export with SheetJS (expense details)
+- Shareable summary view (public link)
+- Print-friendly views
+
+### Phase 11: Polish & Performance
+- Virtual scrolling for long lists
+- Debounce search inputs
+- Loading states and skeletons throughout
+- Toast notifications for all actions
+- Empty states with helpful messaging
+- Error boundaries
+
+### Phase 12: Accessibility & Offline
+- Keyboard navigation
+- Screen reader support
+- Service worker for offline viewing
+- Progressive enhancement
+
+**Full Plan:** See `DEVELOPMENT_PLAN.md` for detailed roadmap
+
+---
+
+## Database Schema
+
+**Current Migrations Applied:** 4/5 (pending 005)
+
+### Core Tables
+- `trips` - Trip metadata (start_date, end_date, tracking_mode)
+- `families` - Family groups (adults, children counts)
+- `participants` - Individual participants (linked to families)
+- `expenses` - Expense tracking with JSONB distribution
+- `settlements` - Payment transfers between participants
+
+### Feature Tables
+- `meals` - Meal planning (meal_date, meal_type, title, responsible_participant_id)
+- `shopping_items` - Shopping list (name, category, quantity, is_completed)
+- `meal_shopping_items` - Junction table for meal-shopping linking
+
+**Real-time:** Shopping list table has Supabase real-time enabled
+
+---
+
+## Tech Stack
+
+- **Frontend:** React 18+ with TypeScript
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+- **State Management:** React Context API
+- **Database:** Supabase (PostgreSQL)
+- **Real-time:** Supabase subscriptions (shopping list)
+- **Deployment:** Cloudflare Pages
+
+---
+
+## Quick Commands
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run build            # Production build
+npm run type-check       # TypeScript check
+
+# Supabase (if CLI working)
+supabase db push         # Apply migrations
+supabase gen types typescript --linked > src/lib/database.types.generated.ts
+
+# Git
+git status               # Check changes
+git add .                # Stage all
+git commit -m "message"  # Commit
+git push                 # Push to remote
+```
+
+---
+
+## Key Files for New Sessions
+
+- `CLAUDE.md` - Instructions for Claude Code
+- `DEVELOPMENT_PLAN.md` - Phased development roadmap
+- `docs/phases/PHASE_6_COMPLETE.md` - Latest completed phase details
+- `.claude/database-setup.md` - Supabase CLI reference
+
+---
+
+## Known Issues Summary
+
+| Issue | Priority | Impact | Workaround |
+|-------|----------|--------|------------|
+| Migration 005 not applied | High | None | Apply manually in Supabase dashboard |
+| Meal-shopping linking UI missing | High | Feature incomplete | Can still use meals and shopping independently |
+| Edit meal not implemented | Medium | Usability | Delete and recreate meal |
+| Edit shopping item missing | Medium | Usability | Delete and recreate item |
+| Debug logs active | Low | Performance | None needed |
+
+---
+
+**For detailed phase summaries, see `docs/phases/` directory**
