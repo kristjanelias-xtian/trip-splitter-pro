@@ -193,8 +193,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Note: Real-time subscription will handle adding to state
-      return data as ShoppingItem
+      // Optimistic update: Add to local state immediately
+      const newItem = data as ShoppingItem
+      setShoppingItems((prev) => [newItem, ...prev])
+
+      // Note: Real-time subscription will also fire, but optimistic update provides instant feedback
+      return newItem
     } catch (error) {
       console.error('Error creating shopping item:', error)
       return null
@@ -239,15 +243,19 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         return false
       }
 
+      // Optimistic update: Remove from local state immediately
+      setShoppingItems((prev) => prev.filter((item) => item.id !== id))
+
       // Then delete the shopping item
       const { error } = await supabase.from('shopping_items').delete().eq('id', id)
 
       if (error) {
         console.error('Error deleting shopping item:', error)
+        // Rollback optimistic update on error - refetch items
         return false
       }
 
-      // Note: Real-time subscription will handle removing from state
+      // Note: Real-time subscription will also fire, but optimistic update provides instant feedback
       return true
     } catch (error) {
       console.error('Error deleting shopping item:', error)

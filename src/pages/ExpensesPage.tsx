@@ -8,7 +8,7 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseForm } from '@/components/ExpenseForm'
 import { ExpenseCard } from '@/components/ExpenseCard'
-import { CreateExpenseInput, ExpenseCategory } from '@/types/expense'
+import { CreateExpenseInput, ExpenseCategory, Expense } from '@/types/expense'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -31,11 +31,12 @@ import {
 
 export function ExpensesPage() {
   const { currentTrip } = useCurrentTrip()
-  const { expenses, loading, error, createExpense, deleteExpense } = useExpenseContext()
+  const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenseContext()
   const { participants, families } = useParticipantContext()
   const { settlements } = useSettlementContext()
 
   const [showForm, setShowForm] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all')
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
@@ -44,6 +45,14 @@ export function ExpensesPage() {
     const result = await createExpense(input)
     if (result) {
       setShowForm(false)
+    }
+  }
+
+  const handleUpdateExpense = async (input: CreateExpenseInput) => {
+    if (!editingExpense) return
+    const result = await updateExpense(editingExpense.id, input)
+    if (result) {
+      setEditingExpense(null)
     }
   }
 
@@ -130,14 +139,32 @@ export function ExpensesPage() {
           </div>
         )}
 
-        {/* Add Expense Form */}
-        {showForm && (
+        {/* Add/Edit Expense Form */}
+        {(showForm || editingExpense) && (
           <Card>
             <CardHeader>
-              <CardTitle>Add New Expense</CardTitle>
+              <CardTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ExpenseForm onSubmit={handleCreateExpense} onCancel={() => setShowForm(false)} />
+              <ExpenseForm
+                onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
+                onCancel={() => {
+                  setShowForm(false)
+                  setEditingExpense(null)
+                }}
+                initialValues={editingExpense ? {
+                  trip_id: editingExpense.trip_id,
+                  description: editingExpense.description,
+                  amount: editingExpense.amount,
+                  currency: editingExpense.currency,
+                  paid_by: editingExpense.paid_by,
+                  distribution: editingExpense.distribution,
+                  category: editingExpense.category,
+                  expense_date: editingExpense.expense_date,
+                  comment: editingExpense.comment ?? undefined,
+                } : undefined}
+                submitLabel={editingExpense ? 'Update Expense' : 'Add Expense'}
+              />
             </CardContent>
           </Card>
         )}
@@ -212,7 +239,8 @@ export function ExpensesPage() {
                     key={expense.id}
                     expense={expense}
                     onEdit={() => {
-                      // TODO: Implement edit functionality
+                      setShowForm(false)
+                      setEditingExpense(expense)
                     }}
                     onDelete={() => setDeletingExpenseId(expense.id)}
                   />

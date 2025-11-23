@@ -57,7 +57,7 @@ export function MealForm({
     meal_type: meal?.meal_type || initialMealType || 'lunch' as MealType,
     title: meal?.title || '',
     description: meal?.description || '',
-    responsible_participant_id: meal?.responsible_participant_id || '',
+    responsible_participant_id: meal?.responsible_participant_id || 'none',
   })
 
   // Defensive checks for context availability
@@ -97,7 +97,7 @@ export function MealForm({
           meal_type: formData.meal_type,
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
-          responsible_participant_id: formData.responsible_participant_id || undefined,
+          responsible_participant_id: formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined,
         }
 
         const result = await updateMeal(meal.id, updateData)
@@ -113,7 +113,7 @@ export function MealForm({
           meal_type: formData.meal_type,
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
-          responsible_participant_id: formData.responsible_participant_id || undefined,
+          responsible_participant_id: formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined,
         }
 
         const result = await createMeal(createData)
@@ -242,7 +242,7 @@ export function MealForm({
             <SelectValue placeholder="-- None --" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">-- None --</SelectItem>
+            <SelectItem value="none">-- None --</SelectItem>
             {adults.map((participant) => (
               <SelectItem key={participant.id} value={participant.id}>
                 {participant.name}
