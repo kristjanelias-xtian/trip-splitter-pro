@@ -1,12 +1,14 @@
 import { lazy, Suspense } from 'react'
-import { Lightbulb, Receipt } from 'lucide-react'
+import { Lightbulb, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances } from '@/services/balanceCalculator'
+import { exportTripSummaryToPDF } from '@/services/pdfExport'
 import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 
 // Lazy load chart components for better performance
@@ -44,12 +46,24 @@ export function DashboardPage() {
     settlements
   )
 
+  const handleExportPDF = () => {
+    exportTripSummaryToPDF(currentTrip, expenses, participants, balanceCalculation.balances)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
-        <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+          <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
+        </div>
+        {expenses.length > 0 && (
+          <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
+            <FileDown size={16} />
+            Export Summary
+          </Button>
+        )}
       </div>
 
       {/* Trip Overview Stats */}

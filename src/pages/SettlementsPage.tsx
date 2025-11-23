@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Receipt } from 'lucide-react'
+import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
+import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
 import type { CreateSettlementInput } from '@/types/settlement'
 import { SettlementPlan } from '@/components/SettlementPlan'
@@ -101,15 +102,27 @@ export function SettlementsPage() {
     }
   }
 
+  const handleExportPDF = () => {
+    exportSettlementPlanToPDF(currentTrip, optimalSettlement, balanceCalculation.balances)
+  }
+
   return (
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Optimal settlement plan and payment recording for {currentTrip.name}
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Optimal settlement plan and payment recording for {currentTrip.name}
+            </p>
+          </div>
+          {expenses.length > 0 && (
+            <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
+              <FileDown size={16} />
+              Export PDF
+            </Button>
+          )}
         </div>
 
         {/* Settlement Summary Stats */}
