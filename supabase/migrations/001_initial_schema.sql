@@ -1,9 +1,6 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Trips table
 CREATE TABLE trips (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   date DATE NOT NULL,
   tracking_mode TEXT NOT NULL CHECK (tracking_mode IN ('individuals', 'families')),
@@ -12,7 +9,7 @@ CREATE TABLE trips (
 
 -- Families table
 CREATE TABLE families (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   family_name TEXT NOT NULL,
   adults INTEGER NOT NULL CHECK (adults > 0),
@@ -21,7 +18,7 @@ CREATE TABLE families (
 
 -- Participants table
 CREATE TABLE participants (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   family_id UUID REFERENCES families(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -30,7 +27,7 @@ CREATE TABLE participants (
 
 -- Expenses table
 CREATE TABLE expenses (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
@@ -43,7 +40,7 @@ CREATE TABLE expenses (
 
 -- Settlements table
 CREATE TABLE settlements (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   from_participant UUID NOT NULL REFERENCES participants(id),
   to_participant UUID NOT NULL REFERENCES participants(id),
@@ -53,7 +50,7 @@ CREATE TABLE settlements (
 
 -- Meals table
 CREATE TABLE meals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner')),
@@ -67,7 +64,7 @@ CREATE TABLE meals (
 
 -- Shopping items table
 CREATE TABLE shopping_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   description TEXT NOT NULL,
   is_completed BOOLEAN NOT NULL DEFAULT false,
@@ -78,7 +75,7 @@ CREATE TABLE shopping_items (
 
 -- Meal shopping items junction table
 CREATE TABLE meal_shopping_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   meal_id UUID NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
   shopping_item_id UUID NOT NULL REFERENCES shopping_items(id) ON DELETE CASCADE,
   quantity TEXT,

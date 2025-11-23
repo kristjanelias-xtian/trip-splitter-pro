@@ -29,5 +29,8 @@ dist-ssr
 .env.production.local
 .env.development.local
 
+# Migration scripts (contains secret keys)
+scripts/migrate.js
+
 # Supabase
 .supabase
