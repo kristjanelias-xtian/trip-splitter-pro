@@ -9,10 +9,14 @@ import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Admin route - outside Layout for full-page control */}
+      <Route path="admin/all-trips" element={<AdminAllTripsPage />} />
+
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="create-trip" element={<TripsPage />} />
