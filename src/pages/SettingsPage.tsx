@@ -1,14 +1,18 @@
+import { Card, CardContent } from '@/components/ui/card'
+
 export function SettingsPage() {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <h2 className="text-2xl font-bold text-foreground">
         Settings
       </h2>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <p className="text-gray-600 dark:text-gray-400">
-          Settings and configuration options
-        </p>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground">
+            Settings and configuration options
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
