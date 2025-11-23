@@ -1,6 +1,15 @@
 import { useState, FormEvent } from 'react'
+import { motion } from 'framer-motion'
+import { X, UserPlus } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { fadeInUp } from '@/lib/animations'
 
 interface IndividualsSetupProps {
   onComplete: () => void
@@ -44,103 +53,120 @@ export function IndividualsSetup({ onComplete, hasSetup }: IndividualsSetupProps
   const canComplete = participants.length > 0
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Add Participants
-        </h3>
+    <motion.div
+      className="space-y-6"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Participants</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Participant Name</Label>
+              <Input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., John Doe"
+                required
+                disabled={adding}
+              />
+            </div>
 
-        <form onSubmit={handleAdd} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Participant Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="e.g., John Doe"
-              required
-              disabled={adding}
-            />
-          </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isAdult"
+                checked={isAdult}
+                onCheckedChange={(checked) => setIsAdult(checked as boolean)}
+                disabled={adding}
+              />
+              <label
+                htmlFor="isAdult"
+                className="text-sm text-foreground cursor-pointer"
+              >
+                Adult (can pay for expenses)
+              </label>
+            </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isAdult"
-              checked={isAdult}
-              onChange={(e) => setIsAdult(e.target.checked)}
-              className="mr-2"
-              disabled={adding}
-            />
-            <label htmlFor="isAdult" className="text-sm text-gray-700 dark:text-gray-300">
-              Adult (can pay for expenses)
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={adding || !name.trim()}
-            className="w-full bg-neutral text-white px-4 py-2 rounded-lg hover:bg-neutral-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {adding ? 'Adding...' : '+ Add Participant'}
-          </button>
-        </form>
-      </div>
+            <Button
+              type="submit"
+              disabled={adding || !name.trim()}
+              className="w-full"
+            >
+              <UserPlus size={16} className="mr-2" />
+              {adding ? 'Adding...' : 'Add Participant'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {participants.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Participants ({participants.length})
-          </h3>
-
-          <div className="space-y-2">
-            {participants.map((participant) => (
-              <div
-                key={participant.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                <div>
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {participant.name}
-                  </span>
-                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                    {participant.is_adult ? '(Adult)' : '(Child)'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDelete(participant.id)}
-                  className="text-negative hover:text-negative-dark p-1 rounded transition-colors"
+        <Card>
+          <CardHeader>
+            <CardTitle>Participants ({participants.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {participants.map((participant) => (
+                <motion.div
+                  key={participant.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center justify-between p-3 bg-accent/5 rounded-lg border border-accent/10"
                 >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">
+                      {participant.name}
+                    </span>
+                    <Badge variant={participant.is_adult ? 'soft' : 'outline'}>
+                      {participant.is_adult ? 'Adult' : 'Child'}
+                    </Badge>
+                  </div>
+                  <Button
+                    onClick={() => handleDelete(participant.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <X size={16} />
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {canComplete && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <button
-            onClick={onComplete}
-            className="w-full bg-positive text-white px-6 py-3 rounded-lg hover:bg-positive-dark transition-colors font-semibold"
-          >
-            {hasSetup ? 'Update & Continue' : 'Complete Setup'}
-          </button>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <Button
+              onClick={onComplete}
+              className="w-full"
+              size="lg"
+            >
+              {hasSetup ? 'Update & Continue' : 'Complete Setup'}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {!canComplete && (
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 text-center">
-          <p className="text-gray-600 dark:text-gray-400">
-            Add at least one participant to continue
-          </p>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+              <p className="text-muted-foreground">
+                Add at least one participant to continue
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
-    </div>
+    </motion.div>
   )
 }
