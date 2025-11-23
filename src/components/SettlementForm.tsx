@@ -1,7 +1,21 @@
 import { useState, FormEvent } from 'react'
+import { motion } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { fadeInUp } from '@/lib/animations'
 
 interface SettlementFormProps {
   onSubmit: (input: CreateSettlementInput) => Promise<void>
@@ -21,6 +35,7 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
   )
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
@@ -53,30 +68,31 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (!fromParticipantId) {
-      alert('Please select who paid')
+      setError('Please select who paid')
       return
     }
 
     if (!toParticipantId) {
-      alert('Please select who received the payment')
+      setError('Please select who received the payment')
       return
     }
 
     if (fromParticipantId === toParticipantId) {
-      alert('Cannot record a payment to yourself')
+      setError('Cannot record a payment to yourself')
       return
     }
 
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert('Please enter a valid amount greater than 0')
+      setError('Please enter a valid amount greater than 0')
       return
     }
 
     if (!currentTrip) {
-      alert('No trip selected')
+      setError('No trip selected')
       return
     }
 
@@ -98,138 +114,158 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
       setAmount('')
       setNote('')
       setSettlementDate(new Date().toISOString().split('T')[0])
+    } catch (err) {
+      setError('Failed to record settlement. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
+
       {/* From Participant */}
-      <div>
-        <label htmlFor="fromParticipant" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Who Paid? (From)
-        </label>
-        <select
-          id="fromParticipant"
+      <div className="space-y-2">
+        <Label htmlFor="fromParticipant">Who Paid? (From)</Label>
+        <Select
           value={fromParticipantId}
-          onChange={e => setFromParticipantId(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          required
+          onValueChange={setFromParticipantId}
           disabled={loading}
         >
-          <option value="">Select person...</option>
-          {adultsForSelection.map(adult => (
-            <option key={adult.id} value={adult.id}>
-              {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="fromParticipant">
+            <SelectValue placeholder="Select person..." />
+          </SelectTrigger>
+          <SelectContent>
+            {adultsForSelection.map(adult => (
+              <SelectItem key={adult.id} value={adult.id}>
+                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* To Participant */}
-      <div>
-        <label htmlFor="toParticipant" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Who Received? (To)
-        </label>
-        <select
-          id="toParticipant"
+      <div className="space-y-2">
+        <Label htmlFor="toParticipant">Who Received? (To)</Label>
+        <Select
           value={toParticipantId}
-          onChange={e => setToParticipantId(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          required
+          onValueChange={setToParticipantId}
           disabled={loading}
         >
-          <option value="">Select person...</option>
-          {adultsForSelection.map(adult => (
-            <option key={adult.id} value={adult.id}>
-              {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="toParticipant">
+            <SelectValue placeholder="Select person..." />
+          </SelectTrigger>
+          <SelectContent>
+            {adultsForSelection.map(adult => (
+              <SelectItem key={adult.id} value={adult.id}>
+                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Visual Arrow Indicator */}
       {fromParticipantId && toParticipantId && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <span className="font-medium text-blue-900 dark:text-blue-200">
-              {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-accent/10 border border-accent/20 rounded-lg p-4"
+        >
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <div className="text-center">
+              <span className="font-semibold text-foreground block">
+                {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
+              </span>
               {adultsForSelection.find(a => a.id === fromParticipantId)?.familyName && (
-                <span className="text-xs ml-1">
+                <span className="text-xs text-muted-foreground">
                   ({adultsForSelection.find(a => a.id === fromParticipantId)?.familyName})
                 </span>
               )}
-            </span>
-            <span className="text-2xl text-blue-600 dark:text-blue-400">→</span>
-            <span className="font-medium text-blue-900 dark:text-blue-200">
-              {adultsForSelection.find(a => a.id === toParticipantId)?.name}
+            </div>
+            <ArrowRight size={24} className="text-accent flex-shrink-0" />
+            <div className="text-center">
+              <span className="font-semibold text-foreground block">
+                {adultsForSelection.find(a => a.id === toParticipantId)?.name}
+              </span>
               {adultsForSelection.find(a => a.id === toParticipantId)?.familyName && (
-                <span className="text-xs ml-1">
+                <span className="text-xs text-muted-foreground">
                   ({adultsForSelection.find(a => a.id === toParticipantId)?.familyName})
                 </span>
               )}
-            </span>
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Amount */}
-      <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Amount
-        </label>
+      {/* Amount and Currency */}
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount</Label>
         <div className="flex gap-2">
-          <input
+          <Input
             type="number"
             id="amount"
             value={amount}
             onChange={e => setAmount(e.target.value)}
-            className="flex-1 px-4 py-3 text-2xl border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className="flex-1 text-2xl h-14 tabular-nums"
             placeholder="0.00"
             step="0.01"
             min="0.01"
             required
             disabled={loading}
           />
-          <select
+          <Select
             value={currency}
-            onChange={e => setCurrency(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
+            onValueChange={setCurrency}
             disabled={loading}
           >
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-            <option value="GBP">GBP</option>
-          </select>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EUR">EUR</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="GBP">GBP</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Date */}
-      <div>
-        <label htmlFor="settlementDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Settlement Date
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="settlementDate">Settlement Date</Label>
+        <Input
           type="date"
           id="settlementDate"
           value={settlementDate}
           onChange={e => setSettlementDate(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
           disabled={loading}
         />
       </div>
 
       {/* Note */}
-      <div>
-        <label htmlFor="note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Note (optional)
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="note">Note (Optional)</Label>
+        <Textarea
           id="note"
           value={note}
           onChange={e => setNote(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
           placeholder="e.g., Paid in cash, Partial payment, etc."
           rows={2}
           disabled={loading}
@@ -237,25 +273,25 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
       </div>
 
       {/* Submit Buttons */}
-      <div className="flex gap-3 pt-4">
-        <button
+      <div className="flex gap-3 pt-2">
+        <Button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="flex-1"
         >
           {loading ? 'Recording...' : 'Record Settlement'}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="outline"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
-    </form>
+    </motion.form>
   )
 }
