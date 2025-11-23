@@ -50,6 +50,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) throw fetchError
 
+      console.log('Fetched expenses:', data)
+      console.log('Current trip ID:', currentTrip.id)
       setExpenses((data as Expense[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch expenses')
