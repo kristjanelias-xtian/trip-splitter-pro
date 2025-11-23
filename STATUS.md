@@ -119,15 +119,9 @@
 
 ---
 
-## 📋 Next Phases (8-12)
+## 📋 Next Phases (9-13)
 
-### Phase 8: Complete Meal-Shopping Integration
-- Add ingredients from meal form → linked shopping items
-- Display ingredient list in MealCard with completion status
-- Filter shopping list by meal
-- Aggregate duplicate ingredients across meals
-
-### Phase 9: Dashboard Analytics
+### Phase 9: Dashboard Analytics (NEXT)
 - Total trip cost visualization
 - Expense breakdown by category (pie chart)
 - Cost per participant/family (bar chart)
