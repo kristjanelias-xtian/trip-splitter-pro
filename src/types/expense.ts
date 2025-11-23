@@ -20,8 +20,8 @@ export interface FamiliesDistribution {
 
 export interface MixedDistribution {
   type: 'mixed';
-  families?: string[]; // family IDs
-  participants?: string[]; // participant IDs
+  families: string[]; // family IDs
+  participants: string[]; // participant IDs
 }
 
 export type ExpenseDistribution =

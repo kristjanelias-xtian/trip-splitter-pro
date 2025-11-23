@@ -2,6 +2,8 @@ import { useState, useEffect, FormEvent } from 'react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useExpenseContext } from '@/contexts/ExpenseContext'
+import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 
 interface ExpenseFormProps {
   onSubmit: (input: CreateExpenseInput) => Promise<void>
@@ -27,6 +29,7 @@ export function ExpenseForm({
 }: ExpenseFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants, families, getAdultParticipants } = useParticipantContext()
+  const { expenses } = useExpenseContext()
 
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
@@ -47,6 +50,12 @@ export function ExpenseForm({
 
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
+
+  // Calculate balances to find suggested payer
+  const balanceCalculation = currentTrip
+    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode)
+    : null
+  const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
   // Auto-select all participants/families on mount if not editing
   useEffect(() => {
@@ -216,6 +225,31 @@ export function ExpenseForm({
         <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Who Paid?
         </label>
+
+        {/* Smart Payer Suggestion */}
+        {suggestedPayer && expenses.length > 0 && (
+          <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-blue-900 dark:text-blue-200">
+                  💡 <strong>{suggestedPayer.name}</strong> should pay next
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  Current balance:{' '}
+                  <span className={getBalanceColorClass(suggestedPayer.balance)}>
+                    {formatBalance(suggestedPayer.balance, currency)}
+                  </span>
+                </p>
+              </div>
+              {!isIndividualsMode && suggestedPayer.isFamily && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Family
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <select
           id="paidBy"
           value={paidBy}

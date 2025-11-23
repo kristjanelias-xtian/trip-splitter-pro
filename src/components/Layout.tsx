@@ -3,6 +3,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
+import { SettlementProvider } from '@/contexts/SettlementContext'
 
 export function Layout() {
   const location = useLocation()
@@ -92,7 +93,9 @@ export function Layout() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 lg:ml-64">
         <ParticipantProvider>
           <ExpenseProvider>
-            <Outlet />
+            <SettlementProvider>
+              <Outlet />
+            </SettlementProvider>
           </ExpenseProvider>
         </ParticipantProvider>
       </main>
