@@ -11,6 +11,7 @@ import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
+import { Toaster } from '@/components/ui/toaster'
 import {
   Select,
   SelectContent,
@@ -219,6 +220,9 @@ export function Layout() {
           })}
         </nav>
       </aside>
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   )
 }
