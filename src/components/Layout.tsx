@@ -4,6 +4,8 @@ import { useTripContext } from '@/contexts/TripContext'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
+import { MealProvider } from '@/contexts/MealContext'
+import { ShoppingProvider } from '@/contexts/ShoppingContext'
 
 export function Layout() {
   const location = useLocation()
@@ -97,7 +99,11 @@ export function Layout() {
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
-              <Outlet />
+              <MealProvider>
+                <ShoppingProvider>
+                  <Outlet />
+                </ShoppingProvider>
+              </MealProvider>
             </SettlementProvider>
           </ExpenseProvider>
         </ParticipantProvider>
