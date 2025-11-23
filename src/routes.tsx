@@ -9,7 +9,6 @@ import { MealsPage } from './pages/MealsPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
-import { SettingsPage } from './pages/SettingsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
 
@@ -23,7 +22,6 @@ export function AppRoutes() {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="create-trip" element={<TripsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
 
         {/* Trip routes - protected by TripRouteGuard */}
         {/* Redirect base trip URL to dashboard */}

@@ -57,8 +57,6 @@ export function Layout() {
       )
     }
 
-    items.push({ path: '/settings', label: 'Settings', requiresTrip: false })
-
     return items
   }
 
@@ -81,16 +79,13 @@ export function Layout() {
   // Overflow menu items (mobile only)
   const getOverflowMenuItems = () => {
     if (!tripCode) {
-      return [
-        { path: '/settings', label: 'Settings', requiresTrip: false },
-      ]
+      return []
     }
 
     return [
       { path: '/', label: 'Trips', requiresTrip: false },
       { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
       { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
-      { path: '/settings', label: 'Settings', requiresTrip: false },
     ]
   }
 
