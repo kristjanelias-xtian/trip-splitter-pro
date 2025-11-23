@@ -23,7 +23,7 @@ interface MealCardProps {
 }
 
 export function MealCard({ meal }: MealCardProps) {
-  const { deleteMeal } = useMealContext()
+  const { deleteMeal, refreshMeals } = useMealContext()
   const { participants } = useParticipantContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -191,7 +191,10 @@ export function MealCard({ meal }: MealCardProps) {
           </DialogHeader>
           <ShoppingItemForm
             initialMealIds={[meal.id]}
-            onSuccess={() => setShowAddIngredient(false)}
+            onSuccess={async () => {
+              await refreshMeals()
+              setShowAddIngredient(false)
+            }}
             onCancel={() => setShowAddIngredient(false)}
           />
         </DialogContent>
