@@ -238,8 +238,12 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
   // Fetch data when current trip changes
   useEffect(() => {
-    fetchData()
-  }, [tripId, currentTrip])
+    console.log('ParticipantContext useEffect triggered, tripId:', tripId, 'has currentTrip:', !!currentTrip)
+    if (tripId && currentTrip) {
+      console.log('Calling fetchData with trip:', currentTrip.id)
+      fetchData()
+    }
+  }, [tripId, currentTrip?.id])
 
   const value: ParticipantContextType = {
     participants,

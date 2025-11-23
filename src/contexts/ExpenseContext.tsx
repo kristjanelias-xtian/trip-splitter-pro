@@ -169,9 +169,12 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses when current trip changes
   useEffect(() => {
-    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'currentTrip:', currentTrip)
-    fetchExpenses()
-  }, [tripId, currentTrip])
+    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'has currentTrip:', !!currentTrip)
+    if (tripId && currentTrip) {
+      console.log('Calling fetchExpenses with trip:', currentTrip.id)
+      fetchExpenses()
+    }
+  }, [tripId, currentTrip?.id])
 
   const value: ExpenseContextType = {
     expenses,
