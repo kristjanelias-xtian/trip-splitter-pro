@@ -1,27 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@layer base {
+  :root {
+    /* Warm & Earthy Design System - Light Mode */
+    --background: 30 17% 98%; /* Warm cream #FAF8F5 */
+    --foreground: 225 15% 20%; /* Deep charcoal #2D3142 */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 225 15% 20%;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 15% 20%;
+
+    --primary: 14 77% 62%; /* Coral #E76F51 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 95 34% 46%; /* Sage green #6A994E */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 25 92% 67%; /* Gold #F4A261 */
+    --accent-foreground: 225 15% 20%;
+
+    --destructive: 30 100% 48%; /* Warm orange #F77F00 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 14 77% 62%; /* Coral focus ring */
+
+    --radius: 16px; /* Friendly, rounded corners */
+
+    /* Custom design tokens */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-soft-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    /* Animation tokens */
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 350ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Warm Dark Mode - Not pure black */
+    --background: 240 21% 10%; /* Warm dark gray #1A1A2E */
+    --foreground: 30 17% 98%;
+
+    --card: 240 15% 12%;
+    --card-foreground: 30 17% 98%;
+
+    --popover: 240 15% 12%;
+    --popover-foreground: 30 17% 98%;
+
+    --primary: 14 77% 65%; /* Lighter coral for dark mode */
+    --primary-foreground: 240 21% 10%;
+
+    --secondary: 95 34% 55%; /* Lighter sage for visibility */
+    --secondary-foreground: 240 21% 10%;
+
+    --muted: 217.9 10.6% 20%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 25 92% 70%;
+    --accent-foreground: 240 21% 10%;
+
+    --destructive: 30 100% 55%;
+    --destructive-foreground: 30 17% 98%;
+
+    --border: 217.9 10.6% 20%;
+    --input: 217.9 10.6% 20%;
+    --ring: 14 77% 65%;
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  /* Tabular numbers for amounts and balances */
+  .tabular-nums {
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
-#root {
-  min-height: 100vh;
+@layer utilities {
+  /* Custom utility classes for common patterns */
+  .soft-shadow {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .soft-shadow-md {
+    box-shadow: var(--shadow-soft-md);
+  }
+
+  .soft-shadow-lg {
+    box-shadow: var(--shadow-soft-lg);
+  }
+
+  .transition-smooth {
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+
+  .hover-lift {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
 }
