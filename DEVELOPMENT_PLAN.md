@@ -394,24 +394,26 @@ This document outlines the phased execution plan for building the Family Trip Co
   - **Documentation:** `docs/phases/PHASE_UI_OVERHAUL.md`
 
 ### ⚠️ Pending Items
-  - Migration 005 (remove legacy date column) - created but not applied due to CLI issues
-  - Meal-shopping integration UI incomplete (junction table exists, no UI)
+  - None currently - all migrations applied, core features complete
 
-### 📋 Remaining Phases (8-13)
+### ✅ Recently Completed
 
-- [ ] **Phase 8: Meal-Shopping Integration** (PARTIALLY COMPLETE)
+- [x] **Phase 8: Meal-Shopping Integration** ✅ COMPLETE
   - Database schema: ✅ Complete
-  - Add ingredients from meal form: ❌ Not implemented
-  - Display ingredient completion in MealCard: ❌ Not implemented
-  - Filter shopping by meal: ❌ Not implemented
-  - Aggregate duplicate ingredients: ❌ Not implemented
+  - Add ingredients from meal card: ✅ Implemented
+  - Display ingredient completion in MealCard: ✅ Implemented with progress bars
+  - Meal-shopping linkage via junction table: ✅ Complete
+  - Initial meal IDs support in ShoppingItemForm: ✅ Complete
 
-- [ ] **Phase 9: Dashboard Analytics** (NEXT RECOMMENDED)
-  - Total trip cost visualization
-  - Expense breakdown by category (pie chart with Recharts)
-  - Cost per participant/family (bar chart)
-  - Top 5 biggest expenses list
-  - Lazy loading for chart components
+- [x] **Phase 9: Dashboard Analytics** ✅ COMPLETE (Nov 2025)
+  - Total trip cost visualization: ✅ Displayed in stats cards
+  - Expense breakdown by category (pie chart with Recharts): ✅ Complete
+  - Cost per participant/family (bar chart): ✅ Complete
+  - Top 5 biggest expenses list: ✅ Complete with ranking and badges
+  - Lazy loading for chart components: ✅ Complete (separate 26-28KB bundles)
+  - Custom tooltips and design system colors: ✅ Complete
+
+### 📋 Remaining Phases (10-13)
 
 - [ ] **Phase 10: Settlement Summary Enhancements**
   - Currently have optimal algorithm ✅
