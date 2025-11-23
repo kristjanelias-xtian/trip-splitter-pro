@@ -89,7 +89,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 lg:ml-64">
         <ParticipantProvider>
           <ExpenseProvider>
             <Outlet />
@@ -136,15 +136,6 @@ export function Layout() {
           ))}
         </nav>
       </aside>
-
-      {/* Adjust main content on desktop to account for sidebar */}
-      <style>{`
-        @media (min-width: 1024px) {
-          main {
-            margin-left: 16rem;
-          }
-        }
-      `}</style>
     </div>
   )
 }
