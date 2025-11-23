@@ -35,12 +35,6 @@ export interface MealWithIngredients extends Meal {
   ingredients_total: number // Total count of linked shopping items
 }
 
-export const MEAL_TYPE_ICONS: Record<MealType, string> = {
-  breakfast: '🍳',
-  lunch: '🍽️',
-  dinner: '🍕',
-}
-
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',

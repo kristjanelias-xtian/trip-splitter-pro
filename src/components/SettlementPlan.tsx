@@ -1,4 +1,8 @@
+import { PartyPopper, Lightbulb, Check } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 
 interface SettlementPlanProps {
   plan: OptimalSettlementPlan
@@ -8,12 +12,12 @@ interface SettlementPlanProps {
 export function SettlementPlan({ plan, onRecordSettlement }: SettlementPlanProps) {
   if (plan.transactions.length === 0) {
     return (
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
-        <div className="text-4xl mb-2">🎉</div>
-        <h3 className="text-lg font-semibold text-green-900 dark:text-green-200 mb-1">
+      <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
+        <PartyPopper size={48} className="mx-auto text-positive mb-2" />
+        <h3 className="text-lg font-semibold text-foreground mb-1">
           All Settled!
         </h3>
-        <p className="text-sm text-green-700 dark:text-green-300">
+        <p className="text-sm text-muted-foreground">
           Everyone is squared up. No payments needed.
         </p>
       </div>
@@ -24,18 +28,19 @@ export function SettlementPlan({ plan, onRecordSettlement }: SettlementPlanProps
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-foreground">
           Settlement Plan
         </h3>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           {plan.totalTransactions} {plan.totalTransactions === 1 ? 'transaction' : 'transactions'}
         </span>
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-        <p className="text-sm text-blue-900 dark:text-blue-200">
-          💡 This is the optimal settlement plan with the minimum number of transactions needed to settle all balances.
+      <div className="bg-accent/10 border border-accent/30 rounded-lg p-3 mb-4 flex items-start gap-2">
+        <Lightbulb size={16} className="text-accent mt-0.5 flex-shrink-0" />
+        <p className="text-sm text-foreground">
+          This is the optimal settlement plan with the minimum number of transactions needed to settle all balances.
         </p>
       </div>
 
@@ -74,60 +79,58 @@ function SettlementTransactionCard({
   }).format(transaction.amount)
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-      <div className="flex items-start justify-between">
+    <Card>
+      <div className="p-4 flex items-start justify-between">
         <div className="flex-1">
           {/* Step Number */}
           <div className="flex items-center mb-2">
-            <span className="flex items-center justify-center w-6 h-6 bg-neutral text-white text-xs font-bold rounded-full mr-2">
+            <span className="flex items-center justify-center w-6 h-6 bg-accent text-accent-foreground text-xs font-bold rounded-full mr-2">
               {index}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Step {index}</span>
+            <span className="text-xs text-muted-foreground">Step {index}</span>
           </div>
 
           {/* Transaction Details */}
           <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="font-medium text-gray-900 dark:text-white">
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-foreground">
                 {transaction.fromName}
               </span>
               {transaction.isFromFamily && (
-                <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded">
-                  Family
-                </span>
+                <Badge variant="soft">Family</Badge>
               )}
             </div>
 
-            <span className="text-gray-400 dark:text-gray-600">→</span>
+            <span className="text-muted-foreground">→</span>
 
-            <div className="flex items-center">
-              <span className="font-medium text-gray-900 dark:text-white">
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-foreground">
                 {transaction.toName}
               </span>
               {transaction.isToFamily && (
-                <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded">
-                  Family
-                </span>
+                <Badge variant="soft">Family</Badge>
               )}
             </div>
           </div>
 
           {/* Amount */}
           <div className="mt-2">
-            <span className="text-2xl font-bold text-neutral">{formattedAmount}</span>
+            <span className="text-2xl font-bold text-accent tabular-nums">{formattedAmount}</span>
           </div>
         </div>
 
         {/* Record Button */}
         {onRecord && (
-          <button
+          <Button
             onClick={onRecord}
-            className="ml-4 px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            size="sm"
+            className="ml-4"
           >
-            ✓ Record
-          </button>
+            <Check size={14} className="mr-1" />
+            Record
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
