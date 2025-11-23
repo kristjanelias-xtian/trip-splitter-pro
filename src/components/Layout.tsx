@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import {
   Home, Users, DollarSign, CreditCard, UtensilsCrossed,
-  ShoppingCart, BarChart3, Settings2
+  ShoppingCart, BarChart3, Settings2, MoreHorizontal
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -19,9 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 // Icon mapping
 const iconMap = {
+  'Overview': Home,
   'Trips': Home,
   'Setup': Users,
   'Expenses': DollarSign,
@@ -30,6 +40,7 @@ const iconMap = {
   'Shopping': ShoppingCart,
   'Dashboard': BarChart3,
   'Settings': Settings2,
+  'More': MoreHorizontal,
 }
 
 export function Layout() {
@@ -37,8 +48,10 @@ export function Layout() {
   const navigate = useNavigate()
   const { tripId } = useCurrentTrip()
   const { trips } = useTripContext()
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
-  const getNavItems = () => {
+  // Desktop navigation - all items visible
+  const getDesktopNavItems = () => {
     const items = [
       { path: '/', label: 'Trips', requiresTrip: false },
     ]
@@ -59,7 +72,41 @@ export function Layout() {
     return items
   }
 
-  const navItems = getNavItems()
+  // Mobile navigation - 5 primary items + overflow menu
+  const getMobileNavItems = () => {
+    if (!tripId) {
+      return [
+        { path: '/', label: 'Trips', requiresTrip: false },
+      ]
+    }
+
+    return [
+      { path: `/trips/${tripId}/dashboard`, label: 'Overview', requiresTrip: true },
+      { path: `/trips/${tripId}/expenses`, label: 'Expenses', requiresTrip: true },
+      { path: `/trips/${tripId}/meals`, label: 'Meals', requiresTrip: true },
+      { path: `/trips/${tripId}/shopping`, label: 'Shopping', requiresTrip: true },
+    ]
+  }
+
+  // Overflow menu items (mobile only)
+  const getOverflowMenuItems = () => {
+    if (!tripId) {
+      return [
+        { path: '/settings', label: 'Settings', requiresTrip: false },
+      ]
+    }
+
+    return [
+      { path: '/', label: 'Trips', requiresTrip: false },
+      { path: `/trips/${tripId}/setup`, label: 'Setup', requiresTrip: true },
+      { path: `/trips/${tripId}/settlements`, label: 'Settlements', requiresTrip: true },
+      { path: '/settings', label: 'Settings', requiresTrip: false },
+    ]
+  }
+
+  const desktopNavItems = getDesktopNavItems()
+  const mobileNavItems = getMobileNavItems()
+  const overflowMenuItems = getOverflowMenuItems()
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -142,7 +189,7 @@ export function Layout() {
       {/* Bottom navigation (mobile) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40">
         <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => {
+          {mobileNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
             const active = isActive(item.path)
 
@@ -179,13 +226,86 @@ export function Layout() {
               </Link>
             )
           })}
+
+          {/* More menu button */}
+          <Sheet open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+            <SheetTrigger asChild>
+              <button className="flex flex-col items-center justify-center w-full h-full relative">
+                {overflowMenuItems.some(item => isActive(item.path)) && (
+                  <motion.div
+                    layoutId="mobile-nav-indicator"
+                    className="absolute inset-x-2 top-0 h-1 bg-primary rounded-full"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <motion.div
+                  className="flex flex-col items-center"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <MoreHorizontal
+                    size={20}
+                    className={
+                      overflowMenuItems.some(item => isActive(item.path))
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                    }
+                  />
+                  <span
+                    className={`text-xs mt-1 ${
+                      overflowMenuItems.some(item => isActive(item.path))
+                        ? 'text-primary font-medium'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    More
+                  </span>
+                </motion.div>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-auto">
+              <SheetHeader>
+                <SheetTitle>More Options</SheetTitle>
+                <SheetDescription>
+                  Additional navigation options
+                </SheetDescription>
+              </SheetHeader>
+              <nav className="mt-6 space-y-2">
+                {overflowMenuItems.map((item) => {
+                  const Icon = iconMap[item.label as keyof typeof iconMap]
+                  const active = isActive(item.path)
+
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMoreMenuOpen(false)}
+                      className="block relative"
+                    >
+                      <motion.div
+                        className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                          active
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        }`}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Icon size={20} className="mr-3" />
+                        <span className="font-medium">{item.label}</span>
+                      </motion.div>
+                    </Link>
+                  )
+                })}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
 
       {/* Side navigation (desktop) */}
       <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
         <nav className="px-3 py-6 space-y-1">
-          {navItems.map((item) => {
+          {desktopNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
             const active = isActive(item.path)
 
