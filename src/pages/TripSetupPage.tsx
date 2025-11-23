@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTripContext } from '@/contexts/TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
 import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
 
 export function TripSetupPage() {
   const navigate = useNavigate()
-  const { currentTrip } = useTripContext()
+  const { currentTrip, tripId } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
 
   const [isComplete, setIsComplete] = useState(false)
@@ -27,7 +27,7 @@ export function TripSetupPage() {
   const handleComplete = () => {
     setIsComplete(true)
     // Redirect to expenses page after setup
-    setTimeout(() => navigate('/expenses'), 1000)
+    setTimeout(() => navigate(`/trips/${tripId}/expenses`), 1000)
   }
 
   const hasSetup = currentTrip.tracking_mode === 'individuals'

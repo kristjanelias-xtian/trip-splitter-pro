@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
-import { useTripContext } from '@/contexts/TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { ExpenseForm } from '@/components/ExpenseForm'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { CreateExpenseInput, ExpenseCategory } from '@/types/expense'
 
 export function ExpensesPage() {
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
   const { expenses, loading, error, createExpense, deleteExpense } = useExpenseContext()
 
   const [showForm, setShowForm] = useState(false)

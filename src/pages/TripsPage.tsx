@@ -7,7 +7,7 @@ import { CreateTripInput, UpdateTripInput } from '@/types/trip'
 
 export function TripsPage() {
   const navigate = useNavigate()
-  const { trips, loading, error, currentTrip, createTrip, updateTrip, deleteTrip, selectTrip } = useTripContext()
+  const { trips, loading, error, createTrip, updateTrip, deleteTrip } = useTripContext()
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTripId, setEditingTripId] = useState<string | null>(null)
 
@@ -16,7 +16,7 @@ export function TripsPage() {
     if (newTrip) {
       setShowCreateForm(false)
       // Navigate to setup page for new trip
-      navigate('/trip-setup')
+      navigate(`/trips/${newTrip.id}/setup`)
     }
   }
 
@@ -102,8 +102,8 @@ export function TripsPage() {
             <TripCard
               key={trip.id}
               trip={trip}
-              isSelected={currentTrip?.id === trip.id}
-              onSelect={() => selectTrip(trip.id)}
+              isSelected={false}
+              onSelect={() => navigate(`/trips/${trip.id}/expenses`)}
               onEdit={() => setEditingTripId(trip.id)}
               onDelete={() => handleDeleteTrip(trip.id)}
             />

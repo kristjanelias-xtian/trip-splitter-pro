@@ -1,17 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Trip, CreateTripInput, UpdateTripInput } from '@/types/trip'
-import { useStore } from '@/store/store'
 
 interface TripContextType {
   trips: Trip[]
   loading: boolean
   error: string | null
-  currentTrip: Trip | null
+  getTripById: (id: string) => Trip | undefined
   createTrip: (input: CreateTripInput) => Promise<Trip | null>
   updateTrip: (id: string, input: UpdateTripInput) => Promise<boolean>
   deleteTrip: (id: string) => Promise<boolean>
-  selectTrip: (tripId: string | null) => void
   refreshTrips: () => Promise<void>
 }
 
@@ -21,11 +19,6 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const { currentTripId, setCurrentTripId } = useStore()
-
-  // Get current trip from the list
-  const currentTrip = trips.find(trip => trip.id === currentTripId) || null
 
   // Fetch all trips
   const fetchTrips = async () => {
@@ -41,17 +34,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (fetchError) throw fetchError
 
       setTrips((data as Trip[]) || [])
-
-      // Auto-select first trip if none selected
-      if (data && data.length > 0 && !currentTripId) {
-        setCurrentTripId((data as Trip[])[0].id)
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
       console.error('Error fetching trips:', err)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Get trip by ID
+  const getTripById = (id: string) => {
+    return trips.find(trip => trip.id === id)
   }
 
   // Create new trip
@@ -69,7 +62,6 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       const newTrip = data as Trip
       setTrips(prev => [newTrip, ...prev])
-      setCurrentTripId(newTrip.id)
 
       return newTrip
     } catch (err) {
@@ -119,23 +111,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       setTrips(prev => prev.filter(trip => trip.id !== id))
 
-      // If deleted trip was selected, select another one
-      if (currentTripId === id) {
-        const remainingTrips = trips.filter(trip => trip.id !== id)
-        setCurrentTripId(remainingTrips.length > 0 ? remainingTrips[0].id : null)
-      }
-
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete trip')
       console.error('Error deleting trip:', err)
       return false
     }
-  }
-
-  // Select trip
-  const selectTrip = (tripId: string | null) => {
-    setCurrentTripId(tripId)
   }
 
   // Refresh trips
@@ -152,11 +133,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     trips,
     loading,
     error,
-    currentTrip,
+    getTripById,
     createTrip,
     updateTrip,
     deleteTrip,
-    selectTrip,
     refreshTrips,
   }
 

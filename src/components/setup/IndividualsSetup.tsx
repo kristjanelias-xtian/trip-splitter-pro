@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { useTripContext } from '@/contexts/TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 
 interface IndividualsSetupProps {
@@ -8,7 +8,7 @@ interface IndividualsSetupProps {
 }
 
 export function IndividualsSetup({ onComplete, hasSetup }: IndividualsSetupProps) {
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
   const { participants, createParticipant, deleteParticipant } = useParticipantContext()
 
   const [name, setName] = useState('')

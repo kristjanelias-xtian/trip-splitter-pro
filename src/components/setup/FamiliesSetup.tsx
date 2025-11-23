@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { useTripContext } from '@/contexts/TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 
 interface FamiliesSetupProps {
@@ -8,7 +8,7 @@ interface FamiliesSetupProps {
 }
 
 export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
   const {
     families,
     createFamily,

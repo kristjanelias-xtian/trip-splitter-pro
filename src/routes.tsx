@@ -13,11 +13,11 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<TripsPage />} />
-        <Route path="trip-setup" element={<TripSetupPage />} />
-        <Route path="expenses" element={<ExpensesPage />} />
-        <Route path="meals" element={<MealsPage />} />
-        <Route path="shopping" element={<ShoppingPage />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="trips/:tripId/setup" element={<TripSetupPage />} />
+        <Route path="trips/:tripId/expenses" element={<ExpensesPage />} />
+        <Route path="trips/:tripId/meals" element={<MealsPage />} />
+        <Route path="trips/:tripId/shopping" element={<ShoppingPage />} />
+        <Route path="trips/:tripId/dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

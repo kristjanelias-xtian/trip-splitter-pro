@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution } from '@/types/expense'
-import { useTripContext } from '@/contexts/TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 
 interface ExpenseFormProps {
@@ -25,7 +25,7 @@ export function ExpenseForm({
   initialValues,
   submitLabel = 'Add Expense',
 }: ExpenseFormProps) {
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
   const { participants, families, getAdultParticipants } = useParticipantContext()
 
   const [description, setDescription] = useState(initialValues?.description || '')

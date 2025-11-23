@@ -1,25 +1,57 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
 
 export function Layout() {
   const location = useLocation()
-  const { trips, currentTrip, selectTrip } = useTripContext()
+  const navigate = useNavigate()
+  const { tripId } = useCurrentTrip()
+  const { trips } = useTripContext()
 
-  const navItems = [
-    { path: '/', label: 'Trips', icon: '🏠' },
-    { path: '/trip-setup', label: 'Setup', icon: '👥' },
-    { path: '/expenses', label: 'Expenses', icon: '💰' },
-    { path: '/meals', label: 'Meals', icon: '🍽️' },
-    { path: '/shopping', label: 'Shopping', icon: '🛒' },
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
-  ]
+  const getNavItems = () => {
+    const items = [
+      { path: '/', label: 'Trips', icon: '🏠', requiresTrip: false },
+    ]
+
+    if (tripId) {
+      items.push(
+        { path: `/trips/${tripId}/setup`, label: 'Setup', icon: '👥', requiresTrip: true },
+        { path: `/trips/${tripId}/expenses`, label: 'Expenses', icon: '💰', requiresTrip: true },
+        { path: `/trips/${tripId}/meals`, label: 'Meals', icon: '🍽️', requiresTrip: true },
+        { path: `/trips/${tripId}/shopping`, label: 'Shopping', icon: '🛒', requiresTrip: true },
+        { path: `/trips/${tripId}/dashboard`, label: 'Dashboard', icon: '📊', requiresTrip: true },
+      )
+    }
+
+    items.push({ path: '/settings', label: 'Settings', icon: '⚙️', requiresTrip: false })
+
+    return items
+  }
+
+  const navItems = getNavItems()
 
   const isActive = (path: string) => {
     if (path === '/') {
       return location.pathname === '/'
     }
-    return location.pathname.startsWith(path)
+    return location.pathname === path
+  }
+
+  const handleTripChange = (newTripId: string) => {
+    // Navigate to the same page type for the new trip
+    if (location.pathname.includes('/expenses')) {
+      navigate(`/trips/${newTripId}/expenses`)
+    } else if (location.pathname.includes('/setup')) {
+      navigate(`/trips/${newTripId}/setup`)
+    } else if (location.pathname.includes('/meals')) {
+      navigate(`/trips/${newTripId}/meals`)
+    } else if (location.pathname.includes('/shopping')) {
+      navigate(`/trips/${newTripId}/shopping`)
+    } else if (location.pathname.includes('/dashboard')) {
+      navigate(`/trips/${newTripId}/dashboard`)
+    } else {
+      navigate(`/trips/${newTripId}/expenses`)
+    }
   }
 
   return (
@@ -31,15 +63,15 @@ export function Layout() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Trip Splitter Pro
             </h1>
-            {trips.length > 0 && (
+            {trips.length > 0 && tripId && (
               <div className="flex items-center gap-2">
                 <label htmlFor="trip-selector" className="text-sm text-gray-600 dark:text-gray-400">
                   Current Trip:
                 </label>
                 <select
                   id="trip-selector"
-                  value={currentTrip?.id || ''}
-                  onChange={(e) => selectTrip(e.target.value)}
+                  value={tripId || ''}
+                  onChange={(e) => handleTripChange(e.target.value)}
                   className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent"
                 >
                   {trips.map((trip) => (

@@ -8,7 +8,7 @@ import {
   UpdateParticipantInput,
   UpdateFamilyInput,
 } from '@/types/participant'
-import { useTripContext } from './TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 
 interface ParticipantContextType {
   participants: Participant[]
@@ -34,7 +34,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
 
   // Fetch participants and families for current trip
   const fetchData = async () => {

@@ -6,7 +6,7 @@ import {
   UpdateExpenseInput,
   ExpenseCategory,
 } from '@/types/expense'
-import { useTripContext } from './TripContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 
 interface ExpenseContextType {
   expenses: Expense[]
@@ -28,7 +28,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip } = useTripContext()
+  const { currentTrip } = useCurrentTrip()
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
