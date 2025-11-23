@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import { useMealContext } from '@/contexts/MealContext'
@@ -9,6 +10,19 @@ import type {
   UpdateShoppingItemInput,
 } from '@/types/shopping'
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '@/types/shopping'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from '@/components/ui/checkbox'
+import { fadeInUp } from '@/lib/animations'
 
 interface ShoppingItemFormProps {
   item?: ShoppingItem
@@ -21,22 +35,24 @@ export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemForm
   const { createShoppingItem, updateShoppingItem } = useShoppingContext()
   const { meals } = useMealContext()
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: item?.name || '',
     quantity: item?.quantity || '',
     category: item?.category || 'other' as ShoppingCategory,
     notes: item?.notes || '',
-    meal_ids: [] as string[], // Only used when creating
+    meal_ids: [] as string[],
   })
 
   if (!currentTrip) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (!formData.name.trim()) {
-      alert('Please enter an item name')
+      setError('Please enter an item name')
       return
     }
 
@@ -44,7 +60,6 @@ export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemForm
 
     try {
       if (item) {
-        // Update existing item
         const updateData: UpdateShoppingItemInput = {
           name: formData.name.trim(),
           quantity: formData.quantity.trim() || undefined,
@@ -53,14 +68,12 @@ export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemForm
         }
 
         const result = await updateShoppingItem(item.id, updateData)
-
         if (result) {
           onSuccess()
         } else {
-          alert('Failed to update item')
+          setError('Failed to update item')
         }
       } else {
-        // Create new item
         const createData: CreateShoppingItemInput = {
           trip_id: currentTrip.id,
           name: formData.name.trim(),
@@ -71,176 +84,158 @@ export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemForm
         }
 
         const result = await createShoppingItem(createData)
-
         if (result) {
           onSuccess()
         } else {
-          alert('Failed to create item')
+          setError('Failed to create item')
         }
       }
     } catch (error) {
-      console.error('Error submitting shopping item:', error)
-      alert('An error occurred')
+      setError('An error occurred while saving')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleMealToggle = (mealId: string) => {
+  const handleMealToggle = (mealId: string, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      meal_ids: prev.meal_ids.includes(mealId)
-        ? prev.meal_ids.filter((id) => id !== mealId)
-        : [...prev.meal_ids, mealId],
+      meal_ids: checked
+        ? [...prev.meal_ids, mealId]
+        : prev.meal_ids.filter((id) => id !== mealId),
     }))
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Item Name */}
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
         >
-          Item Name *
-        </label>
-        <input
+          {error}
+        </motion.div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Item Name</Label>
+        <Input
           type="text"
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Tomatoes"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent"
           required
+          disabled={submitting}
         />
       </div>
 
-      {/* Quantity */}
-      <div>
-        <label
-          htmlFor="quantity"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Quantity (Optional)
-        </label>
-        <input
-          type="text"
-          id="quantity"
-          value={formData.quantity}
-          onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-          placeholder="e.g., 2 kg, 3 bottles, 1 pack"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="quantity">Quantity (Optional)</Label>
+          <Input
+            type="text"
+            id="quantity"
+            value={formData.quantity}
+            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+            placeholder="e.g., 2 kg, 3 bottles"
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select
+            value={formData.category}
+            onValueChange={(value) => setFormData({ ...formData, category: value as ShoppingCategory })}
+            disabled={submitting}
+          >
+            <SelectTrigger id="category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORY_ORDER.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {CATEGORY_LABELS[category]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Category */}
-      <div>
-        <label
-          htmlFor="category"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Category *
-        </label>
-        <select
-          id="category"
-          value={formData.category}
-          onChange={(e) =>
-            setFormData({ ...formData, category: e.target.value as ShoppingCategory })
-          }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent"
-          required
-        >
-          {CATEGORY_ORDER.map((category) => (
-            <option key={category} value={category}>
-              {CATEGORY_LABELS[category]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Notes */}
-      <div>
-        <label
-          htmlFor="notes"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Notes (Optional)
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes (Optional)</Label>
+        <Textarea
           id="notes"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           placeholder="Brand preferences, special instructions..."
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent resize-none"
+          disabled={submitting}
         />
       </div>
 
-      {/* Link to Meals (only when creating) */}
       {!item && meals.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Link to Meals (Optional)
-          </label>
-          <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-2 space-y-1">
-            {meals.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 p-2">
-                No meals planned yet
-              </p>
-            ) : (
-              meals.map((meal) => (
+        <div className="space-y-2">
+          <Label>Link to Meals (Optional)</Label>
+          <div className="max-h-40 overflow-y-auto rounded-lg border border-input p-3 space-y-2">
+            {meals.map((meal) => (
+              <div key={meal.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`meal-${meal.id}`}
+                  checked={formData.meal_ids.includes(meal.id)}
+                  onCheckedChange={(checked) => handleMealToggle(meal.id, checked as boolean)}
+                  disabled={submitting}
+                />
                 <label
-                  key={meal.id}
-                  className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+                  htmlFor={`meal-${meal.id}`}
+                  className="text-sm text-foreground cursor-pointer flex-1"
                 >
-                  <input
-                    type="checkbox"
-                    checked={formData.meal_ids.includes(meal.id)}
-                    onChange={() => handleMealToggle(meal.id)}
-                    className="rounded border-gray-300 text-neutral focus:ring-neutral"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {meal.title} ({new Date(meal.meal_date).toLocaleDateString()})
-                  </span>
+                  {meal.title} ({new Date(meal.meal_date).toLocaleDateString()})
                 </label>
-              ))
-            )}
+              </div>
+            ))}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground">
             Select which meals this ingredient is for
           </p>
         </div>
       )}
 
-      {/* Info for editing */}
       {item && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-          <p className="text-sm text-blue-900 dark:text-blue-200">
-            💡 To link this item to meals, delete it and recreate with meal links, or manage links
-            from the meal planning page.
+        <div className="bg-accent/50 border border-accent rounded-lg p-3">
+          <p className="text-sm text-accent-foreground">
+            To link this item to meals, manage links from the meal planning page.
           </p>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <button
+      <div className="flex gap-3 pt-2">
+        <Button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          variant="outline"
           disabled={submitting}
+          className="flex-1"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="px-4 py-2 text-sm bg-neutral text-white rounded-lg hover:bg-neutral-dark disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={submitting}
+          className="flex-1"
         >
-          {submitting ? 'Saving...' : item ? 'Update Item' : 'Add Item'}
-        </button>
+          {submitting ? 'Saving...' : item ? 'Update' : 'Add Item'}
+        </Button>
       </div>
-    </form>
+    </motion.form>
   )
 }
