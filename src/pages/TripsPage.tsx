@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTripContext } from '@/contexts/TripContext'
 import { TripForm } from '@/components/TripForm'
 import { TripCard } from '@/components/TripCard'
 import { CreateTripInput, UpdateTripInput } from '@/types/trip'
 
 export function TripsPage() {
+  const navigate = useNavigate()
   const { trips, loading, error, currentTrip, createTrip, updateTrip, deleteTrip, selectTrip } = useTripContext()
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTripId, setEditingTripId] = useState<string | null>(null)
@@ -13,6 +15,8 @@ export function TripsPage() {
     const newTrip = await createTrip(input)
     if (newTrip) {
       setShowCreateForm(false)
+      // Navigate to setup page for new trip
+      navigate('/trip-setup')
     }
   }
 

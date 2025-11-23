@@ -1,12 +1,15 @@
 import { BrowserRouter } from 'react-router-dom'
 import { AppRoutes } from './routes'
 import { TripProvider } from './contexts/TripContext'
+import { ParticipantProvider } from './contexts/ParticipantContext'
 
 function App() {
   return (
     <BrowserRouter>
       <TripProvider>
-        <AppRoutes />
+        <ParticipantProvider>
+          <AppRoutes />
+        </ParticipantProvider>
       </TripProvider>
     </BrowserRouter>
   )

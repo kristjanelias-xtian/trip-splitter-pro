@@ -7,6 +7,7 @@ export function Layout() {
 
   const navItems = [
     { path: '/', label: 'Trips', icon: '🏠' },
+    { path: '/trip-setup', label: 'Setup', icon: '👥' },
     { path: '/expenses', label: 'Expenses', icon: '💰' },
     { path: '/meals', label: 'Meals', icon: '🍽️' },
     { path: '/shopping', label: 'Shopping', icon: '🛒' },
