@@ -32,6 +32,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const { currentTrip, tripId } = useCurrentTrip()
   const { trips } = useTripContext()
 
+  console.log('🔄 ExpenseProvider rendering - trips.length:', trips.length, 'tripId:', tripId, 'has currentTrip:', !!currentTrip)
+
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
     console.log('fetchExpenses called, currentTrip:', currentTrip)
