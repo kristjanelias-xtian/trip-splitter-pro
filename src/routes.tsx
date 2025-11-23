@@ -14,12 +14,13 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<TripsPage />} />
-        <Route path="trips/:tripId/setup" element={<TripSetupPage />} />
-        <Route path="trips/:tripId/expenses" element={<ExpensesPage />} />
-        <Route path="trips/:tripId/settlements" element={<SettlementsPage />} />
-        <Route path="trips/:tripId/meals" element={<MealsPage />} />
-        <Route path="trips/:tripId/shopping" element={<ShoppingPage />} />
-        <Route path="trips/:tripId/dashboard" element={<DashboardPage />} />
+        {/* Trip routes using shareable trip codes */}
+        <Route path="t/:tripCode/setup" element={<TripSetupPage />} />
+        <Route path="t/:tripCode/expenses" element={<ExpensesPage />} />
+        <Route path="t/:tripCode/settlements" element={<SettlementsPage />} />
+        <Route path="t/:tripCode/meals" element={<MealsPage />} />
+        <Route path="t/:tripCode/shopping" element={<ShoppingPage />} />
+        <Route path="t/:tripCode/dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 
 export function TripSetupPage() {
   const navigate = useNavigate()
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
 
   const [isComplete, setIsComplete] = useState(false)
@@ -30,7 +30,7 @@ export function TripSetupPage() {
   const handleComplete = () => {
     setIsComplete(true)
     // Redirect to expenses page after setup
-    setTimeout(() => navigate(`/trips/${tripId}/expenses`), 1000)
+    setTimeout(() => navigate(`/t/${tripCode}/expenses`), 1000)
   }
 
   const hasSetup = currentTrip.tracking_mode === 'individuals'

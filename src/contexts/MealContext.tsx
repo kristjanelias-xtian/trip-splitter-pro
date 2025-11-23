@@ -22,7 +22,7 @@ const MealContext = createContext<MealContextValue | undefined>(undefined)
 export function MealProvider({ children }: { children: ReactNode }) {
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
   const fetchMeals = async () => {
@@ -60,13 +60,13 @@ export function MealProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    if (tripId && currentTrip) {
+    if (tripCode && currentTrip) {
       fetchMeals()
     } else {
       setMeals([])
       setLoading(false)
     }
-  }, [tripId, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id, trips.length])
 
   const createMeal = async (input: CreateMealInput): Promise<Meal | null> => {
     try {

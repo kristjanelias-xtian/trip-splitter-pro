@@ -2,15 +2,15 @@ import { useParams } from 'react-router-dom'
 import { useTripContext } from '@/contexts/TripContext'
 
 export function useCurrentTrip() {
-  const { tripId } = useParams<{ tripId: string }>()
-  const { getTripById, trips } = useTripContext()
+  const { tripCode } = useParams<{ tripCode: string }>()
+  const { getTripByCode, trips } = useTripContext()
 
-  const currentTrip = tripId ? getTripById(tripId) : null
+  const currentTrip = tripCode ? getTripByCode(tripCode) : null
 
-  console.log('useCurrentTrip:', { tripId, currentTrip, tripsCount: trips.length })
+  console.log('useCurrentTrip:', { tripCode, currentTrip, tripsCount: trips.length })
 
   return {
     currentTrip,
-    tripId,
+    tripCode,
   }
 }

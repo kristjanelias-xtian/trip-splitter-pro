@@ -14,9 +14,9 @@ Implement a lightweight access control system that allows easy sharing while mai
 
 ### Trip URLs Format:
 ```
-tripapp.com/t/summer-2025-a3x9k2
-tripapp.com/t/beach-trip-m8n4p1
-tripapp.com/t/ski-weekend-q7r2v5
+https://split.xtian.me/t/summer-2025-a3x9k2
+https://split.xtian.me/t/beach-trip-m8n4p1
+https://split.xtian.me/t/ski-weekend-q7r2v5
 ```
 
 **Components:**
@@ -79,7 +79,7 @@ CREATE INDEX idx_trips_trip_code ON trips(trip_code);
    - Optional: Short explanation "Share this link with your group"
 
 ### Joining a Trip (First Time):
-1. User clicks/types URL: `tripapp.com/t/summer-2025-a3x9k2`
+1. User clicks/types URL: `https://split.xtian.me/t/summer-2025-a3x9k2`
 2. App extracts trip_code from URL
 3. Queries Supabase for trip with that code
 4. If found: Load trip data and show trip dashboard
@@ -87,7 +87,7 @@ CREATE INDEX idx_trips_trip_code ON trips(trip_code);
 6. Store trip_code in localStorage for "My Trips" list
 
 ### Returning to a Trip:
-1. User opens app (base URL: `tripapp.com`)
+1. User opens app (base URL: `https://split.xtian.me/`)
 2. App checks localStorage for previously accessed trips
 3. Shows "My Trips" list with all stored trip codes
 4. User clicks a trip → Navigate to `/t/{trip_code}`
@@ -210,7 +210,7 @@ After creating a trip, show a prominent share screen:
 │   Share this link with your group:  │
 │                                     │
 │   ┌─────────────────────────────┐  │
-│   │ tripapp.com/t/summer-202... │  │
+│   │ https://split.xtian.me/t/summer-202... │  │
 │   │                    [Copy] 📋 │  │
 │   └─────────────────────────────┘  │
 │                                     │

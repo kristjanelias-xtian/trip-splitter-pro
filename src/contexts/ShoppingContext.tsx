@@ -28,7 +28,7 @@ const ShoppingContext = createContext<ShoppingContextValue | undefined>(undefine
 export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([])
   const [loading, setLoading] = useState(true)
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
@@ -152,7 +152,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(shoppingChannel)
     }
-  }, [tripId, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id, trips.length])
 
   const createShoppingItem = async (
     input: CreateShoppingItemInput

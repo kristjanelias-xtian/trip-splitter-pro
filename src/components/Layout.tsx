@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import {
   Home, Users, DollarSign, CreditCard, UtensilsCrossed,
@@ -6,20 +6,12 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from '@/contexts/TripContext'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Sheet,
   SheetContent,
@@ -45,9 +37,7 @@ const iconMap = {
 
 export function Layout() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const { tripId } = useCurrentTrip()
-  const { trips } = useTripContext()
+  const { tripCode } = useCurrentTrip()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   // Desktop navigation - all items visible
@@ -56,14 +46,14 @@ export function Layout() {
       { path: '/', label: 'Trips', requiresTrip: false },
     ]
 
-    if (tripId) {
+    if (tripCode) {
       items.push(
-        { path: `/trips/${tripId}/setup`, label: 'Setup', requiresTrip: true },
-        { path: `/trips/${tripId}/expenses`, label: 'Expenses', requiresTrip: true },
-        { path: `/trips/${tripId}/settlements`, label: 'Settlements', requiresTrip: true },
-        { path: `/trips/${tripId}/meals`, label: 'Meals', requiresTrip: true },
-        { path: `/trips/${tripId}/shopping`, label: 'Shopping', requiresTrip: true },
-        { path: `/trips/${tripId}/dashboard`, label: 'Dashboard', requiresTrip: true },
+        { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
+        { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
+        { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
+        { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
+        { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
+        { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
       )
     }
 
@@ -74,23 +64,23 @@ export function Layout() {
 
   // Mobile navigation - 5 primary items + overflow menu
   const getMobileNavItems = () => {
-    if (!tripId) {
+    if (!tripCode) {
       return [
         { path: '/', label: 'Trips', requiresTrip: false },
       ]
     }
 
     return [
-      { path: `/trips/${tripId}/dashboard`, label: 'Overview', requiresTrip: true },
-      { path: `/trips/${tripId}/expenses`, label: 'Expenses', requiresTrip: true },
-      { path: `/trips/${tripId}/meals`, label: 'Meals', requiresTrip: true },
-      { path: `/trips/${tripId}/shopping`, label: 'Shopping', requiresTrip: true },
+      { path: `/t/${tripCode}/dashboard`, label: 'Overview', requiresTrip: true },
+      { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
+      { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
+      { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
     ]
   }
 
   // Overflow menu items (mobile only)
   const getOverflowMenuItems = () => {
-    if (!tripId) {
+    if (!tripCode) {
       return [
         { path: '/settings', label: 'Settings', requiresTrip: false },
       ]
@@ -98,8 +88,8 @@ export function Layout() {
 
     return [
       { path: '/', label: 'Trips', requiresTrip: false },
-      { path: `/trips/${tripId}/setup`, label: 'Setup', requiresTrip: true },
-      { path: `/trips/${tripId}/settlements`, label: 'Settlements', requiresTrip: true },
+      { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
+      { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
       { path: '/settings', label: 'Settings', requiresTrip: false },
     ]
   }
@@ -113,25 +103,6 @@ export function Layout() {
       return location.pathname === '/'
     }
     return location.pathname === path
-  }
-
-  const handleTripChange = (newTripId: string) => {
-    // Navigate to the same page type for the new trip
-    if (location.pathname.includes('/expenses')) {
-      navigate(`/trips/${newTripId}/expenses`)
-    } else if (location.pathname.includes('/settlements')) {
-      navigate(`/trips/${newTripId}/settlements`)
-    } else if (location.pathname.includes('/setup')) {
-      navigate(`/trips/${newTripId}/setup`)
-    } else if (location.pathname.includes('/meals')) {
-      navigate(`/trips/${newTripId}/meals`)
-    } else if (location.pathname.includes('/shopping')) {
-      navigate(`/trips/${newTripId}/shopping`)
-    } else if (location.pathname.includes('/dashboard')) {
-      navigate(`/trips/${newTripId}/dashboard`)
-    } else {
-      navigate(`/trips/${newTripId}/expenses`)
-    }
   }
 
   return (
@@ -148,25 +119,6 @@ export function Layout() {
             >
               Trip Splitter Pro
             </motion.h1>
-            {trips.length > 0 && tripId && (
-              <div className="flex items-center gap-3">
-                <label htmlFor="trip-selector" className="text-sm text-muted-foreground hidden sm:block">
-                  Current Trip:
-                </label>
-                <Select value={tripId || ''} onValueChange={handleTripChange}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select trip" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {trips.map((trip) => (
-                      <SelectItem key={trip.id} value={trip.id}>
-                        {trip.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
         </div>
       </header>

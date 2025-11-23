@@ -17,7 +17,7 @@ const CostPerParticipantChart = lazy(() => import('@/components/CostPerParticipa
 const TopExpensesList = lazy(() => import('@/components/TopExpensesList').then(m => ({ default: m.TopExpensesList })))
 
 export function DashboardPage() {
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
@@ -122,7 +122,7 @@ export function DashboardPage() {
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               <Link
-                to={`/trips/${tripId}/settlements`}
+                to={`/t/${tripCode}/settlements`}
                 className="text-accent hover:underline"
               >
                 View settlements →

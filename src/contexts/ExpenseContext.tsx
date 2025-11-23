@@ -29,10 +29,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
-  console.log('🔄 ExpenseProvider rendering - trips.length:', trips.length, 'tripId:', tripId, 'has currentTrip:', !!currentTrip)
+  console.log('🔄 ExpenseProvider rendering - trips.length:', trips.length, 'tripCode:', tripCode, 'has currentTrip:', !!currentTrip)
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
@@ -173,14 +173,14 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses when current trip changes
   useEffect(() => {
-    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'has currentTrip:', !!currentTrip, 'trips loaded:', trips.length)
-    if (tripId && currentTrip) {
+    console.log('ExpenseContext useEffect triggered, tripCode:', tripCode, 'has currentTrip:', !!currentTrip, 'trips loaded:', trips.length)
+    if (tripCode && currentTrip) {
       console.log('Calling fetchExpenses with trip:', currentTrip.id)
       fetchExpenses()
     } else {
-      console.log('Skipping fetch - tripId:', tripId, 'currentTrip:', !!currentTrip)
+      console.log('Skipping fetch - tripCode:', tripCode, 'currentTrip:', !!currentTrip)
     }
-  }, [tripId, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id, trips.length])
 
   const value: ExpenseContextType = {
     expenses,

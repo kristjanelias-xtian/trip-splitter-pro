@@ -26,7 +26,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip, tripId } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
   // Fetch settlements for current trip
@@ -148,12 +148,12 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
 
   // Fetch settlements when current trip changes
   useEffect(() => {
-    if (tripId && currentTrip) {
+    if (tripCode && currentTrip) {
       fetchSettlements()
     } else {
       setSettlements([])
     }
-  }, [tripId, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id, trips.length])
 
   const value: SettlementContextType = {
     settlements,
