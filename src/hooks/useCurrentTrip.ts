@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTripContext } from '@/contexts/TripContext'
+import { addToMyTrips } from '@/lib/myTripsStorage'
 
 export function useCurrentTrip() {
   const { tripCode } = useParams<{ tripCode: string }>()
@@ -8,6 +10,13 @@ export function useCurrentTrip() {
   const currentTrip = tripCode ? getTripByCode(tripCode) : null
 
   console.log('useCurrentTrip:', { tripCode, currentTrip, tripsCount: trips.length })
+
+  // Automatically add trip to "My Trips" when accessed
+  useEffect(() => {
+    if (currentTrip && tripCode) {
+      addToMyTrips(tripCode, currentTrip.name)
+    }
+  }, [currentTrip, tripCode])
 
   return {
     currentTrip,

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { HomePage } from './pages/HomePage'
 import { TripsPage } from './pages/TripsPage'
 import { TripSetupPage } from './pages/TripSetupPage'
 import { ExpensesPage } from './pages/ExpensesPage'
@@ -13,7 +14,8 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<TripsPage />} />
+        <Route index element={<HomePage />} />
+        <Route path="create-trip" element={<TripsPage />} />
         {/* Trip routes using shareable trip codes */}
         <Route path="t/:tripCode/setup" element={<TripSetupPage />} />
         <Route path="t/:tripCode/expenses" element={<ExpensesPage />} />
