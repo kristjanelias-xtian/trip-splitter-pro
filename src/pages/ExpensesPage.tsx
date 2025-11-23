@@ -1,7 +1,11 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown } from 'lucide-react'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useSettlementContext } from '@/contexts/SettlementContext'
+import { calculateBalances } from '@/services/balanceCalculator'
+import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseForm } from '@/components/ExpenseForm'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { CreateExpenseInput, ExpenseCategory } from '@/types/expense'
@@ -28,6 +32,8 @@ import {
 export function ExpensesPage() {
   const { currentTrip } = useCurrentTrip()
   const { expenses, loading, error, createExpense, deleteExpense } = useExpenseContext()
+  const { participants, families } = useParticipantContext()
+  const { settlements } = useSettlementContext()
 
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -46,6 +52,20 @@ export function ExpensesPage() {
       await deleteExpense(deletingExpenseId)
       setDeletingExpenseId(null)
     }
+  }
+
+  const handleExportExcel = () => {
+    if (!currentTrip) return
+
+    const balances = calculateBalances(
+      expenses,
+      participants,
+      families,
+      currentTrip.tracking_mode,
+      settlements
+    ).balances
+
+    exportExpensesToExcel(currentTrip, expenses, participants, families, balances, settlements)
   }
 
   // Filter expenses
@@ -89,10 +109,18 @@ export function ExpensesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-foreground">Expenses</h2>
-          <Button onClick={() => setShowForm(!showForm)}>
-            <Plus size={16} className="mr-2" />
-            {showForm ? 'Cancel' : 'Add Expense'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {expenses.length > 0 && (
+              <Button onClick={handleExportExcel} variant="outline" size="sm" className="gap-2">
+                <FileDown size={16} />
+                Export Excel
+              </Button>
+            )}
+            <Button onClick={() => setShowForm(!showForm)}>
+              <Plus size={16} className="mr-2" />
+              {showForm ? 'Cancel' : 'Add Expense'}
+            </Button>
+          </div>
         </div>
 
         {/* Error Message */}
