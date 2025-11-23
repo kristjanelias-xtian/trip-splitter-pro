@@ -15,7 +15,7 @@ export function DashboardPage() {
   const { currentTrip } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
-  const { createSettlement } = useSettlementContext()
+  const { createSettlement, settlements } = useSettlementContext()
   const [recordingSettlement, setRecordingSettlement] = useState(false)
   const [showCustomSettlement, setShowCustomSettlement] = useState(false)
 
@@ -32,12 +32,13 @@ export function DashboardPage() {
     )
   }
 
-  // Calculate balances
+  // Calculate balances (including settlements)
   const balanceCalculation = calculateBalances(
     expenses,
     participants,
     families,
-    currentTrip.tracking_mode
+    currentTrip.tracking_mode,
+    settlements
   )
 
   // Calculate optimal settlement

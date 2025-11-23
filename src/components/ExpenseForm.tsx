@@ -3,6 +3,7 @@ import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution } from '@/type
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
+import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 
 interface ExpenseFormProps {
@@ -30,6 +31,7 @@ export function ExpenseForm({
   const { currentTrip } = useCurrentTrip()
   const { participants, families, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
+  const { settlements } = useSettlementContext()
 
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
@@ -51,9 +53,9 @@ export function ExpenseForm({
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
-  // Calculate balances to find suggested payer
+  // Calculate balances to find suggested payer (including settlements)
   const balanceCalculation = currentTrip
-    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode)
+    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 

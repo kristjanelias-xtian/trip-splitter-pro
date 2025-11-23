@@ -1,5 +1,6 @@
 import { Expense } from '@/types/expense'
 import { Participant, Family } from '@/types/participant'
+import { Settlement } from '@/types/settlement'
 
 export interface ParticipantBalance {
   id: string
@@ -17,19 +18,21 @@ export interface BalanceCalculation {
 }
 
 /**
- * Calculate balances for all participants/families based on expenses
+ * Calculate balances for all participants/families based on expenses and settlements
  *
  * @param expenses - All expenses for the trip
  * @param participants - All participants in the trip
  * @param families - All families in the trip (if in families mode)
  * @param trackingMode - 'individuals' or 'families'
+ * @param settlements - All settlements for the trip (optional)
  * @returns Balance calculation with suggested next payer
  */
 export function calculateBalances(
   expenses: Expense[],
   participants: Participant[],
   families: Family[],
-  trackingMode: 'individuals' | 'families'
+  trackingMode: 'individuals' | 'families',
+  settlements: Settlement[] = []
 ): BalanceCalculation {
   const balances = new Map<string, ParticipantBalance>()
 
@@ -87,6 +90,25 @@ export function calculateBalances(
     balance.balance = balance.totalPaid - balance.totalShare
   })
 
+  // Apply settlements to balances
+  // When participant A pays participant B:
+  // - A's balance decreases (they paid out money)
+  // - B's balance increases (they received money)
+  settlements.forEach(settlement => {
+    const fromId = getEntityIdForParticipant(settlement.from_participant_id, participants, trackingMode)
+    const toId = getEntityIdForParticipant(settlement.to_participant_id, participants, trackingMode)
+
+    if (fromId && balances.has(fromId)) {
+      const fromEntity = balances.get(fromId)!
+      fromEntity.balance -= settlement.amount // They paid out
+    }
+
+    if (toId && balances.has(toId)) {
+      const toEntity = balances.get(toId)!
+      toEntity.balance += settlement.amount // They received
+    }
+  })
+
   // Find suggested next payer (person furthest behind their share)
   const suggestedNextPayer = findSuggestedPayer(Array.from(balances.values()))
 
@@ -115,6 +137,26 @@ function getPaidById(
   }
 
   return payer.id
+}
+
+/**
+ * Get the entity ID for a participant
+ * In families mode, returns the participant's family ID
+ * In individuals mode, returns the participant ID
+ */
+function getEntityIdForParticipant(
+  participantId: string,
+  participants: Participant[],
+  trackingMode: 'individuals' | 'families'
+): string | null {
+  const participant = participants.find(p => p.id === participantId)
+  if (!participant) return null
+
+  if (trackingMode === 'families' && participant.family_id) {
+    return participant.family_id
+  }
+
+  return participant.id
 }
 
 /**
