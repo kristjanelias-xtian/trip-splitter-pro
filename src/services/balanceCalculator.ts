@@ -92,20 +92,20 @@ export function calculateBalances(
 
   // Apply settlements to balances
   // When participant A pays participant B:
-  // - A's balance decreases (they paid out money)
-  // - B's balance increases (they received money)
+  // - A's balance INCREASES (they paid out cash, so they're owed more)
+  // - B's balance DECREASES (they received cash, so they're owed less)
   settlements.forEach(settlement => {
     const fromId = getEntityIdForParticipant(settlement.from_participant_id, participants, trackingMode)
     const toId = getEntityIdForParticipant(settlement.to_participant_id, participants, trackingMode)
 
     if (fromId && balances.has(fromId)) {
       const fromEntity = balances.get(fromId)!
-      fromEntity.balance -= settlement.amount // They paid out
+      fromEntity.balance += settlement.amount // They paid out cash
     }
 
     if (toId && balances.has(toId)) {
       const toEntity = balances.get(toId)!
-      toEntity.balance += settlement.amount // They received
+      toEntity.balance -= settlement.amount // They received cash
     }
   })
 
