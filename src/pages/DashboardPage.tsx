@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Lightbulb, Receipt } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -7,6 +8,11 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Link } from 'react-router-dom'
+
+// Lazy load chart components for better performance
+const ExpenseByCategoryChart = lazy(() => import('@/components/ExpenseByCategoryChart').then(m => ({ default: m.ExpenseByCategoryChart })))
+const CostPerParticipantChart = lazy(() => import('@/components/CostPerParticipantChart').then(m => ({ default: m.CostPerParticipantChart })))
+const TopExpensesList = lazy(() => import('@/components/TopExpensesList').then(m => ({ default: m.TopExpensesList })))
 
 export function DashboardPage() {
   const { currentTrip, tripId } = useCurrentTrip()
@@ -156,6 +162,63 @@ export function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Analytics & Insights */}
+      {expenses.length > 0 && (
+        <>
+          <h3 className="text-lg font-semibold text-foreground mt-8 mb-4">
+            Analytics & Insights
+          </h3>
+
+          <div className="space-y-6">
+            {/* Top 5 Expenses */}
+            <Suspense fallback={
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-center h-32 text-muted-foreground">
+                    Loading...
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <TopExpensesList
+                expenses={expenses}
+                participants={participants}
+                limit={5}
+              />
+            </Suspense>
+
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Expense by Category Chart */}
+              <Suspense fallback={
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-center h-64 text-muted-foreground">
+                      Loading chart...
+                    </div>
+                  </CardContent>
+                </Card>
+              }>
+                <ExpenseByCategoryChart expenses={expenses} />
+              </Suspense>
+
+              {/* Cost per Participant Chart */}
+              <Suspense fallback={
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-center h-64 text-muted-foreground">
+                      Loading chart...
+                    </div>
+                  </CardContent>
+                </Card>
+              }>
+                <CostPerParticipantChart balances={balanceCalculation.balances} />
+              </Suspense>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
