@@ -37,6 +37,12 @@
 
     --radius: 16px; /* Friendly, rounded corners */
 
+    /* Balance & Status Colors */
+    --positive: 142 71% 45%; /* Green for money owed to you */
+    --positive-foreground: 0 0% 100%;
+    --negative: 0 84% 60%; /* Red for money you owe (same as destructive) */
+    --negative-foreground: 0 0% 100%;
+
     /* Custom design tokens */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -86,6 +92,12 @@
     --border: 217.9 10.6% 20%;
     --input: 217.9 10.6% 20%;
     --ring: 14 77% 65%;
+
+    /* Balance & Status Colors - Dark Mode */
+    --positive: 142 71% 55%; /* Brighter green for dark backgrounds */
+    --positive-foreground: 240 21% 10%;
+    --negative: 0 84% 65%; /* Slightly lighter red for dark mode */
+    --negative-foreground: 30 17% 98%;
   }
 }
 
