@@ -553,13 +553,16 @@ export function ExpenseForm({
                 </div>
               </div>
             )}
-            {participants.filter(p => !p.family_id).length > 0 && (
+            {participants.length > 0 && (
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Individual Participants</p>
+                <p className="text-xs text-muted-foreground mb-2">Individual Members</p>
                 <div className="space-y-2 rounded-lg border border-input p-3">
-                  {participants
-                    .filter(p => !p.family_id)
-                    .map(participant => (
+                  {participants.map(participant => {
+                    const participantFamily = participant.family_id
+                      ? families.find(f => f.id === participant.family_id)
+                      : null
+
+                    return (
                       <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
                         <Checkbox
                           id={`participant-${participant.id}`}
@@ -572,6 +575,11 @@ export function ExpenseForm({
                           className="text-sm text-foreground cursor-pointer flex-1"
                         >
                           {participant.name} {participant.is_adult ? '' : '(child)'}
+                          {participantFamily && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({participantFamily.family_name})
+                            </span>
+                          )}
                         </label>
                         {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
                           <Input
@@ -586,7 +594,8 @@ export function ExpenseForm({
                           />
                         )}
                       </div>
-                    ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
