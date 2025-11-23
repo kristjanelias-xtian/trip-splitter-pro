@@ -6,8 +6,10 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
+import type { CreateSettlementInput } from '@/types/settlement'
 import { BalanceCard } from '@/components/BalanceCard'
 import { SettlementPlan } from '@/components/SettlementPlan'
+import { SettlementForm } from '@/components/SettlementForm'
 
 export function DashboardPage() {
   const { currentTrip } = useCurrentTrip()
@@ -15,6 +17,7 @@ export function DashboardPage() {
   const { expenses } = useExpenseContext()
   const { createSettlement } = useSettlementContext()
   const [recordingSettlement, setRecordingSettlement] = useState(false)
+  const [showCustomSettlement, setShowCustomSettlement] = useState(false)
 
   if (!currentTrip) {
     return (
@@ -79,6 +82,22 @@ export function DashboardPage() {
     }
   }
 
+  const handleCustomSettlement = async (input: CreateSettlementInput) => {
+    try {
+      const result = await createSettlement(input)
+
+      if (result) {
+        alert('Custom settlement recorded successfully!')
+        setShowCustomSettlement(false)
+      } else {
+        alert('Failed to record settlement')
+      }
+    } catch (error) {
+      console.error('Error recording custom settlement:', error)
+      alert('Failed to record settlement')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -127,6 +146,35 @@ export function DashboardPage() {
       {expenses.length > 0 && (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
           <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} />
+        </div>
+      )}
+
+      {/* Custom Settlement Form */}
+      {participants.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Record Custom Settlement
+            </h3>
+            <button
+              onClick={() => setShowCustomSettlement(!showCustomSettlement)}
+              className="text-sm text-neutral hover:underline"
+            >
+              {showCustomSettlement ? '▼ Hide' : '▶ Add Custom Payment'}
+            </button>
+          </div>
+
+          {showCustomSettlement && (
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Record a payment that happened outside of the optimal settlement plan (e.g., partial payments, cash transfers, etc.)
+              </p>
+              <SettlementForm
+                onSubmit={handleCustomSettlement}
+                onCancel={() => setShowCustomSettlement(false)}
+              />
+            </div>
+          )}
         </div>
       )}
 
