@@ -123,6 +123,62 @@
 
 ---
 
+## 📋 Features Not Implemented from Original Spec
+
+The following features were mentioned in the original specification (`docs/FIRST_PROMPT.md` and `CLAUDE.md`) but were deemed unnecessary or lower priority for the MVP:
+
+### Form Validation
+- **Status:** Using built-in HTML5 validation + manual validation
+- **Original Spec:** Zod schemas for all forms
+- **Reason:** Current validation is sufficient; adding Zod would add complexity without significant benefit
+- **Impact:** None - form validation works correctly
+
+### Performance Optimizations
+- **Virtual Scrolling** - Not implemented
+  - Original spec mentioned for long expense lists
+  - Current lists perform well even with 50+ items
+  - Can add later if performance degrades with hundreds of items
+- **Debounced Search** - Not implemented
+  - Search/filter is already fast enough with current approach
+  - Not needed for typical trip sizes (< 100 expenses)
+
+### Mobile Gestures
+- **Pull-to-Refresh** - Not implemented
+  - Real-time subscriptions keep data fresh
+  - Manual refresh not needed in typical usage
+- **Swipe Actions** - Not implemented
+  - Edit/delete buttons work well on mobile
+  - Swipe gestures would add complexity for minimal benefit
+
+### Offline Support
+- **Service Worker** - Not implemented
+  - App requires connection for Supabase real-time features
+  - Offline mode would require complex sync logic
+  - Better to show "no connection" message than stale data
+  - Could add as future enhancement for read-only offline viewing
+
+### Error Handling
+- **Comprehensive Error Boundaries** - Partially implemented
+  - Added ErrorBoundary component for critical sections (meal dialog)
+  - Could wrap more components for additional safety
+  - Current error handling is sufficient for most scenarios
+
+### Accessibility Enhancements
+- **Advanced Keyboard Navigation** - Basic support only
+  - All interactive elements are keyboard accessible
+  - Tab order is logical
+  - Could add keyboard shortcuts (e.g., "?" for help, "/" for search)
+- **Enhanced Screen Reader Support** - Basic support only
+  - Semantic HTML throughout
+  - Could add more ARIA labels and announcements
+  - Current implementation meets WCAG 2.0 AA basics
+
+### Currency Support
+- **Multi-Currency** - Not implemented
+  - EUR/USD/GBP selector exists but currency is per-expense, not per-trip
+  - Original spec suggested per-trip currency selection
+  - Current implementation allows mixed currencies (not ideal but functional)
+
 ## ⚠️ Optional Enhancements
 
 ### Nice-to-Have Features
@@ -131,24 +187,33 @@
    - Console logs in contexts (MealContext, ShoppingContext, ExpenseContext)
    - Minor performance impact
 
-2. **Hard-coded Currency**
-   - EUR hard-coded throughout
-   - Could add currency selection per trip
+2. **Multi-Currency Improvements**
+   - Add per-trip default currency
+   - Currency conversion for analytics
+   - Display total in multiple currencies
 
 3. **Additional Polish**
-   - Virtual scrolling for very long lists (not typically needed)
-   - Debounce search inputs (already fast enough)
+   - Virtual scrolling for very long lists (100+ items)
+   - Debounce search inputs (if performance degrades)
    - More loading skeletons (already have loading states)
-   - Error boundaries (could add for robustness)
+   - Comprehensive error boundaries throughout app
 
 4. **Advanced Accessibility**
-   - Enhanced keyboard navigation
-   - Additional ARIA labels
-   - Screen reader optimizations
+   - Enhanced keyboard shortcuts (?, /, etc.)
+   - Additional ARIA labels and live regions
+   - Screen reader optimizations and announcements
+   - High contrast mode support
 
 5. **Offline Support**
-   - Service worker for offline viewing
+   - Service worker for offline viewing (read-only)
    - Cache-first strategy for static assets
+   - Sync queue for offline changes
+
+6. **Mobile Enhancements**
+   - Pull-to-refresh on lists
+   - Swipe actions for delete/edit
+   - Haptic feedback on actions
+   - iOS/Android app wrappers (Capacitor/Cordova)
 
 ---
 
@@ -228,20 +293,27 @@ git push                 # Push to remote
 
 - `CLAUDE.md` - Instructions for Claude Code
 - `DEVELOPMENT_PLAN.md` - Phased development roadmap
-- `docs/phases/PHASE_6_COMPLETE.md` - Latest completed phase details
+- `docs/FIRST_PROMPT.md` - Original project specification
+- `docs/phases/` - Detailed phase completion summaries
 - `.claude/database-setup.md` - Supabase CLI reference
 
 ---
 
 ## Known Issues Summary
 
-| Issue | Priority | Impact | Workaround |
-|-------|----------|--------|------------|
-| Migration 005 not applied | High | None | Apply manually in Supabase dashboard |
-| Meal-shopping linking UI missing | High | Feature incomplete | Can still use meals and shopping independently |
-| Edit meal not implemented | Medium | Usability | Delete and recreate meal |
-| Edit shopping item missing | Medium | Usability | Delete and recreate item |
-| Debug logs active | Low | Performance | None needed |
+| Issue | Priority | Impact | Workaround | Status |
+|-------|----------|--------|------------|--------|
+| Edit meal not implemented | Medium | Usability | Delete and recreate meal | Open |
+| Edit shopping item not implemented | Medium | Usability | Delete and recreate item | Open |
+| Debug logs active | Low | Performance | None needed | Open |
+| ~~Meal dialog causes blank page~~ | ~~High~~ | ~~Feature blocked~~ | ~~Refresh page~~ | ✅ **Fixed Nov 23** |
+| ~~Family editing missing~~ | ~~High~~ | ~~Cannot fix spelling errors~~ | ~~Delete and recreate~~ | ✅ **Fixed Nov 23** |
+
+### Recent Fixes (Nov 23, 2025)
+1. **Meal Dialog Blank Page Bug** - Fixed by adding ErrorBoundary and defensive checks
+2. **Family Editing** - Added edit dialog to update family/participant names
+3. **Mobile Menu Overcrowding** - Redesigned to 5 items with overflow menu
+4. **Expense Split Modes** - Added percentage and custom amount split options
 
 ---
 
