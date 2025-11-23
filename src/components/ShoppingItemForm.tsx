@@ -26,11 +26,12 @@ import { fadeInUp } from '@/lib/animations'
 
 interface ShoppingItemFormProps {
   item?: ShoppingItem
+  initialMealIds?: string[]
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemFormProps) {
+export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: ShoppingItemFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { createShoppingItem, updateShoppingItem } = useShoppingContext()
   const { meals } = useMealContext()
@@ -42,7 +43,7 @@ export function ShoppingItemForm({ item, onSuccess, onCancel }: ShoppingItemForm
     quantity: item?.quantity || '',
     category: item?.category || 'other' as ShoppingCategory,
     notes: item?.notes || '',
-    meal_ids: [] as string[],
+    meal_ids: initialMealIds || [] as string[],
   })
 
   if (!currentTrip) return null

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChefHat, Edit, Trash2 } from 'lucide-react'
+import { ChefHat, Edit, Trash2, Plus, ShoppingBasket } from 'lucide-react'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import type { MealWithIngredients } from '@/types/meal'
 import { MealForm } from './MealForm'
+import { ShoppingItemForm } from './ShoppingItemForm'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ export function MealCard({ meal }: MealCardProps) {
   const { participants } = useParticipantContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showAddIngredient, setShowAddIngredient] = useState(false)
 
   const responsiblePerson = meal.responsible_participant_id
     ? participants.find((p) => p.id === meal.responsible_participant_id)
@@ -41,7 +44,7 @@ export function MealCard({ meal }: MealCardProps) {
   const ingredientProgress =
     meal.ingredients_total > 0
       ? `${meal.ingredients_ready}/${meal.ingredients_total} ready`
-      : 'No ingredients added'
+      : 'No ingredients yet'
 
   const ingredientPercentage =
     meal.ingredients_total > 0
@@ -96,22 +99,44 @@ export function MealCard({ meal }: MealCardProps) {
           )}
 
           {/* Ingredient Progress */}
-          {meal.ingredients_total > 0 && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <ShoppingBasket size={14} />
                 <span>Ingredients</span>
-                <span>{ingredientProgress}</span>
               </div>
-              <div className="w-full bg-secondary/20 rounded-full h-2">
-                <motion.div
-                  className="bg-positive h-2 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${ingredientPercentage}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
+              <Button
+                onClick={() => setShowAddIngredient(true)}
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+              >
+                <Plus size={12} className="mr-1" />
+                Add
+              </Button>
             </div>
-          )}
+
+            {meal.ingredients_total > 0 ? (
+              <>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">{ingredientProgress}</span>
+                  <Badge variant={ingredientPercentage === 100 ? "default" : "outline"} className="h-5">
+                    {ingredientPercentage}%
+                  </Badge>
+                </div>
+                <div className="w-full bg-muted/30 rounded-full h-2">
+                  <motion.div
+                    className={`h-2 rounded-full ${ingredientPercentage === 100 ? 'bg-positive' : 'bg-accent'}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${ingredientPercentage}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">No ingredients added yet</p>
+            )}
+          </div>
         </Card>
       </motion.div>
 
@@ -135,8 +160,7 @@ export function MealCard({ meal }: MealCardProps) {
           <DialogHeader>
             <DialogTitle>Delete Meal?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{meal.title}"? This will also remove all linked
-              shopping items.
+              Are you sure you want to delete "{meal.title}"? The linked shopping items will remain in your shopping list.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -153,6 +177,23 @@ export function MealCard({ meal }: MealCardProps) {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Ingredient Dialog */}
+      <Dialog open={showAddIngredient} onOpenChange={setShowAddIngredient}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Ingredient to "{meal.title}"</DialogTitle>
+            <DialogDescription>
+              Create a shopping item that will be linked to this meal.
+            </DialogDescription>
+          </DialogHeader>
+          <ShoppingItemForm
+            initialMealIds={[meal.id]}
+            onSuccess={() => setShowAddIngredient(false)}
+            onCancel={() => setShowAddIngredient(false)}
+          />
         </DialogContent>
       </Dialog>
     </>
