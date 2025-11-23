@@ -32,7 +32,10 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
+    console.log('fetchExpenses called, currentTrip:', currentTrip)
+
     if (!currentTrip) {
+      console.log('No currentTrip, setting expenses to []')
       setExpenses([])
       return
     }
@@ -40,6 +43,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true)
       setError(null)
+
+      console.log('Fetching expenses for trip:', currentTrip.id)
 
       const { data, error: fetchError } = await supabase
         .from('expenses')
