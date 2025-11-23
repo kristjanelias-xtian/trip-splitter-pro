@@ -27,8 +27,8 @@ export function TripsPage() {
     const newTrip = await createTrip(input)
     if (newTrip) {
       setShowCreateForm(false)
-      // Navigate to setup page for new trip
-      navigate(`/trips/${newTrip.id}/setup`)
+      // Navigate to setup page for new trip using trip code
+      navigate(`/t/${newTrip.trip_code}/setup`)
     }
   }
 
@@ -127,7 +127,7 @@ export function TripsPage() {
                 key={trip.id}
                 trip={trip}
                 isSelected={false}
-                onSelect={() => navigate(`/trips/${trip.id}/expenses`)}
+                onSelect={() => navigate(`/t/${trip.trip_code}/dashboard`)}
                 onEdit={() => setEditingTripId(trip.id)}
                 onDelete={() => setDeletingTripId(trip.id)}
               />
