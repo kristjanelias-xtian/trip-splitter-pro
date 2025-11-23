@@ -28,7 +28,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip } = useCurrentTrip()
+  const { currentTrip, tripId } = useCurrentTrip()
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
@@ -169,8 +169,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses when current trip changes
   useEffect(() => {
+    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'currentTrip:', currentTrip)
     fetchExpenses()
-  }, [currentTrip?.id])
+  }, [tripId, currentTrip])
 
   const value: ExpenseContextType = {
     expenses,

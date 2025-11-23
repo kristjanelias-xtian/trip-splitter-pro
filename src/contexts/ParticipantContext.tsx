@@ -34,7 +34,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { currentTrip } = useCurrentTrip()
+  const { currentTrip, tripId } = useCurrentTrip()
 
   // Fetch participants and families for current trip
   const fetchData = async () => {
@@ -239,7 +239,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   // Fetch data when current trip changes
   useEffect(() => {
     fetchData()
-  }, [currentTrip?.id])
+  }, [tripId, currentTrip])
 
   const value: ParticipantContextType = {
     participants,
