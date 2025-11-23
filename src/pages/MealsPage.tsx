@@ -6,6 +6,7 @@ import type { MealType, MealWithIngredients } from '@/types/meal'
 import { MEAL_TYPE_LABELS } from '@/types/meal'
 import { MealCard } from '@/components/MealCard'
 import { MealForm } from '@/components/MealForm'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -217,14 +218,16 @@ export function MealsPage() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {selectedDate && selectedMealType && (
-            <MealForm
-              initialDate={selectedDate}
-              initialMealType={selectedMealType}
-              onSuccess={handleCloseForm}
-              onCancel={handleCloseForm}
-            />
-          )}
+          <ErrorBoundary>
+            {selectedDate && selectedMealType && (
+              <MealForm
+                initialDate={selectedDate}
+                initialMealType={selectedMealType}
+                onSuccess={handleCloseForm}
+                onCancel={handleCloseForm}
+              />
+            )}
+          </ErrorBoundary>
         </DialogContent>
       </Dialog>
     </>

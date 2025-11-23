@@ -48,7 +48,7 @@ export function MealForm({
 }: MealFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { createMeal, updateMeal } = useMealContext()
-  const { participants } = useParticipantContext()
+  const participantContext = useParticipantContext()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,8 +60,18 @@ export function MealForm({
     responsible_participant_id: meal?.responsible_participant_id || '',
   })
 
+  // Defensive checks for context availability
   if (!currentTrip) return null
 
+  if (!participantContext || participantContext.loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-sm text-muted-foreground">Loading participants...</div>
+      </div>
+    )
+  }
+
+  const { participants } = participantContext
   const adults = participants.filter((p) => p.is_adult)
 
   const handleSubmit = async (e: React.FormEvent) => {

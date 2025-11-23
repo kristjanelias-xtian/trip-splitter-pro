@@ -1,13 +1,21 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, Plus, Users } from 'lucide-react'
+import { X, Plus, Users, Edit } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { fadeInUp } from '@/lib/animations'
+import type { Family } from '@/types/participant'
 
 interface FamiliesSetupProps {
   onComplete: () => void
@@ -22,6 +30,8 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
     createParticipant,
     deleteFamily,
     deleteParticipant,
+    updateFamily,
+    updateParticipant,
     getParticipantsByFamily,
   } = useParticipantContext()
 
@@ -30,6 +40,13 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
   const [childrenNames, setChildrenNames] = useState<string[]>([])
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Edit state
+  const [editingFamily, setEditingFamily] = useState<Family | null>(null)
+  const [editFamilyName, setEditFamilyName] = useState('')
+  const [editAdults, setEditAdults] = useState<Array<{ id: string; name: string }>>([])
+  const [editChildren, setEditChildren] = useState<Array<{ id: string; name: string }>>([])
+  const [updating, setUpdating] = useState(false)
 
   const handleAddFamily = async (e: FormEvent) => {
     e.preventDefault()
@@ -98,6 +115,70 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
 
       // Then delete the family
       await deleteFamily(familyId)
+    }
+  }
+
+  const handleStartEdit = (family: Family) => {
+    const familyParticipants = getParticipantsByFamily(family.id)
+    const adults = familyParticipants.filter(p => p.is_adult)
+    const children = familyParticipants.filter(p => !p.is_adult)
+
+    setEditingFamily(family)
+    setEditFamilyName(family.family_name)
+    setEditAdults(adults.map(a => ({ id: a.id, name: a.name })))
+    setEditChildren(children.map(c => ({ id: c.id, name: c.name })))
+  }
+
+  const handleCancelEdit = () => {
+    setEditingFamily(null)
+    setEditFamilyName('')
+    setEditAdults([])
+    setEditChildren([])
+    setError(null)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingFamily || !currentTrip) return
+
+    setError(null)
+    setUpdating(true)
+
+    try {
+      // Validate at least one adult
+      const validAdults = editAdults.filter(a => a.name.trim())
+      if (validAdults.length === 0) {
+        setError('Please keep at least one adult')
+        setUpdating(false)
+        return
+      }
+
+      // Update family name if changed
+      if (editFamilyName.trim() !== editingFamily.family_name) {
+        await updateFamily(editingFamily.id, {
+          family_name: editFamilyName.trim(),
+        })
+      }
+
+      // Update all participant names
+      for (const adult of validAdults) {
+        await updateParticipant(adult.id, {
+          name: adult.name.trim(),
+        })
+      }
+
+      const validChildren = editChildren.filter(c => c.name.trim())
+      for (const child of validChildren) {
+        await updateParticipant(child.id, {
+          name: child.name.trim(),
+        })
+      }
+
+      // Close dialog
+      handleCancelEdit()
+    } catch (err) {
+      setError('Failed to update family. Please try again.')
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -244,14 +325,24 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
                       <h4 className="font-semibold text-foreground">
                         {family.family_name}
                       </h4>
-                      <Button
-                        onClick={() => handleDeleteFamily(family.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <X size={16} />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          onClick={() => handleStartEdit(family)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit size={16} />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteFamily(family.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <X size={16} />
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="space-y-1 text-sm">
@@ -297,6 +388,98 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Family Dialog */}
+      <Dialog open={!!editingFamily} onOpenChange={(open) => !open && handleCancelEdit()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Family</DialogTitle>
+            <DialogDescription>
+              Update family name and participant names
+            </DialogDescription>
+          </DialogHeader>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editFamilyName">Family Name</Label>
+              <Input
+                type="text"
+                id="editFamilyName"
+                value={editFamilyName}
+                onChange={(e) => setEditFamilyName(e.target.value)}
+                placeholder="e.g., The Smiths"
+                disabled={updating}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Adults</Label>
+              {editAdults.map((adult, index) => (
+                <Input
+                  key={adult.id}
+                  type="text"
+                  value={adult.name}
+                  onChange={(e) => {
+                    const newAdults = [...editAdults]
+                    newAdults[index].name = e.target.value
+                    setEditAdults(newAdults)
+                  }}
+                  placeholder={`Adult ${index + 1} name`}
+                  disabled={updating}
+                />
+              ))}
+            </div>
+
+            {editChildren.length > 0 && (
+              <div className="space-y-2">
+                <Label>Children</Label>
+                {editChildren.map((child, index) => (
+                  <Input
+                    key={child.id}
+                    type="text"
+                    value={child.name}
+                    onChange={(e) => {
+                      const newChildren = [...editChildren]
+                      newChildren[index].name = e.target.value
+                      setEditChildren(newChildren)
+                    }}
+                    placeholder={`Child ${index + 1} name`}
+                    disabled={updating}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleCancelEdit}
+                variant="outline"
+                disabled={updating}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={updating || !editFamilyName.trim()}
+                className="flex-1"
+              >
+                {updating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   )
 }
