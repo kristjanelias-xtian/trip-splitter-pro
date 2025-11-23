@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { TripRouteGuard } from './components/TripRouteGuard'
 import { HomePage } from './pages/HomePage'
@@ -26,6 +26,8 @@ export function AppRoutes() {
         <Route path="settings" element={<SettingsPage />} />
 
         {/* Trip routes - protected by TripRouteGuard */}
+        {/* Redirect base trip URL to dashboard */}
+        <Route path="t/:tripCode" element={<Navigate to="dashboard" replace />} />
         <Route path="t/:tripCode/setup" element={<TripRouteGuard><TripSetupPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ExpensesPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/settlements" element={<TripRouteGuard><SettlementsPage /></TripRouteGuard>} />
