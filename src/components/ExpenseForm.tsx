@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, ChevronDown, ChevronRight } from 'lucide-react'
-import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution } from '@/types/expense'
+import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -63,6 +63,11 @@ export function ExpenseForm({
   // Distribution state
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
+  const [splitMode, setSplitMode] = useState<SplitMode>('equal')
+
+  // Custom split values for percentage/amount modes
+  const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
+  const [familySplitValues, setFamilySplitValues] = useState<Record<string, string>>({})
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -87,15 +92,56 @@ export function ExpenseForm({
   }, [participants, families])
 
   const handleParticipantToggle = (id: string) => {
-    setSelectedParticipants(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
+    setSelectedParticipants(prev => {
+      const newSelection = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+
+      // Initialize split value for new selections in non-equal mode
+      if (!prev.includes(id) && splitMode !== 'equal') {
+        setParticipantSplitValues(vals => ({
+          ...vals,
+          [id]: ''
+        }))
+      }
+
+      return newSelection
+    })
   }
 
   const handleFamilyToggle = (id: string) => {
-    setSelectedFamilies(prev =>
-      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-    )
+    setSelectedFamilies(prev => {
+      const newSelection = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+
+      // Initialize split value for new selections in non-equal mode
+      if (!prev.includes(id) && splitMode !== 'equal') {
+        setFamilySplitValues(vals => ({
+          ...vals,
+          [id]: ''
+        }))
+      }
+
+      return newSelection
+    })
+  }
+
+  const handleParticipantSplitChange = (id: string, value: string) => {
+    setParticipantSplitValues(prev => ({
+      ...prev,
+      [id]: value
+    }))
+  }
+
+  const handleFamilySplitChange = (id: string, value: string) => {
+    setFamilySplitValues(prev => ({
+      ...prev,
+      [id]: value
+    }))
+  }
+
+  const handleSplitModeChange = (mode: SplitMode) => {
+    setSplitMode(mode)
+    // Reset custom split values when switching modes
+    setParticipantSplitValues({})
+    setFamilySplitValues({})
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -131,12 +177,66 @@ export function ExpenseForm({
       }
     }
 
+    // Validate split mode values
+    if (splitMode === 'percentage') {
+      let totalPercentage = 0
+      for (const id of selectedParticipants) {
+        const value = parseFloat(participantSplitValues[id] || '0')
+        if (isNaN(value) || value <= 0) {
+          setError('Please enter valid percentages for all selected participants')
+          return
+        }
+        totalPercentage += value
+      }
+      for (const id of selectedFamilies) {
+        const value = parseFloat(familySplitValues[id] || '0')
+        if (isNaN(value) || value <= 0) {
+          setError('Please enter valid percentages for all selected families')
+          return
+        }
+        totalPercentage += value
+      }
+      if (Math.abs(totalPercentage - 100) > 0.01) {
+        setError(`Percentages must sum to 100% (currently ${totalPercentage.toFixed(1)}%)`)
+        return
+      }
+    } else if (splitMode === 'amount') {
+      let totalAmount = 0
+      for (const id of selectedParticipants) {
+        const value = parseFloat(participantSplitValues[id] || '0')
+        if (isNaN(value) || value <= 0) {
+          setError('Please enter valid amounts for all selected participants')
+          return
+        }
+        totalAmount += value
+      }
+      for (const id of selectedFamilies) {
+        const value = parseFloat(familySplitValues[id] || '0')
+        if (isNaN(value) || value <= 0) {
+          setError('Please enter valid amounts for all selected families')
+          return
+        }
+        totalAmount += value
+      }
+      if (Math.abs(totalAmount - amountNum) > 0.01) {
+        setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
+        return
+      }
+    }
+
     // Build distribution object
     let distribution: ExpenseDistribution
     if (isIndividualsMode) {
       distribution = {
         type: 'individuals',
         participants: selectedParticipants,
+        splitMode,
+        participantSplits: splitMode !== 'equal'
+          ? selectedParticipants.map(id => ({
+              participantId: id,
+              value: parseFloat(participantSplitValues[id] || '0')
+            }))
+          : undefined
       }
     } else {
       // Families mode
@@ -145,16 +245,43 @@ export function ExpenseForm({
           type: 'mixed',
           families: selectedFamilies,
           participants: selectedParticipants,
+          splitMode,
+          familySplits: splitMode !== 'equal'
+            ? selectedFamilies.map(id => ({
+                familyId: id,
+                value: parseFloat(familySplitValues[id] || '0')
+              }))
+            : undefined,
+          participantSplits: splitMode !== 'equal'
+            ? selectedParticipants.map(id => ({
+                participantId: id,
+                value: parseFloat(participantSplitValues[id] || '0')
+              }))
+            : undefined
         }
       } else if (selectedFamilies.length > 0) {
         distribution = {
           type: 'families',
           families: selectedFamilies,
+          splitMode,
+          familySplits: splitMode !== 'equal'
+            ? selectedFamilies.map(id => ({
+                familyId: id,
+                value: parseFloat(familySplitValues[id] || '0')
+              }))
+            : undefined
         }
       } else {
         distribution = {
           type: 'individuals',
           participants: selectedParticipants,
+          splitMode,
+          participantSplits: splitMode !== 'equal'
+            ? selectedParticipants.map(id => ({
+                participantId: id,
+                value: parseFloat(participantSplitValues[id] || '0')
+              }))
+            : undefined
         }
       }
     }
@@ -306,6 +433,51 @@ export function ExpenseForm({
         </Select>
       </div>
 
+      {/* Split Mode Selector */}
+      <div className="space-y-2">
+        <Label>Split Method</Label>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={splitMode === 'equal' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSplitModeChange('equal')}
+            disabled={loading}
+            className="flex-1"
+          >
+            Equal Split
+          </Button>
+          <Button
+            type="button"
+            variant={splitMode === 'percentage' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSplitModeChange('percentage')}
+            disabled={loading}
+            className="flex-1"
+          >
+            By %
+          </Button>
+          <Button
+            type="button"
+            variant={splitMode === 'amount' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSplitModeChange('amount')}
+            disabled={loading}
+            className="flex-1"
+          >
+            By Amount
+          </Button>
+        </div>
+        {splitMode !== 'equal' && (
+          <p className="text-xs text-muted-foreground">
+            {splitMode === 'percentage'
+              ? 'Enter percentages for each party (must sum to 100%)'
+              : `Enter specific amounts for each party (must sum to ${currency} ${amount || '0.00'})`
+            }
+          </p>
+        )}
+      </div>
+
       {/* Split Between */}
       <div className="space-y-2">
         <Label>Split Between</Label>
@@ -327,6 +499,18 @@ export function ExpenseForm({
                 >
                   {participant.name} {participant.is_adult ? '' : '(child)'}
                 </label>
+                {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                  <Input
+                    type="number"
+                    value={participantSplitValues[participant.id] || ''}
+                    onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
+                    placeholder={splitMode === 'percentage' ? '%' : currency}
+                    step={splitMode === 'percentage' ? '0.1' : '0.01'}
+                    min="0"
+                    disabled={loading}
+                    className="w-24 h-9"
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -352,6 +536,18 @@ export function ExpenseForm({
                         {family.family_name} ({family.adults} adults
                         {family.children > 0 && `, ${family.children} children`})
                       </label>
+                      {splitMode !== 'equal' && selectedFamilies.includes(family.id) && (
+                        <Input
+                          type="number"
+                          value={familySplitValues[family.id] || ''}
+                          onChange={(e) => handleFamilySplitChange(family.id, e.target.value)}
+                          placeholder={splitMode === 'percentage' ? '%' : currency}
+                          step={splitMode === 'percentage' ? '0.1' : '0.01'}
+                          min="0"
+                          disabled={loading}
+                          className="w-24 h-9"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -377,6 +573,18 @@ export function ExpenseForm({
                         >
                           {participant.name} {participant.is_adult ? '' : '(child)'}
                         </label>
+                        {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                          <Input
+                            type="number"
+                            value={participantSplitValues[participant.id] || ''}
+                            onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
+                            placeholder={splitMode === 'percentage' ? '%' : currency}
+                            step={splitMode === 'percentage' ? '0.1' : '0.01'}
+                            min="0"
+                            disabled={loading}
+                            className="w-24 h-9"
+                          />
+                        )}
                       </div>
                     ))}
                 </div>

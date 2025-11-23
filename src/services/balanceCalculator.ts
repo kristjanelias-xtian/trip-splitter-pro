@@ -171,54 +171,144 @@ function calculateExpenseShares(
 ): Map<string, number> {
   const shares = new Map<string, number>()
   const distribution = expense.distribution
+  const splitMode = distribution.splitMode || 'equal'
 
   if (distribution.type === 'individuals') {
-    // Split evenly among listed individuals
-    const shareCount = distribution.participants.length
-    const shareAmount = expense.amount / shareCount
+    if (splitMode === 'equal') {
+      // Split evenly among listed individuals
+      const shareCount = distribution.participants.length
+      const shareAmount = expense.amount / shareCount
 
-    distribution.participants.forEach(participantId => {
-      if (trackingMode === 'families') {
-        // Find the family of this participant
-        const participant = participants.find(p => p.id === participantId)
-        const familyId = participant?.family_id
-        if (familyId) {
-          const currentShare = shares.get(familyId) || 0
-          shares.set(familyId, currentShare + shareAmount)
+      distribution.participants.forEach(participantId => {
+        if (trackingMode === 'families') {
+          const participant = participants.find(p => p.id === participantId)
+          const familyId = participant?.family_id
+          if (familyId) {
+            const currentShare = shares.get(familyId) || 0
+            shares.set(familyId, currentShare + shareAmount)
+          }
+        } else {
+          shares.set(participantId, shareAmount)
         }
-      } else {
-        shares.set(participantId, shareAmount)
-      }
-    })
+      })
+    } else if (splitMode === 'percentage' && distribution.participantSplits) {
+      // Split by percentage
+      distribution.participantSplits.forEach(split => {
+        const shareAmount = (expense.amount * split.value) / 100
+        if (trackingMode === 'families') {
+          const participant = participants.find(p => p.id === split.participantId)
+          const familyId = participant?.family_id
+          if (familyId) {
+            const currentShare = shares.get(familyId) || 0
+            shares.set(familyId, currentShare + shareAmount)
+          }
+        } else {
+          shares.set(split.participantId, shareAmount)
+        }
+      })
+    } else if (splitMode === 'amount' && distribution.participantSplits) {
+      // Split by custom amount
+      distribution.participantSplits.forEach(split => {
+        if (trackingMode === 'families') {
+          const participant = participants.find(p => p.id === split.participantId)
+          const familyId = participant?.family_id
+          if (familyId) {
+            const currentShare = shares.get(familyId) || 0
+            shares.set(familyId, currentShare + split.value)
+          }
+        } else {
+          shares.set(split.participantId, split.value)
+        }
+      })
+    }
   } else if (distribution.type === 'families') {
-    // Split evenly among listed families
-    const shareCount = distribution.families.length
-    const shareAmount = expense.amount / shareCount
+    if (splitMode === 'equal') {
+      // Split evenly among listed families
+      const shareCount = distribution.families.length
+      const shareAmount = expense.amount / shareCount
 
-    distribution.families.forEach(familyId => {
-      shares.set(familyId, shareAmount)
-    })
+      distribution.families.forEach(familyId => {
+        shares.set(familyId, shareAmount)
+      })
+    } else if (splitMode === 'percentage' && distribution.familySplits) {
+      // Split by percentage
+      distribution.familySplits.forEach(split => {
+        const shareAmount = (expense.amount * split.value) / 100
+        shares.set(split.familyId, shareAmount)
+      })
+    } else if (splitMode === 'amount' && distribution.familySplits) {
+      // Split by custom amount
+      distribution.familySplits.forEach(split => {
+        shares.set(split.familyId, split.value)
+      })
+    }
   } else if (distribution.type === 'mixed') {
-    // Mixed distribution: some families, some individuals
-    const totalShares = distribution.families.length + distribution.participants.length
-    const shareAmount = expense.amount / totalShares
+    if (splitMode === 'equal') {
+      // Mixed distribution: some families, some individuals
+      const totalShares = distribution.families.length + distribution.participants.length
+      const shareAmount = expense.amount / totalShares
 
-    distribution.families.forEach(familyId => {
-      shares.set(familyId, shareAmount)
-    })
+      distribution.families.forEach(familyId => {
+        shares.set(familyId, shareAmount)
+      })
 
-    distribution.participants.forEach(participantId => {
-      if (trackingMode === 'families') {
-        const participant = participants.find(p => p.id === participantId)
-        const familyId = participant?.family_id
-        if (familyId) {
-          const currentShare = shares.get(familyId) || 0
-          shares.set(familyId, currentShare + shareAmount)
+      distribution.participants.forEach(participantId => {
+        if (trackingMode === 'families') {
+          const participant = participants.find(p => p.id === participantId)
+          const familyId = participant?.family_id
+          if (familyId) {
+            const currentShare = shares.get(familyId) || 0
+            shares.set(familyId, currentShare + shareAmount)
+          }
+        } else {
+          shares.set(participantId, shareAmount)
         }
-      } else {
-        shares.set(participantId, shareAmount)
+      })
+    } else if (splitMode === 'percentage') {
+      // Split by percentage for both families and participants
+      if (distribution.familySplits) {
+        distribution.familySplits.forEach(split => {
+          const shareAmount = (expense.amount * split.value) / 100
+          shares.set(split.familyId, shareAmount)
+        })
       }
-    })
+      if (distribution.participantSplits) {
+        distribution.participantSplits.forEach(split => {
+          const shareAmount = (expense.amount * split.value) / 100
+          if (trackingMode === 'families') {
+            const participant = participants.find(p => p.id === split.participantId)
+            const familyId = participant?.family_id
+            if (familyId) {
+              const currentShare = shares.get(familyId) || 0
+              shares.set(familyId, currentShare + shareAmount)
+            }
+          } else {
+            shares.set(split.participantId, shareAmount)
+          }
+        })
+      }
+    } else if (splitMode === 'amount') {
+      // Split by custom amount for both families and participants
+      if (distribution.familySplits) {
+        distribution.familySplits.forEach(split => {
+          shares.set(split.familyId, split.value)
+        })
+      }
+      if (distribution.participantSplits) {
+        distribution.participantSplits.forEach(split => {
+          if (trackingMode === 'families') {
+            const participant = participants.find(p => p.id === split.participantId)
+            const familyId = participant?.family_id
+            if (familyId) {
+              const currentShare = shares.get(familyId) || 0
+              shares.set(familyId, currentShare + split.value)
+            }
+          } else {
+            shares.set(split.participantId, split.value)
+          }
+        })
+      }
+    }
   }
 
   return shares

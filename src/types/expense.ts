@@ -6,22 +6,42 @@ export type ExpenseCategory =
   | 'Transport'
   | 'Other';
 
+export type SplitMode = 'equal' | 'percentage' | 'amount';
+
 export type DistributionType = 'individuals' | 'families' | 'mixed';
+
+// Split data for percentage and amount modes
+export interface ParticipantSplit {
+  participantId: string;
+  value: number; // percentage (0-100) or amount
+}
+
+export interface FamilySplit {
+  familyId: string;
+  value: number; // percentage (0-100) or amount
+}
 
 export interface IndividualsDistribution {
   type: 'individuals';
   participants: string[]; // participant IDs
+  splitMode?: SplitMode; // defaults to 'equal' if not specified
+  participantSplits?: ParticipantSplit[]; // for percentage/amount modes
 }
 
 export interface FamiliesDistribution {
   type: 'families';
   families: string[]; // family IDs
+  splitMode?: SplitMode; // defaults to 'equal' if not specified
+  familySplits?: FamilySplit[]; // for percentage/amount modes
 }
 
 export interface MixedDistribution {
   type: 'mixed';
   families: string[]; // family IDs
   participants: string[]; // participant IDs
+  splitMode?: SplitMode; // defaults to 'equal' if not specified
+  familySplits?: FamilySplit[]; // for percentage/amount modes
+  participantSplits?: ParticipantSplit[]; // for percentage/amount modes
 }
 
 export type ExpenseDistribution =
