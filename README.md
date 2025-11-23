@@ -111,9 +111,19 @@ supabase gen types typescript --linked > src/lib/database.types.generated.ts
 
 **Current Migrations:** 4 applied, 1 pending (see STATUS.md for details)
 
-### Real-time Features
+### Real-time & State Management
 
-The shopping list uses Supabase real-time subscriptions. Real-time is enabled for the `shopping_items` table.
+**Optimistic UI Updates:**
+All create, update, and delete operations provide instant feedback with optimistic updates:
+- Changes appear immediately in the UI before database confirmation
+- No page refreshes needed for any CRUD operations
+- Rollback logic in place for failed operations
+
+**Real-time Subscriptions:**
+The shopping list uses Supabase real-time subscriptions for collaborative features:
+- Real-time enabled for the `shopping_items` table
+- Automatic sync across multiple devices/users
+- Combines optimistic updates with real-time for best experience
 
 ## Deployment
 

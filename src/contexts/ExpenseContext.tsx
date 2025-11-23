@@ -32,14 +32,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
-  console.log('🔄 ExpenseProvider rendering - trips.length:', trips.length, 'tripCode:', tripCode, 'has currentTrip:', !!currentTrip)
-
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
-    console.log('fetchExpenses called, currentTrip:', currentTrip)
-
     if (!currentTrip) {
-      console.log('No currentTrip, setting expenses to []')
       setExpenses([])
       return
     }
@@ -47,8 +42,6 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true)
       setError(null)
-
-      console.log('Fetching expenses for trip:', currentTrip.id)
 
       const { data, error: fetchError } = await supabase
         .from('expenses')
@@ -59,8 +52,6 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) throw fetchError
 
-      console.log('Fetched expenses:', data)
-      console.log('Current trip ID:', currentTrip.id)
       setExpenses((data as unknown as Expense[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch expenses')
@@ -173,12 +164,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses when current trip changes
   useEffect(() => {
-    console.log('ExpenseContext useEffect triggered, tripCode:', tripCode, 'has currentTrip:', !!currentTrip, 'trips loaded:', trips.length)
     if (tripCode && currentTrip) {
-      console.log('Calling fetchExpenses with trip:', currentTrip.id)
       fetchExpenses()
-    } else {
-      console.log('Skipping fetch - tripCode:', tripCode, 'currentTrip:', !!currentTrip)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 

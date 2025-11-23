@@ -5,11 +5,9 @@ import { addToMyTrips } from '@/lib/myTripsStorage'
 
 export function useCurrentTrip() {
   const { tripCode } = useParams<{ tripCode: string }>()
-  const { getTripByCode, trips } = useTripContext()
+  const { getTripByCode } = useTripContext()
 
   const currentTrip = tripCode ? getTripByCode(tripCode) : null
-
-  console.log('useCurrentTrip:', { tripCode, currentTrip, tripsCount: trips.length })
 
   // Automatically add trip to "My Trips" when accessed
   useEffect(() => {

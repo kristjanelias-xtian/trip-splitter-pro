@@ -127,6 +127,29 @@ Use Zod schemas for all forms with client-side validation:
 - Optimistic UI updates for shopping list (update local state immediately, sync with Supabase)
 - Service worker for offline viewing (progressive enhancement)
 
+## State Management & Sync Patterns
+
+**Optimistic Updates:**
+All contexts implement optimistic updates for instant UX feedback:
+- **ExpenseContext**: Immediate state updates for create/update/delete operations
+- **SettlementContext**: Immediate state updates for create/update/delete operations
+- **ParticipantContext**: Immediate state updates for all CRUD operations on participants and families
+- **MealContext**: Immediate state updates for create/update/delete operations
+- **TripContext**: Immediate state updates for all CRUD operations
+- **ShoppingContext**: Optimistic updates combined with real-time subscriptions for best experience
+
+**Real-time Subscriptions:**
+- ShoppingContext uses Supabase real-time subscriptions (INSERT/UPDATE/DELETE events)
+- Prevents duplicate items from real-time events with existence checks
+- Other contexts use optimistic updates without real-time (sufficient for their single-user-focused use cases)
+- Real-time is ideal for collaborative features like shared shopping lists
+
+**Refresh Patterns:**
+- MealCard calls `refreshMeals()` after adding ingredients to ensure parent page updates ingredient counts
+- ShoppingContext has rollback logic for toggle operations if database updates fail
+- No manual page refreshes needed for normal CRUD operations - React state handles re-renders
+- Cross-context dependencies (e.g., meal-shopping links) trigger appropriate refresh calls
+
 ## Component Patterns
 
 **shadcn/ui usage:** Use shadcn/ui components for consistency (buttons, dialogs, forms, toasts)

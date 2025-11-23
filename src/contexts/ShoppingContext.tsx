@@ -94,7 +94,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           filter: `trip_id=eq.${currentTrip.id}`,
         },
         (payload) => {
-          console.log('Shopping item inserted:', payload.new)
           setShoppingItems((prev) => {
             // Check if item already exists (prevent duplicates)
             if (prev.some(item => item.id === payload.new.id)) {
@@ -117,7 +116,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           filter: `trip_id=eq.${currentTrip.id}`,
         },
         (payload) => {
-          console.log('Shopping item updated:', payload.new)
           setShoppingItems((prev) =>
             prev
               .map((item) =>
@@ -140,7 +138,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           filter: `trip_id=eq.${currentTrip.id}`,
         },
         (payload) => {
-          console.log('Shopping item deleted:', payload.old)
           setShoppingItems((prev) => prev.filter((item) => item.id !== payload.old.id))
         }
       )

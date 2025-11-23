@@ -240,12 +240,8 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
   // Fetch data when current trip changes
   useEffect(() => {
-    console.log('ParticipantContext useEffect triggered, tripCode:', tripCode, 'has currentTrip:', !!currentTrip, 'trips loaded:', trips.length)
     if (tripCode && currentTrip) {
-      console.log('Calling fetchData with trip:', currentTrip.id)
       fetchData()
-    } else {
-      console.log('Skipping fetch - tripCode:', tripCode, 'currentTrip:', !!currentTrip)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
