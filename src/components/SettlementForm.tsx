@@ -24,17 +24,32 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
-  // Get all entities (participants or families) for selection
-  const getEntities = () => {
+  // Get all adults for selection
+  // Note: Settlements always use participant IDs (adults), even in families mode
+  // In families mode, we show which family they belong to
+  const getAdults = () => {
+    const adults = participants.filter(p => p.is_adult)
+
     if (isIndividualsMode) {
-      return participants.map(p => ({ id: p.id, name: p.name, isFamily: false }))
+      return adults.map(p => ({
+        id: p.id,
+        name: p.name,
+        familyName: null
+      }))
     } else {
-      // In families mode, show families
-      return families.map(f => ({ id: f.id, name: f.family_name, isFamily: true }))
+      // In families mode, show adults with their family name
+      return adults.map(p => {
+        const family = families.find(f => f.id === p.family_id)
+        return {
+          id: p.id,
+          name: p.name,
+          familyName: family?.family_name || null
+        }
+      })
     }
   }
 
-  const entities = getEntities()
+  const adultsForSelection = getAdults()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -103,10 +118,10 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
           required
           disabled={loading}
         >
-          <option value="">Select {isIndividualsMode ? 'person' : 'family'}...</option>
-          {entities.map(entity => (
-            <option key={entity.id} value={entity.id}>
-              {entity.name}
+          <option value="">Select person...</option>
+          {adultsForSelection.map(adult => (
+            <option key={adult.id} value={adult.id}>
+              {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
             </option>
           ))}
         </select>
@@ -125,10 +140,10 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
           required
           disabled={loading}
         >
-          <option value="">Select {isIndividualsMode ? 'person' : 'family'}...</option>
-          {entities.map(entity => (
-            <option key={entity.id} value={entity.id}>
-              {entity.name}
+          <option value="">Select person...</option>
+          {adultsForSelection.map(adult => (
+            <option key={adult.id} value={adult.id}>
+              {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
             </option>
           ))}
         </select>
@@ -139,11 +154,21 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
           <div className="flex items-center justify-center gap-2 text-sm">
             <span className="font-medium text-blue-900 dark:text-blue-200">
-              {entities.find(e => e.id === fromParticipantId)?.name}
+              {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
+              {adultsForSelection.find(a => a.id === fromParticipantId)?.familyName && (
+                <span className="text-xs ml-1">
+                  ({adultsForSelection.find(a => a.id === fromParticipantId)?.familyName})
+                </span>
+              )}
             </span>
             <span className="text-2xl text-blue-600 dark:text-blue-400">→</span>
             <span className="font-medium text-blue-900 dark:text-blue-200">
-              {entities.find(e => e.id === toParticipantId)?.name}
+              {adultsForSelection.find(a => a.id === toParticipantId)?.name}
+              {adultsForSelection.find(a => a.id === toParticipantId)?.familyName && (
+                <span className="text-xs ml-1">
+                  ({adultsForSelection.find(a => a.id === toParticipantId)?.familyName})
+                </span>
+              )}
             </span>
           </div>
         </div>

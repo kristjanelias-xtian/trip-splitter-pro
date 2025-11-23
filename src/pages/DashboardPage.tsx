@@ -168,6 +168,11 @@ export function DashboardPage() {
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Record a payment that happened outside of the optimal settlement plan (e.g., partial payments, cash transfers, etc.)
+                {currentTrip.tracking_mode === 'families' && (
+                  <span className="block mt-2 text-xs">
+                    💡 In families mode, select the adult who made/received the payment. The balance will update for their family.
+                  </span>
+                )}
               </p>
               <SettlementForm
                 onSubmit={handleCustomSettlement}
