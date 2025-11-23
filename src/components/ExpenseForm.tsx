@@ -1,10 +1,26 @@
 import { useState, useEffect, FormEvent } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Lightbulb, ChevronDown, ChevronRight } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { fadeInUp } from '@/lib/animations'
 
 interface ExpenseFormProps {
   onSubmit: (input: CreateExpenseInput) => Promise<void>
@@ -49,6 +65,7 @@ export function ExpenseForm({
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
 
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
@@ -83,32 +100,33 @@ export function ExpenseForm({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (!description.trim()) {
-      alert('Please enter a description')
+      setError('Please enter a description')
       return
     }
 
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert('Please enter a valid amount greater than 0')
+      setError('Please enter a valid amount greater than 0')
       return
     }
 
     if (!paidBy) {
-      alert('Please select who paid')
+      setError('Please select who paid')
       return
     }
 
     // Validate distribution
     if (isIndividualsMode) {
       if (selectedParticipants.length === 0) {
-        alert('Please select at least one person to split between')
+        setError('Please select at least one person to split between')
         return
       }
     } else {
       if (selectedFamilies.length === 0 && selectedParticipants.length === 0) {
-        alert('Please select at least one family or person to split between')
+        setError('Please select at least one family or person to split between')
         return
       }
     }
@@ -142,7 +160,7 @@ export function ExpenseForm({
     }
 
     if (!currentTrip) {
-      alert('No trip selected')
+      setError('No trip selected')
       return
     }
 
@@ -167,76 +185,96 @@ export function ExpenseForm({
       setSelectedParticipants(participants.map(p => p.id))
       setSelectedFamilies(families.map(f => f.id))
       setShowMoreDetails(false)
+    } catch (err) {
+      setError('Failed to save expense. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
+
       {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Description
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Input
           type="text"
           id="description"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
           placeholder="e.g., Dinner at restaurant"
           required
           disabled={loading}
         />
       </div>
 
-      {/* Amount - Large mobile input */}
-      <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Amount
-        </label>
+      {/* Amount and Currency */}
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount</Label>
         <div className="flex gap-2">
-          <input
+          <Input
             type="number"
             id="amount"
             value={amount}
             onChange={e => setAmount(e.target.value)}
-            className="flex-1 px-4 py-3 text-2xl border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className="flex-1 text-2xl h-14 tabular-nums"
             placeholder="0.00"
             step="0.01"
             min="0.01"
             required
             disabled={loading}
           />
-          <select
+          <Select
             value={currency}
-            onChange={e => setCurrency(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
+            onValueChange={setCurrency}
             disabled={loading}
           >
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-            <option value="GBP">GBP</option>
-          </select>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EUR">EUR</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="GBP">GBP</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Who Paid */}
-      <div>
-        <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Who Paid?
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="paidBy">Who Paid?</Label>
 
         {/* Smart Payer Suggestion */}
         {suggestedPayer && expenses.length > 0 && (
-          <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3 bg-accent/10 border border-accent/20 rounded-lg"
+          >
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-sm text-blue-900 dark:text-blue-200">
-                  💡 <strong>{suggestedPayer.name}</strong> should pay next
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Lightbulb size={16} className="text-accent" />
+                  <span><strong>{suggestedPayer.name}</strong> should pay next</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
                   Current balance:{' '}
                   <span className={getBalanceColorClass(suggestedPayer.balance)}>
                     {formatBalance(suggestedPayer.balance, currency)}
@@ -244,53 +282,52 @@ export function ExpenseForm({
                 </p>
               </div>
               {!isIndividualsMode && suggestedPayer.isFamily && (
-                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                  Family
-                </span>
+                <Badge variant="soft">Family</Badge>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <select
-          id="paidBy"
+        <Select
           value={paidBy}
-          onChange={e => setPaidBy(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-          required
+          onValueChange={setPaidBy}
           disabled={loading}
         >
-          <option value="">Select person...</option>
-          {adults.map(adult => (
-            <option key={adult.id} value={adult.id}>
-              {adult.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="paidBy">
+            <SelectValue placeholder="Select person..." />
+          </SelectTrigger>
+          <SelectContent>
+            {adults.map(adult => (
+              <SelectItem key={adult.id} value={adult.id}>
+                {adult.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Split Between */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Split Between
-        </label>
+      <div className="space-y-2">
+        <Label>Split Between</Label>
 
         {isIndividualsMode ? (
           // Individuals mode - show participants
-          <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
             {participants.map(participant => (
-              <label key={participant.id} className="flex items-center min-h-[44px]">
-                <input
-                  type="checkbox"
+              <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
+                <Checkbox
+                  id={`participant-${participant.id}`}
                   checked={selectedParticipants.includes(participant.id)}
-                  onChange={() => handleParticipantToggle(participant.id)}
-                  className="mr-3 h-5 w-5"
+                  onCheckedChange={() => handleParticipantToggle(participant.id)}
                   disabled={loading}
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor={`participant-${participant.id}`}
+                  className="text-sm text-foreground cursor-pointer flex-1"
+                >
                   {participant.name} {participant.is_adult ? '' : '(child)'}
-                </span>
-              </label>
+                </label>
+              </div>
             ))}
           </div>
         ) : (
@@ -298,45 +335,49 @@ export function ExpenseForm({
           <div className="space-y-3">
             {families.length > 0 && (
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Families</p>
-                <div className="space-y-2 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-2">Families</p>
+                <div className="space-y-2 rounded-lg border border-input p-3">
                   {families.map(family => (
-                    <label key={family.id} className="flex items-center min-h-[44px]">
-                      <input
-                        type="checkbox"
+                    <div key={family.id} className="flex items-center space-x-2 min-h-[44px]">
+                      <Checkbox
+                        id={`family-${family.id}`}
                         checked={selectedFamilies.includes(family.id)}
-                        onChange={() => handleFamilyToggle(family.id)}
-                        className="mr-3 h-5 w-5"
+                        onCheckedChange={() => handleFamilyToggle(family.id)}
                         disabled={loading}
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                      <label
+                        htmlFor={`family-${family.id}`}
+                        className="text-sm text-foreground cursor-pointer flex-1"
+                      >
                         {family.family_name} ({family.adults} adults
                         {family.children > 0 && `, ${family.children} children`})
-                      </span>
-                    </label>
+                      </label>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
             {participants.filter(p => !p.family_id).length > 0 && (
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Individual Participants</p>
-                <div className="space-y-2 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-2">Individual Participants</p>
+                <div className="space-y-2 rounded-lg border border-input p-3">
                   {participants
                     .filter(p => !p.family_id)
                     .map(participant => (
-                      <label key={participant.id} className="flex items-center min-h-[44px]">
-                        <input
-                          type="checkbox"
+                      <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
+                        <Checkbox
+                          id={`participant-${participant.id}`}
                           checked={selectedParticipants.includes(participant.id)}
-                          onChange={() => handleParticipantToggle(participant.id)}
-                          className="mr-3 h-5 w-5"
+                          onCheckedChange={() => handleParticipantToggle(participant.id)}
                           disabled={loading}
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                        <label
+                          htmlFor={`participant-${participant.id}`}
+                          className="text-sm text-foreground cursor-pointer flex-1"
+                        >
                           {participant.name} {participant.is_adult ? '' : '(child)'}
-                        </span>
-                      </label>
+                        </label>
+                      </div>
                     ))}
                 </div>
               </div>
@@ -346,92 +387,107 @@ export function ExpenseForm({
       </div>
 
       {/* More Details Collapsible */}
-      <div>
+      <div className="space-y-3">
         <button
           type="button"
           onClick={() => setShowMoreDetails(!showMoreDetails)}
-          className="text-sm text-neutral hover:underline"
+          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
           disabled={loading}
         >
-          {showMoreDetails ? '▼ Less details' : '▶ More details'}
+          {showMoreDetails ? (
+            <>
+              <ChevronDown size={16} />
+              <span>Less details</span>
+            </>
+          ) : (
+            <>
+              <ChevronRight size={16} />
+              <span>More details</span>
+            </>
+          )}
         </button>
 
-        {showMoreDetails && (
-          <div className="mt-3 space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            {/* Date */}
-            <div>
-              <label htmlFor="expenseDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Date
-              </label>
-              <input
-                type="date"
-                id="expenseDate"
-                value={expenseDate}
-                onChange={e => setExpenseDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-                disabled={loading}
-              />
-            </div>
+        <AnimatePresence>
+          {showMoreDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-4 p-4 bg-accent/5 rounded-lg border border-accent/10">
+                {/* Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="expenseDate">Date</Label>
+                  <Input
+                    type="date"
+                    id="expenseDate"
+                    value={expenseDate}
+                    onChange={e => setExpenseDate(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
 
-            {/* Category */}
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Category
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={e => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-                disabled={loading}
-              >
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {/* Category */}
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={category}
+                    onValueChange={(value) => setCategory(value as ExpenseCategory)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map(cat => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Comment */}
-            <div>
-              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Comment (optional)
-              </label>
-              <textarea
-                id="comment"
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Additional notes..."
-                rows={2}
-                disabled={loading}
-              />
-            </div>
-          </div>
-        )}
+                {/* Comment */}
+                <div className="space-y-2">
+                  <Label htmlFor="comment">Comment (Optional)</Label>
+                  <Textarea
+                    id="comment"
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                    placeholder="Additional notes..."
+                    rows={2}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Submit Buttons */}
-      <div className="flex gap-3 pt-4">
-        <button
+      <div className="flex gap-3 pt-2">
+        <Button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-neutral text-white px-4 py-3 rounded-lg hover:bg-neutral-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="flex-1"
         >
           {loading ? 'Saving...' : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="outline"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
-    </form>
+    </motion.form>
   )
 }
