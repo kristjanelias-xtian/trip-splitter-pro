@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Users, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Calendar, Users, Trash2, ExternalLink, Share2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
+import { ShareTripDialog } from '@/components/ShareTripDialog'
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -135,6 +136,19 @@ export function HomePage() {
                         <ExternalLink size={14} />
                         Open
                       </Button>
+                      <ShareTripDialog
+                        tripCode={trip.tripCode}
+                        tripName={trip.tripName}
+                        trigger={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Share2 size={14} />
+                          </Button>
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>

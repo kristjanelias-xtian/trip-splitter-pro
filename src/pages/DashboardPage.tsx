@@ -10,6 +10,7 @@ import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
+import { ShareTripDialog } from '@/components/ShareTripDialog'
 
 // Lazy load chart components for better performance
 const ExpenseByCategoryChart = lazy(() => import('@/components/ExpenseByCategoryChart').then(m => ({ default: m.ExpenseByCategoryChart })))
@@ -58,12 +59,15 @@ export function DashboardPage() {
           <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
           <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
         </div>
-        {expenses.length > 0 && (
-          <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
-            <FileDown size={16} />
-            Export Summary
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <ShareTripDialog tripCode={tripCode!} tripName={currentTrip.name} />
+          {expenses.length > 0 && (
+            <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
+              <FileDown size={16} />
+              Export Summary
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Trip Overview Stats */}
