@@ -7,6 +7,7 @@ import {
   ExpenseCategory,
 } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useTripContext } from '@/contexts/TripContext'
 
 interface ExpenseContextType {
   expenses: Expense[]
@@ -29,6 +30,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripId } = useCurrentTrip()
+  const { trips } = useTripContext()
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
@@ -169,12 +171,14 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
   // Fetch expenses when current trip changes
   useEffect(() => {
-    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'has currentTrip:', !!currentTrip)
+    console.log('ExpenseContext useEffect triggered, tripId:', tripId, 'has currentTrip:', !!currentTrip, 'trips loaded:', trips.length)
     if (tripId && currentTrip) {
       console.log('Calling fetchExpenses with trip:', currentTrip.id)
       fetchExpenses()
+    } else {
+      console.log('Skipping fetch - tripId:', tripId, 'currentTrip:', !!currentTrip)
     }
-  }, [tripId, currentTrip?.id])
+  }, [tripId, currentTrip?.id, trips.length])
 
   const value: ExpenseContextType = {
     expenses,
