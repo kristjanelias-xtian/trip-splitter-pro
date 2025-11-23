@@ -334,7 +334,14 @@ This document outlines the phased execution plan for building the Family Trip Co
   - Database schema deployed to Supabase
   - Navigation shell (mobile bottom nav, desktop sidebar)
   - Deployed to Cloudflare Pages
-- [ ] Phase 2: Trip Management Core (NEXT)
+- [x] Phase 2: Trip Management Core ✅ COMPLETED
+  - Trip CRUD operations with Supabase integration
+  - Trip context provider
+  - Trip creation and edit forms
+  - Trip listing page with card layout
+  - Trip selector dropdown in header
+  - Delete trip with confirmation
+- [ ] Phase 3: Trip Setup Flow (NEXT)
 - [ ] Phase 3: Trip Setup Flow
 - [ ] Phase 4: Expense Entry & Management
 - [ ] Phase 5: Balance Calculation & Smart Payer

@@ -1,10 +1,13 @@
 import { BrowserRouter } from 'react-router-dom'
 import { AppRoutes } from './routes'
+import { TripProvider } from './contexts/TripContext'
 
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <TripProvider>
+        <AppRoutes />
+      </TripProvider>
     </BrowserRouter>
   )
 }

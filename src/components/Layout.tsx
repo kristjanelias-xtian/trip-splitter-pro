@@ -1,7 +1,9 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
+import { useTripContext } from '@/contexts/TripContext'
 
 export function Layout() {
   const location = useLocation()
+  const { trips, currentTrip, selectTrip } = useTripContext()
 
   const navItems = [
     { path: '/', label: 'Trips', icon: '🏠' },
@@ -24,10 +26,30 @@ export function Layout() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Trip Splitter Pro
-          </h1>
-          {/* Trip selector will go here in Phase 2 */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Trip Splitter Pro
+            </h1>
+            {trips.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label htmlFor="trip-selector" className="text-sm text-gray-600 dark:text-gray-400">
+                  Current Trip:
+                </label>
+                <select
+                  id="trip-selector"
+                  value={currentTrip?.id || ''}
+                  onChange={(e) => selectTrip(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-neutral focus:border-transparent"
+                >
+                  {trips.map((trip) => (
+                    <option key={trip.id} value={trip.id}>
+                      {trip.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
