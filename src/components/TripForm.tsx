@@ -10,7 +10,6 @@ interface TripFormProps {
 
 export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Create Trip' }: TripFormProps) {
   const [name, setName] = useState(initialValues?.name || '')
-  const [date, setDate] = useState(initialValues?.date || new Date().toISOString().split('T')[0])
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
@@ -33,7 +32,6 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
     try {
       await onSubmit({
         name: name.trim(),
-        date,
         start_date: startDate,
         end_date: endDate,
         tracking_mode: trackingMode
@@ -56,21 +54,6 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
           onChange={(e) => setName(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
           placeholder="e.g., Summer Vacation 2024"
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Trip Date (Legacy)
-        </label>
-        <input
-          type="date"
-          id="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral focus:border-transparent dark:bg-gray-700 dark:text-white"
           required
           disabled={loading}
         />

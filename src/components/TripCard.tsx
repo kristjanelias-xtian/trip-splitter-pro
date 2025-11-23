@@ -12,9 +12,20 @@ export function TripCard({ trip, isSelected, onSelect, onEdit, onDelete }: TripC
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     })
+  }
+
+  const formatDateRange = () => {
+    const start = formatDate(trip.start_date)
+    const end = formatDate(trip.end_date)
+
+    if (trip.start_date === trip.end_date) {
+      return start
+    }
+
+    return `${start} - ${end}`
   }
 
   return (
@@ -32,7 +43,7 @@ export function TripCard({ trip, isSelected, onSelect, onEdit, onDelete }: TripC
             {trip.name}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {formatDate(trip.date)}
+            {formatDateRange()}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
             {trip.tracking_mode === 'individuals' ? 'Individuals only' : 'Individuals + Families'}
