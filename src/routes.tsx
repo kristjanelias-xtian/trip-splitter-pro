@@ -6,6 +6,7 @@ import { ExpensesPage } from './pages/ExpensesPage'
 import { MealsPage } from './pages/MealsPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { SettlementsPage } from './pages/SettlementsPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export function AppRoutes() {
@@ -15,6 +16,7 @@ export function AppRoutes() {
         <Route index element={<TripsPage />} />
         <Route path="trips/:tripId/setup" element={<TripSetupPage />} />
         <Route path="trips/:tripId/expenses" element={<ExpensesPage />} />
+        <Route path="trips/:tripId/settlements" element={<SettlementsPage />} />
         <Route path="trips/:tripId/meals" element={<MealsPage />} />
         <Route path="trips/:tripId/shopping" element={<ShoppingPage />} />
         <Route path="trips/:tripId/dashboard" element={<DashboardPage />} />

@@ -20,6 +20,7 @@ export function Layout() {
       items.push(
         { path: `/trips/${tripId}/setup`, label: 'Setup', icon: '👥', requiresTrip: true },
         { path: `/trips/${tripId}/expenses`, label: 'Expenses', icon: '💰', requiresTrip: true },
+        { path: `/trips/${tripId}/settlements`, label: 'Settlements', icon: '💸', requiresTrip: true },
         { path: `/trips/${tripId}/meals`, label: 'Meals', icon: '🍽️', requiresTrip: true },
         { path: `/trips/${tripId}/shopping`, label: 'Shopping', icon: '🛒', requiresTrip: true },
         { path: `/trips/${tripId}/dashboard`, label: 'Dashboard', icon: '📊', requiresTrip: true },
@@ -44,6 +45,8 @@ export function Layout() {
     // Navigate to the same page type for the new trip
     if (location.pathname.includes('/expenses')) {
       navigate(`/trips/${newTripId}/expenses`)
+    } else if (location.pathname.includes('/settlements')) {
+      navigate(`/trips/${newTripId}/settlements`)
     } else if (location.pathname.includes('/setup')) {
       navigate(`/trips/${newTripId}/setup`)
     } else if (location.pathname.includes('/meals')) {
