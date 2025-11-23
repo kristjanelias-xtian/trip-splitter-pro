@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { TripRouteGuard } from './components/TripRouteGuard'
 import { HomePage } from './pages/HomePage'
 import { TripsPage } from './pages/TripsPage'
 import { TripSetupPage } from './pages/TripSetupPage'
@@ -10,24 +11,27 @@ import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
+import { TripNotFoundPage } from './pages/TripNotFoundPage'
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Admin route - outside Layout for full-page control */}
+      {/* Special routes - outside Layout */}
       <Route path="admin/all-trips" element={<AdminAllTripsPage />} />
+      <Route path="trip-not-found/:tripCode" element={<TripNotFoundPage />} />
 
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="create-trip" element={<TripsPage />} />
-        {/* Trip routes using shareable trip codes */}
-        <Route path="t/:tripCode/setup" element={<TripSetupPage />} />
-        <Route path="t/:tripCode/expenses" element={<ExpensesPage />} />
-        <Route path="t/:tripCode/settlements" element={<SettlementsPage />} />
-        <Route path="t/:tripCode/meals" element={<MealsPage />} />
-        <Route path="t/:tripCode/shopping" element={<ShoppingPage />} />
-        <Route path="t/:tripCode/dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
+
+        {/* Trip routes - protected by TripRouteGuard */}
+        <Route path="t/:tripCode/setup" element={<TripRouteGuard><TripSetupPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ExpensesPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/settlements" element={<TripRouteGuard><SettlementsPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/meals" element={<TripRouteGuard><MealsPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/shopping" element={<TripRouteGuard><ShoppingPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/dashboard" element={<TripRouteGuard><DashboardPage /></TripRouteGuard>} />
       </Route>
     </Routes>
   )
