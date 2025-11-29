@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   CreateExpenseInput,
   ExpenseCategory,
@@ -11,6 +11,8 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ExpenseForm } from './ExpenseForm'
@@ -75,6 +77,19 @@ function MobileWizard({
   const { participants, families, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
+
+  // Keyboard detection for mobile
+  const contentRef = useRef<HTMLDivElement>(null)
+  const keyboard = useKeyboardHeight()
+
+  useScrollIntoView(contentRef, {
+    enabled: keyboard.isVisible,
+    offset: 20,
+  })
+
+  const sheetHeight = keyboard.isVisible
+    ? `${keyboard.availableHeight}px`
+    : '90vh'
 
   const [currentStep, setCurrentStep] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -248,7 +263,8 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[90vh] flex flex-col p-6 gap-0"
+        className="flex flex-col p-6 gap-0"
+        style={{ height: sheetHeight }}
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside during submission
           if (isSubmitting) {
@@ -264,7 +280,7 @@ function MobileWizard({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
+        <div ref={contentRef} className="flex-1 overflow-y-auto -mx-6 px-6">
           {currentStep === 1 && (
             <WizardStep1
               description={description}
@@ -325,15 +341,17 @@ function MobileWizard({
           )}
         </div>
 
-        <WizardNavigation
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          onBack={handleBack}
-          onNext={handleNext}
-          onSubmit={handleSubmit}
-          canProceed={canProceed()}
-          isSubmitting={isSubmitting}
-        />
+        <div className="pt-4 border-t border-border" style={{ flexShrink: 0 }}>
+          <WizardNavigation
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onBack={handleBack}
+            onNext={handleNext}
+            onSubmit={handleSubmit}
+            canProceed={canProceed()}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   )

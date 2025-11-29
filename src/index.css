@@ -165,4 +165,21 @@
   .hover-lift:hover {
     transform: translateY(-2px);
   }
+
+  /* Mobile keyboard-aware viewport heights */
+  @supports (height: 100dvh) {
+    .mobile-sheet-fallback {
+      height: 90dvh;
+    }
+  }
+
+  /* Ensure inputs visible when focused on mobile */
+  @media (max-width: 768px) {
+    input:focus,
+    textarea:focus,
+    select:focus {
+      scroll-margin-top: 80px;
+      scroll-margin-bottom: 120px;
+    }
+  }
 }

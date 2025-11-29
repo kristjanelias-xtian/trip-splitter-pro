@@ -1,9 +1,11 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,6 +38,15 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Keyboard detection for mobile
+  const formRef = useRef<HTMLFormElement>(null)
+  const keyboard = useKeyboardHeight()
+
+  useScrollIntoView(formRef, {
+    enabled: keyboard.isVisible,
+    offset: 20,
+  })
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
@@ -123,6 +134,7 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
 
   return (
     <motion.form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-4"
       variants={fadeInUp}

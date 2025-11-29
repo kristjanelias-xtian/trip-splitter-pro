@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import { useMealContext } from '@/contexts/MealContext'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import type {
   ShoppingItem,
   ShoppingCategory,
@@ -36,6 +38,15 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
   const { meals } = useMealContext()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Keyboard detection for mobile
+  const formRef = useRef<HTMLFormElement>(null)
+  const keyboard = useKeyboardHeight()
+
+  useScrollIntoView(formRef, {
+    enabled: keyboard.isVisible,
+    offset: 20,
+  })
 
   const [formData, setFormData] = useState({
     name: item?.name || '',
@@ -105,6 +116,7 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
 
   return (
     <motion.form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-4"
       variants={fadeInUp}

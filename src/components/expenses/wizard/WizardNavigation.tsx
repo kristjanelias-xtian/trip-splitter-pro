@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -25,12 +24,7 @@ export function WizardNavigation({
   const isLastStep = currentStep === totalSteps
 
   return (
-    <motion.div
-      className="flex gap-3 pt-4 border-t border-border mt-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
+    <div className="flex gap-3">
       {!isFirstStep && (
         <Button
           type="button"
@@ -63,6 +57,6 @@ export function WizardNavigation({
           </>
         )}
       </Button>
-    </motion.div>
+    </div>
   )
 }

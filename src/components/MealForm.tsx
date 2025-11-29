@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, CloudSun, Moon, Plus, X, Utensils, Home, Receipt } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import { supabase } from '@/lib/supabase'
 import type { Meal, MealType, CreateMealInput, UpdateMealInput } from '@/types/meal'
 import type { ShoppingItem, ShoppingCategory } from '@/types/shopping'
@@ -81,6 +83,15 @@ export function MealForm({
   const [error, setError] = useState<string | null>(null)
   const [loadingIngredients, setLoadingIngredients] = useState(false)
   const [existingIngredients, setExistingIngredients] = useState<ShoppingItem[]>([])
+
+  // Keyboard detection for mobile
+  const formRef = useRef<HTMLFormElement>(null)
+  const keyboard = useKeyboardHeight()
+
+  useScrollIntoView(formRef, {
+    enabled: keyboard.isVisible,
+    offset: 20,
+  })
 
   const [formData, setFormData] = useState({
     title: meal?.title || '',
@@ -367,6 +378,7 @@ export function MealForm({
 
   return (
     <motion.form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-4"
       variants={fadeInUp}
