@@ -49,7 +49,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          node .github/scripts/claude-handler.js
+          node .github/scripts/claude-handler.cjs
 
       - name: Create Pull Request
         if: success()
