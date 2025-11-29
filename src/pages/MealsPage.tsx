@@ -29,18 +29,18 @@ export function MealsPage() {
     }
   }, [meals])
 
-  // Set default expanded day (today or first day)
+  // Set default expanded day (only when trip is active)
   useEffect(() => {
     if (!currentTrip) return
 
     const tripDates = generateDateRange(currentTrip.start_date, currentTrip.end_date)
     const todayDate = new Date().toISOString().split('T')[0]
 
-    // Expand today if it's within trip dates, otherwise expand first day
-    const defaultExpandedDate = tripDates.includes(todayDate) ? todayDate : tripDates[0]
-
-    if (defaultExpandedDate) {
-      setExpandedDays([defaultExpandedDate])
+    // Only expand today if it's within trip dates, otherwise leave all collapsed
+    if (tripDates.includes(todayDate)) {
+      setExpandedDays([todayDate])
+    } else {
+      setExpandedDays([])
     }
   }, [currentTrip])
 

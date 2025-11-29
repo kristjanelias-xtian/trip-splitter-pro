@@ -196,6 +196,7 @@ All contexts implement optimistic updates for instant UX feedback:
 **Required environment variables:**
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `VITE_UNSPLASH_ACCESS_KEY` - Unsplash API access key (for meal images)
 
 **Supabase setup:**
 - Run migrations to create schema
