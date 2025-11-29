@@ -8,6 +8,8 @@ export interface Meal {
   title: string
   description?: string | null
   responsible_participant_id?: string | null
+  is_restaurant: boolean
+  everyone_at_home: boolean
   created_at: string
   updated_at: string
 }
@@ -19,6 +21,8 @@ export interface CreateMealInput {
   title: string
   description?: string
   responsible_participant_id?: string
+  is_restaurant?: boolean
+  everyone_at_home?: boolean
 }
 
 export interface UpdateMealInput {
@@ -27,6 +31,8 @@ export interface UpdateMealInput {
   title?: string
   description?: string
   responsible_participant_id?: string
+  is_restaurant?: boolean
+  everyone_at_home?: boolean
 }
 
 export interface MealWithIngredients extends Meal {

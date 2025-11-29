@@ -50,6 +50,7 @@ export type Database = {
           distribution: Json
           expense_date: string
           id: string
+          meal_id: string | null
           paid_by: string
           trip_id: string
           updated_at: string
@@ -64,6 +65,7 @@ export type Database = {
           distribution: Json
           expense_date: string
           id?: string
+          meal_id?: string | null
           paid_by: string
           trip_id: string
           updated_at?: string
@@ -78,11 +80,19 @@ export type Database = {
           distribution?: Json
           expense_date?: string
           id?: string
+          meal_id?: string | null
           paid_by?: string
           trip_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_paid_by_fkey"
             columns: ["paid_by"]
@@ -171,7 +181,9 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          everyone_at_home: boolean
           id: string
+          is_restaurant: boolean
           meal_date: string
           meal_type: string
           responsible_participant_id: string | null
@@ -182,7 +194,9 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          everyone_at_home?: boolean
           id?: string
+          is_restaurant?: boolean
           meal_date: string
           meal_type: string
           responsible_participant_id?: string | null
@@ -193,7 +207,9 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          everyone_at_home?: boolean
           id?: string
+          is_restaurant?: boolean
           meal_date?: string
           meal_type?: string
           responsible_participant_id?: string | null

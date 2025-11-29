@@ -20,6 +20,8 @@ interface ExpenseContextType {
   getExpensesByCategory: (category: ExpenseCategory) => Expense[]
   getExpensesByPayer: (payerId: string) => Expense[]
   searchExpenses: (query: string) => Expense[]
+  getFoodExpenses: () => Expense[]
+  getExpenseById: (id: string) => Expense | undefined
 }
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined)
@@ -162,6 +164,16 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  // Helper: Get food expenses (for restaurant meal linking)
+  const getFoodExpenses = () => {
+    return expenses.filter(e => e.category === 'Food')
+  }
+
+  // Helper: Get expense by ID
+  const getExpenseById = (id: string) => {
+    return expenses.find(e => e.id === id)
+  }
+
   // Fetch expenses when current trip changes
   useEffect(() => {
     if (tripCode && currentTrip) {
@@ -180,6 +192,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     getExpensesByCategory,
     getExpensesByPayer,
     searchExpenses,
+    getFoodExpenses,
+    getExpenseById,
   }
 
   return <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>

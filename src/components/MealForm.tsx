@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, CloudSun, Moon } from 'lucide-react'
+import { Sun, CloudSun, Moon, Utensils, Home } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useExpenseContext } from '@/contexts/ExpenseContext'
 import type { Meal, MealType, CreateMealInput, UpdateMealInput } from '@/types/meal'
 import { MEAL_TYPE_LABELS } from '@/types/meal'
+import { linkMealToExpense, unlinkMealFromExpense } from '@/services/mealExpenseLinkService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -49,8 +52,14 @@ export function MealForm({
   const { currentTrip } = useCurrentTrip()
   const { createMeal, updateMeal } = useMealContext()
   const participantContext = useParticipantContext()
+  const { getFoodExpenses, expenses } = useExpenseContext()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Find linked expense if editing a restaurant meal
+  const linkedExpense = meal?.is_restaurant
+    ? expenses.find(e => e.meal_id === meal.id)
+    : null
 
   const [formData, setFormData] = useState({
     meal_date: meal?.meal_date || initialDate || '',
@@ -58,6 +67,9 @@ export function MealForm({
     title: meal?.title || '',
     description: meal?.description || '',
     responsible_participant_id: meal?.responsible_participant_id || 'none',
+    is_restaurant: meal?.is_restaurant || false,
+    everyone_at_home: meal?.everyone_at_home || false,
+    linked_expense_id: linkedExpense?.id || 'none',
   })
 
   // Defensive checks for context availability
@@ -91,17 +103,31 @@ export function MealForm({
     setSubmitting(true)
 
     try {
+      // Set responsible_participant_id to null if restaurant or everyone_at_home is true
+      const responsibleId = formData.is_restaurant || formData.everyone_at_home
+        ? undefined
+        : (formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined)
+
       if (meal) {
         const updateData: UpdateMealInput = {
           meal_date: formData.meal_date,
           meal_type: formData.meal_type,
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
-          responsible_participant_id: formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined,
+          responsible_participant_id: responsibleId,
+          is_restaurant: formData.is_restaurant,
+          everyone_at_home: formData.everyone_at_home,
         }
 
         const result = await updateMeal(meal.id, updateData)
         if (result) {
+          // Handle expense linking for restaurant meals
+          if (formData.is_restaurant && formData.linked_expense_id !== 'none') {
+            await linkMealToExpense(meal.id, formData.linked_expense_id)
+          } else if (!formData.is_restaurant) {
+            // Unlink if no longer a restaurant meal
+            await unlinkMealFromExpense(meal.id)
+          }
           onSuccess()
         } else {
           setError('Failed to update meal')
@@ -113,11 +139,17 @@ export function MealForm({
           meal_type: formData.meal_type,
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
-          responsible_participant_id: formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined,
+          responsible_participant_id: responsibleId,
+          is_restaurant: formData.is_restaurant,
+          everyone_at_home: formData.everyone_at_home,
         }
 
         const result = await createMeal(createData)
         if (result) {
+          // Handle expense linking for restaurant meals
+          if (formData.is_restaurant && formData.linked_expense_id !== 'none') {
+            await linkMealToExpense(result.id, formData.linked_expense_id)
+          }
           onSuccess()
         } else {
           setError('Failed to create meal')
@@ -131,6 +163,7 @@ export function MealForm({
   }
 
   const MealIcon = mealTypeIcons[formData.meal_type]
+  const foodExpenses = getFoodExpenses()
 
   return (
     <motion.form
@@ -236,7 +269,7 @@ export function MealForm({
         <Select
           value={formData.responsible_participant_id}
           onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
-          disabled={submitting}
+          disabled={submitting || formData.is_restaurant || formData.everyone_at_home}
         >
           <SelectTrigger id="responsible">
             <SelectValue placeholder="-- None --" />
@@ -250,6 +283,93 @@ export function MealForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-4 border-t border-border pt-4">
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="is_restaurant"
+            checked={formData.is_restaurant}
+            onCheckedChange={(checked) => {
+              setFormData({
+                ...formData,
+                is_restaurant: checked as boolean,
+                everyone_at_home: checked ? false : formData.everyone_at_home,
+              })
+            }}
+            disabled={submitting}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <label
+              htmlFor="is_restaurant"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+            >
+              <Utensils size={16} className="text-amber-600" />
+              Restaurant Meal
+            </label>
+            <p className="text-sm text-muted-foreground">
+              Mark this meal as eaten at a restaurant
+            </p>
+          </div>
+        </div>
+
+        {formData.is_restaurant && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-2 pl-7"
+          >
+            <Label htmlFor="linked_expense">Link to Expense (Optional)</Label>
+            <Select
+              value={formData.linked_expense_id}
+              onValueChange={(value) => setFormData({ ...formData, linked_expense_id: value })}
+              disabled={submitting}
+            >
+              <SelectTrigger id="linked_expense">
+                <SelectValue placeholder="-- None --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">-- None --</SelectItem>
+                {foodExpenses.map((expense) => (
+                  <SelectItem key={expense.id} value={expense.id}>
+                    {expense.description} - {expense.currency} {expense.amount.toFixed(2)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Link this meal to an existing Food expense
+            </p>
+          </motion.div>
+        )}
+
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="everyone_at_home"
+            checked={formData.everyone_at_home}
+            onCheckedChange={(checked) => {
+              setFormData({
+                ...formData,
+                everyone_at_home: checked as boolean,
+                is_restaurant: checked ? false : formData.is_restaurant,
+              })
+            }}
+            disabled={submitting}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <label
+              htmlFor="everyone_at_home"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+            >
+              <Home size={16} className="text-sky-600" />
+              Everyone At Home
+            </label>
+            <p className="text-sm text-muted-foreground">
+              Participants eat separately at their own homes (e.g., first breakfast, last dinner)
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">

@@ -60,6 +60,7 @@ export interface Expense {
   category: ExpenseCategory;
   expense_date: string; // ISO date string
   comment?: string | null;
+  meal_id?: string | null; // Optional link to restaurant meal
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +75,7 @@ export interface CreateExpenseInput {
   category: ExpenseCategory;
   expense_date?: string; // Optional, defaults to today
   comment?: string;
+  meal_id?: string; // Optional link to restaurant meal
 }
 
 export interface UpdateExpenseInput {
@@ -85,4 +87,5 @@ export interface UpdateExpenseInput {
   category?: ExpenseCategory;
   expense_date?: string;
   comment?: string;
+  meal_id?: string; // Optional link to restaurant meal
 }
