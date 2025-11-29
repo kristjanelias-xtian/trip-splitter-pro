@@ -7,7 +7,8 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import { supabase } from '@/lib/supabase'
 import type { Meal, MealType, CreateMealInput, UpdateMealInput } from '@/types/meal'
-import type { ShoppingItem } from '@/types/shopping'
+import type { ShoppingItem, ShoppingCategory } from '@/types/shopping'
+import { CATEGORY_LABELS } from '@/types/shopping'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { fadeInUp } from '@/lib/animations'
+
+interface IngredientInput {
+  name: string
+  quantity?: string
+  category?: ShoppingCategory
+}
 
 const mealTypeIcons = {
   breakfast: Sun,
@@ -61,7 +68,7 @@ export function MealForm({
     title: meal?.title || '',
     description: meal?.description || '',
     responsible_participant_id: meal?.responsible_participant_id || 'none',
-    ingredients: [''] as string[],
+    ingredients: [{ name: '', quantity: '', category: undefined }] as IngredientInput[],
   })
 
   // Load existing ingredients when editing a meal
@@ -93,7 +100,11 @@ export function MealForm({
             setExistingIngredients(items as ShoppingItem[])
             setFormData(prev => ({
               ...prev,
-              ingredients: items.map(item => item.name)
+              ingredients: items.map(item => ({
+                name: item.name,
+                quantity: item.quantity || '',
+                category: item.category as ShoppingCategory
+              }))
             }))
           }
         }
@@ -161,19 +172,23 @@ export function MealForm({
         const result = await updateMeal(meal.id, updateData)
         if (result) {
           // Handle ingredient changes
-          const newIngredientNames = formData.ingredients.filter(ing => ing.trim())
+          const newIngredients = formData.ingredients.filter(ing => ing.name.trim())
           const existingNames = existingIngredients.map(item => item.name)
 
           // Find ingredients to add (new ones not in existing)
-          const toAdd = newIngredientNames.filter(name => !existingNames.includes(name))
+          const toAdd = newIngredients.filter(ing => !existingNames.includes(ing.name))
 
           // Find ingredients to remove (existing ones not in new list)
-          const toRemove = existingIngredients.filter(item => !newIngredientNames.includes(item.name))
+          const toRemove = existingIngredients.filter(item =>
+            !newIngredients.some(ing => ing.name === item.name)
+          )
 
           // Add new ingredients
-          for (const ingredientName of toAdd) {
+          for (const ingredient of toAdd) {
             const shoppingItem = await createShoppingItem({
-              name: ingredientName.trim(),
+              name: ingredient.name.trim(),
+              quantity: ingredient.quantity?.trim() || undefined,
+              category: ingredient.category || 'other',
               trip_id: currentTrip.id,
             })
 
@@ -211,10 +226,12 @@ export function MealForm({
         const result = await createMeal(createData)
         if (result) {
           // Create shopping items for each ingredient
-          const nonEmptyIngredients = formData.ingredients.filter(ing => ing.trim())
-          for (const ingredientName of nonEmptyIngredients) {
+          const nonEmptyIngredients = formData.ingredients.filter(ing => ing.name.trim())
+          for (const ingredient of nonEmptyIngredients) {
             const shoppingItem = await createShoppingItem({
-              name: ingredientName.trim(),
+              name: ingredient.name.trim(),
+              quantity: ingredient.quantity?.trim() || undefined,
+              category: ingredient.category || 'other',
               trip_id: currentTrip.id,
             })
 
@@ -240,9 +257,44 @@ export function MealForm({
 
   const MealIcon = mealTypeIcons[mealType]
 
+  // Auto-detect category based on ingredient name
+  const detectCategory = (name: string): ShoppingCategory => {
+    const lowerName = name.toLowerCase()
+
+    // Produce
+    if (/tomato|lettuce|salat|kapsas|kurk|paprika|sibul|porgand|kartul|cucumber|pepper|onion|carrot|potato|apple|banana|orange/i.test(lowerName)) {
+      return 'produce'
+    }
+    // Meat & Fish
+    if (/meat|chicken|beef|pork|fish|lõhe|kana|liha|salmon|seafood/i.test(lowerName)) {
+      return 'meat'
+    }
+    // Dairy
+    if (/milk|cheese|yogurt|piim|juust|cream|butter|või/i.test(lowerName)) {
+      return 'dairy'
+    }
+    // Bakery
+    if (/bread|sai|baguette|croissant|roll|bun/i.test(lowerName)) {
+      return 'bakery'
+    }
+    // Pantry
+    if (/pasta|rice|riis|oil|õli|flour|jahu|sugar|suhkur|salt|sool|spice|vürts/i.test(lowerName)) {
+      return 'pantry'
+    }
+    // Beverages
+    if (/water|vesi|juice|mahl|soda|wine|vein|beer|õlu|coffee|kohv|tea|tee/i.test(lowerName)) {
+      return 'beverages'
+    }
+
+    return 'other'
+  }
+
   // Ingredient management
   const addIngredient = () => {
-    setFormData({ ...formData, ingredients: [...formData.ingredients, ''] })
+    setFormData({
+      ...formData,
+      ingredients: [...formData.ingredients, { name: '', quantity: '', category: undefined }]
+    })
   }
 
   const removeIngredient = (index: number) => {
@@ -252,9 +304,21 @@ export function MealForm({
     })
   }
 
-  const updateIngredient = (index: number, value: string) => {
+  const updateIngredientField = (index: number, field: keyof IngredientInput, value: string) => {
     const newIngredients = [...formData.ingredients]
-    newIngredients[index] = value
+
+    if (field === 'name') {
+      newIngredients[index].name = value
+      // Auto-detect category when name changes, but only if category not manually set
+      if (!newIngredients[index].category && value.trim()) {
+        newIngredients[index].category = detectCategory(value)
+      }
+    } else if (field === 'quantity') {
+      newIngredients[index].quantity = value
+    } else if (field === 'category') {
+      newIngredients[index].category = value as ShoppingCategory
+    }
+
     setFormData({ ...formData, ingredients: newIngredients })
   }
 
@@ -351,26 +415,54 @@ export function MealForm({
         )}
 
         {!loadingIngredients && formData.ingredients.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {formData.ingredients.map((ingredient, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  type="text"
-                  value={ingredient}
-                  onChange={(e) => updateIngredient(index, e.target.value)}
-                  placeholder="e.g., Pasta, Bacon, Eggs"
-                  disabled={submitting}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  onClick={() => removeIngredient(index)}
-                  variant="outline"
-                  size="icon"
-                  disabled={submitting}
-                >
-                  <X size={14} />
-                </Button>
+              <div key={index} className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={ingredient.name}
+                    onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
+                    placeholder="e.g., Salmon, Potatoes"
+                    disabled={submitting}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    variant="outline"
+                    size="icon"
+                    disabled={submitting}
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pl-2">
+                  <Input
+                    type="text"
+                    value={ingredient.quantity || ''}
+                    onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
+                    placeholder="Quantity (e.g., 2 kg)"
+                    disabled={submitting}
+                    className="text-sm"
+                  />
+                  <Select
+                    value={ingredient.category || 'other'}
+                    onValueChange={(value) => updateIngredientField(index, 'category', value)}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             ))}
           </div>
