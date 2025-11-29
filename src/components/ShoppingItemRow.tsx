@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import type { ShoppingItemWithMeals } from '@/types/shopping'
 import { CATEGORY_LABELS } from '@/types/shopping'
@@ -105,16 +105,7 @@ export function ShoppingItemRow({ item }: ShoppingItemRowProps) {
 
         {/* Actions */}
         <td className="p-3" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowEditForm(true)}
-              className="h-8 w-8 p-0"
-            >
-              <Edit size={14} />
-              <span className="sr-only">Edit</span>
-            </Button>
+          <div className="flex items-center justify-end">
             <Button
               variant="ghost"
               size="sm"
