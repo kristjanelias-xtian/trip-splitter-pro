@@ -74,8 +74,8 @@ export function getGradientPattern(date: string): GradientPattern {
 
   const gradient = GRADIENTS[gradientIndex]
 
-  // Generate 3-5 icons deterministically
-  const iconCount = 3 + Math.floor(seededRandom(date, 0) * 3)
+  // Generate 2-3 icons deterministically (fewer for mobile friendliness)
+  const iconCount = 2 + Math.floor(seededRandom(date, 0) * 2)
   const icons = []
 
   for (let i = 0; i < iconCount; i++) {
@@ -84,11 +84,11 @@ export function getGradientPattern(date: string): GradientPattern {
 
     icons.push({
       Icon,
-      x: 10 + seededRandom(date, i * 10) * 80, // 10-90%
-      y: 10 + seededRandom(date, i * 11) * 80, // 10-90%
-      size: 80 + seededRandom(date, i * 12) * 40, // 80-120px
+      x: 15 + seededRandom(date, i * 10) * 70, // 15-85% (more padding from edges)
+      y: 15 + seededRandom(date, i * 11) * 70, // 15-85% (more padding from edges)
+      size: 60 + seededRandom(date, i * 12) * 40, // 60-100px (smaller for mobile)
       rotation: -15 + seededRandom(date, i * 13) * 30, // -15 to +15 degrees
-      opacity: 0.1 + seededRandom(date, i * 14) * 0.1, // 0.1-0.2
+      opacity: 0.08 + seededRandom(date, i * 14) * 0.08, // 0.08-0.16 (more subtle)
     })
   }
 

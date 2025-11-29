@@ -13,7 +13,6 @@ import { CATEGORY_LABELS, CATEGORY_ORDER } from '@/types/shopping'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -42,7 +41,6 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
     name: item?.name || '',
     quantity: item?.quantity || '',
     category: item?.category || 'other' as ShoppingCategory,
-    notes: item?.notes || '',
     meal_ids: initialMealIds || [] as string[],
   })
 
@@ -65,7 +63,6 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
           name: formData.name.trim(),
           quantity: formData.quantity.trim() || undefined,
           category: formData.category,
-          notes: formData.notes.trim() || undefined,
         }
 
         const result = await updateShoppingItem(item.id, updateData)
@@ -80,7 +77,6 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
           name: formData.name.trim(),
           quantity: formData.quantity.trim() || undefined,
           category: formData.category,
-          notes: formData.notes.trim() || undefined,
           meal_ids: formData.meal_ids.length > 0 ? formData.meal_ids : undefined,
         }
 
@@ -125,28 +121,30 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
         </motion.div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Item Name</Label>
-        <Input
-          type="text"
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="e.g., Tomatoes"
-          required
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
         <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity (Optional)</Label>
+          <Label htmlFor="name">Item Name</Label>
+          <Input
+            type="text"
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="e.g., Tomatoes"
+            className="text-base"
+            required
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="quantity">Quantity</Label>
           <Input
             type="text"
             id="quantity"
             value={formData.quantity}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-            placeholder="e.g., 2 kg, 3 bottles"
+            placeholder="e.g., 2 kg"
+            className="text-base"
             disabled={submitting}
           />
         </div>
@@ -158,7 +156,7 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
             onValueChange={(value) => setFormData({ ...formData, category: value as ShoppingCategory })}
             disabled={submitting}
           >
-            <SelectTrigger id="category">
+            <SelectTrigger id="category" className="text-base">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -172,44 +170,41 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes (Optional)</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="Brand preferences, special instructions..."
-          rows={2}
-          disabled={submitting}
-        />
-      </div>
+      {!item && (() => {
+        // Filter out restaurant and at-home meals
+        const linkableMeals = meals.filter(
+          meal => !meal.is_restaurant && !meal.everyone_at_home
+        );
 
-      {!item && meals.length > 0 && (
-        <div className="space-y-2">
-          <Label>Link to Meals (Optional)</Label>
-          <div className="max-h-40 overflow-y-auto rounded-lg border border-input p-3 space-y-2">
-            {meals.map((meal) => (
-              <div key={meal.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`meal-${meal.id}`}
-                  checked={formData.meal_ids.includes(meal.id)}
-                  onCheckedChange={(checked) => handleMealToggle(meal.id, checked as boolean)}
-                  disabled={submitting}
-                />
-                <label
-                  htmlFor={`meal-${meal.id}`}
-                  className="text-sm text-foreground cursor-pointer flex-1"
-                >
-                  {meal.title} ({new Date(meal.meal_date).toLocaleDateString()})
-                </label>
-              </div>
-            ))}
+        if (linkableMeals.length === 0) return null;
+
+        return (
+          <div className="space-y-2">
+            <Label>Link to Meals (Optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Restaurant and at-home meals are excluded
+            </p>
+            <div className="max-h-40 overflow-y-auto rounded-lg border border-input p-3 space-y-2">
+              {linkableMeals.map((meal) => (
+                <div key={meal.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`meal-${meal.id}`}
+                    checked={formData.meal_ids.includes(meal.id)}
+                    onCheckedChange={(checked) => handleMealToggle(meal.id, checked as boolean)}
+                    disabled={submitting}
+                  />
+                  <label
+                    htmlFor={`meal-${meal.id}`}
+                    className="text-sm text-foreground cursor-pointer flex-1"
+                  >
+                    {meal.title} ({new Date(meal.meal_date).toLocaleDateString()})
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Select which meals this ingredient is for
-          </p>
-        </div>
-      )}
+        );
+      })()}
 
       {item && (
         <div className="bg-accent/50 border border-accent rounded-lg p-3">
