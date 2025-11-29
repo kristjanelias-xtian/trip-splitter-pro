@@ -443,6 +443,7 @@ export function MealForm({
           placeholder="Notes, recipe, dietary considerations..."
           rows={3}
           disabled={submitting}
+          required={false}
         />
       </div>
 
