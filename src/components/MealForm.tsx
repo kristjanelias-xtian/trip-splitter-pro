@@ -49,7 +49,7 @@ export function MealForm({
   onCancel,
 }: MealFormProps) {
   const { currentTrip } = useCurrentTrip()
-  const { createMeal, updateMeal } = useMealContext()
+  const { createMeal, updateMeal, refreshMeals } = useMealContext()
   const participantContext = useParticipantContext()
   const { createShoppingItem, linkShoppingItemToMeal, unlinkShoppingItemFromMeal } = useShoppingContext()
   const [submitting, setSubmitting] = useState(false)
@@ -189,6 +189,8 @@ export function MealForm({
             // For now, we'll just unlink it
           }
 
+          // Refresh meals to update ingredient counts on meal cards
+          await refreshMeals()
           onSuccess()
         } else {
           setError('Failed to update meal')
@@ -221,6 +223,8 @@ export function MealForm({
             }
           }
 
+          // Refresh meals to update ingredient counts on meal cards
+          await refreshMeals()
           onSuccess()
         } else {
           setError('Failed to create meal')
