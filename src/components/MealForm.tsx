@@ -90,7 +90,9 @@ export function MealForm({
     e.preventDefault()
     setError(null)
 
-    if (!formData.title.trim()) {
+    // Title is optional for restaurant and at-home meals
+    const requiresTitle = !formData.is_restaurant && !formData.everyone_at_home
+    if (requiresTitle && !formData.title.trim()) {
       setError('Please enter a meal title')
       return
     }
@@ -108,11 +110,15 @@ export function MealForm({
         ? undefined
         : (formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined)
 
+      // Auto-generate title if not provided for special meal types
+      const mealTitle = formData.title.trim() ||
+        (formData.is_restaurant ? 'Restaurant' : formData.everyone_at_home ? 'At Home' : '')
+
       if (meal) {
         const updateData: UpdateMealInput = {
           meal_date: formData.meal_date,
           meal_type: formData.meal_type,
-          title: formData.title.trim(),
+          title: mealTitle,
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
           is_restaurant: formData.is_restaurant,
@@ -137,7 +143,7 @@ export function MealForm({
           trip_id: currentTrip.id,
           meal_date: formData.meal_date,
           meal_type: formData.meal_type,
-          title: formData.title.trim(),
+          title: mealTitle,
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
           is_restaurant: formData.is_restaurant,
@@ -184,15 +190,25 @@ export function MealForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="title">Meal Title</Label>
+        <Label htmlFor="title">
+          Meal Title {(formData.is_restaurant || formData.everyone_at_home) && (
+            <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span>
+          )}
+        </Label>
         <div className="relative">
           <Input
             type="text"
             id="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="e.g., Pasta Carbonara"
-            required
+            placeholder={
+              formData.is_restaurant
+                ? "Optional - defaults to 'Restaurant'"
+                : formData.everyone_at_home
+                ? "Optional - defaults to 'At Home'"
+                : "e.g., Pasta Carbonara"
+            }
+            required={!formData.is_restaurant && !formData.everyone_at_home}
             disabled={submitting}
             className="pl-10"
           />
