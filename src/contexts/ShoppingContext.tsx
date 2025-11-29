@@ -313,20 +313,22 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           ...item,
           meal_ids: [],
           meal_titles: [],
+          meal_dates: [],
         }))
       }
 
       // Build lookup map
-      const itemMealsMap = new Map<string, { ids: string[], titles: string[] }>()
+      const itemMealsMap = new Map<string, { ids: string[], titles: string[], dates: string[] }>()
 
       links?.forEach((link: any) => {
         if (!itemMealsMap.has(link.shopping_item_id)) {
-          itemMealsMap.set(link.shopping_item_id, { ids: [], titles: [] })
+          itemMealsMap.set(link.shopping_item_id, { ids: [], titles: [], dates: [] })
         }
         const itemData = itemMealsMap.get(link.shopping_item_id)!
         itemData.ids.push(link.meal_id)
         if (link.meals) {
           itemData.titles.push(link.meals.title)
+          itemData.dates.push(link.meals.meal_date)
         }
       })
 
@@ -337,6 +339,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           ...item,
           meal_ids: mealData?.ids || [],
           meal_titles: mealData?.titles || [],
+          meal_dates: mealData?.dates || [],
         }
       })
     } catch (error) {
@@ -345,6 +348,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         ...item,
         meal_ids: [],
         meal_titles: [],
+        meal_dates: [],
       }))
     }
   }

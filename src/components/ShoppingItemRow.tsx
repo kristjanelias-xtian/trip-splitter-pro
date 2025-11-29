@@ -78,6 +78,11 @@ export function ShoppingItemRow({ item }: ShoppingItemRowProps) {
                 {item.meal_titles.slice(0, 2).map((title, idx) => (
                   <Badge key={idx} variant="secondary" className="text-xs">
                     {title}
+                    {item.meal_dates[idx] && (
+                      <span className="ml-1 opacity-70">
+                        ({new Date(item.meal_dates[idx]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </span>
+                    )}
                   </Badge>
                 ))}
                 {item.meal_titles.length > 2 && (

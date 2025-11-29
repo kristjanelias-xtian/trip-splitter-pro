@@ -48,6 +48,7 @@ export interface MealShoppingLink {
 export interface ShoppingItemWithMeals extends ShoppingItem {
   meal_ids: string[] // Array of linked meal IDs
   meal_titles: string[] // Array of meal titles for display
+  meal_dates: string[] // Array of meal dates for display
 }
 
 export const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
