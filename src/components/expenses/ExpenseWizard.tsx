@@ -275,7 +275,13 @@ function MobileWizard({
           </div>
         )}
 
-        <div ref={contentRef} className="flex-1 overflow-y-auto -mx-6 px-6">
+        <div
+          ref={contentRef}
+          className="flex-1 overflow-y-auto -mx-6 px-6"
+          style={{
+            paddingBottom: keyboard.isVisible ? `${keyboard.keyboardHeight + 80}px` : '20px'
+          }}
+        >
           {currentStep === 1 && (
             <WizardStep1
               description={description}
@@ -336,14 +342,7 @@ function MobileWizard({
           )}
         </div>
 
-        <div
-          className="pt-4 border-t border-border"
-          style={{
-            flexShrink: 0,
-            paddingBottom: keyboard.isVisible ? `${keyboard.keyboardHeight + 20}px` : '0px',
-            transition: 'padding-bottom 0.2s ease-out'
-          }}
-        >
+        <div className="pt-4 border-t border-border" style={{ flexShrink: 0 }}>
           <WizardNavigation
             currentStep={currentStep}
             totalSteps={totalSteps}
