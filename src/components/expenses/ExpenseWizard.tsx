@@ -87,10 +87,6 @@ function MobileWizard({
     offset: 20,
   })
 
-  const sheetHeight = keyboard.isVisible
-    ? `${keyboard.availableHeight}px`
-    : '90vh'
-
   const [currentStep, setCurrentStep] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -263,8 +259,7 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-6 gap-0"
-        style={{ height: sheetHeight }}
+        className="h-[90vh] flex flex-col p-6 gap-0"
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside during submission
           if (isSubmitting) {
