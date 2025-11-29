@@ -6,11 +6,11 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
-import { ExpenseForm } from '@/components/ExpenseForm'
+import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { CreateExpenseInput, ExpenseCategory, Expense } from '@/types/expense'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -139,35 +139,29 @@ export function ExpensesPage() {
           </div>
         )}
 
-        {/* Add/Edit Expense Form */}
-        {(showForm || editingExpense) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ExpenseForm
-                onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
-                onCancel={() => {
-                  setShowForm(false)
-                  setEditingExpense(null)
-                }}
-                initialValues={editingExpense ? {
-                  trip_id: editingExpense.trip_id,
-                  description: editingExpense.description,
-                  amount: editingExpense.amount,
-                  currency: editingExpense.currency,
-                  paid_by: editingExpense.paid_by,
-                  distribution: editingExpense.distribution,
-                  category: editingExpense.category,
-                  expense_date: editingExpense.expense_date,
-                  comment: editingExpense.comment ?? undefined,
-                } : undefined}
-                submitLabel={editingExpense ? 'Update Expense' : 'Add Expense'}
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* Add/Edit Expense Wizard */}
+        <ExpenseWizard
+          open={showForm || !!editingExpense}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowForm(false)
+              setEditingExpense(null)
+            }
+          }}
+          onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
+          initialValues={editingExpense ? {
+            trip_id: editingExpense.trip_id,
+            description: editingExpense.description,
+            amount: editingExpense.amount,
+            currency: editingExpense.currency,
+            paid_by: editingExpense.paid_by,
+            distribution: editingExpense.distribution,
+            category: editingExpense.category,
+            expense_date: editingExpense.expense_date,
+            comment: editingExpense.comment ?? undefined,
+          } : undefined}
+          mode={editingExpense ? 'edit' : 'create'}
+        />
 
         {/* Filters */}
         <Card>
