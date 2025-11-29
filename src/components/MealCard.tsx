@@ -22,7 +22,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 
 interface MealCardProps {
@@ -30,13 +29,11 @@ interface MealCardProps {
 }
 
 export function MealCard({ meal }: MealCardProps) {
-  const { deleteMeal, updateMeal } = useMealContext()
+  const { deleteMeal } = useMealContext()
   const { participants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showMarkRestaurant, setShowMarkRestaurant] = useState(false)
-  const [showMarkAtHome, setShowMarkAtHome] = useState(false)
 
   const responsiblePerson = meal.responsible_participant_id
     ? participants.find((p) => p.id === meal.responsible_participant_id)
@@ -63,39 +60,6 @@ export function MealCard({ meal }: MealCardProps) {
       setShowDeleteConfirm(false)
     }
     // Note: Error handling should be done via toast in the parent component
-  }
-
-  const handleMarkRestaurant = async () => {
-    const success = await updateMeal(meal.id, {
-      meal_date: meal.meal_date,
-      meal_type: meal.meal_type,
-      title: meal.title,
-      description: meal.description || undefined,
-      is_restaurant: true,
-      everyone_at_home: false,
-      responsible_participant_id: undefined, // Remove responsible person for restaurant meals
-    })
-
-    if (success) {
-      // TODO: Link to expense if selected
-      setShowMarkRestaurant(false)
-    }
-  }
-
-  const handleMarkAtHome = async () => {
-    const success = await updateMeal(meal.id, {
-      meal_date: meal.meal_date,
-      meal_type: meal.meal_type,
-      title: meal.title,
-      description: meal.description || undefined,
-      is_restaurant: false,
-      everyone_at_home: true,
-      responsible_participant_id: undefined, // Remove responsible person for at-home meals
-    })
-
-    if (success) {
-      setShowMarkAtHome(false)
-    }
   }
 
   const ingredientProgress =
@@ -161,19 +125,6 @@ export function MealCard({ meal }: MealCardProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {!meal.is_restaurant && !meal.everyone_at_home && (
-                    <>
-                      <DropdownMenuItem onClick={() => setShowMarkRestaurant(true)}>
-                        <Utensils size={14} className="mr-2" />
-                        Mark as Restaurant
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowMarkAtHome(true)}>
-                        <Home size={14} className="mr-2" />
-                        Mark as At-Home
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
                   <DropdownMenuItem
                     onClick={() => setShowDeleteConfirm(true)}
                     className="text-destructive focus:text-destructive"
@@ -282,59 +233,6 @@ export function MealCard({ meal }: MealCardProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Mark as Restaurant Dialog */}
-      <Dialog open={showMarkRestaurant} onOpenChange={setShowMarkRestaurant}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Mark as Restaurant Meal?</DialogTitle>
-            <DialogDescription>
-              This will mark "{meal.title}" as a restaurant meal and remove the assigned cook.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              onClick={() => setShowMarkRestaurant(false)}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => handleMarkRestaurant()}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              <Utensils size={14} className="mr-2" />
-              Mark as Restaurant
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Mark as At-Home Dialog */}
-      <Dialog open={showMarkAtHome} onOpenChange={setShowMarkAtHome}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Mark as At-Home Meal?</DialogTitle>
-            <DialogDescription>
-              This will mark "{meal.title}" as an at-home meal where everyone eats separately. The assigned cook will be removed.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              onClick={() => setShowMarkAtHome(false)}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleMarkAtHome}
-              className="bg-sky-600 hover:bg-sky-700"
-            >
-              <Home size={14} className="mr-2" />
-              Mark as At-Home
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
