@@ -43,12 +43,13 @@ export function ShoppingItemRow({ item }: ShoppingItemRowProps) {
   return (
     <>
       <tr
-        className={`border-b transition-colors hover:bg-muted/50 ${
+        className={`border-b transition-colors hover:bg-muted/50 cursor-pointer ${
           item.is_completed ? 'bg-positive/5' : ''
         }`}
+        onClick={() => setShowEditForm(true)}
       >
         {/* Checkbox */}
-        <td className="p-3">
+        <td className="p-3" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={item.is_completed}
             onCheckedChange={handleToggle}
@@ -103,7 +104,7 @@ export function ShoppingItemRow({ item }: ShoppingItemRowProps) {
         </td>
 
         {/* Actions */}
-        <td className="p-3">
+        <td className="p-3" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-end gap-1">
             <Button
               variant="ghost"
