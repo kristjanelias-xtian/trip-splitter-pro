@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
 import { DateContext, formatDayHeader } from '@/lib/dateUtils'
-import { getMealPhoto, MealPhoto } from '@/services/mealImageService'
+import { getGradientPattern } from '@/services/gradientService'
 import { MealWithIngredients } from '@/types/meal'
 import { Badge } from '@/components/ui/badge'
 import { MealCompletionRing } from '@/components/MealCompletionRing'
@@ -13,50 +12,14 @@ export interface DayBannerProps {
   meals: MealWithIngredients[]
 }
 
-const DEBUG = false // Set to true to see debug badges and logs
-
 export function DayBanner({
   date,
   dayNumber,
   context,
   completionPercentage,
-  meals,
 }: DayBannerProps) {
-  const [photo, setPhoto] = useState<MealPhoto | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    let mounted = true
-
-    async function loadPhoto() {
-      setIsLoading(true)
-      try {
-        if (DEBUG) console.log(`[DayBanner] Loading photo for ${date}`)
-        const mealPhoto = await getMealPhoto(date, meals)
-        if (mounted) {
-          if (DEBUG) {
-            console.log(`[DayBanner] Photo loaded for ${date}:`, {
-              isFallback: mealPhoto.fallback,
-              photographer: mealPhoto.photographer || 'N/A'
-            })
-          }
-          setPhoto(mealPhoto)
-        }
-      } catch (error) {
-        console.error('[DayBanner] Error loading meal photo:', error)
-      } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    loadPhoto()
-
-    return () => {
-      mounted = false
-    }
-  }, [date, meals])
+  // Get deterministic gradient pattern for this date
+  const pattern = getGradientPattern(date)
 
   // Context badge styling
   const contextStyles = {
@@ -66,52 +29,42 @@ export function DayBanner({
     future: 'bg-card border-border text-foreground',
   }
 
-  // Background style (photo or gradient)
-  const backgroundStyle = photo?.fallback
-    ? { background: photo.url }
-    : photo
-    ? { backgroundImage: `url(${photo.thumbnailUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }
-
   return (
     <div className="relative w-full h-[120px] md:h-[160px] lg:h-[200px] rounded-lg overflow-hidden">
-      {/* Background Image/Gradient */}
+      {/* Gradient Background */}
       <div
-        className="absolute inset-0 transition-opacity duration-300"
-        style={{
-          ...backgroundStyle,
-          opacity: isLoading ? 0 : 1,
-        }}
+        className="absolute inset-0"
+        style={{ background: pattern.gradient }}
       />
 
-      {/* Loading skeleton */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-muted/50 animate-pulse" />
-      )}
+      {/* Food Icon Pattern Overlay */}
+      {pattern.icons.map((icon, i) => {
+        const Icon = icon.Icon
+        return (
+          <Icon
+            key={i}
+            size={icon.size}
+            className="absolute text-white pointer-events-none"
+            style={{
+              left: `${icon.x}%`,
+              top: `${icon.y}%`,
+              transform: `translate(-50%, -50%) rotate(${icon.rotation}deg)`,
+              opacity: icon.opacity,
+            }}
+          />
+        )
+      })}
 
       {/* Gradient Overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
       {/* Content */}
       <div className="relative h-full p-4 md:p-6 flex flex-col justify-between">
-        {/* Top Row: Day Badge + Context Badge + Debug Badge */}
+        {/* Top Row: Day Badge + Context Badge */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            {/* Day Number Ribbon */}
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-md shadow-md font-bold text-sm md:text-base">
-              Day {dayNumber}
-            </div>
-
-            {/* Debug Badge - shows if using fallback gradient (only in debug mode) */}
-            {DEBUG && photo?.fallback && (
-              <Badge
-                variant="outline"
-                className="bg-yellow-500/20 border-yellow-500/50 text-yellow-100 backdrop-blur-sm text-xs"
-                title="Using fallback gradient - Unsplash photo unavailable"
-              >
-                🎨 Gradient
-              </Badge>
-            )}
+          {/* Day Number Ribbon */}
+          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-md shadow-md font-bold text-sm md:text-base">
+            Day {dayNumber}
           </div>
 
           {/* Context Badge */}
@@ -130,20 +83,6 @@ export function DayBanner({
             <h3 className="text-white font-bold text-lg md:text-xl lg:text-2xl drop-shadow-md">
               {formatDayHeader(date)}
             </h3>
-            {photo && !photo.fallback && photo.photographer && (
-              <p className="text-white/70 text-xs mt-1">
-                Photo by{' '}
-                <a
-                  href={photo.photographerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-white"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {photo.photographer}
-                </a>
-              </p>
-            )}
           </div>
 
           {/* Completion Ring */}
