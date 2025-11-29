@@ -17,6 +17,15 @@ const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY
 const CACHE_PREFIX = 'meal-photo-'
 const CACHE_DURATION_DAYS = 30
 
+// Debug mode - set to true to see detailed logs
+const DEBUG = true
+
+function debugLog(message: string, ...args: any[]) {
+  if (DEBUG) {
+    console.log(`[MealImageService] ${message}`, ...args)
+  }
+}
+
 // Fallback gradients for when photos aren't available
 const FALLBACK_GRADIENTS = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -59,14 +68,19 @@ function isCacheValid(cached: CachedPhoto): boolean {
 function getFromCache(date: string): MealPhoto | null {
   try {
     const cached = localStorage.getItem(getCacheKey(date))
-    if (!cached) return null
+    if (!cached) {
+      debugLog(`No cache found for date: ${date}`)
+      return null
+    }
 
     const parsed: CachedPhoto = JSON.parse(cached)
     if (isCacheValid(parsed)) {
+      debugLog(`Cache hit for date: ${date}, fallback: ${parsed.photo.fallback}`)
       return parsed.photo
     }
 
     // Cache expired, remove it
+    debugLog(`Cache expired for date: ${date}`)
     localStorage.removeItem(getCacheKey(date))
     return null
   } catch (error) {
@@ -145,28 +159,54 @@ function buildSearchQuery(meals: MealWithIngredients[]): string {
  */
 async function fetchFromUnsplash(query: string): Promise<MealPhoto | null> {
   if (!UNSPLASH_ACCESS_KEY) {
-    console.warn('Unsplash API key not configured')
+    console.warn('[MealImageService] ❌ Unsplash API key not configured (VITE_UNSPLASH_ACCESS_KEY is missing)')
+    debugLog('Environment check:', {
+      hasKey: !!UNSPLASH_ACCESS_KEY,
+      keyPrefix: UNSPLASH_ACCESS_KEY ? `${UNSPLASH_ACCESS_KEY.substring(0, 8)}...` : 'undefined',
+      allEnvKeys: Object.keys(import.meta.env)
+    })
     return null
   }
 
+  debugLog('✓ API key found, fetching from Unsplash with query:', query)
+
   try {
-    const response = await fetch(
-      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&content_filter=high`,
-      {
-        headers: {
-          'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
-        }
+    const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&content_filter=high`
+    debugLog('Request URL:', url)
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
       }
-    )
+    })
+
+    debugLog('Response status:', response.status, response.statusText)
 
     if (!response.ok) {
       if (response.status === 403) {
-        console.warn('Unsplash API rate limit exceeded')
+        console.warn('[MealImageService] ❌ Unsplash API rate limit exceeded (403)')
+      } else if (response.status === 401) {
+        console.warn('[MealImageService] ❌ Unsplash API unauthorized (401) - check API key validity')
+      } else {
+        console.warn(`[MealImageService] ❌ Unsplash API error: ${response.status} ${response.statusText}`)
       }
+
+      // Try to get error details
+      try {
+        const errorData = await response.json()
+        debugLog('API error details:', errorData)
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+
       return null
     }
 
     const data = await response.json()
+    debugLog('✓ Successfully fetched photo:', {
+      photographer: data.user.name,
+      imageUrl: data.urls.small
+    })
 
     return {
       url: data.urls.regular,
@@ -176,7 +216,7 @@ async function fetchFromUnsplash(query: string): Promise<MealPhoto | null> {
       fallback: false
     }
   } catch (error) {
-    console.error('Error fetching from Unsplash:', error)
+    console.error('[MealImageService] ❌ Error fetching from Unsplash:', error)
     return null
   }
 }
@@ -191,25 +231,33 @@ export async function getMealPhoto(
   date: string,
   meals: MealWithIngredients[]
 ): Promise<MealPhoto> {
+  debugLog('==========================================')
+  debugLog(`Getting photo for date: ${date}`)
+  debugLog('Meals:', meals.map(m => m.title))
+
   // Check cache first
   const cached = getFromCache(date)
   if (cached) {
+    debugLog('✓ Returning cached photo (fallback:', cached.fallback + ')')
     return cached
   }
 
   // Build search query from meals
   const query = buildSearchQuery(meals)
+  debugLog('Search query built:', query)
 
   // Try to fetch from Unsplash
   const photo = await fetchFromUnsplash(query)
 
   if (photo) {
     // Save to cache and return
+    debugLog('✓ Photo fetched successfully, saving to cache')
     saveToCache(date, photo)
     return photo
   }
 
   // Fallback to gradient
+  debugLog('⚠️ No photo available, using fallback gradient')
   const fallbackPhoto = createFallbackPhoto(date)
   saveToCache(date, fallbackPhoto)
   return fallbackPhoto

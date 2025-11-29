@@ -29,12 +29,17 @@ export function DayBanner({
     async function loadPhoto() {
       setIsLoading(true)
       try {
+        console.log(`[DayBanner] Loading photo for ${date}`)
         const mealPhoto = await getMealPhoto(date, meals)
         if (mounted) {
+          console.log(`[DayBanner] Photo loaded for ${date}:`, {
+            isFallback: mealPhoto.fallback,
+            photographer: mealPhoto.photographer || 'N/A'
+          })
           setPhoto(mealPhoto)
         }
       } catch (error) {
-        console.error('Error loading meal photo:', error)
+        console.error('[DayBanner] Error loading meal photo:', error)
       } finally {
         if (mounted) {
           setIsLoading(false)
@@ -85,11 +90,24 @@ export function DayBanner({
 
       {/* Content */}
       <div className="relative h-full p-4 md:p-6 flex flex-col justify-between">
-        {/* Top Row: Day Badge + Context Badge */}
+        {/* Top Row: Day Badge + Context Badge + Debug Badge */}
         <div className="flex items-start justify-between">
-          {/* Day Number Ribbon */}
-          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-md shadow-md font-bold text-sm md:text-base">
-            Day {dayNumber}
+          <div className="flex items-center gap-2">
+            {/* Day Number Ribbon */}
+            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-md shadow-md font-bold text-sm md:text-base">
+              Day {dayNumber}
+            </div>
+
+            {/* Debug Badge - shows if using fallback gradient */}
+            {photo?.fallback && (
+              <Badge
+                variant="outline"
+                className="bg-yellow-500/20 border-yellow-500/50 text-yellow-100 backdrop-blur-sm text-xs"
+                title="Using fallback gradient - Unsplash photo unavailable"
+              >
+                🎨 Gradient
+              </Badge>
+            )}
           </div>
 
           {/* Context Badge */}
