@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, CloudSun, Moon, Plus, X } from 'lucide-react'
+import { Sun, CloudSun, Moon, Plus, X, Utensils, Home, Receipt } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { fadeInUp } from '@/lib/animations'
 
 interface IngredientInput {
@@ -27,6 +28,8 @@ interface IngredientInput {
   quantity?: string
   category?: ShoppingCategory
 }
+
+type MealFormType = 'regular' | 'restaurant' | 'at-home'
 
 const mealTypeIcons = {
   breakfast: Sun,
@@ -59,6 +62,21 @@ export function MealForm({
   const { createMeal, updateMeal, refreshMeals } = useMealContext()
   const participantContext = useParticipantContext()
   const { createShoppingItem, linkShoppingItemToMeal, unlinkShoppingItemFromMeal } = useShoppingContext()
+
+  // Helper function to convert meal form type to database flags
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const getMealFlags = (formType: MealFormType) => {
+    switch (formType) {
+      case 'restaurant':
+        return { is_restaurant: true, everyone_at_home: false }
+      case 'at-home':
+        return { is_restaurant: false, everyone_at_home: true }
+      case 'regular':
+      default:
+        return { is_restaurant: false, everyone_at_home: false }
+    }
+  }
+
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadingIngredients, setLoadingIngredients] = useState(false)
@@ -70,6 +88,29 @@ export function MealForm({
     responsible_participant_id: meal?.responsible_participant_id || 'none',
     ingredients: [{ name: '', quantity: '', category: undefined }] as IngredientInput[],
   })
+
+  // Meal form type state - initialized from meal flags or defaults to 'regular'
+  const [mealFormType, setMealFormType] = useState<MealFormType>(() => {
+    if (meal?.is_restaurant) return 'restaurant'
+    if (meal?.everyone_at_home) return 'at-home'
+    return 'regular'
+  })
+
+  // Auto-clear fields when switching to non-regular meal types
+  useEffect(() => {
+    if (mealFormType === 'restaurant' || mealFormType === 'at-home') {
+      setFormData(prev => ({
+        ...prev,
+        responsible_participant_id: 'none',
+        ingredients: []
+      }))
+    } else if (mealFormType === 'regular' && formData.ingredients.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        ingredients: [{ name: '', quantity: '', category: undefined }]
+      }))
+    }
+  }, [mealFormType])
 
   // Load existing ingredients when editing a meal
   useEffect(() => {
@@ -165,14 +206,14 @@ export function MealForm({
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
-          is_restaurant: meal.is_restaurant, // Preserve existing flags
-          everyone_at_home: meal.everyone_at_home,
+          ...getMealFlags(mealFormType), // Use selected meal type flags
         }
 
         const result = await updateMeal(meal.id, updateData)
         if (result) {
-          // Handle ingredient changes
-          const newIngredients = formData.ingredients.filter(ing => ing.name.trim())
+          // Handle ingredient changes (only for regular meals)
+          if (mealFormType === 'regular') {
+            const newIngredients = formData.ingredients.filter(ing => ing.name.trim())
           const existingNames = existingIngredients.map(item => item.name)
 
           // Find ingredients to add (new ones not in existing)
@@ -203,6 +244,7 @@ export function MealForm({
             // Optionally delete the shopping item if it's not linked to any other meals
             // For now, we'll just unlink it
           }
+          }
 
           // Refresh meals to update ingredient counts on meal cards
           await refreshMeals()
@@ -219,24 +261,25 @@ export function MealForm({
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
-          is_restaurant: false,
-          everyone_at_home: false,
+          ...getMealFlags(mealFormType), // Use selected meal type flags
         }
 
         const result = await createMeal(createData)
         if (result) {
-          // Create shopping items for each ingredient
-          const nonEmptyIngredients = formData.ingredients.filter(ing => ing.name.trim())
-          for (const ingredient of nonEmptyIngredients) {
-            const shoppingItem = await createShoppingItem({
-              name: ingredient.name.trim(),
-              quantity: ingredient.quantity?.trim() || undefined,
-              category: ingredient.category || 'other',
-              trip_id: currentTrip.id,
-            })
+          // Create shopping items for each ingredient (only for regular meals)
+          if (mealFormType === 'regular') {
+            const nonEmptyIngredients = formData.ingredients.filter(ing => ing.name.trim())
+            for (const ingredient of nonEmptyIngredients) {
+              const shoppingItem = await createShoppingItem({
+                name: ingredient.name.trim(),
+                quantity: ingredient.quantity?.trim() || undefined,
+                category: ingredient.category || 'other',
+                trip_id: currentTrip.id,
+              })
 
-            if (shoppingItem) {
-              await linkShoppingItemToMeal(shoppingItem.id, result.id)
+              if (shoppingItem) {
+                await linkShoppingItemToMeal(shoppingItem.id, result.id)
+              }
             }
           }
 
@@ -340,6 +383,37 @@ export function MealForm({
         </motion.div>
       )}
 
+      {/* Meal Type Selector */}
+      <div className="space-y-2">
+        <Label>Meal Type</Label>
+        <Tabs value={mealFormType} onValueChange={(value) => setMealFormType(value as MealFormType)}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="regular">
+              <Utensils size={16} className="mr-1 hidden sm:inline" />
+              Regular
+            </TabsTrigger>
+            <TabsTrigger value="restaurant">
+              <Receipt size={16} className="mr-1 hidden sm:inline" />
+              Restaurant
+            </TabsTrigger>
+            <TabsTrigger value="at-home">
+              <Home size={16} className="mr-1 hidden sm:inline" />
+              At Home
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {mealFormType === 'restaurant' && (
+          <p className="text-xs text-muted-foreground">
+            Restaurant meals don't require cooking assignments or ingredients.
+          </p>
+        )}
+        {mealFormType === 'at-home' && (
+          <p className="text-xs text-muted-foreground">
+            At-home meals are for when everyone eats separately.
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="title">Meal Title</Label>
         <div className="relative">
@@ -372,104 +446,108 @@ export function MealForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="responsible">Who's Cooking? (Optional)</Label>
-        <Select
-          value={formData.responsible_participant_id}
-          onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
-          disabled={submitting}
-        >
-          <SelectTrigger id="responsible">
-            <SelectValue placeholder="-- None --" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">-- None --</SelectItem>
-            {adults.map((participant) => (
-              <SelectItem key={participant.id} value={participant.id}>
-                {participant.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Ingredients Section - Show in both create and edit mode */}
-      <div className="space-y-3 border-t border-border pt-4">
-        <div className="flex items-center justify-between">
-          <Label>Ingredients (Optional)</Label>
-          <Button
-            type="button"
-            onClick={addIngredient}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            disabled={submitting || loadingIngredients}
+      {mealFormType === 'regular' && (
+        <div className="space-y-2">
+          <Label htmlFor="responsible">Who's Cooking? (Optional)</Label>
+          <Select
+            value={formData.responsible_participant_id}
+            onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
+            disabled={submitting}
           >
-            <Plus size={14} />
-            Add Ingredient
-          </Button>
+            <SelectTrigger id="responsible">
+              <SelectValue placeholder="-- None --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">-- None --</SelectItem>
+              {adults.map((participant) => (
+                <SelectItem key={participant.id} value={participant.id}>
+                  {participant.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+      )}
 
-        {loadingIngredients && meal && (
-          <p className="text-sm text-muted-foreground">Loading ingredients...</p>
-        )}
-
-        {!loadingIngredients && formData.ingredients.length > 0 && (
-          <div className="space-y-2">
-            {formData.ingredients.map((ingredient, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  type="text"
-                  value={ingredient.name}
-                  onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
-                  placeholder="Name"
-                  disabled={submitting}
-                  className="flex-1"
-                />
-                <Input
-                  type="text"
-                  value={ingredient.quantity || ''}
-                  onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
-                  placeholder="Qty"
-                  disabled={submitting}
-                  className="w-24"
-                />
-                <Select
-                  value={ingredient.category || 'other'}
-                  onValueChange={(value) => updateIngredientField(index, 'category', value)}
-                  disabled={submitting}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  onClick={() => removeIngredient(index)}
-                  variant="outline"
-                  size="icon"
-                  disabled={submitting}
-                >
-                  <X size={14} />
-                </Button>
-              </div>
-            ))}
+      {/* Ingredients Section - Show only for regular meals */}
+      {mealFormType === 'regular' && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <div className="flex items-center justify-between">
+            <Label>Ingredients (Optional)</Label>
+            <Button
+              type="button"
+              onClick={addIngredient}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={submitting || loadingIngredients}
+            >
+              <Plus size={14} />
+              Add Ingredient
+            </Button>
           </div>
-        )}
 
-        {!loadingIngredients && formData.ingredients.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
-          </p>
-        )}
-      </div>
+          {loadingIngredients && meal && (
+            <p className="text-sm text-muted-foreground">Loading ingredients...</p>
+          )}
+
+          {!loadingIngredients && formData.ingredients.length > 0 && (
+            <div className="space-y-2">
+              {formData.ingredients.map((ingredient, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={ingredient.name}
+                    onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
+                    placeholder="Name"
+                    disabled={submitting}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="text"
+                    value={ingredient.quantity || ''}
+                    onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
+                    placeholder="Qty"
+                    disabled={submitting}
+                    className="w-24"
+                  />
+                  <Select
+                    value={ingredient.category || 'other'}
+                    onValueChange={(value) => updateIngredientField(index, 'category', value)}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    variant="outline"
+                    size="icon"
+                    disabled={submitting}
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loadingIngredients && formData.ingredients.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <Button
