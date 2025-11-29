@@ -1,18 +1,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, CloudSun, Moon, Utensils, Home } from 'lucide-react'
+import { Sun, CloudSun, Moon, Plus, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
-import { useExpenseContext } from '@/contexts/ExpenseContext'
+import { useShoppingContext } from '@/contexts/ShoppingContext'
 import type { Meal, MealType, CreateMealInput, UpdateMealInput } from '@/types/meal'
-import { MEAL_TYPE_LABELS } from '@/types/meal'
-import { linkMealToExpense, unlinkMealFromExpense } from '@/services/mealExpenseLinkService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -52,24 +49,15 @@ export function MealForm({
   const { currentTrip } = useCurrentTrip()
   const { createMeal, updateMeal } = useMealContext()
   const participantContext = useParticipantContext()
-  const { getFoodExpenses, expenses } = useExpenseContext()
+  const { createShoppingItem, linkShoppingItemToMeal } = useShoppingContext()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Find linked expense if editing a restaurant meal
-  const linkedExpense = meal?.is_restaurant
-    ? expenses.find(e => e.meal_id === meal.id)
-    : null
-
   const [formData, setFormData] = useState({
-    meal_date: meal?.meal_date || initialDate || '',
-    meal_type: meal?.meal_type || initialMealType || 'lunch' as MealType,
     title: meal?.title || '',
     description: meal?.description || '',
     responsible_participant_id: meal?.responsible_participant_id || 'none',
-    is_restaurant: meal?.is_restaurant || false,
-    everyone_at_home: meal?.everyone_at_home || false,
-    linked_expense_id: linkedExpense?.id || 'none',
+    ingredients: [''] as string[],
   })
 
   // Defensive checks for context availability
@@ -86,90 +74,109 @@ export function MealForm({
   const { participants } = participantContext
   const adults = participants.filter((p) => p.is_adult)
 
+  // Date and meal type are fixed (passed as props)
+  const mealDate = meal?.meal_date || initialDate || ''
+  const mealType = meal?.meal_type || initialMealType || 'lunch'
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    // Title is optional for restaurant and at-home meals
-    const requiresTitle = !formData.is_restaurant && !formData.everyone_at_home
-    if (requiresTitle && !formData.title.trim()) {
+    if (!formData.title.trim()) {
       setError('Please enter a meal title')
       return
     }
 
-    if (!formData.meal_date) {
-      setError('Please select a date')
+    if (!mealDate) {
+      setError('Date is required')
       return
     }
 
     setSubmitting(true)
 
     try {
-      // Set responsible_participant_id to null if restaurant or everyone_at_home is true
-      const responsibleId = formData.is_restaurant || formData.everyone_at_home
+      const responsibleId = formData.responsible_participant_id === 'none'
         ? undefined
-        : (formData.responsible_participant_id === 'none' ? undefined : formData.responsible_participant_id || undefined)
-
-      // Auto-generate title if not provided for special meal types
-      const mealTitle = formData.title.trim() ||
-        (formData.is_restaurant ? 'Restaurant' : formData.everyone_at_home ? 'At Home' : '')
+        : formData.responsible_participant_id || undefined
 
       if (meal) {
+        // Update mode
         const updateData: UpdateMealInput = {
-          meal_date: formData.meal_date,
-          meal_type: formData.meal_type,
-          title: mealTitle,
+          meal_date: mealDate,
+          meal_type: mealType,
+          title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
-          is_restaurant: formData.is_restaurant,
-          everyone_at_home: formData.everyone_at_home,
+          is_restaurant: meal.is_restaurant, // Preserve existing flags
+          everyone_at_home: meal.everyone_at_home,
         }
 
         const result = await updateMeal(meal.id, updateData)
         if (result) {
-          // Handle expense linking for restaurant meals
-          if (formData.is_restaurant && formData.linked_expense_id !== 'none') {
-            await linkMealToExpense(meal.id, formData.linked_expense_id)
-          } else if (!formData.is_restaurant) {
-            // Unlink if no longer a restaurant meal
-            await unlinkMealFromExpense(meal.id)
-          }
           onSuccess()
         } else {
           setError('Failed to update meal')
         }
       } else {
+        // Create mode
         const createData: CreateMealInput = {
           trip_id: currentTrip.id,
-          meal_date: formData.meal_date,
-          meal_type: formData.meal_type,
-          title: mealTitle,
+          meal_date: mealDate,
+          meal_type: mealType,
+          title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           responsible_participant_id: responsibleId,
-          is_restaurant: formData.is_restaurant,
-          everyone_at_home: formData.everyone_at_home,
+          is_restaurant: false,
+          everyone_at_home: false,
         }
 
         const result = await createMeal(createData)
         if (result) {
-          // Handle expense linking for restaurant meals
-          if (formData.is_restaurant && formData.linked_expense_id !== 'none') {
-            await linkMealToExpense(result.id, formData.linked_expense_id)
+          // Create shopping items for each ingredient
+          const nonEmptyIngredients = formData.ingredients.filter(ing => ing.trim())
+          for (const ingredientName of nonEmptyIngredients) {
+            const shoppingItem = await createShoppingItem({
+              name: ingredientName.trim(),
+              trip_id: currentTrip.id,
+            })
+
+            if (shoppingItem) {
+              await linkShoppingItemToMeal(shoppingItem.id, result.id)
+            }
           }
+
           onSuccess()
         } else {
           setError('Failed to create meal')
         }
       }
     } catch (error) {
+      console.error('Error saving meal:', error)
       setError('An error occurred while saving')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const MealIcon = mealTypeIcons[formData.meal_type]
-  const foodExpenses = getFoodExpenses()
+  const MealIcon = mealTypeIcons[mealType]
+
+  // Ingredient management
+  const addIngredient = () => {
+    setFormData({ ...formData, ingredients: [...formData.ingredients, ''] })
+  }
+
+  const removeIngredient = (index: number) => {
+    setFormData({
+      ...formData,
+      ingredients: formData.ingredients.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateIngredient = (index: number, value: string) => {
+    const newIngredients = [...formData.ingredients]
+    newIngredients[index] = value
+    setFormData({ ...formData, ingredients: newIngredients })
+  }
 
   return (
     <motion.form
@@ -190,81 +197,22 @@ export function MealForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="title">
-          Meal Title {(formData.is_restaurant || formData.everyone_at_home) && (
-            <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span>
-          )}
-        </Label>
+        <Label htmlFor="title">Meal Title</Label>
         <div className="relative">
           <Input
             type="text"
             id="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder={
-              formData.is_restaurant
-                ? "Optional - defaults to 'Restaurant'"
-                : formData.everyone_at_home
-                ? "Optional - defaults to 'At Home'"
-                : "e.g., Pasta Carbonara"
-            }
-            required={!formData.is_restaurant && !formData.everyone_at_home}
+            placeholder="e.g., Pasta Carbonara"
+            required
             disabled={submitting}
             className="pl-10"
           />
           <MealIcon
             size={18}
-            className={`absolute left-3 top-1/2 -translate-y-1/2 ${mealTypeColors[formData.meal_type]}`}
+            className={`absolute left-3 top-1/2 -translate-y-1/2 ${mealTypeColors[mealType]}`}
           />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="meal_date">Date</Label>
-          <Input
-            type="date"
-            id="meal_date"
-            value={formData.meal_date}
-            onChange={(e) => setFormData({ ...formData, meal_date: e.target.value })}
-            min={currentTrip.start_date}
-            max={currentTrip.end_date}
-            required
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="meal_type">Meal Type</Label>
-          <Select
-            value={formData.meal_type}
-            onValueChange={(value) => setFormData({ ...formData, meal_type: value as MealType })}
-            disabled={submitting}
-          >
-            <SelectTrigger id="meal_type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="breakfast">
-                <div className="flex items-center gap-2">
-                  <Sun size={16} className="text-gold" />
-                  <span>{MEAL_TYPE_LABELS.breakfast}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="lunch">
-                <div className="flex items-center gap-2">
-                  <CloudSun size={16} className="text-primary" />
-                  <span>{MEAL_TYPE_LABELS.lunch}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="dinner">
-                <div className="flex items-center gap-2">
-                  <Moon size={16} className="text-secondary" />
-                  <span>{MEAL_TYPE_LABELS.dinner}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -285,7 +233,7 @@ export function MealForm({
         <Select
           value={formData.responsible_participant_id}
           onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
-          disabled={submitting || formData.is_restaurant || formData.everyone_at_home}
+          disabled={submitting}
         >
           <SelectTrigger id="responsible">
             <SelectValue placeholder="-- None --" />
@@ -301,92 +249,57 @@ export function MealForm({
         </Select>
       </div>
 
-      <div className="space-y-4 border-t border-border pt-4">
-        <div className="flex items-start space-x-3">
-          <Checkbox
-            id="is_restaurant"
-            checked={formData.is_restaurant}
-            onCheckedChange={(checked) => {
-              setFormData({
-                ...formData,
-                is_restaurant: checked as boolean,
-                everyone_at_home: checked ? false : formData.everyone_at_home,
-              })
-            }}
-            disabled={submitting}
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="is_restaurant"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-            >
-              <Utensils size={16} className="text-amber-600" />
-              Restaurant Meal
-            </label>
-            <p className="text-sm text-muted-foreground">
-              Mark this meal as eaten at a restaurant
-            </p>
-          </div>
-        </div>
-
-        {formData.is_restaurant && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-2 pl-7"
-          >
-            <Label htmlFor="linked_expense">Link to Expense (Optional)</Label>
-            <Select
-              value={formData.linked_expense_id}
-              onValueChange={(value) => setFormData({ ...formData, linked_expense_id: value })}
+      {/* Ingredients Section - Only show in create mode */}
+      {!meal && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <div className="flex items-center justify-between">
+            <Label>Ingredients (Optional)</Label>
+            <Button
+              type="button"
+              onClick={addIngredient}
+              variant="outline"
+              size="sm"
+              className="gap-2"
               disabled={submitting}
             >
-              <SelectTrigger id="linked_expense">
-                <SelectValue placeholder="-- None --" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-- None --</SelectItem>
-                {foodExpenses.map((expense) => (
-                  <SelectItem key={expense.id} value={expense.id}>
-                    {expense.description} - {expense.currency} {expense.amount.toFixed(2)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Link this meal to an existing Food expense
-            </p>
-          </motion.div>
-        )}
-
-        <div className="flex items-start space-x-3">
-          <Checkbox
-            id="everyone_at_home"
-            checked={formData.everyone_at_home}
-            onCheckedChange={(checked) => {
-              setFormData({
-                ...formData,
-                everyone_at_home: checked as boolean,
-                is_restaurant: checked ? false : formData.is_restaurant,
-              })
-            }}
-            disabled={submitting}
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="everyone_at_home"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-            >
-              <Home size={16} className="text-sky-600" />
-              Everyone At Home
-            </label>
-            <p className="text-sm text-muted-foreground">
-              Participants eat separately at their own homes (e.g., first breakfast, last dinner)
-            </p>
+              <Plus size={14} />
+              Add Ingredient
+            </Button>
           </div>
+
+          {formData.ingredients.length > 0 && (
+            <div className="space-y-2">
+              {formData.ingredients.map((ingredient, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={ingredient}
+                    onChange={(e) => updateIngredient(index, e.target.value)}
+                    placeholder="e.g., Pasta, Bacon, Eggs"
+                    disabled={submitting}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    variant="outline"
+                    size="icon"
+                    disabled={submitting}
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {formData.ingredients.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
+            </p>
+          )}
         </div>
-      </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <Button

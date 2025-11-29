@@ -43,6 +43,17 @@ export function MealGrid({ date, meals }: MealGridProps) {
     return meals.find((m) => m.meal_type === mealType)
   }
 
+  // Format date for dialog title
+  const formatDialogDate = (dateStr: string): string => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
   // Handle add meal button click
   const handleAddMeal = (mealType: MealType) => {
     setSelectedMealType(mealType)
@@ -104,7 +115,7 @@ export function MealGrid({ date, meals }: MealGridProps) {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'}
+              Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - {formatDialogDate(date)}
             </DialogTitle>
           </DialogHeader>
           <MealForm
