@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChefHat, Edit, Trash2, Plus, ShoppingBasket, Utensils, Home, Receipt, MoreVertical } from 'lucide-react'
+import { ChefHat, Edit, Trash2, ShoppingBasket, Utensils, Home, Receipt, MoreVertical } from 'lucide-react'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import type { MealWithIngredients } from '@/types/meal'
 import { MealForm } from './MealForm'
-import { ShoppingItemForm } from './ShoppingItemForm'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,12 +30,11 @@ interface MealCardProps {
 }
 
 export function MealCard({ meal }: MealCardProps) {
-  const { deleteMeal, refreshMeals, updateMeal } = useMealContext()
+  const { deleteMeal, updateMeal } = useMealContext()
   const { participants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showAddIngredient, setShowAddIngredient] = useState(false)
   const [showMarkRestaurant, setShowMarkRestaurant] = useState(false)
   const [showMarkAtHome, setShowMarkAtHome] = useState(false)
 
@@ -238,20 +236,9 @@ export function MealCard({ meal }: MealCardProps) {
           {/* Ingredient Progress */}
           {showIngredients && (
             <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ShoppingBasket size={14} />
-                <span>Ingredients</span>
-              </div>
-              <Button
-                onClick={() => setShowAddIngredient(true)}
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-              >
-                <Plus size={12} className="mr-1" />
-                Add
-              </Button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+              <ShoppingBasket size={14} />
+              <span>Ingredients</span>
             </div>
 
             {meal.ingredients_total > 0 ? (
@@ -316,26 +303,6 @@ export function MealCard({ meal }: MealCardProps) {
               Delete
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Ingredient Dialog */}
-      <Dialog open={showAddIngredient} onOpenChange={setShowAddIngredient}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Ingredient to "{meal.title}"</DialogTitle>
-            <DialogDescription>
-              Create a shopping item that will be linked to this meal.
-            </DialogDescription>
-          </DialogHeader>
-          <ShoppingItemForm
-            initialMealIds={[meal.id]}
-            onSuccess={async () => {
-              await refreshMeals()
-              setShowAddIngredient(false)
-            }}
-            onCancel={() => setShowAddIngredient(false)}
-          />
         </DialogContent>
       </Dialog>
 

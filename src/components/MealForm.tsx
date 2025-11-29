@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, CloudSun, Moon, Plus, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
+import { supabase } from '@/lib/supabase'
 import type { Meal, MealType, CreateMealInput, UpdateMealInput } from '@/types/meal'
+import type { ShoppingItem } from '@/types/shopping'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,9 +51,11 @@ export function MealForm({
   const { currentTrip } = useCurrentTrip()
   const { createMeal, updateMeal } = useMealContext()
   const participantContext = useParticipantContext()
-  const { createShoppingItem, linkShoppingItemToMeal } = useShoppingContext()
+  const { createShoppingItem, linkShoppingItemToMeal, unlinkShoppingItemFromMeal } = useShoppingContext()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadingIngredients, setLoadingIngredients] = useState(false)
+  const [existingIngredients, setExistingIngredients] = useState<ShoppingItem[]>([])
 
   const [formData, setFormData] = useState({
     title: meal?.title || '',
@@ -59,6 +63,49 @@ export function MealForm({
     responsible_participant_id: meal?.responsible_participant_id || 'none',
     ingredients: [''] as string[],
   })
+
+  // Load existing ingredients when editing a meal
+  useEffect(() => {
+    const loadIngredients = async () => {
+      if (!meal) return
+
+      setLoadingIngredients(true)
+      try {
+        // Fetch shopping items linked to this meal
+        const { data: links, error: linksError } = await supabase
+          .from('meal_shopping_items')
+          .select('shopping_item_id')
+          .eq('meal_id', meal.id)
+
+        if (linksError) throw linksError
+
+        if (links && links.length > 0) {
+          const itemIds = links.map(link => link.shopping_item_id)
+
+          const { data: items, error: itemsError } = await supabase
+            .from('shopping_items')
+            .select('*')
+            .in('id', itemIds)
+
+          if (itemsError) throw itemsError
+
+          if (items) {
+            setExistingIngredients(items as ShoppingItem[])
+            setFormData(prev => ({
+              ...prev,
+              ingredients: items.map(item => item.name)
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Error loading ingredients:', error)
+      } finally {
+        setLoadingIngredients(false)
+      }
+    }
+
+    loadIngredients()
+  }, [meal?.id])
 
   // Defensive checks for context availability
   if (!currentTrip) return null
@@ -113,6 +160,35 @@ export function MealForm({
 
         const result = await updateMeal(meal.id, updateData)
         if (result) {
+          // Handle ingredient changes
+          const newIngredientNames = formData.ingredients.filter(ing => ing.trim())
+          const existingNames = existingIngredients.map(item => item.name)
+
+          // Find ingredients to add (new ones not in existing)
+          const toAdd = newIngredientNames.filter(name => !existingNames.includes(name))
+
+          // Find ingredients to remove (existing ones not in new list)
+          const toRemove = existingIngredients.filter(item => !newIngredientNames.includes(item.name))
+
+          // Add new ingredients
+          for (const ingredientName of toAdd) {
+            const shoppingItem = await createShoppingItem({
+              name: ingredientName.trim(),
+              trip_id: currentTrip.id,
+            })
+
+            if (shoppingItem) {
+              await linkShoppingItemToMeal(shoppingItem.id, meal.id)
+            }
+          }
+
+          // Remove deleted ingredients
+          for (const item of toRemove) {
+            await unlinkShoppingItemFromMeal(item.id, meal.id)
+            // Optionally delete the shopping item if it's not linked to any other meals
+            // For now, we'll just unlink it
+          }
+
           onSuccess()
         } else {
           setError('Failed to update meal')
@@ -249,57 +325,59 @@ export function MealForm({
         </Select>
       </div>
 
-      {/* Ingredients Section - Only show in create mode */}
-      {!meal && (
-        <div className="space-y-3 border-t border-border pt-4">
-          <div className="flex items-center justify-between">
-            <Label>Ingredients (Optional)</Label>
-            <Button
-              type="button"
-              onClick={addIngredient}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              disabled={submitting}
-            >
-              <Plus size={14} />
-              Add Ingredient
-            </Button>
-          </div>
-
-          {formData.ingredients.length > 0 && (
-            <div className="space-y-2">
-              {formData.ingredients.map((ingredient, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={ingredient}
-                    onChange={(e) => updateIngredient(index, e.target.value)}
-                    placeholder="e.g., Pasta, Bacon, Eggs"
-                    disabled={submitting}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => removeIngredient(index)}
-                    variant="outline"
-                    size="icon"
-                    disabled={submitting}
-                  >
-                    <X size={14} />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {formData.ingredients.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
-            </p>
-          )}
+      {/* Ingredients Section - Show in both create and edit mode */}
+      <div className="space-y-3 border-t border-border pt-4">
+        <div className="flex items-center justify-between">
+          <Label>Ingredients (Optional)</Label>
+          <Button
+            type="button"
+            onClick={addIngredient}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={submitting || loadingIngredients}
+          >
+            <Plus size={14} />
+            Add Ingredient
+          </Button>
         </div>
-      )}
+
+        {loadingIngredients && meal && (
+          <p className="text-sm text-muted-foreground">Loading ingredients...</p>
+        )}
+
+        {!loadingIngredients && formData.ingredients.length > 0 && (
+          <div className="space-y-2">
+            {formData.ingredients.map((ingredient, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  type="text"
+                  value={ingredient}
+                  onChange={(e) => updateIngredient(index, e.target.value)}
+                  placeholder="e.g., Pasta, Bacon, Eggs"
+                  disabled={submitting}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => removeIngredient(index)}
+                  variant="outline"
+                  size="icon"
+                  disabled={submitting}
+                >
+                  <X size={14} />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loadingIngredients && formData.ingredients.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
+          </p>
+        )}
+      </div>
 
       <div className="flex gap-3 pt-2">
         <Button
