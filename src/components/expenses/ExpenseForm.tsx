@@ -59,6 +59,7 @@ export function ExpenseForm({
   )
   const [comment, setComment] = useState(initialValues?.comment || '')
   const [showMoreDetails, setShowMoreDetails] = useState(false)
+  const [showIndividualMembers, setShowIndividualMembers] = useState(false)
 
   // Distribution state
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
@@ -555,48 +556,71 @@ export function ExpenseForm({
             )}
             {participants.length > 0 && (
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Individual Members</p>
-                <div className="space-y-2 rounded-lg border border-input p-3">
-                  {participants.map(participant => {
-                    const participantFamily = participant.family_id
-                      ? families.find(f => f.id === participant.family_id)
-                      : null
+                <button
+                  type="button"
+                  onClick={() => setShowIndividualMembers(!showIndividualMembers)}
+                  className="flex items-center gap-2 text-xs text-muted-foreground mb-2 hover:text-foreground transition-colors"
+                >
+                  {showIndividualMembers ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                  Individual Members ({participants.length})
+                </button>
+                <AnimatePresence>
+                  {showIndividualMembers && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-2 rounded-lg border border-input p-3">
+                        {participants.map(participant => {
+                          const participantFamily = participant.family_id
+                            ? families.find(f => f.id === participant.family_id)
+                            : null
 
-                    return (
-                      <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
-                        <Checkbox
-                          id={`participant-${participant.id}`}
-                          checked={selectedParticipants.includes(participant.id)}
-                          onCheckedChange={() => handleParticipantToggle(participant.id)}
-                          disabled={loading}
-                        />
-                        <label
-                          htmlFor={`participant-${participant.id}`}
-                          className="text-sm text-foreground cursor-pointer flex-1"
-                        >
-                          {participant.name} {participant.is_adult ? '' : '(child)'}
-                          {participantFamily && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              ({participantFamily.family_name})
-                            </span>
-                          )}
-                        </label>
-                        {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                          <Input
-                            type="number"
-                            value={participantSplitValues[participant.id] || ''}
-                            onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
-                            placeholder={splitMode === 'percentage' ? '%' : currency}
-                            step={splitMode === 'percentage' ? '0.1' : '0.01'}
-                            min="0"
-                            disabled={loading}
-                            className="w-24 h-9"
-                          />
-                        )}
+                          return (
+                            <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
+                              <Checkbox
+                                id={`participant-${participant.id}`}
+                                checked={selectedParticipants.includes(participant.id)}
+                                onCheckedChange={() => handleParticipantToggle(participant.id)}
+                                disabled={loading}
+                              />
+                              <label
+                                htmlFor={`participant-${participant.id}`}
+                                className="text-sm text-foreground cursor-pointer flex-1"
+                              >
+                                {participant.name} {participant.is_adult ? '' : '(child)'}
+                                {participantFamily && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    ({participantFamily.family_name})
+                                  </span>
+                                )}
+                              </label>
+                              {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                                <Input
+                                  type="number"
+                                  value={participantSplitValues[participant.id] || ''}
+                                  onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
+                                  placeholder={splitMode === 'percentage' ? '%' : currency}
+                                  step={splitMode === 'percentage' ? '0.1' : '0.01'}
+                                  min="0"
+                                  disabled={loading}
+                                  className="w-24 h-9"
+                                />
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
-                </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </div>
