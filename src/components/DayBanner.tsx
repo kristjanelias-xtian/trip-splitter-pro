@@ -2,13 +2,11 @@ import { DateContext, formatDayHeader } from '@/lib/dateUtils'
 import { getGradientPattern } from '@/services/gradientService'
 import { MealWithIngredients } from '@/types/meal'
 import { Badge } from '@/components/ui/badge'
-import { MealCompletionRing } from '@/components/MealCompletionRing'
 
 export interface DayBannerProps {
   date: string
   dayNumber: number
   context: DateContext
-  completionPercentage: number
   meals: MealWithIngredients[]
 }
 
@@ -16,7 +14,6 @@ export function DayBanner({
   date,
   dayNumber,
   context,
-  completionPercentage,
 }: DayBannerProps) {
   // Get deterministic gradient pattern for this date
   const pattern = getGradientPattern(date)
@@ -76,21 +73,14 @@ export function DayBanner({
           </Badge>
         </div>
 
-        {/* Bottom Row: Date + Completion Ring */}
-        <div className="flex items-end justify-between">
+        {/* Bottom Row: Date */}
+        <div className="flex items-end">
           {/* Date Display */}
           <div>
             <h3 className="text-white font-bold text-lg md:text-xl lg:text-2xl drop-shadow-md">
               {formatDayHeader(date)}
             </h3>
           </div>
-
-          {/* Completion Ring */}
-          <MealCompletionRing
-            percentage={completionPercentage}
-            size={48}
-            className="md:w-16 md:h-16"
-          />
         </div>
       </div>
     </div>

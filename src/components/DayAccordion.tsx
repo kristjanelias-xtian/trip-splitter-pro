@@ -21,17 +21,6 @@ export function DayAccordion({
   context,
   onAddMeal,
 }: DayAccordionProps) {
-  // Calculate aggregate completion percentage
-  const getCompletionPercentage = () => {
-    const totalIngredients = meals.reduce((sum, meal) => sum + meal.ingredients_total, 0)
-    const readyIngredients = meals.reduce((sum, meal) => sum + meal.ingredients_ready, 0)
-
-    if (totalIngredients === 0) return 0
-    return Math.round((readyIngredients / totalIngredients) * 100)
-  }
-
-  const completionPercentage = getCompletionPercentage()
-
   return (
     <AccordionItem value={date} className="border-0 mb-4">
       <AccordionTrigger className="hover:no-underline p-0">
@@ -40,7 +29,6 @@ export function DayAccordion({
             date={date}
             dayNumber={dayNumber}
             context={context}
-            completionPercentage={completionPercentage}
             meals={meals}
           />
         </div>
