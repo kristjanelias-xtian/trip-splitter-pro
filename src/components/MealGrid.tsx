@@ -27,6 +27,13 @@ const MEAL_COLORS = {
   dinner: 'text-secondary',
 }
 
+// Background colors for meal type headers
+const MEAL_HEADER_BG = {
+  breakfast: 'bg-gold/10 border-gold/20',
+  lunch: 'bg-primary/10 border-primary/20',
+  dinner: 'bg-secondary/10 border-secondary/20',
+}
+
 export function MealGrid({ date, meals }: MealGridProps) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null)
@@ -47,25 +54,26 @@ export function MealGrid({ date, meals }: MealGridProps) {
     const meal = getMealForSlot(mealType)
     const Icon = MEAL_ICONS[mealType]
     const colorClass = MEAL_COLORS[mealType]
+    const headerBgClass = MEAL_HEADER_BG[mealType]
 
     return (
-      <div key={mealType} className="flex flex-col">
-        {/* Meal Type Header */}
-        <div className="flex items-center justify-between mb-3">
+      <Card key={mealType} className="overflow-hidden border-2">
+        {/* Meal Type Header - More prominent */}
+        <div className={`${headerBgClass} px-4 py-3 border-b-2 border-current`}>
           <div className="flex items-center gap-2">
-            <Icon size={20} className={colorClass} />
-            <span className="text-sm font-medium">{MEAL_TYPE_LABELS[mealType]}</span>
+            <Icon size={24} className={colorClass} />
+            <span className="text-base font-semibold">{MEAL_TYPE_LABELS[mealType]}</span>
           </div>
         </div>
 
-        {/* Meal Card or Empty State */}
-        {meal ? (
-          <MealCard meal={meal} />
-        ) : (
-          <Card className="p-6 border-dashed border-2 hover:border-primary/50 transition-colors">
-            <div className="flex flex-col items-center justify-center text-center">
-              <Icon size={32} className={`${colorClass} opacity-30 mb-2`} />
-              <p className="text-sm text-muted-foreground mb-3">No meal planned</p>
+        {/* Meal Content */}
+        <div className="p-4">
+          {meal ? (
+            <MealCard meal={meal} />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-8">
+              <Icon size={40} className={`${colorClass} opacity-20 mb-3`} />
+              <p className="text-sm text-muted-foreground mb-4">No meal planned</p>
               <Button
                 onClick={() => handleAddMeal(mealType)}
                 variant="outline"
@@ -76,16 +84,16 @@ export function MealGrid({ date, meals }: MealGridProps) {
                 Add {MEAL_TYPE_LABELS[mealType]}
               </Button>
             </div>
-          </Card>
-        )}
-      </div>
+          )}
+        </div>
+      </Card>
     )
   }
 
   return (
     <>
-      {/* Responsive Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      {/* Responsive Grid - Increased spacing on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-6 lg:gap-6">
         {renderMealSlot('breakfast')}
         {renderMealSlot('lunch')}
         {renderMealSlot('dinner')}
