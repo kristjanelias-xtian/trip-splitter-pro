@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChefHat, Edit, Trash2, ShoppingBasket, Utensils, Home, Receipt, MoreVertical } from 'lucide-react'
+import { ChefHat, Trash2, ShoppingBasket, Utensils, Home, Receipt } from 'lucide-react'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -17,12 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 interface MealCardProps {
   meal: MealWithIngredients
@@ -110,33 +104,13 @@ export function MealCard({ meal }: MealCardProps) {
             {/* Actions */}
             <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
               <Button
-                onClick={() => setShowEditForm(true)}
+                onClick={() => setShowDeleteConfirm(true)}
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <Edit size={14} />
+                <Trash2 size={14} />
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                  >
-                    <MoreVertical size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 size={14} className="mr-2" />
-                    Delete Meal
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
