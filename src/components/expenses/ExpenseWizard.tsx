@@ -336,7 +336,14 @@ function MobileWizard({
           )}
         </div>
 
-        <div className="pt-4 border-t border-border" style={{ flexShrink: 0 }}>
+        <div
+          className="pt-4 border-t border-border"
+          style={{
+            flexShrink: 0,
+            paddingBottom: keyboard.isVisible ? `${keyboard.keyboardHeight + 20}px` : '0px',
+            transition: 'padding-bottom 0.2s ease-out'
+          }}
+        >
           <WizardNavigation
             currentStep={currentStep}
             totalSteps={totalSteps}
