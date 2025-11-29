@@ -415,54 +415,50 @@ export function MealForm({
         )}
 
         {!loadingIngredients && formData.ingredients.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {formData.ingredients.map((ingredient, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={ingredient.name}
-                    onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
-                    placeholder="e.g., Salmon, Potatoes"
-                    disabled={submitting}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => removeIngredient(index)}
-                    variant="outline"
-                    size="icon"
-                    disabled={submitting}
-                  >
-                    <X size={14} />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2 pl-2">
-                  <Input
-                    type="text"
-                    value={ingredient.quantity || ''}
-                    onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
-                    placeholder="Quantity (e.g., 2 kg)"
-                    disabled={submitting}
-                    className="text-sm"
-                  />
-                  <Select
-                    value={ingredient.category || 'other'}
-                    onValueChange={(value) => updateIngredientField(index, 'category', value)}
-                    disabled={submitting}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div key={index} className="flex gap-2">
+                <Input
+                  type="text"
+                  value={ingredient.name}
+                  onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
+                  placeholder="Name"
+                  disabled={submitting}
+                  className="flex-1"
+                />
+                <Input
+                  type="text"
+                  value={ingredient.quantity || ''}
+                  onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
+                  placeholder="Qty"
+                  disabled={submitting}
+                  className="w-24"
+                />
+                <Select
+                  value={ingredient.category || 'other'}
+                  onValueChange={(value) => updateIngredientField(index, 'category', value)}
+                  disabled={submitting}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  onClick={() => removeIngredient(index)}
+                  variant="outline"
+                  size="icon"
+                  disabled={submitting}
+                >
+                  <X size={14} />
+                </Button>
               </div>
             ))}
           </div>
