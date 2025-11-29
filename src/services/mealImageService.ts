@@ -18,7 +18,7 @@ const CACHE_PREFIX = 'meal-photo-'
 const CACHE_DURATION_DAYS = 30
 
 // Debug mode - set to true to see detailed logs
-const DEBUG = true
+const DEBUG = false
 
 function debugLog(message: string, ...args: any[]) {
   if (DEBUG) {
@@ -132,7 +132,19 @@ function createFallbackPhoto(date: string): MealPhoto {
  */
 function buildSearchQuery(meals: MealWithIngredients[]): string {
   if (meals.length === 0) {
-    return 'food preparation'
+    // Use appetizing food categories instead of generic "food preparation"
+    const appetizingQueries = [
+      'delicious dinner table',
+      'homemade pasta dish',
+      'fresh breakfast food',
+      'colorful lunch plate',
+      'gourmet meal',
+      'family dinner',
+      'tasty food platter',
+      'restaurant quality meal',
+    ]
+    // Rotate through queries based on randomness (will be cached per day)
+    return appetizingQueries[Math.floor(Math.random() * appetizingQueries.length)]
   }
 
   // Get the most prominent meal (one with most ingredients or first one)
@@ -142,7 +154,7 @@ function buildSearchQuery(meals: MealWithIngredients[]): string {
   const primaryMeal = sortedMeals[0]
 
   // Extract key food words from title (remove common words)
-  const commonWords = ['with', 'and', 'the', 'a', 'an', 'for', 'to', 'in', 'on']
+  const commonWords = ['with', 'and', 'the', 'a', 'an', 'for', 'to', 'in', 'on', 'or']
   const words = primaryMeal.title
     .toLowerCase()
     .split(/\s+/)
@@ -151,7 +163,7 @@ function buildSearchQuery(meals: MealWithIngredients[]): string {
   // Use first 2-3 words for search query
   const query = words.slice(0, 3).join(' ') || primaryMeal.title
 
-  return `${query} food`
+  return `${query} delicious food`
 }
 
 /**

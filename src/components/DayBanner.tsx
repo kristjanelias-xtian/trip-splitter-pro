@@ -13,6 +13,8 @@ export interface DayBannerProps {
   meals: MealWithIngredients[]
 }
 
+const DEBUG = false // Set to true to see debug badges and logs
+
 export function DayBanner({
   date,
   dayNumber,
@@ -29,13 +31,15 @@ export function DayBanner({
     async function loadPhoto() {
       setIsLoading(true)
       try {
-        console.log(`[DayBanner] Loading photo for ${date}`)
+        if (DEBUG) console.log(`[DayBanner] Loading photo for ${date}`)
         const mealPhoto = await getMealPhoto(date, meals)
         if (mounted) {
-          console.log(`[DayBanner] Photo loaded for ${date}:`, {
-            isFallback: mealPhoto.fallback,
-            photographer: mealPhoto.photographer || 'N/A'
-          })
+          if (DEBUG) {
+            console.log(`[DayBanner] Photo loaded for ${date}:`, {
+              isFallback: mealPhoto.fallback,
+              photographer: mealPhoto.photographer || 'N/A'
+            })
+          }
           setPhoto(mealPhoto)
         }
       } catch (error) {
@@ -98,8 +102,8 @@ export function DayBanner({
               Day {dayNumber}
             </div>
 
-            {/* Debug Badge - shows if using fallback gradient */}
-            {photo?.fallback && (
+            {/* Debug Badge - shows if using fallback gradient (only in debug mode) */}
+            {DEBUG && photo?.fallback && (
               <Badge
                 variant="outline"
                 className="bg-yellow-500/20 border-yellow-500/50 text-yellow-100 backdrop-blur-sm text-xs"
