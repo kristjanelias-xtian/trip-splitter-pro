@@ -98,22 +98,6 @@ export function MealCard({ meal }: MealCardProps) {
     }
   }
 
-  const handleUnmarkSpecial = async () => {
-    const success = await updateMeal(meal.id, {
-      meal_date: meal.meal_date,
-      meal_type: meal.meal_type,
-      title: meal.title,
-      description: meal.description || undefined,
-      responsible_participant_id: meal.responsible_participant_id || undefined,
-      is_restaurant: false,
-      everyone_at_home: false,
-    })
-
-    if (success) {
-      // Meal is now a regular meal
-    }
-  }
-
   const ingredientProgress =
     meal.ingredients_total > 0
       ? `${meal.ingredients_ready}/${meal.ingredients_total} ready`
@@ -186,14 +170,6 @@ export function MealCard({ meal }: MealCardProps) {
                       <DropdownMenuItem onClick={() => setShowMarkAtHome(true)}>
                         <Home size={14} className="mr-2" />
                         Mark as At-Home
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  {(meal.is_restaurant || meal.everyone_at_home) && (
-                    <>
-                      <DropdownMenuItem onClick={handleUnmarkSpecial}>
-                        Remove Special Type
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
