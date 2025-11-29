@@ -78,7 +78,10 @@ export function MealCard({ meal }: MealCardProps) {
         whileHover={{ y: -2 }}
         transition={{ duration: 0.2 }}
       >
-        <Card className={`p-3 hover:shadow-md transition-shadow ${cardBackgroundClass}`}>
+        <Card
+          className={`p-3 hover:shadow-md transition-shadow cursor-pointer ${cardBackgroundClass}`}
+          onClick={() => setShowEditForm(true)}
+        >
           {/* Meal Header */}
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
@@ -105,7 +108,7 @@ export function MealCard({ meal }: MealCardProps) {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 ml-2">
+            <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
               <Button
                 onClick={() => setShowEditForm(true)}
                 variant="ghost"
