@@ -1,309 +1,238 @@
-import { useState, FormEvent, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { CreateSettlementInput } from '@/types/settlement'
-import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useParticipantContext } from '@/contexts/ParticipantContext'
-import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
-import { useScrollIntoView } from '@/hooks/useScrollIntoView'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { fadeInUp } from '@/lib/animations'
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { useTrip } from '@/contexts/TripContext';
+import { Settlement } from '@/types/settlement';
+import { Participant } from '@/types/participant';
+import { supabase } from '@/lib/supabase';
+import { PlusCircle } from 'lucide-react';
 
 interface SettlementFormProps {
-  onSubmit: (input: CreateSettlementInput) => Promise<void>
-  onCancel?: () => void
+  participants: Participant[];
+  onSettlementAdded: (settlement: Settlement) => void;
 }
 
-export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
-  const { currentTrip } = useCurrentTrip()
-  const { participants, families } = useParticipantContext()
+export function SettlementForm({ participants, onSettlementAdded }: SettlementFormProps) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    from_participant_id: '',
+    to_participant_id: '',
+    amount: '',
+    description: '',
+    settlement_date: new Date().toISOString().split('T')[0]
+  });
+  
+  const { currentTrip } = useTrip();
+  const { toast } = useToast();
 
-  const [fromParticipantId, setFromParticipantId] = useState('')
-  const [toParticipantId, setToParticipantId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('EUR')
-  const [settlementDate, setSettlementDate] = useState(
-    new Date().toISOString().split('T')[0]
-  )
-  const [note, setNote] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Keyboard detection for mobile
-  const formRef = useRef<HTMLFormElement>(null)
-  const keyboard = useKeyboardHeight()
-
-  useScrollIntoView(formRef, {
-    enabled: keyboard.isVisible,
-    offset: 20,
-  })
-
-  const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
-
-  // Get all adults for selection
-  // Note: Settlements always use participant IDs (adults), even in families mode
-  // In families mode, we show which family they belong to
-  const getAdults = () => {
-    const adults = participants.filter(p => p.is_adult)
-
-    if (isIndividualsMode) {
-      return adults.map(p => ({
-        id: p.id,
-        name: p.name,
-        familyName: null
-      }))
-    } else {
-      // In families mode, show adults with their family name
-      return adults.map(p => {
-        const family = families.find(f => f.id === p.family_id)
-        return {
-          id: p.id,
-          name: p.name,
-          familyName: family?.family_name || null
-        }
-      })
-    }
-  }
-
-  const adultsForSelection = getAdults()
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    if (!fromParticipantId) {
-      setError('Please select who paid')
-      return
-    }
-
-    if (!toParticipantId) {
-      setError('Please select who received the payment')
-      return
-    }
-
-    if (fromParticipantId === toParticipantId) {
-      setError('Cannot record a payment to yourself')
-      return
-    }
-
-    const amountNum = parseFloat(amount)
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError('Please enter a valid amount greater than 0')
-      return
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!currentTrip) {
-      setError('No trip selected')
-      return
+      toast({
+        title: "Error",
+        description: "No trip selected",
+        variant: "destructive"
+      });
+      return;
     }
 
-    setLoading(true)
+    if (formData.from_participant_id === formData.to_participant_id) {
+      toast({
+        title: "Error",
+        description: "Cannot settle with the same participant",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      await onSubmit({
-        trip_id: currentTrip.id,
-        from_participant_id: fromParticipantId,
-        to_participant_id: toParticipantId,
-        amount: amountNum,
-        currency,
-        settlement_date: settlementDate,
-        note: note.trim() || undefined,
-      })
+      const { data, error } = await supabase
+        .from('settlements')
+        .insert({
+          trip_id: currentTrip.id,
+          from_participant_id: formData.from_participant_id,
+          to_participant_id: formData.to_participant_id,
+          amount: parseFloat(formData.amount),
+          description: formData.description.trim() || null,
+          settlement_date: formData.settlement_date
+        })
+        .select(`
+          *,
+          from_participant:participants!settlements_from_participant_id_fkey(id, name, family_id),
+          to_participant:participants!settlements_to_participant_id_fkey(id, name, family_id)
+        `)
+        .single();
 
+      if (error) {
+        console.error('Error creating settlement:', error);
+        throw error;
+      }
+
+      onSettlementAdded(data);
+      
       // Reset form
-      setFromParticipantId('')
-      setToParticipantId('')
-      setAmount('')
-      setNote('')
-      setSettlementDate(new Date().toISOString().split('T')[0])
-    } catch (err) {
-      setError('Failed to record settlement. Please try again.')
+      setFormData({
+        from_participant_id: '',
+        to_participant_id: '',
+        amount: '',
+        description: '',
+        settlement_date: new Date().toISOString().split('T')[0]
+      });
+      
+      setOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Settlement recorded successfully"
+      });
+    } catch (error) {
+      console.error('Error creating settlement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record settlement",
+        variant: "destructive"
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const fromParticipant = participants.find(p => p.id === formData.from_participant_id);
+  const toParticipant = participants.find(p => p.id === formData.to_participant_id);
 
   return (
-    <motion.form
-      ref={formRef}
-      onSubmit={handleSubmit}
-      className="space-y-4"
-      variants={fadeInUp}
-      initial="initial"
-      animate="animate"
-    >
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      {/* From Participant */}
-      <div className="space-y-2">
-        <Label htmlFor="fromParticipant">Who Paid? (From)</Label>
-        <Select
-          value={fromParticipantId}
-          onValueChange={setFromParticipantId}
-          disabled={loading}
-        >
-          <SelectTrigger id="fromParticipant">
-            <SelectValue placeholder="Select person..." />
-          </SelectTrigger>
-          <SelectContent>
-            {adultsForSelection.map(adult => (
-              <SelectItem key={adult.id} value={adult.id}>
-                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* To Participant */}
-      <div className="space-y-2">
-        <Label htmlFor="toParticipant">Who Received? (To)</Label>
-        <Select
-          value={toParticipantId}
-          onValueChange={setToParticipantId}
-          disabled={loading}
-        >
-          <SelectTrigger id="toParticipant">
-            <SelectValue placeholder="Select person..." />
-          </SelectTrigger>
-          <SelectContent>
-            {adultsForSelection.map(adult => (
-              <SelectItem key={adult.id} value={adult.id}>
-                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Visual Arrow Indicator */}
-      {fromParticipantId && toParticipantId && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-accent/10 border border-accent/20 rounded-lg p-4"
-        >
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <div className="text-center">
-              <span className="font-semibold text-foreground block">
-                {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
-              </span>
-              {adultsForSelection.find(a => a.id === fromParticipantId)?.familyName && (
-                <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === fromParticipantId)?.familyName})
-                </span>
-              )}
-            </div>
-            <ArrowRight size={24} className="text-accent flex-shrink-0" />
-            <div className="text-center">
-              <span className="font-semibold text-foreground block">
-                {adultsForSelection.find(a => a.id === toParticipantId)?.name}
-              </span>
-              {adultsForSelection.find(a => a.id === toParticipantId)?.familyName && (
-                <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === toParticipantId)?.familyName})
-                </span>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Amount and Currency */}
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            id="amount"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            className="flex-1 text-2xl h-14 tabular-nums"
-            placeholder="0.00"
-            step="0.01"
-            min="0.01"
-            required
-            disabled={loading}
-          />
-          <Select
-            value={currency}
-            onValueChange={setCurrency}
-            disabled={loading}
-          >
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="GBP">GBP</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Date */}
-      <div className="space-y-2">
-        <Label htmlFor="settlementDate">Settlement Date</Label>
-        <Input
-          type="date"
-          id="settlementDate"
-          value={settlementDate}
-          onChange={e => setSettlementDate(e.target.value)}
-          disabled={loading}
-        />
-      </div>
-
-      {/* Note */}
-      <div className="space-y-2">
-        <Label htmlFor="note">Note (Optional)</Label>
-        <Textarea
-          id="note"
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          placeholder="e.g., Paid in cash, Partial payment, etc."
-          rows={2}
-          disabled={loading}
-        />
-      </div>
-
-      {/* Submit Buttons */}
-      <div className="flex gap-3 pt-2">
-        <Button
-          type="submit"
-          disabled={loading}
-          className="flex-1"
-        >
-          {loading ? 'Recording...' : 'Record Settlement'}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="flex items-center gap-2">
+          <PlusCircle className="w-4 h-4" />
+          Record Settlement
         </Button>
-        {onCancel && (
-          <Button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            variant="outline"
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
-    </motion.form>
-  )
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Record Settlement</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="from_participant">From</Label>
+            <Select
+              value={formData.from_participant_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, from_participant_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select who paid" />
+              </SelectTrigger>
+              <SelectContent>
+                {participants.map((participant) => (
+                  <SelectItem key={participant.id} value={participant.id}>
+                    {participant.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="to_participant">To</Label>
+            <Select
+              value={formData.to_participant_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, to_participant_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select who received" />
+              </SelectTrigger>
+              <SelectContent>
+                {participants
+                  .filter(p => p.id !== formData.from_participant_id)
+                  .map((participant) => (
+                    <SelectItem key={participant.id} value={participant.id}>
+                      {participant.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={formData.amount}
+              onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="settlement_date">Date</Label>
+            <Input
+              id="settlement_date"
+              type="date"
+              value={formData.settlement_date}
+              onChange={(e) => setFormData(prev => ({ ...prev, settlement_date: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (optional)</Label>
+            <Textarea
+              id="description"
+              placeholder="e.g., Venmo payment for dinner"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={2}
+            />
+          </div>
+
+          {fromParticipant && toParticipant && formData.amount && (
+            <div className="p-3 bg-muted rounded-lg text-sm">
+              <strong>{fromParticipant.name}</strong> paid <strong>${parseFloat(formData.amount).toFixed(2)}</strong> to <strong>{toParticipant.name}</strong>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !formData.from_participant_id || !formData.to_participant_id || !formData.amount}
+              className="flex-1"
+            >
+              {loading ? 'Recording...' : 'Record Settlement'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }

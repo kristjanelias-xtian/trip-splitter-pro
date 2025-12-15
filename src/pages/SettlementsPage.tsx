@@ -1,320 +1,250 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
-import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useParticipantContext } from '@/contexts/ParticipantContext'
-import { useExpenseContext } from '@/contexts/ExpenseContext'
-import { useSettlementContext } from '@/contexts/SettlementContext'
-import { calculateBalances } from '@/services/balanceCalculator'
-import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
-import { exportSettlementPlanToPDF } from '@/services/pdfExport'
-import type { SettlementTransaction } from '@/services/settlementOptimizer'
-import type { CreateSettlementInput } from '@/types/settlement'
-import { SettlementPlan } from '@/components/SettlementPlan'
-import { SettlementForm } from '@/components/SettlementForm'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { SettlementForm } from '@/components/SettlementForm';
+import { useTrip } from '@/contexts/TripContext';
+import { Settlement } from '@/types/settlement';
+import { Participant } from '@/types/participant';
+import { supabase } from '@/lib/supabase';
+import { ArrowRight, Calendar, DollarSign, FileText, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export function SettlementsPage() {
-  const { currentTrip } = useCurrentTrip()
-  const { participants, families } = useParticipantContext()
-  const { expenses } = useExpenseContext()
-  const { createSettlement, settlements } = useSettlementContext()
-  const [recordingSettlement, setRecordingSettlement] = useState(false)
-  const [showCustomSettlement, setShowCustomSettlement] = useState(false)
-  const [confirmingTransaction, setConfirmingTransaction] = useState<SettlementTransaction | null>(null)
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { currentTrip } = useTrip();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentTrip) {
+      fetchData();
+    }
+  }, [currentTrip]);
+
+  const fetchData = async () => {
+    if (!currentTrip) return;
+
+    try {
+      setLoading(true);
+      
+      // Fetch settlements
+      const { data: settlementsData, error: settlementsError } = await supabase
+        .from('settlements')
+        .select(`
+          *,
+          from_participant:participants!settlements_from_participant_id_fkey(id, name, family_id),
+          to_participant:participants!settlements_to_participant_id_fkey(id, name, family_id)
+        `)
+        .eq('trip_id', currentTrip.id)
+        .order('settlement_date', { ascending: false });
+
+      if (settlementsError) throw settlementsError;
+      
+      // Fetch participants
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('participants')
+        .select('*')
+        .eq('trip_id', currentTrip.id)
+        .order('name');
+
+      if (participantsError) throw participantsError;
+      
+      setSettlements(settlementsData || []);
+      setParticipants(participantsData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load settlements",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSettlementAdded = (newSettlement: Settlement) => {
+    setSettlements(prev => [newSettlement, ...prev]);
+  };
+
+  const handleDeleteSettlement = async (settlementId: string) => {
+    if (!confirm('Are you sure you want to delete this settlement?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('settlements')
+        .delete()
+        .eq('id', settlementId);
+
+      if (error) throw error;
+
+      setSettlements(prev => prev.filter(s => s.id !== settlementId));
+      toast({
+        title: "Success",
+        description: "Settlement deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting settlement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete settlement",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-300 rounded w-1/4"></div>
+          <div className="h-32 bg-gray-300 rounded"></div>
+          <div className="h-32 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentTrip) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">
-              No trip selected. Please select a trip to view settlements.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Trip Selected</h2>
+          <p className="text-gray-600">Please select a trip to view settlements.</p>
+        </div>
       </div>
-    )
-  }
-
-  // Calculate balances (including settlements)
-  const balanceCalculation = calculateBalances(
-    expenses,
-    participants,
-    families,
-    currentTrip.tracking_mode,
-    settlements
-  )
-
-  // Calculate optimal settlement
-  const optimalSettlement = calculateOptimalSettlement(
-    balanceCalculation.balances,
-    'EUR' // TODO: Get from trip settings
-  )
-
-  const handleRecordSettlement = async (transaction: SettlementTransaction) => {
-    if (recordingSettlement) return
-    setConfirmingTransaction(transaction)
-  }
-
-  const confirmRecordSettlement = async () => {
-    if (!confirmingTransaction || recordingSettlement) return
-
-    setRecordingSettlement(true)
-    try {
-      const result = await createSettlement({
-        trip_id: currentTrip.id,
-        from_participant_id: confirmingTransaction.fromId,
-        to_participant_id: confirmingTransaction.toId,
-        amount: confirmingTransaction.amount,
-        currency: 'EUR',
-        note: 'Settlement recorded from optimal plan',
-      })
-
-      if (result) {
-        setConfirmingTransaction(null)
-      }
-    } catch (error) {
-      console.error('Error recording settlement:', error)
-    } finally {
-      setRecordingSettlement(false)
-    }
-  }
-
-  const handleCustomSettlement = async (input: CreateSettlementInput) => {
-    try {
-      const result = await createSettlement(input)
-
-      if (result) {
-        setShowCustomSettlement(false)
-      }
-    } catch (error) {
-      console.error('Error recording custom settlement:', error)
-    }
-  }
-
-  const handleExportPDF = () => {
-    exportSettlementPlanToPDF(currentTrip, optimalSettlement, balanceCalculation.balances)
+    );
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Optimal settlement plan and payment recording for {currentTrip.name}
-            </p>
-          </div>
-          {expenses.length > 0 && (
-            <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
-              <FileDown size={16} />
-              Export PDF
-            </Button>
-          )}
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Settlements</h1>
+          <p className="text-gray-600 mt-1">
+            Track payments between participants
+          </p>
         </div>
-
-        {/* Settlement Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Total to Settle</div>
-              <div className="text-2xl font-bold text-foreground tabular-nums">
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'EUR',
-                }).format(
-                  balanceCalculation.balances
-                    .filter(b => b.balance < 0)
-                    .reduce((sum, b) => sum + Math.abs(b.balance), 0)
-                )}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Total amount owed by all debtors
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Settlements Needed</div>
-              <div className="text-2xl font-bold text-foreground tabular-nums">
-                {optimalSettlement.totalTransactions}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {optimalSettlement.totalTransactions === 0 ? 'All settled!' : 'transactions required'}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Settlements Recorded</div>
-              <div className="text-2xl font-bold text-foreground tabular-nums">
-                {settlements.length}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Total payments recorded
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Optimal Settlement Plan */}
-        {expenses.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Custom Settlement Form */}
-        {participants.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Record Custom Settlement
-                </h3>
-                <Button
-                  onClick={() => setShowCustomSettlement(!showCustomSettlement)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  {showCustomSettlement ? (
-                    <><ChevronDown size={16} className="mr-1" /> Hide</>
-                  ) : (
-                    <><ChevronRight size={16} className="mr-1" /> Add Custom Payment</>
-                  )}
-                </Button>
-              </div>
-
-              {showCustomSettlement && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Record a payment that happened outside of the optimal settlement plan (e.g., partial payments, cash transfers, etc.)
-                    {currentTrip.tracking_mode === 'families' && (
-                      <span className="block mt-2 text-xs text-accent">
-                        Tip: In families mode, select the adult who made/received the payment. The balance will update for their family.
-                      </span>
-                    )}
-                  </p>
-                  <SettlementForm
-                    onSubmit={handleCustomSettlement}
-                    onCancel={() => setShowCustomSettlement(false)}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Settlement History */}
-        {settlements.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Settlement History
-              </h3>
-              <div className="space-y-2">
-                {settlements.map((settlement) => {
-                  const fromParticipant = participants.find(p => p.id === settlement.from_participant_id)
-                  const toParticipant = participants.find(p => p.id === settlement.to_participant_id)
-
-                  return (
-                    <div
-                      key={settlement.id}
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-foreground">
-                            {fromParticipant?.name || 'Unknown'}
-                          </span>
-                          <span className="text-muted-foreground">→</span>
-                          <span className="font-medium text-foreground">
-                            {toParticipant?.name || 'Unknown'}
-                          </span>
-                        </div>
-                        {settlement.note && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {settlement.note}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-positive tabular-nums">
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: settlement.currency,
-                          }).format(settlement.amount)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(settlement.settlement_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Empty State */}
-        {expenses.length === 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <Receipt size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">
-                  No expenses recorded yet. Add expenses first to see settlement recommendations.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        {participants.length > 1 && (
+          <SettlementForm
+            participants={participants}
+            onSettlementAdded={handleSettlementAdded}
+          />
         )}
       </div>
 
-      {/* Record Settlement Confirmation Dialog */}
-      <Dialog open={!!confirmingTransaction} onOpenChange={(open) => !open && setConfirmingTransaction(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Record Settlement?</DialogTitle>
-            <DialogDescription>
-              {confirmingTransaction && (
-                <>
-                  {confirmingTransaction.fromName} pays {confirmingTransaction.toName}{' '}
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(confirmingTransaction.amount)}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setConfirmingTransaction(null)} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={confirmRecordSettlement} disabled={recordingSettlement}>
-              {recordingSettlement ? 'Recording...' : 'Record Settlement'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+      {participants.length <= 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-6">
+              <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Add Participants
+              </h3>
+              <p className="text-gray-600 mb-4">
+                You need at least 2 participants to record settlements.
+              </p>
+              <Button variant="outline">
+                Manage Participants
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {settlements.length === 0 && participants.length > 1 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-6">
+              <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Settlements Yet
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Record payments between participants to keep track of who owes what.
+              </p>
+              <SettlementForm
+                participants={participants}
+                onSettlementAdded={handleSettlementAdded}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {settlements.map((settlement) => (
+            <Card key={settlement.id}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        ${settlement.amount.toFixed(2)}
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(settlement.settlement_date)}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 text-lg font-medium mb-2">
+                      <span className="text-gray-900">
+                        {settlement.from_participant.name}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">
+                        {settlement.to_participant.name}
+                      </span>
+                    </div>
+                    
+                    {settlement.description && (
+                      <div className="flex items-start gap-2 text-sm text-gray-600">
+                        <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <p>{settlement.description}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteSettlement(settlement.id)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {settlements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Settlement Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-gray-600">
+              <p>Total settlements recorded: <strong>{settlements.length}</strong></p>
+              <p>Total amount settled: <strong>${settlements.reduce((sum, s) => sum + s.amount, 0).toFixed(2)}</strong></p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }

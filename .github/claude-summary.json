@@ -1,0 +1,43 @@
+{
+  "issue_number": "3",
+  "issue_title": "record settlement button not working",
+  "files_changed": 9,
+  "files": [
+    {
+      "path": "src/components/SettlementForm.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/components/ui/use-toast.ts",
+      "action": "create"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "action": "create"
+    },
+    {
+      "path": "src/lib/supabase.ts",
+      "action": "create"
+    },
+    {
+      "path": "src/contexts/TripContext.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/pages/SettlementsPage.tsx",
+      "action": "update"
+    }
+  ]
+}
