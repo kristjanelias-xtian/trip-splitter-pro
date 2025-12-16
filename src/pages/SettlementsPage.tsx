@@ -61,6 +61,24 @@ export function SettlementsPage() {
     'EUR' // TODO: Get from trip settings
   )
 
+  // Helper to get participant ID from entity ID (handles families mode)
+  const getParticipantIdFromEntity = (entityId: string): string => {
+    if (currentTrip.tracking_mode === 'individuals') {
+      return entityId // Already a participant ID
+    }
+
+    // In families mode, entityId is a family ID
+    // Find the first adult participant from this family
+    const familyParticipants = participants.filter(p => p.family_id === entityId)
+    const adult = familyParticipants.find(p => p.is_adult)
+
+    if (!adult) {
+      throw new Error(`No adult participant found for family ${entityId}`)
+    }
+
+    return adult.id
+  }
+
   const handleRecordSettlement = async (transaction: SettlementTransaction) => {
     if (recordingSettlement) return
     setConfirmingTransaction(transaction)
@@ -71,10 +89,14 @@ export function SettlementsPage() {
 
     setRecordingSettlement(true)
     try {
+      // Convert entity IDs (family IDs in families mode) to participant IDs
+      const fromParticipantId = getParticipantIdFromEntity(confirmingTransaction.fromId)
+      const toParticipantId = getParticipantIdFromEntity(confirmingTransaction.toId)
+
       const result = await createSettlement({
         trip_id: currentTrip.id,
-        from_participant_id: confirmingTransaction.fromId,
-        to_participant_id: confirmingTransaction.toId,
+        from_participant_id: fromParticipantId,
+        to_participant_id: toParticipantId,
         amount: confirmingTransaction.amount,
         currency: 'EUR',
         note: 'Settlement recorded from optimal plan',
