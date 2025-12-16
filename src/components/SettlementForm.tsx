@@ -1,4 +1,4 @@
-import { useState, FormEvent, useRef } from 'react'
+import { useState, FormEvent, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -22,20 +22,22 @@ import { fadeInUp } from '@/lib/animations'
 interface SettlementFormProps {
   onSubmit: (input: CreateSettlementInput) => Promise<void>
   onCancel?: () => void
+  initialAmount?: number
+  initialNote?: string
 }
 
-export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
+export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote }: SettlementFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
 
   const [fromParticipantId, setFromParticipantId] = useState('')
   const [toParticipantId, setToParticipantId] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(initialAmount?.toString() || '')
   const [currency, setCurrency] = useState('EUR')
   const [settlementDate, setSettlementDate] = useState(
     new Date().toISOString().split('T')[0]
   )
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initialNote || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -47,6 +49,19 @@ export function SettlementForm({ onSubmit, onCancel }: SettlementFormProps) {
     enabled: keyboard.isVisible,
     offset: 20,
   })
+
+  // Update form when initial values change
+  useEffect(() => {
+    if (initialAmount !== undefined) {
+      setAmount(initialAmount.toString())
+    }
+  }, [initialAmount])
+
+  useEffect(() => {
+    if (initialNote !== undefined) {
+      setNote(initialNote)
+    }
+  }, [initialNote])
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 

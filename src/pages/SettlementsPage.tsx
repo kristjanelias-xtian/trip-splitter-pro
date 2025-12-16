@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -13,23 +13,16 @@ import { SettlementPlan } from '@/components/SettlementPlan'
 import { SettlementForm } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { createSettlement, settlements } = useSettlementContext()
-  const [recordingSettlement, setRecordingSettlement] = useState(false)
   const [showCustomSettlement, setShowCustomSettlement] = useState(false)
-  const [confirmingTransaction, setConfirmingTransaction] = useState<SettlementTransaction | null>(null)
+  const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
+  const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
+  const customSettlementRef = useRef<HTMLDivElement>(null)
 
   if (!currentTrip) {
     return (
@@ -61,55 +54,21 @@ export function SettlementsPage() {
     'EUR' // TODO: Get from trip settings
   )
 
-  // Helper to get participant ID from entity ID (handles families mode)
-  const getParticipantIdFromEntity = (entityId: string): string => {
-    if (currentTrip.tracking_mode === 'individuals') {
-      return entityId // Already a participant ID
-    }
+  const handleRecordSettlement = (transaction: SettlementTransaction) => {
+    // Pre-populate the custom settlement form with amount and note
+    setPrefilledAmount(transaction.amount)
+    setPrefilledNote(`Settlement from optimal plan: ${transaction.fromName} → ${transaction.toName}`)
 
-    // In families mode, entityId is a family ID
-    // Find the first adult participant from this family
-    const familyParticipants = participants.filter(p => p.family_id === entityId)
-    const adult = familyParticipants.find(p => p.is_adult)
+    // Expand the custom settlement section
+    setShowCustomSettlement(true)
 
-    if (!adult) {
-      throw new Error(`No adult participant found for family ${entityId}`)
-    }
-
-    return adult.id
-  }
-
-  const handleRecordSettlement = async (transaction: SettlementTransaction) => {
-    if (recordingSettlement) return
-    setConfirmingTransaction(transaction)
-  }
-
-  const confirmRecordSettlement = async () => {
-    if (!confirmingTransaction || recordingSettlement) return
-
-    setRecordingSettlement(true)
-    try {
-      // Convert entity IDs (family IDs in families mode) to participant IDs
-      const fromParticipantId = getParticipantIdFromEntity(confirmingTransaction.fromId)
-      const toParticipantId = getParticipantIdFromEntity(confirmingTransaction.toId)
-
-      const result = await createSettlement({
-        trip_id: currentTrip.id,
-        from_participant_id: fromParticipantId,
-        to_participant_id: toParticipantId,
-        amount: confirmingTransaction.amount,
-        currency: 'EUR',
-        note: 'Settlement recorded from optimal plan',
+    // Scroll to the custom settlement form
+    setTimeout(() => {
+      customSettlementRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       })
-
-      if (result) {
-        setConfirmingTransaction(null)
-      }
-    } catch (error) {
-      console.error('Error recording settlement:', error)
-    } finally {
-      setRecordingSettlement(false)
-    }
+    }, 100)
   }
 
   const handleCustomSettlement = async (input: CreateSettlementInput) => {
@@ -118,6 +77,9 @@ export function SettlementsPage() {
 
       if (result) {
         setShowCustomSettlement(false)
+        // Clear pre-filled values after successful submission
+        setPrefilledAmount(undefined)
+        setPrefilledNote(undefined)
       }
     } catch (error) {
       console.error('Error recording custom settlement:', error)
@@ -204,7 +166,7 @@ export function SettlementsPage() {
 
         {/* Custom Settlement Form */}
         {participants.length > 0 && (
-          <Card>
+          <Card ref={customSettlementRef}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-foreground">
@@ -236,6 +198,8 @@ export function SettlementsPage() {
                   <SettlementForm
                     onSubmit={handleCustomSettlement}
                     onCancel={() => setShowCustomSettlement(false)}
+                    initialAmount={prefilledAmount}
+                    initialNote={prefilledNote}
                   />
                 </div>
               )}
@@ -309,34 +273,6 @@ export function SettlementsPage() {
           </Card>
         )}
       </div>
-
-      {/* Record Settlement Confirmation Dialog */}
-      <Dialog open={!!confirmingTransaction} onOpenChange={(open) => !open && setConfirmingTransaction(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Record Settlement?</DialogTitle>
-            <DialogDescription>
-              {confirmingTransaction && (
-                <>
-                  {confirmingTransaction.fromName} pays {confirmingTransaction.toName}{' '}
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(confirmingTransaction.amount)}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setConfirmingTransaction(null)} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={confirmRecordSettlement} disabled={recordingSettlement}>
-              {recordingSettlement ? 'Recording...' : 'Record Settlement'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
