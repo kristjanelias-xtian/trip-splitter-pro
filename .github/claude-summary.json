@@ -1,0 +1,27 @@
+{
+  "issue_number": "5",
+  "issue_title": "Button not working",
+  "files_changed": 5,
+  "files": [
+    {
+      "path": "src/components/ui/button.tsx",
+      "action": "create"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "action": "create"
+    },
+    {
+      "path": "src/pages/TripsPage.tsx",
+      "action": "update"
+    },
+    {
+      "path": "src/hooks/use-toast.ts",
+      "action": "create"
+    },
+    {
+      "path": "src/lib/supabase.ts",
+      "action": "create"
+    }
+  ]
+}
