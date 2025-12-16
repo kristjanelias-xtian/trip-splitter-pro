@@ -58,6 +58,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: claude/issue-${{ github.event.issue.number }}
           force: false
+          force-with-lease: false
           commit-message: |
             Implement changes from issue #${{ github.event.issue.number }}
 
