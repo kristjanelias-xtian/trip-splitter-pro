@@ -415,6 +415,53 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
         </CardContent>
       </Card>
 
+      {/* Add Individual Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Individual</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddIndividual} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="individualName">Name</Label>
+              <Input
+                type="text"
+                id="individualName"
+                value={individualName}
+                onChange={(e) => setIndividualName(e.target.value)}
+                placeholder="e.g., John Doe"
+                required
+                disabled={addingIndividual}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isAdult"
+                checked={isAdult}
+                onCheckedChange={(checked) => setIsAdult(checked as boolean)}
+                disabled={addingIndividual}
+              />
+              <label
+                htmlFor="isAdult"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Is Adult?
+              </label>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={addingIndividual || !individualName.trim()}
+              className="w-full"
+            >
+              <User size={16} className="mr-2" />
+              {addingIndividual ? 'Adding...' : 'Add Individual'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {families.length > 0 && (
         <Card>
           <CardHeader>
@@ -475,53 +522,6 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
           </CardContent>
         </Card>
       )}
-
-      {/* Add Individual Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Individual</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAddIndividual} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="individualName">Name</Label>
-              <Input
-                type="text"
-                id="individualName"
-                value={individualName}
-                onChange={(e) => setIndividualName(e.target.value)}
-                placeholder="e.g., John Doe"
-                required
-                disabled={addingIndividual}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isAdult"
-                checked={isAdult}
-                onCheckedChange={(checked) => setIsAdult(checked as boolean)}
-                disabled={addingIndividual}
-              />
-              <label
-                htmlFor="isAdult"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Is Adult?
-              </label>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={addingIndividual || !individualName.trim()}
-              className="w-full"
-            >
-              <User size={16} className="mr-2" />
-              {addingIndividual ? 'Adding...' : 'Add Individual'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
       {/* Standalone Individuals List */}
       {getStandaloneIndividuals().length > 0 && (
