@@ -290,10 +290,23 @@ export function ExpenseForm({
     } else {
       // Families mode
       if (selectedFamilies.length > 0 && selectedParticipants.length > 0) {
+        // CRITICAL: Filter out family members from participants to avoid double-counting
+        const standaloneParticipants = selectedParticipants.filter(participantId => {
+          const participant = participants.find(p => p.id === participantId)
+          // Only include participants who are NOT in any selected family
+          if (!participant) return false
+
+          // If participant has no family, they're standalone
+          if (participant.family_id === null) return true
+
+          // If participant belongs to a selected family, exclude them
+          return !selectedFamilies.includes(participant.family_id)
+        })
+
         distribution = {
           type: 'mixed',
           families: selectedFamilies,
-          participants: selectedParticipants,
+          participants: standaloneParticipants,
           splitMode,
           accountForFamilySize, // Include toggle value
           familySplits: splitMode !== 'equal'
@@ -303,7 +316,7 @@ export function ExpenseForm({
               }))
             : undefined,
           participantSplits: splitMode !== 'equal'
-            ? selectedParticipants.map(id => ({
+            ? standaloneParticipants.map(id => ({
                 participantId: id,
                 value: parseFloat(participantSplitValues[id] || '0')
               }))

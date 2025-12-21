@@ -286,8 +286,18 @@ function calculateExpenseShares(
   } else if (distribution.type === 'mixed') {
     if (splitMode === 'equal') {
       // Mixed distribution: some families, some individuals
+      // CRITICAL: Filter out family members from participants array to avoid double-counting
+      const standaloneParticipants = distribution.participants.filter(participantId => {
+        const participant = participants.find(p => p.id === participantId)
+        if (!participant) return false
+
+        // Only count if NOT in a selected family
+        if (participant.family_id === null) return true
+        return !distribution.families.includes(participant.family_id)
+      })
+
       // Count total PEOPLE across families and standalone individuals
-      let totalPeople = distribution.participants.length // Standalone individuals
+      let totalPeople = standaloneParticipants.length
 
       // Add up family sizes
       distribution.families.forEach(familyId => {
@@ -310,18 +320,10 @@ function calculateExpenseShares(
         }
       })
 
-      // Assign per-person share to standalone individuals
-      distribution.participants.forEach(participantId => {
+      // Assign per-person share to STANDALONE individuals only
+      standaloneParticipants.forEach(participantId => {
         if (trackingMode === 'families') {
-          const participant = participants.find(p => p.id === participantId)
-          const familyId = participant?.family_id
-          if (familyId) {
-            const currentShare = shares.get(familyId) || 0
-            shares.set(familyId, currentShare + perPersonShare)
-          } else {
-            // Standalone individual - track directly by participant ID
-            shares.set(participantId, perPersonShare)
-          }
+          shares.set(participantId, perPersonShare)
         } else {
           shares.set(participantId, perPersonShare)
         }
@@ -335,18 +337,20 @@ function calculateExpenseShares(
         })
       }
       if (distribution.participantSplits) {
-        distribution.participantSplits.forEach(split => {
+        // CRITICAL: Filter out family members from participant splits to avoid double-counting
+        const standaloneSplits = distribution.participantSplits.filter(split => {
+          const participant = participants.find(p => p.id === split.participantId)
+          if (!participant) return false
+
+          // Only include if NOT in a selected family
+          if (participant.family_id === null) return true
+          return !distribution.families.includes(participant.family_id)
+        })
+
+        standaloneSplits.forEach(split => {
           const shareAmount = (expense.amount * split.value) / 100
           if (trackingMode === 'families') {
-            const participant = participants.find(p => p.id === split.participantId)
-            const familyId = participant?.family_id
-            if (familyId) {
-              const currentShare = shares.get(familyId) || 0
-              shares.set(familyId, currentShare + shareAmount)
-            } else {
-              // Standalone individual
-              shares.set(split.participantId, shareAmount)
-            }
+            shares.set(split.participantId, shareAmount)
           } else {
             shares.set(split.participantId, shareAmount)
           }
@@ -360,17 +364,19 @@ function calculateExpenseShares(
         })
       }
       if (distribution.participantSplits) {
-        distribution.participantSplits.forEach(split => {
+        // CRITICAL: Filter out family members from participant splits to avoid double-counting
+        const standaloneSplits = distribution.participantSplits.filter(split => {
+          const participant = participants.find(p => p.id === split.participantId)
+          if (!participant) return false
+
+          // Only include if NOT in a selected family
+          if (participant.family_id === null) return true
+          return !distribution.families.includes(participant.family_id)
+        })
+
+        standaloneSplits.forEach(split => {
           if (trackingMode === 'families') {
-            const participant = participants.find(p => p.id === split.participantId)
-            const familyId = participant?.family_id
-            if (familyId) {
-              const currentShare = shares.get(familyId) || 0
-              shares.set(familyId, currentShare + split.value)
-            } else {
-              // Standalone individual
-              shares.set(split.participantId, split.value)
-            }
+            shares.set(split.participantId, split.value)
           } else {
             shares.set(split.participantId, split.value)
           }
