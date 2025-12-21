@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
+import { ExpenseSplitPreview } from './ExpenseSplitPreview'
 
 interface ExpenseFormProps {
   onSubmit: (input: CreateExpenseInput) => Promise<void>
@@ -64,6 +65,7 @@ export function ExpenseForm({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
   const [splitMode, setSplitMode] = useState<SplitMode>('equal')
+  const [accountForFamilySize, setAccountForFamilySize] = useState(true) // Default to true (fair per-person)
 
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
@@ -246,6 +248,7 @@ export function ExpenseForm({
           families: selectedFamilies,
           participants: selectedParticipants,
           splitMode,
+          accountForFamilySize, // Include toggle value
           familySplits: splitMode !== 'equal'
             ? selectedFamilies.map(id => ({
                 familyId: id,
@@ -264,6 +267,7 @@ export function ExpenseForm({
           type: 'families',
           families: selectedFamilies,
           splitMode,
+          accountForFamilySize, // Include toggle value
           familySplits: splitMode !== 'equal'
             ? selectedFamilies.map(id => ({
                 familyId: id,
@@ -478,6 +482,34 @@ export function ExpenseForm({
         )}
       </div>
 
+      {/* Account for Family Size Toggle */}
+      {selectedFamilies.length > 0 && splitMode === 'equal' && (
+        <div className="space-y-2 p-3 bg-accent/5 rounded-lg border border-accent/10">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="accountForFamilySize"
+              checked={accountForFamilySize}
+              onCheckedChange={(checked) => setAccountForFamilySize(checked as boolean)}
+              disabled={loading}
+            />
+            <div className="flex-1 space-y-1">
+              <label
+                htmlFor="accountForFamilySize"
+                className="text-sm font-medium text-foreground cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Account for family size
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {accountForFamilySize
+                  ? 'Families pay proportionally by number of people (e.g., family of 4 pays 2× family of 2)'
+                  : 'All families pay equally regardless of size'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Split Between */}
       <div className="space-y-2">
         <Label>Split Between</Label>
@@ -595,6 +627,77 @@ export function ExpenseForm({
           </div>
         )}
       </div>
+
+      {/* Split Preview */}
+      {parseFloat(amount) > 0 && (selectedParticipants.length > 0 || selectedFamilies.length > 0) && (() => {
+        // Build distribution object for preview
+        const distributionType: ExpenseDistribution['type'] =
+          selectedFamilies.length > 0 && selectedParticipants.length > 0
+            ? 'mixed'
+            : selectedFamilies.length > 0
+            ? 'families'
+            : 'individuals'
+
+        let previewDistribution: ExpenseDistribution
+
+        if (distributionType === 'individuals') {
+          const dist: ExpenseDistribution = {
+            type: 'individuals',
+            participants: selectedParticipants,
+            splitMode,
+          }
+          if (splitMode === 'percentage' || splitMode === 'amount') {
+            dist.participantSplits = selectedParticipants.map(id => ({
+              participantId: id,
+              value: parseFloat(participantSplitValues[id] || '0')
+            }))
+          }
+          previewDistribution = dist
+        } else if (distributionType === 'families') {
+          const dist: ExpenseDistribution = {
+            type: 'families',
+            families: selectedFamilies,
+            splitMode,
+            accountForFamilySize, // Include the toggle value
+          }
+          if (splitMode === 'percentage' || splitMode === 'amount') {
+            dist.familySplits = selectedFamilies.map(id => ({
+              familyId: id,
+              value: parseFloat(familySplitValues[id] || '0')
+            }))
+          }
+          previewDistribution = dist
+        } else {
+          const dist: ExpenseDistribution = {
+            type: 'mixed',
+            families: selectedFamilies,
+            participants: selectedParticipants,
+            splitMode,
+            accountForFamilySize, // Include the toggle value
+          }
+          if (splitMode === 'percentage' || splitMode === 'amount') {
+            dist.familySplits = selectedFamilies.map(id => ({
+              familyId: id,
+              value: parseFloat(familySplitValues[id] || '0')
+            }))
+            dist.participantSplits = selectedParticipants.map(id => ({
+              participantId: id,
+              value: parseFloat(participantSplitValues[id] || '0')
+            }))
+          }
+          previewDistribution = dist
+        }
+
+        return (
+          <ExpenseSplitPreview
+            amount={parseFloat(amount)}
+            currency={currency}
+            distribution={previewDistribution}
+            participants={participants}
+            families={families}
+          />
+        )
+      })()}
 
       {/* More Details Collapsible */}
       <div className="space-y-3">

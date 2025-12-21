@@ -237,13 +237,40 @@ function calculateExpenseShares(
     }
   } else if (distribution.type === 'families') {
     if (splitMode === 'equal') {
-      // Split evenly among listed families
-      const shareCount = distribution.families.length
-      const shareAmount = expense.amount / shareCount
+      // Check if we should account for family size
+      // Default to false for backward compatibility (existing expenses without this field)
+      const shouldAccountForSize = distribution.accountForFamilySize ?? false
 
-      distribution.families.forEach(familyId => {
-        shares.set(familyId, shareAmount)
-      })
+      if (shouldAccountForSize) {
+        // Fair per-person split: count total people across families
+        let totalPeople = 0
+        distribution.families.forEach(familyId => {
+          const family = families.find(f => f.id === familyId)
+          if (family) {
+            totalPeople += family.adults + family.children
+          }
+        })
+
+        const perPersonShare = expense.amount / totalPeople
+
+        // Assign shares to families based on their size
+        distribution.families.forEach(familyId => {
+          const family = families.find(f => f.id === familyId)
+          if (family) {
+            const familySize = family.adults + family.children
+            const familyShare = perPersonShare * familySize
+            shares.set(familyId, familyShare)
+          }
+        })
+      } else {
+        // Families as units: split evenly among families (backward compatible behavior)
+        const shareCount = distribution.families.length
+        const shareAmount = expense.amount / shareCount
+
+        distribution.families.forEach(familyId => {
+          shares.set(familyId, shareAmount)
+        })
+      }
     } else if (splitMode === 'percentage' && distribution.familySplits) {
       // Split by percentage
       distribution.familySplits.forEach(split => {

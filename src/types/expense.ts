@@ -33,6 +33,7 @@ export interface FamiliesDistribution {
   families: string[]; // family IDs
   splitMode?: SplitMode; // defaults to 'equal' if not specified
   familySplits?: FamilySplit[]; // for percentage/amount modes
+  accountForFamilySize?: boolean; // if true, split proportionally by family size; if false/undefined, treat families as units
 }
 
 export interface MixedDistribution {
@@ -42,6 +43,7 @@ export interface MixedDistribution {
   splitMode?: SplitMode; // defaults to 'equal' if not specified
   familySplits?: FamilySplit[]; // for percentage/amount modes
   participantSplits?: ParticipantSplit[]; // for percentage/amount modes
+  accountForFamilySize?: boolean; // if true, split proportionally by family size; if false/undefined, families are still counted by size in mixed mode
 }
 
 export type ExpenseDistribution =
