@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import {
-  Home, Users, DollarSign, CreditCard, UtensilsCrossed,
+  Home, DollarSign, CreditCard, UtensilsCrossed,
   ShoppingCart, BarChart3, Settings2, MoreHorizontal
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -25,13 +25,12 @@ import {
 const iconMap = {
   'Overview': Home,
   'Trips': Home,
-  'Setup': Users,
+  'Manage Trip': Settings2,
   'Expenses': DollarSign,
   'Settlements': CreditCard,
   'Meals': UtensilsCrossed,
   'Shopping': ShoppingCart,
   'Dashboard': BarChart3,
-  'Settings': Settings2,
   'More': MoreHorizontal,
 }
 
@@ -48,13 +47,12 @@ export function Layout() {
 
     if (tripCode) {
       items.push(
-        { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
+        { path: `/t/${tripCode}/manage`, label: 'Manage Trip', requiresTrip: true },
         { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
         { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
         { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
         { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
         { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
-        { path: `/t/${tripCode}/settings`, label: 'Settings', requiresTrip: true },
       )
     }
 
@@ -85,9 +83,8 @@ export function Layout() {
 
     return [
       { path: '/', label: 'Trips', requiresTrip: false },
-      { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
+      { path: `/t/${tripCode}/manage`, label: 'Manage Trip', requiresTrip: true },
       { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
-      { path: `/t/${tripCode}/settings`, label: 'Settings', requiresTrip: true },
     ]
   }
 

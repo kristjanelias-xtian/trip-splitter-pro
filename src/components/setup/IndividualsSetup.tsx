@@ -12,11 +12,11 @@ import { Badge } from '@/components/ui/badge'
 import { fadeInUp } from '@/lib/animations'
 
 interface IndividualsSetupProps {
-  onComplete: () => void
-  hasSetup: boolean
+  onComplete?: () => void
+  hasSetup?: boolean
 }
 
-export function IndividualsSetup({ onComplete, hasSetup }: IndividualsSetupProps) {
+export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: IndividualsSetupProps = {}) {
   const { currentTrip } = useCurrentTrip()
   const { participants, createParticipant, deleteParticipant } = useParticipantContext()
 
@@ -49,8 +49,6 @@ export function IndividualsSetup({ onComplete, hasSetup }: IndividualsSetupProps
       await deleteParticipant(id)
     }
   }
-
-  const canComplete = participants.length > 0
 
   return (
     <motion.div
@@ -137,32 +135,6 @@ export function IndividualsSetup({ onComplete, hasSetup }: IndividualsSetupProps
                   </Button>
                 </motion.div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {canComplete && (
-        <Card>
-          <CardContent className="pt-6">
-            <Button
-              onClick={onComplete}
-              className="w-full"
-              size="lg"
-            >
-              {hasSetup ? 'Update & Continue' : 'Complete Setup'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {!canComplete && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-              <p className="text-muted-foreground">
-                Add at least one participant to continue
-              </p>
             </div>
           </CardContent>
         </Card>
