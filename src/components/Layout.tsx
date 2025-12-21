@@ -12,6 +12,7 @@ import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
+import { TripBanner } from '@/components/TripBanner'
 import {
   Sheet,
   SheetContent,
@@ -36,7 +37,7 @@ const iconMap = {
 
 export function Layout() {
   const location = useLocation()
-  const { tripCode } = useCurrentTrip()
+  const { currentTrip, tripCode } = useCurrentTrip()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   // Desktop navigation - all items visible
@@ -105,14 +106,20 @@ export function Layout() {
       <header className="bg-card border-b border-border soft-shadow-sm fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <motion.h1
-              className="text-2xl font-bold text-foreground"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              Trip Splitter Pro
-            </motion.h1>
+            {currentTrip ? (
+              <div className="flex-1 max-w-md">
+                <TripBanner tripName={currentTrip.name} compact />
+              </div>
+            ) : (
+              <motion.h1
+                className="text-2xl font-bold text-foreground"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                Trip Splitter Pro
+              </motion.h1>
+            )}
           </div>
         </div>
       </header>
