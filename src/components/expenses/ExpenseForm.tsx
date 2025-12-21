@@ -65,7 +65,7 @@ export function ExpenseForm({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
   const [splitMode, setSplitMode] = useState<SplitMode>('equal')
-  const [accountForFamilySize, setAccountForFamilySize] = useState(true) // Default to true (fair per-person)
+  const [accountForFamilySize, setAccountForFamilySize] = useState(false) // Default to false (families as units)
 
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
@@ -92,6 +92,53 @@ export function ExpenseForm({
       setSelectedFamilies(families.map(f => f.id))
     }
   }, [participants, families])
+
+  // Restore distribution selections when editing existing expense
+  useEffect(() => {
+    if (initialValues?.distribution) {
+      const dist = initialValues.distribution
+
+      if (dist.type === 'individuals') {
+        setSelectedParticipants(dist.participants || [])
+        setSelectedFamilies([])
+      } else if (dist.type === 'families') {
+        setSelectedFamilies(dist.families || [])
+        setSelectedParticipants([])
+        if ('accountForFamilySize' in dist && dist.accountForFamilySize !== undefined) {
+          setAccountForFamilySize(dist.accountForFamilySize)
+        }
+      } else if (dist.type === 'mixed') {
+        setSelectedFamilies(dist.families || [])
+        setSelectedParticipants(dist.participants || [])
+        if ('accountForFamilySize' in dist && dist.accountForFamilySize !== undefined) {
+          setAccountForFamilySize(dist.accountForFamilySize)
+        }
+      }
+
+      // Restore split mode
+      if (dist.splitMode) {
+        setSplitMode(dist.splitMode)
+      }
+
+      // Restore custom split values
+      if (dist.splitMode === 'percentage' || dist.splitMode === 'amount') {
+        if ('participantSplits' in dist && dist.participantSplits) {
+          const values: Record<string, string> = {}
+          dist.participantSplits.forEach(split => {
+            values[split.participantId] = split.value.toString()
+          })
+          setParticipantSplitValues(values)
+        }
+        if ('familySplits' in dist && dist.familySplits) {
+          const values: Record<string, string> = {}
+          dist.familySplits.forEach(split => {
+            values[split.familyId] = split.value.toString()
+          })
+          setFamilySplitValues(values)
+        }
+      }
+    }
+  }, [initialValues])
 
   const handleParticipantToggle = (id: string) => {
     setSelectedParticipants(prev => {

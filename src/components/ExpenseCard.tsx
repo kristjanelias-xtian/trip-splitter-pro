@@ -74,7 +74,11 @@ export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
         .map(id => families.find(f => f.id === id)?.family_name)
         .filter(Boolean)
       const participantNames = (dist.participants || [])
-        .map(id => participants.find(p => p.id === id)?.name)
+        .map(id => {
+          const participant = participants.find(p => p.id === id)
+          // Only include standalone individuals (not in any family)
+          return participant?.family_id === null ? participant.name : null
+        })
         .filter(Boolean)
       return [...familyNames, ...participantNames].join(', ')
     }

@@ -318,6 +318,9 @@ function calculateExpenseShares(
           if (familyId) {
             const currentShare = shares.get(familyId) || 0
             shares.set(familyId, currentShare + perPersonShare)
+          } else {
+            // Standalone individual - track directly by participant ID
+            shares.set(participantId, perPersonShare)
           }
         } else {
           shares.set(participantId, perPersonShare)
@@ -340,6 +343,9 @@ function calculateExpenseShares(
             if (familyId) {
               const currentShare = shares.get(familyId) || 0
               shares.set(familyId, currentShare + shareAmount)
+            } else {
+              // Standalone individual
+              shares.set(split.participantId, shareAmount)
             }
           } else {
             shares.set(split.participantId, shareAmount)
@@ -361,6 +367,9 @@ function calculateExpenseShares(
             if (familyId) {
               const currentShare = shares.get(familyId) || 0
               shares.set(familyId, currentShare + split.value)
+            } else {
+              // Standalone individual
+              shares.set(split.participantId, split.value)
             }
           } else {
             shares.set(split.participantId, split.value)
