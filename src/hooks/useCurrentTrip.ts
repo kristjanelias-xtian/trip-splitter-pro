@@ -5,7 +5,7 @@ import { addToMyTrips } from '@/lib/myTripsStorage'
 
 export function useCurrentTrip() {
   const { tripCode } = useParams<{ tripCode: string }>()
-  const { getTripByCode } = useTripContext()
+  const { getTripByCode, loading } = useTripContext()
 
   const currentTrip = tripCode ? getTripByCode(tripCode) : null
 
@@ -19,5 +19,6 @@ export function useCurrentTrip() {
   return {
     currentTrip,
     tripCode,
+    loading,
   }
 }

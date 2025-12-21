@@ -14,23 +14,19 @@ interface TripRouteGuardProps {
  * Shows loading state while trip is being loaded
  */
 export function TripRouteGuard({ children }: TripRouteGuardProps) {
-  const { currentTrip, tripCode } = useCurrentTrip()
+  const { currentTrip, tripCode, loading } = useCurrentTrip()
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Wait for trips to load (give it a moment)
-    const timer = setTimeout(() => {
-      if (tripCode && !currentTrip) {
-        // Trip code exists in URL but trip not found
-        navigate(`/trip-not-found/${tripCode}`, { replace: true })
-      }
-    }, 500)
+    // Only check if trip exists after loading completes
+    if (!loading && tripCode && !currentTrip) {
+      // Trip code exists in URL but trip not found
+      navigate(`/trip-not-found/${tripCode}`, { replace: true })
+    }
+  }, [loading, currentTrip, tripCode, navigate])
 
-    return () => clearTimeout(timer)
-  }, [currentTrip, tripCode, navigate])
-
-  // Show loading while waiting
-  if (tripCode && !currentTrip) {
+  // Show loading while trips are being fetched
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="w-full max-w-md">
