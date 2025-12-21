@@ -166,12 +166,42 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
         })
       }
 
+      // Get original children to detect deletions
+      const originalChildren = getParticipantsByFamily(editingFamily.id).filter(p => !p.is_adult)
+      const currentChildIds = editChildren.map(c => c.id)
+
+      // Delete removed children
+      for (const originalChild of originalChildren) {
+        if (!currentChildIds.includes(originalChild.id)) {
+          await deleteParticipant(originalChild.id)
+        }
+      }
+
+      // Handle children: update existing, create new
       const validChildren = editChildren.filter(c => c.name.trim())
       for (const child of validChildren) {
-        await updateParticipant(child.id, {
-          name: child.name.trim(),
-        })
+        if (child.id.startsWith('new-')) {
+          // Create new child
+          await createParticipant({
+            trip_id: currentTrip.id,
+            family_id: editingFamily.id,
+            name: child.name.trim(),
+            is_adult: false,
+          })
+        } else {
+          // Update existing child
+          await updateParticipant(child.id, {
+            name: child.name.trim(),
+          })
+        }
       }
+
+      // Update family counts
+      const childCount = validChildren.filter(c => !c.id.startsWith('new-')).length +
+                        validChildren.filter(c => c.id.startsWith('new-')).length
+      await updateFamily(editingFamily.id, {
+        children: childCount,
+      })
 
       // Close dialog
       handleCancelEdit()
@@ -440,12 +470,11 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
               ))}
             </div>
 
-            {editChildren.length > 0 && (
-              <div className="space-y-2">
-                <Label>Children</Label>
-                {editChildren.map((child, index) => (
+            <div className="space-y-2">
+              <Label>Children</Label>
+              {editChildren.map((child, index) => (
+                <div key={child.id} className="flex gap-2">
                   <Input
-                    key={child.id}
                     type="text"
                     value={child.name}
                     onChange={(e) => {
@@ -455,10 +484,32 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
                     }}
                     placeholder={`Child ${index + 1} name`}
                     disabled={updating}
+                    className="flex-1"
                   />
-                ))}
-              </div>
-            )}
+                  <Button
+                    type="button"
+                    onClick={() => setEditChildren(editChildren.filter((_, i) => i !== index))}
+                    variant="ghost"
+                    size="sm"
+                    disabled={updating}
+                    className="h-10 w-10 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                onClick={() => setEditChildren([...editChildren, { id: `new-${Date.now()}`, name: '' }])}
+                variant="ghost"
+                size="sm"
+                disabled={updating}
+                className="w-full"
+              >
+                <Plus size={16} className="mr-2" />
+                Add child
+              </Button>
+            </div>
 
             <div className="flex gap-3 pt-2">
               <Button
