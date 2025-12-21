@@ -180,7 +180,7 @@ function getEntityIdForParticipant(
 function calculateExpenseShares(
   expense: Expense,
   participants: Participant[],
-  _families: Family[],
+  families: Family[],
   trackingMode: 'individuals' | 'families'
 ): Map<string, number> {
   const shares = new Map<string, number>()
@@ -259,23 +259,41 @@ function calculateExpenseShares(
   } else if (distribution.type === 'mixed') {
     if (splitMode === 'equal') {
       // Mixed distribution: some families, some individuals
-      const totalShares = distribution.families.length + distribution.participants.length
-      const shareAmount = expense.amount / totalShares
+      // Count total PEOPLE across families and standalone individuals
+      let totalPeople = distribution.participants.length // Standalone individuals
 
+      // Add up family sizes
       distribution.families.forEach(familyId => {
-        shares.set(familyId, shareAmount)
+        const family = families.find(f => f.id === familyId)
+        if (family) {
+          totalPeople += family.adults + family.children
+        }
       })
 
+      // Calculate per-person share
+      const perPersonShare = expense.amount / totalPeople
+
+      // Assign shares to families based on their size
+      distribution.families.forEach(familyId => {
+        const family = families.find(f => f.id === familyId)
+        if (family) {
+          const familySize = family.adults + family.children
+          const familyShare = perPersonShare * familySize
+          shares.set(familyId, familyShare)
+        }
+      })
+
+      // Assign per-person share to standalone individuals
       distribution.participants.forEach(participantId => {
         if (trackingMode === 'families') {
           const participant = participants.find(p => p.id === participantId)
           const familyId = participant?.family_id
           if (familyId) {
             const currentShare = shares.get(familyId) || 0
-            shares.set(familyId, currentShare + shareAmount)
+            shares.set(familyId, currentShare + perPersonShare)
           }
         } else {
-          shares.set(participantId, shareAmount)
+          shares.set(participantId, perPersonShare)
         }
       })
     } else if (splitMode === 'percentage') {
