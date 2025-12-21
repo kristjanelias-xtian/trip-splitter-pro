@@ -3,13 +3,12 @@ import { Layout } from './components/Layout'
 import { TripRouteGuard } from './components/TripRouteGuard'
 import { HomePage } from './pages/HomePage'
 import { TripsPage } from './pages/TripsPage'
-import { TripSetupPage } from './pages/TripSetupPage'
+import { ManageTripPage } from './pages/ManageTripPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { MealsPage } from './pages/MealsPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
-import { SettingsPage } from './pages/SettingsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
 
@@ -27,13 +26,12 @@ export function AppRoutes() {
         {/* Trip routes - protected by TripRouteGuard */}
         {/* Redirect base trip URL to dashboard */}
         <Route path="t/:tripCode" element={<Navigate to="dashboard" replace />} />
-        <Route path="t/:tripCode/setup" element={<TripRouteGuard><TripSetupPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/manage" element={<TripRouteGuard><ManageTripPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ExpensesPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/settlements" element={<TripRouteGuard><SettlementsPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/meals" element={<TripRouteGuard><MealsPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/shopping" element={<TripRouteGuard><ShoppingPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/dashboard" element={<TripRouteGuard><DashboardPage /></TripRouteGuard>} />
-        <Route path="t/:tripCode/settings" element={<TripRouteGuard><SettingsPage /></TripRouteGuard>} />
       </Route>
     </Routes>
   )

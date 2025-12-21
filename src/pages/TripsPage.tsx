@@ -11,8 +11,8 @@ export function TripsPage() {
   const handleCreateTrip = async (input: CreateTripInput) => {
     const newTrip = await createTrip(input)
     if (newTrip) {
-      // Navigate to setup page for new trip using trip code
-      navigate(`/t/${newTrip.trip_code}/setup`)
+      // Navigate to manage page for new trip using trip code
+      navigate(`/t/${newTrip.trip_code}/manage`)
     }
   }
 

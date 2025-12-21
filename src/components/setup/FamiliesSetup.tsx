@@ -19,11 +19,11 @@ import { fadeInUp } from '@/lib/animations'
 import type { Family, Participant } from '@/types/participant'
 
 interface FamiliesSetupProps {
-  onComplete: () => void
-  hasSetup: boolean
+  onComplete?: () => void
+  hasSetup?: boolean
 }
 
-export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
+export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: FamiliesSetupProps = {}) {
   const { currentTrip } = useCurrentTrip()
   const {
     families,
@@ -294,8 +294,6 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
       setUpdatingIndividual(false)
     }
   }
-
-  const canComplete = families.length > 0 || getStandaloneIndividuals().length > 0
 
   return (
     <motion.div
@@ -570,32 +568,6 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
                   </div>
                 </motion.div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {canComplete && (
-        <Card>
-          <CardContent className="pt-6">
-            <Button
-              onClick={onComplete}
-              className="w-full"
-              size="lg"
-            >
-              {hasSetup ? 'Update & Continue' : 'Complete Setup'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {!canComplete && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-              <p className="text-muted-foreground">
-                Add at least one family or individual to continue
-              </p>
             </div>
           </CardContent>
         </Card>

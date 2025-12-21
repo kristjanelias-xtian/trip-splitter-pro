@@ -6,6 +6,8 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useMealContext } from '@/contexts/MealContext'
+import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
+import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
 import { TripForm } from '@/components/TripForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -32,7 +34,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { CreateTripInput } from '@/types/trip'
 
-export function SettingsPage() {
+export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
   const { updateTrip, deleteTrip } = useTripContext()
   const { participants } = useParticipantContext()
@@ -47,7 +49,7 @@ export function SettingsPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+        <h2 className="text-2xl font-bold text-foreground">Manage Trip</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
@@ -131,8 +133,9 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+        <h2 className="text-2xl font-bold text-foreground">Manage Trip</h2>
         <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
       </div>
 
@@ -175,6 +178,18 @@ export function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Participants Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">
+          Participants & Families
+        </h3>
+        {currentTrip.tracking_mode === 'individuals' ? (
+          <IndividualsSetup />
+        ) : (
+          <FamiliesSetup />
+        )}
+      </div>
 
       {/* Danger Zone */}
       <Card className="border-destructive">
