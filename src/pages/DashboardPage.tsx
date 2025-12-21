@@ -91,10 +91,19 @@ export function DashboardPage() {
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground mb-1">Participants</div>
             <div className="text-2xl font-bold text-foreground tabular-nums">
-              {currentTrip.tracking_mode === 'families' ? families.length : participants.length}
+              {currentTrip.tracking_mode === 'families'
+                ? families.length + participants.filter(p => p.family_id === null).length
+                : participants.length}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {currentTrip.tracking_mode === 'families' ? 'families' : 'individuals'}
+              {currentTrip.tracking_mode === 'families'
+                ? (() => {
+                    const standaloneCount = participants.filter(p => p.family_id === null).length
+                    if (standaloneCount === 0) return `${families.length} ${families.length === 1 ? 'family' : 'families'}`
+                    if (families.length === 0) return `${standaloneCount} ${standaloneCount === 1 ? 'individual' : 'individuals'}`
+                    return `${families.length} ${families.length === 1 ? 'family' : 'families'}, ${standaloneCount} ${standaloneCount === 1 ? 'individual' : 'individuals'}`
+                  })()
+                : 'individuals'}
             </div>
           </CardContent>
         </Card>
