@@ -111,8 +111,8 @@ export function ManageTripPage() {
           description: 'The trip has been permanently deleted.',
         })
 
-        // Navigate to trips page
-        navigate('/trips')
+        // Navigate to home page
+        navigate('/')
       } else {
         toast({
           variant: 'destructive',
