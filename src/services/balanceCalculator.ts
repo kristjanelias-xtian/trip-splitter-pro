@@ -48,6 +48,20 @@ export function calculateBalances(
         isFamily: true,
       })
     })
+
+    // Also initialize balances for standalone participants (family_id is null)
+    participants
+      .filter(p => p.family_id === null)
+      .forEach(participant => {
+        balances.set(participant.id, {
+          id: participant.id,
+          name: participant.name,
+          totalPaid: 0,
+          totalShare: 0,
+          balance: 0,
+          isFamily: false,
+        })
+      })
   } else {
     participants.forEach(participant => {
       balances.set(participant.id, {
