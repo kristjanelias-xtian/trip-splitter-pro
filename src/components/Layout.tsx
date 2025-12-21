@@ -54,6 +54,7 @@ export function Layout() {
         { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
         { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
         { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
+        { path: `/t/${tripCode}/settings`, label: 'Settings', requiresTrip: true },
       )
     }
 
@@ -86,6 +87,7 @@ export function Layout() {
       { path: '/', label: 'Trips', requiresTrip: false },
       { path: `/t/${tripCode}/setup`, label: 'Setup', requiresTrip: true },
       { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
+      { path: `/t/${tripCode}/settings`, label: 'Settings', requiresTrip: true },
     ]
   }
 

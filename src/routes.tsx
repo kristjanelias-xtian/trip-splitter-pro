@@ -9,6 +9,7 @@ import { MealsPage } from './pages/MealsPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
 
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <Route path="t/:tripCode/meals" element={<TripRouteGuard><MealsPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/shopping" element={<TripRouteGuard><ShoppingPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/dashboard" element={<TripRouteGuard><DashboardPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/settings" element={<TripRouteGuard><SettingsPage /></TripRouteGuard>} />
       </Route>
     </Routes>
   )
