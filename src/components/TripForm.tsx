@@ -11,15 +11,26 @@ interface TripFormProps {
   onCancel?: () => void
   initialValues?: Partial<CreateTripInput>
   submitLabel?: string
+  isLoading?: boolean
+  disableTrackingMode?: boolean
 }
 
-export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Create Trip' }: TripFormProps) {
+export function TripForm({
+  onSubmit,
+  onCancel,
+  initialValues,
+  submitLabel = 'Create Trip',
+  isLoading: externalLoading,
+  disableTrackingMode = false
+}: TripFormProps) {
   const [name, setName] = useState(initialValues?.name || '')
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isSubmitting = externalLoading || loading
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -77,7 +88,7 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Summer Vacation 2025"
           required
-          disabled={loading}
+          disabled={isSubmitting}
         />
       </div>
 
@@ -90,7 +101,7 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             required
-            disabled={loading}
+            disabled={isSubmitting}
           />
         </div>
 
@@ -103,13 +114,18 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
             onChange={(e) => setEndDate(e.target.value)}
             min={startDate}
             required
-            disabled={loading}
+            disabled={isSubmitting}
           />
         </div>
       </div>
 
       <div className="space-y-3">
         <Label>Tracking Mode</Label>
+        {disableTrackingMode && (
+          <p className="text-sm text-muted-foreground">
+            Cannot change tracking mode after adding participants
+          </p>
+        )}
         <div className="space-y-3">
           <label className="flex items-start p-4 rounded-lg border-2 border-border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
             <input
@@ -119,7 +135,7 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
               checked={trackingMode === 'individuals'}
               onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
               className="mt-0.5 mr-3 text-primary focus:ring-primary"
-              disabled={loading}
+              disabled={isSubmitting || disableTrackingMode}
             />
             <div>
               <div className="font-medium text-foreground">Individuals only</div>
@@ -137,7 +153,7 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
               checked={trackingMode === 'families'}
               onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
               className="mt-0.5 mr-3 text-primary focus:ring-primary"
-              disabled={loading}
+              disabled={isSubmitting || disableTrackingMode}
             />
             <div>
               <div className="font-medium text-foreground">Individuals + Families</div>
@@ -152,17 +168,17 @@ export function TripForm({ onSubmit, onCancel, initialValues, submitLabel = 'Cre
       <div className="flex gap-3 pt-2">
         <Button
           type="submit"
-          disabled={loading}
+          disabled={isSubmitting}
           className="flex-1"
           size="lg"
         >
-          {loading ? 'Saving...' : submitLabel}
+          {isSubmitting ? 'Saving...' : submitLabel}
         </Button>
         {onCancel && (
           <Button
             type="button"
             onClick={onCancel}
-            disabled={loading}
+            disabled={isSubmitting}
             variant="outline"
             size="lg"
           >
