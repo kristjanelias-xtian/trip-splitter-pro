@@ -164,8 +164,15 @@ export function ExpenseSplitPreview({
       }
     } else if (distribution.type === 'mixed') {
       if (splitMode === 'equal') {
-        // Mixed always accounts for family size (our recent fix)
-        let totalPeople = distribution.participants.length
+        // CRITICAL: Filter out family members from participants to avoid double-counting
+        const standaloneParticipants = distribution.participants.filter(participantId => {
+          const participant = participants.find(p => p.id === participantId)
+          if (!participant) return false
+          if (participant.family_id === null) return true
+          return !distribution.families.includes(participant.family_id)
+        })
+
+        let totalPeople = standaloneParticipants.length
 
         distribution.families.forEach(familyId => {
           const family = families.find(f => f.id === familyId)
@@ -193,8 +200,8 @@ export function ExpenseSplitPreview({
           }
         })
 
-        // Add standalone individuals
-        distribution.participants.forEach(participantId => {
+        // Add ONLY standalone individuals
+        standaloneParticipants.forEach(participantId => {
           const participant = participants.find(p => p.id === participantId)
           if (participant) {
             entries.push({
@@ -225,9 +232,16 @@ export function ExpenseSplitPreview({
           })
         }
 
-        // Add individuals by percentage
+        // Add ONLY standalone individuals by percentage
         if (distribution.participantSplits) {
-          distribution.participantSplits.forEach(split => {
+          const standaloneSplits = distribution.participantSplits.filter(split => {
+            const participant = participants.find(p => p.id === split.participantId)
+            if (!participant) return false
+            if (participant.family_id === null) return true
+            return !distribution.families.includes(participant.family_id)
+          })
+
+          standaloneSplits.forEach(split => {
             const participant = participants.find(p => p.id === split.participantId)
             if (participant) {
               const shareAmount = (amount * split.value) / 100
@@ -259,9 +273,16 @@ export function ExpenseSplitPreview({
           })
         }
 
-        // Add individuals by amount
+        // Add ONLY standalone individuals by amount
         if (distribution.participantSplits) {
-          distribution.participantSplits.forEach(split => {
+          const standaloneSplits = distribution.participantSplits.filter(split => {
+            const participant = participants.find(p => p.id === split.participantId)
+            if (!participant) return false
+            if (participant.family_id === null) return true
+            return !distribution.families.includes(participant.family_id)
+          })
+
+          standaloneSplits.forEach(split => {
             const participant = participants.find(p => p.id === split.participantId)
             if (participant) {
               entries.push({
