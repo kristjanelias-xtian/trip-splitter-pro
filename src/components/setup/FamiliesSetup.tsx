@@ -1,11 +1,12 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, Plus, Users, Edit } from 'lucide-react'
+import { X, Plus, Users, User, Edit } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
@@ -15,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { fadeInUp } from '@/lib/animations'
-import type { Family } from '@/types/participant'
+import type { Family, Participant } from '@/types/participant'
 
 interface FamiliesSetupProps {
   onComplete: () => void
@@ -26,6 +27,7 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
   const { currentTrip } = useCurrentTrip()
   const {
     families,
+    participants,
     createFamily,
     createParticipant,
     deleteFamily,
@@ -41,12 +43,23 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Edit state
+  // Edit family state
   const [editingFamily, setEditingFamily] = useState<Family | null>(null)
   const [editFamilyName, setEditFamilyName] = useState('')
   const [editAdults, setEditAdults] = useState<Array<{ id: string; name: string }>>([])
   const [editChildren, setEditChildren] = useState<Array<{ id: string; name: string }>>([])
   const [updating, setUpdating] = useState(false)
+
+  // Add individual state
+  const [individualName, setIndividualName] = useState('')
+  const [isAdult, setIsAdult] = useState(true)
+  const [addingIndividual, setAddingIndividual] = useState(false)
+
+  // Edit individual state
+  const [editingIndividual, setEditingIndividual] = useState<Participant | null>(null)
+  const [editIndividualName, setEditIndividualName] = useState('')
+  const [editIsAdult, setEditIsAdult] = useState(true)
+  const [updatingIndividual, setUpdatingIndividual] = useState(false)
 
   const handleAddFamily = async (e: FormEvent) => {
     e.preventDefault()
@@ -212,7 +225,77 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
     }
   }
 
-  const canComplete = families.length > 0
+  // Helper to get standalone individuals
+  const getStandaloneIndividuals = () => {
+    return participants.filter(p => p.family_id === null)
+  }
+
+  // Handler functions for standalone individuals
+  const handleAddIndividual = async (e: FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!currentTrip || !individualName.trim()) return
+
+    setAddingIndividual(true)
+    try {
+      await createParticipant({
+        trip_id: currentTrip.id,
+        family_id: null,  // Key: null for standalone
+        name: individualName.trim(),
+        is_adult: isAdult,
+      })
+
+      // Reset form
+      setIndividualName('')
+      setIsAdult(true)
+    } catch (err) {
+      setError('Failed to add individual. Please try again.')
+    } finally {
+      setAddingIndividual(false)
+    }
+  }
+
+  const handleDeleteIndividual = async (participantId: string) => {
+    if (window.confirm('Remove this individual?')) {
+      await deleteParticipant(participantId)
+    }
+  }
+
+  const handleStartEditIndividual = (participant: Participant) => {
+    setEditingIndividual(participant)
+    setEditIndividualName(participant.name)
+    setEditIsAdult(participant.is_adult)
+  }
+
+  const handleCancelEditIndividual = () => {
+    setEditingIndividual(null)
+    setEditIndividualName('')
+    setEditIsAdult(true)
+    setError(null)
+  }
+
+  const handleSaveEditIndividual = async () => {
+    if (!editingIndividual) return
+
+    setError(null)
+    setUpdatingIndividual(true)
+
+    try {
+      await updateParticipant(editingIndividual.id, {
+        name: editIndividualName.trim(),
+        is_adult: editIsAdult,
+      })
+
+      handleCancelEditIndividual()
+    } catch (err) {
+      setError('Failed to update individual. Please try again.')
+    } finally {
+      setUpdatingIndividual(false)
+    }
+  }
+
+  const canComplete = families.length > 0 || getStandaloneIndividuals().length > 0
 
   return (
     <motion.div
@@ -393,6 +476,105 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
         </Card>
       )}
 
+      {/* Add Individual Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Individual</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddIndividual} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="individualName">Name</Label>
+              <Input
+                type="text"
+                id="individualName"
+                value={individualName}
+                onChange={(e) => setIndividualName(e.target.value)}
+                placeholder="e.g., John Doe"
+                required
+                disabled={addingIndividual}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isAdult"
+                checked={isAdult}
+                onCheckedChange={(checked) => setIsAdult(checked as boolean)}
+                disabled={addingIndividual}
+              />
+              <label
+                htmlFor="isAdult"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Is Adult?
+              </label>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={addingIndividual || !individualName.trim()}
+              className="w-full"
+            >
+              <User size={16} className="mr-2" />
+              {addingIndividual ? 'Adding...' : 'Add Individual'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Standalone Individuals List */}
+      {getStandaloneIndividuals().length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Standalone Individuals ({getStandaloneIndividuals().length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {getStandaloneIndividuals().map((individual) => (
+                <motion.div
+                  key={individual.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-4 bg-accent/5 rounded-lg border border-accent/10"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-foreground">
+                        {individual.name}
+                        {!individual.is_adult && (
+                          <span className="text-sm text-muted-foreground ml-2">
+                            (child)
+                          </span>
+                        )}
+                      </h4>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={() => handleStartEditIndividual(individual)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit size={16} />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteIndividual(individual.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <X size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {canComplete && (
         <Card>
           <CardContent className="pt-6">
@@ -412,7 +594,7 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
           <CardContent className="pt-6">
             <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
               <p className="text-muted-foreground">
-                Add at least one family to continue
+                Add at least one family or individual to continue
               </p>
             </div>
           </CardContent>
@@ -526,6 +708,75 @@ export function FamiliesSetup({ onComplete, hasSetup }: FamiliesSetupProps) {
                 className="flex-1"
               >
                 {updating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Individual Dialog */}
+      <Dialog open={!!editingIndividual} onOpenChange={(open) => !open && handleCancelEditIndividual()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Individual</DialogTitle>
+            <DialogDescription>
+              Update individual name and adult status
+            </DialogDescription>
+          </DialogHeader>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editIndividualName">Name</Label>
+              <Input
+                type="text"
+                id="editIndividualName"
+                value={editIndividualName}
+                onChange={(e) => setEditIndividualName(e.target.value)}
+                placeholder="e.g., John Doe"
+                disabled={updatingIndividual}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="editIsAdult"
+                checked={editIsAdult}
+                onCheckedChange={(checked) => setEditIsAdult(checked as boolean)}
+                disabled={updatingIndividual}
+              />
+              <label
+                htmlFor="editIsAdult"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Is Adult?
+              </label>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleCancelEditIndividual}
+                variant="outline"
+                disabled={updatingIndividual}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEditIndividual}
+                disabled={updatingIndividual || !editIndividualName.trim()}
+                className="flex-1"
+              >
+                {updatingIndividual ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>
