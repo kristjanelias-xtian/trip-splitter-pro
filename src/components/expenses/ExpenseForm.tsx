@@ -172,6 +172,16 @@ export function ExpenseForm({
     })
   }
 
+  const handleSelectAll = () => {
+    setSelectedParticipants(participants.map(p => p.id))
+    setSelectedFamilies(families.map(f => f.id))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedParticipants([])
+    setSelectedFamilies([])
+  }
+
   const handleParticipantSplitChange = (id: string, value: string) => {
     setParticipantSplitValues(prev => ({
       ...prev,
@@ -573,6 +583,31 @@ export function ExpenseForm({
       {/* Split Between */}
       <div className="space-y-2">
         <Label>Split Between</Label>
+
+        {/* Selection Controls */}
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleSelectAll}
+            disabled={loading}
+            className="h-8 px-2 text-xs"
+          >
+            Select All
+          </Button>
+          <span className="text-muted-foreground">|</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDeselectAll}
+            disabled={loading}
+            className="h-8 px-2 text-xs"
+          >
+            Deselect All
+          </Button>
+        </div>
 
         {isIndividualsMode ? (
           // Individuals mode - show participants
