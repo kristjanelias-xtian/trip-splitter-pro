@@ -92,7 +92,14 @@ export function WizardStep3({
             <p className="font-medium text-foreground">{getSelectionText()}</p>
             {allSelected && (
               <p className="text-sm text-muted-foreground mt-0.5">
-                Everyone shares the cost equally
+                {isIndividualsMode
+                  ? 'Everyone shares the cost equally'
+                  : selectedFamilies.length > 0
+                    ? accountForFamilySize
+                      ? 'Each person pays equally (families pay proportionally by size)'
+                      : 'Each family pays equally (regardless of size)'
+                    : 'Everyone shares the cost equally'
+                }
               </p>
             )}
           </div>
