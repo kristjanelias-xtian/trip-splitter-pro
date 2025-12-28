@@ -109,6 +109,7 @@ function MobileWizard({
     initialValues?.expense_date || new Date().toISOString().split('T')[0]
   )
   const [comment, setComment] = useState(initialValues?.comment || '')
+  const [accountForFamilySize, setAccountForFamilySize] = useState(false)
 
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
@@ -158,6 +159,16 @@ function MobileWizard({
     )
   }
 
+  const handleSelectAll = () => {
+    setSelectedParticipants(participants.map((p) => p.id))
+    setSelectedFamilies(families.map((f) => f.id))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedParticipants([])
+    setSelectedFamilies([])
+  }
+
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
     setError(null)
@@ -182,6 +193,18 @@ function MobileWizard({
     setIsSubmitting(true)
 
     try {
+      // Validate selection
+      if (isIndividualsMode && selectedParticipants.length === 0) {
+        setError('Please select at least one person to split between')
+        setIsSubmitting(false)
+        return
+      }
+      if (!isIndividualsMode && selectedFamilies.length === 0 && selectedParticipants.length === 0) {
+        setError('Please select at least one family or person to split between')
+        setIsSubmitting(false)
+        return
+      }
+
       // Build distribution based on tracking mode
       let distribution: ExpenseDistribution
 
@@ -202,12 +225,14 @@ function MobileWizard({
             families: selectedFamilies,
             participants: selectedParticipants,
             splitMode: splitMode,
+            accountForFamilySize,
           }
         } else if (hasFamilies) {
           distribution = {
             type: 'families',
             families: selectedFamilies,
             splitMode: splitMode,
+            accountForFamilySize,
           }
         } else {
           distribution = {
@@ -322,6 +347,10 @@ function MobileWizard({
               selectedFamilies={selectedFamilies}
               onParticipantToggle={handleParticipantToggle}
               onFamilyToggle={handleFamilyToggle}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              accountForFamilySize={accountForFamilySize}
+              onAccountForFamilySizeChange={setAccountForFamilySize}
               onAdvancedClick={handleAdvanced}
               disabled={isSubmitting}
             />

@@ -27,6 +27,10 @@ interface WizardStep3Props {
   selectedFamilies: string[]
   onParticipantToggle: (id: string) => void
   onFamilyToggle: (id: string) => void
+  onSelectAll: () => void
+  onDeselectAll: () => void
+  accountForFamilySize: boolean
+  onAccountForFamilySizeChange: (value: boolean) => void
   onAdvancedClick: () => void
   disabled?: boolean
 }
@@ -39,6 +43,10 @@ export function WizardStep3({
   selectedFamilies,
   onParticipantToggle,
   onFamilyToggle,
+  onSelectAll,
+  onDeselectAll,
+  accountForFamilySize,
+  onAccountForFamilySizeChange,
   onAdvancedClick,
   disabled = false,
 }: WizardStep3Props) {
@@ -90,6 +98,57 @@ export function WizardStep3({
           </div>
         </div>
       </div>
+
+      {/* Selection Controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onSelectAll}
+          disabled={disabled}
+          className="h-11 px-3 text-sm flex-1"
+        >
+          Select All
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onDeselectAll}
+          disabled={disabled}
+          className="h-11 px-3 text-sm flex-1"
+        >
+          Deselect All
+        </Button>
+      </div>
+
+      {/* Account for Family Size Toggle - Only show in families mode with families selected */}
+      {!isIndividualsMode && selectedFamilies.length > 0 && (
+        <div className="p-3 bg-accent/5 rounded-lg border border-accent/10">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="accountForFamilySize-mobile"
+              checked={accountForFamilySize}
+              onCheckedChange={(checked) => onAccountForFamilySizeChange(checked as boolean)}
+              disabled={disabled}
+            />
+            <div className="flex-1 space-y-1">
+              <label
+                htmlFor="accountForFamilySize-mobile"
+                className="text-sm font-medium text-foreground cursor-pointer leading-none"
+              >
+                Account for family size
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {accountForFamilySize
+                  ? 'Families pay proportionally by number of people (e.g., family of 4 pays 2× family of 2)'
+                  : 'All families pay equally regardless of size'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Choose Specific People */}
       <div className="space-y-3">
