@@ -719,6 +719,44 @@ export function ExpenseForm({
                 </div>
               )
             })()}
+            {/* All individuals - allows selecting specific people from families */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Individuals</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
+                {participants.map(participant => (
+                  <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
+                    <Checkbox
+                      id={`individual-${participant.id}`}
+                      checked={selectedParticipants.includes(participant.id)}
+                      onCheckedChange={() => handleParticipantToggle(participant.id)}
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor={`individual-${participant.id}`}
+                      className="text-sm text-foreground cursor-pointer flex-1"
+                    >
+                      {participant.name} {participant.is_adult ? '' : '(child)'}
+                      {participant.family_id && (() => {
+                        const family = families.find(f => f.id === participant.family_id)
+                        return family ? ` (${family.family_name})` : ''
+                      })()}
+                    </label>
+                    {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                      <Input
+                        type="number"
+                        value={participantSplitValues[participant.id] || ''}
+                        onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
+                        placeholder={splitMode === 'percentage' ? '%' : currency}
+                        step={splitMode === 'percentage' ? '0.1' : '0.01'}
+                        min="0"
+                        disabled={loading}
+                        className="w-24 h-9"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
