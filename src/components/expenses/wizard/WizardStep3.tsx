@@ -90,15 +90,11 @@ export function WizardStep3({
           <Users size={24} className="text-primary flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-foreground">{getSelectionText()}</p>
-            {allSelected && (
+            {allSelected && !isIndividualsMode && selectedFamilies.length > 0 && (
               <p className="text-sm text-muted-foreground mt-0.5">
-                {isIndividualsMode
-                  ? 'Everyone shares the cost equally'
-                  : selectedFamilies.length > 0
-                    ? accountForFamilySize
-                      ? 'Each person pays equally (families pay proportionally by size)'
-                      : 'Each family pays equally (regardless of size)'
-                    : 'Everyone shares the cost equally'
+                {accountForFamilySize
+                  ? 'Split by people - larger families pay more'
+                  : 'Split by families - all families pay the same'
                 }
               </p>
             )}
