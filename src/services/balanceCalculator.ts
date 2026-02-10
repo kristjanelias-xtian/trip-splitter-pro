@@ -323,7 +323,15 @@ function calculateExpenseShares(
       // Assign per-person share to STANDALONE individuals only
       standaloneParticipants.forEach(participantId => {
         if (trackingMode === 'families') {
-          shares.set(participantId, perPersonShare)
+          // In families mode, aggregate under the family ID so it matches the balance map
+          const participant = participants.find(p => p.id === participantId)
+          const familyId = participant?.family_id
+          if (familyId) {
+            const currentShare = shares.get(familyId) || 0
+            shares.set(familyId, currentShare + perPersonShare)
+          } else {
+            shares.set(participantId, perPersonShare)
+          }
         } else {
           shares.set(participantId, perPersonShare)
         }
@@ -350,7 +358,14 @@ function calculateExpenseShares(
         standaloneSplits.forEach(split => {
           const shareAmount = (expense.amount * split.value) / 100
           if (trackingMode === 'families') {
-            shares.set(split.participantId, shareAmount)
+            const participant = participants.find(p => p.id === split.participantId)
+            const familyId = participant?.family_id
+            if (familyId) {
+              const currentShare = shares.get(familyId) || 0
+              shares.set(familyId, currentShare + shareAmount)
+            } else {
+              shares.set(split.participantId, shareAmount)
+            }
           } else {
             shares.set(split.participantId, shareAmount)
           }
@@ -376,7 +391,14 @@ function calculateExpenseShares(
 
         standaloneSplits.forEach(split => {
           if (trackingMode === 'families') {
-            shares.set(split.participantId, split.value)
+            const participant = participants.find(p => p.id === split.participantId)
+            const familyId = participant?.family_id
+            if (familyId) {
+              const currentShare = shares.get(familyId) || 0
+              shares.set(familyId, currentShare + split.value)
+            } else {
+              shares.set(split.participantId, split.value)
+            }
           } else {
             shares.set(split.participantId, split.value)
           }
