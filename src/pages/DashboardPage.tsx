@@ -216,6 +216,7 @@ export function DashboardPage() {
                 participants={participants}
                 limit={5}
                 currency={currentTrip.default_currency}
+                exchangeRates={currentTrip.exchange_rates}
               />
             </Suspense>
 

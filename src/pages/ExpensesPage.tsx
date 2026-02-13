@@ -4,7 +4,7 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalances, convertToBaseCurrency } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
@@ -230,7 +230,7 @@ export function ExpensesPage() {
                     Total: {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: currentTrip.default_currency,
-                    }).format(filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
+                    }).format(filteredExpenses.reduce((sum, exp) => sum + convertToBaseCurrency(exp.amount, exp.currency, currentTrip.default_currency, currentTrip.exchange_rates), 0))}
                   </p>
                 </div>
                 {filteredExpenses.map(expense => (

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { TrendingUp } from 'lucide-react'
 import type { Expense } from '@/types/expense'
 import type { Participant } from '@/types/participant'
+import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -10,9 +11,10 @@ interface TopExpensesListProps {
   participants: Participant[]
   limit?: number
   currency?: string
+  exchangeRates?: Record<string, number>
 }
 
-export function TopExpensesList({ expenses, participants, limit = 5, currency = 'EUR' }: TopExpensesListProps) {
+export function TopExpensesList({ expenses, participants, limit = 5, currency = 'EUR', exchangeRates = {} }: TopExpensesListProps) {
   const topExpenses = useMemo(() => {
     return expenses
       .slice()
@@ -77,12 +79,22 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
                 <Badge variant="outline" className="text-xs">
                   {expense.category}
                 </Badge>
-                <span className="font-bold text-foreground tabular-nums text-lg">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: expense.currency || currency,
-                  }).format(expense.amount)}
-                </span>
+                <div className="text-right">
+                  <span className="font-bold text-foreground tabular-nums text-lg">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: expense.currency || currency,
+                    }).format(expense.amount)}
+                  </span>
+                  {expense.currency && expense.currency !== currency && exchangeRates[expense.currency] && (
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      ({new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: currency,
+                      }).format(convertToBaseCurrency(expense.amount, expense.currency, currency, exchangeRates))})
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

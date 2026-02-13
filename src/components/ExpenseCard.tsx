@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { Expense } from '@/types/expense'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -25,6 +27,11 @@ interface ExpenseCardProps {
 
 export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
   const { participants, families } = useParticipantContext()
+  const { currentTrip } = useCurrentTrip()
+
+  const defaultCurrency = currentTrip?.default_currency || 'EUR'
+  const exchangeRates = currentTrip?.exchange_rates || {}
+  const isForeignCurrency = expense.currency !== defaultCurrency
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -144,8 +151,15 @@ export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
           </div>
 
           <div className="flex flex-col items-end gap-2 ml-4">
-            <div className="text-xl font-bold text-foreground whitespace-nowrap tabular-nums">
-              {formatAmount(expense.amount, expense.currency)}
+            <div className="text-right">
+              <div className="text-xl font-bold text-foreground whitespace-nowrap tabular-nums">
+                {formatAmount(expense.amount, expense.currency)}
+              </div>
+              {isForeignCurrency && exchangeRates[expense.currency] && (
+                <div className="text-xs text-muted-foreground tabular-nums">
+                  ({formatAmount(convertToBaseCurrency(expense.amount, expense.currency, defaultCurrency, exchangeRates), defaultCurrency)})
+                </div>
+              )}
             </div>
             <div className="flex gap-1">
               <Button
