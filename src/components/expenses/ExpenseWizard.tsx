@@ -333,7 +333,7 @@ function MobileWizard({
                     }
                   : null
               }
-              currency={currency}
+              currency={currentTrip?.default_currency || 'EUR'}
               disabled={isSubmitting}
             />
           )}

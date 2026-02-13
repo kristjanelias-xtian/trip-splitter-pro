@@ -40,9 +40,14 @@ export function WizardStep2({
   disabled = false,
 }: WizardStep2Props) {
   const formatBalance = (balance: number, curr: string) => {
-    const absBalance = Math.abs(balance)
-    const sign = balance < 0 ? '-' : ''
-    return `${sign}${curr} ${absBalance.toFixed(2)}`
+    const formatted = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: curr,
+      currencyDisplay: 'narrowSymbol',
+    }).format(Math.abs(balance))
+    if (balance < 0) return `-${formatted}`
+    if (balance > 0) return `+${formatted}`
+    return formatted
   }
 
   const handleSuggestionClick = () => {
