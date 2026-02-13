@@ -22,29 +22,19 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch all trips with timeout to prevent indefinite hang
-  // (Supabase JS v2 blocks REST calls behind auth initialization which can hang)
   const fetchTrips = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const timeoutMs = 15000
-      const query = supabase
+      const { data, error: fetchError } = await supabase
         .from('trips')
         .select('*')
         .order('created_at', { ascending: false })
 
-      const result = await Promise.race([
-        query,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection timed out. The server may be unavailable — please try again.')), timeoutMs)
-        ),
-      ])
+      if (fetchError) throw fetchError
 
-      if (result.error) throw result.error
-
-      setTrips((result.data as unknown as Trip[]) || [])
+      setTrips((data as unknown as Trip[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
       console.error('Error fetching trips:', err)
