@@ -1,40 +1,36 @@
 /**
- * Muted Trips Storage
- * Tracks trips the user has muted (hidden from Quick Mode home)
+ * Hidden Trips Storage
+ * Tracks trips the user has hidden from Quick Mode home
  */
 
-const MUTED_KEY = 'trip-splitter:muted-trips'
+const STORAGE_KEY = 'trip-splitter:hidden-trips'
 
-export function getMutedTripCodes(): string[] {
+export function getHiddenTripCodes(): string[] {
   try {
-    const stored = localStorage.getItem(MUTED_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : []
   } catch {
     return []
   }
 }
 
-export function muteTrip(tripCode: string): void {
+export function hideTrip(tripCode: string): void {
   try {
-    const muted = getMutedTripCodes()
-    if (!muted.includes(tripCode)) {
-      muted.push(tripCode)
-      localStorage.setItem(MUTED_KEY, JSON.stringify(muted))
+    const hidden = getHiddenTripCodes()
+    if (!hidden.includes(tripCode)) {
+      hidden.push(tripCode)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden))
     }
   } catch (error) {
-    console.error('Error muting trip:', error)
+    console.error('Error hiding trip:', error)
   }
 }
 
-export function unmuteTrip(tripCode: string): void {
+export function showTrip(tripCode: string): void {
   try {
-    const muted = getMutedTripCodes().filter(c => c !== tripCode)
-    localStorage.setItem(MUTED_KEY, JSON.stringify(muted))
+    const hidden = getHiddenTripCodes().filter(c => c !== tripCode)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden))
   } catch (error) {
-    console.error('Error unmuting trip:', error)
+    console.error('Error showing trip:', error)
   }
-}
-
-export function isTripMuted(tripCode: string): boolean {
-  return getMutedTripCodes().includes(tripCode)
 }
