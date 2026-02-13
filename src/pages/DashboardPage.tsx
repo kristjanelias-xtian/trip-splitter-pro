@@ -38,13 +38,15 @@ export function DashboardPage() {
     )
   }
 
-  // Calculate balances (including settlements)
+  // Calculate balances (including settlements, with currency conversion)
   const balanceCalculation = calculateBalances(
     expenses,
     participants,
     families,
     currentTrip.tracking_mode,
-    settlements
+    settlements,
+    currentTrip.default_currency,
+    currentTrip.exchange_rates
   )
 
   const handleExportPDF = () => {
@@ -78,7 +80,7 @@ export function DashboardPage() {
             <div className="text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: 'EUR',
+                currency: currentTrip.default_currency,
               }).format(balanceCalculation.totalExpenses)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -114,7 +116,7 @@ export function DashboardPage() {
             <div className="text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: 'EUR',
+                currency: currentTrip.default_currency,
               }).format(
                 Math.abs(balanceCalculation.balances
                   .filter(b => b.balance < 0)
@@ -165,7 +167,7 @@ export function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {balanceCalculation.balances.map(balance => (
-              <BalanceCard key={balance.id} balance={balance} currency="EUR" />
+              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} />
             ))}
           </div>
         )}
@@ -213,6 +215,7 @@ export function DashboardPage() {
                 expenses={expenses}
                 participants={participants}
                 limit={5}
+                currency={currentTrip.default_currency}
               />
             </Suspense>
 
@@ -228,7 +231,7 @@ export function DashboardPage() {
                   </CardContent>
                 </Card>
               }>
-                <ExpenseByCategoryChart expenses={expenses} />
+                <ExpenseByCategoryChart expenses={expenses} currency={currentTrip.default_currency} />
               </Suspense>
 
               {/* Cost per Participant Chart */}
@@ -241,7 +244,7 @@ export function DashboardPage() {
                   </CardContent>
                 </Card>
               }>
-                <CostPerParticipantChart balances={balanceCalculation.balances} />
+                <CostPerParticipantChart balances={balanceCalculation.balances} currency={currentTrip.default_currency} />
               </Suspense>
             </div>
           </div>

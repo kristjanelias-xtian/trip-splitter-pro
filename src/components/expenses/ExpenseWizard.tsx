@@ -97,7 +97,7 @@ function MobileWizard({
   // Form state
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
-  const [currency, setCurrency] = useState(initialValues?.currency || 'EUR')
+  const [currency, setCurrency] = useState(initialValues?.currency || currentTrip?.default_currency || 'EUR')
   const [paidBy, setPaidBy] = useState(initialValues?.paid_by || '')
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
@@ -116,7 +116,7 @@ function MobileWizard({
 
   // Calculate balances for smart payer suggestion
   const balanceCalculation = currentTrip
-    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements)
+    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 

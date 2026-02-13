@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ExpenseByCategoryChartProps {
   expenses: Expense[]
+  currency?: string
 }
 
 const CATEGORY_COLORS = {
@@ -16,7 +17,7 @@ const CATEGORY_COLORS = {
   Other: 'hsl(0, 0%, 60%)', // Gray
 }
 
-export function ExpenseByCategoryChart({ expenses }: ExpenseByCategoryChartProps) {
+export function ExpenseByCategoryChart({ expenses, currency = 'EUR' }: ExpenseByCategoryChartProps) {
   const chartData = useMemo(() => {
     // Group expenses by category and sum amounts
     const categoryTotals = expenses.reduce((acc, expense) => {
@@ -69,7 +70,7 @@ export function ExpenseByCategoryChart({ expenses }: ExpenseByCategoryChartProps
           <p className="text-sm text-muted-foreground">
             {new Intl.NumberFormat('en-US', {
               style: 'currency',
-              currency: 'EUR',
+              currency: currency,
             }).format(data.value)}
           </p>
           <p className="text-xs text-accent font-semibold">{data.percentage}%</p>
@@ -112,7 +113,7 @@ export function ExpenseByCategoryChart({ expenses }: ExpenseByCategoryChartProps
                 <span className="text-sm text-foreground">
                   {value} ({new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'EUR',
+                    currency: currency,
                   }).format(entry.payload.value)})
                 </span>
               )}

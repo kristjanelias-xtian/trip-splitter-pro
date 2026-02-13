@@ -33,7 +33,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote 
   const [fromParticipantId, setFromParticipantId] = useState('')
   const [toParticipantId, setToParticipantId] = useState('')
   const [amount, setAmount] = useState(initialAmount?.toString() || '')
-  const [currency, setCurrency] = useState('EUR')
+  const [currency, setCurrency] = useState(currentTrip?.default_currency || 'EUR')
   const [settlementDate, setSettlementDate] = useState(
     new Date().toISOString().split('T')[0]
   )
@@ -269,6 +269,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote 
               <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="THB">THB</SelectItem>
             </SelectContent>
           </Select>
         </div>

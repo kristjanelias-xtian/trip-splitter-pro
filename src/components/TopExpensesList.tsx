@@ -9,9 +9,10 @@ interface TopExpensesListProps {
   expenses: Expense[]
   participants: Participant[]
   limit?: number
+  currency?: string
 }
 
-export function TopExpensesList({ expenses, participants, limit = 5 }: TopExpensesListProps) {
+export function TopExpensesList({ expenses, participants, limit = 5, currency = 'EUR' }: TopExpensesListProps) {
   const topExpenses = useMemo(() => {
     return expenses
       .slice()
@@ -79,7 +80,7 @@ export function TopExpensesList({ expenses, participants, limit = 5 }: TopExpens
                 <span className="font-bold text-foreground tabular-nums text-lg">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: 'EUR',
+                    currency: expense.currency || currency,
                   }).format(expense.amount)}
                 </span>
               </div>
