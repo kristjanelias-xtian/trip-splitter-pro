@@ -469,6 +469,7 @@ export function formatBalance(balance: number, currency: string = 'EUR'): string
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
+    currencyDisplay: 'narrowSymbol',
   }).format(Math.abs(balance))
 
   if (balance > 0) {

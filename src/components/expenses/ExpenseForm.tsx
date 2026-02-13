@@ -479,7 +479,7 @@ export function ExpenseForm({
                 <p className="text-xs text-muted-foreground mt-1">
                   Current balance:{' '}
                   <span className={getBalanceColorClass(suggestedPayer.balance)}>
-                    {formatBalance(suggestedPayer.balance, currency)}
+                    {formatBalance(suggestedPayer.balance, currentTrip?.default_currency || 'EUR')}
                   </span>
                 </p>
               </div>
