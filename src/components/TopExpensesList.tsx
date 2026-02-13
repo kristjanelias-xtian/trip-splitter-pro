@@ -18,7 +18,7 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
   const topExpenses = useMemo(() => {
     return expenses
       .slice()
-      .sort((a, b) => b.amount - a.amount)
+      .sort((a, b) => convertToBaseCurrency(b.amount, b.currency, currency, exchangeRates) - convertToBaseCurrency(a.amount, a.currency, currency, exchangeRates))
       .slice(0, limit)
       .map(expense => {
         const payer = participants.find(p => p.id === expense.paid_by)

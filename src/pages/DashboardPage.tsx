@@ -232,7 +232,7 @@ export function DashboardPage() {
                   </CardContent>
                 </Card>
               }>
-                <ExpenseByCategoryChart expenses={expenses} currency={currentTrip.default_currency} />
+                <ExpenseByCategoryChart expenses={expenses} currency={currentTrip.default_currency} exchangeRates={currentTrip.exchange_rates} />
               </Suspense>
 
               {/* Cost per Participant Chart */}
