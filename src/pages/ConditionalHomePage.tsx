@@ -18,9 +18,9 @@ export function ConditionalHomePage() {
   useEffect(() => {
     if (authLoading || prefsLoading || tripsLoading) return
 
-    if (user && mode === 'quick') {
+    if (mode === 'quick') {
       // If user has a default trip set, go directly to that group
-      if (defaultTripId) {
+      if (user && defaultTripId) {
         const defaultTrip = trips.find(t => t.id === defaultTripId)
         if (defaultTrip) {
           navigate(`/t/${defaultTrip.trip_code}/quick`, { replace: true })

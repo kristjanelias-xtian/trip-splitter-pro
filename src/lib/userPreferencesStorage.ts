@@ -12,8 +12,12 @@ export interface UserPreferencesLocal {
   defaultTripId: string | null
 }
 
+function getDefaultMode(): AppMode {
+  return typeof window !== 'undefined' && window.innerWidth < 1024 ? 'quick' : 'full'
+}
+
 const defaults: UserPreferencesLocal = {
-  preferredMode: 'full',
+  preferredMode: getDefaultMode(),
   defaultTripId: null,
 }
 
