@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Lightbulb, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
+import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
+import { ParticipantBalance } from '@/services/balanceCalculator'
 
 // Lazy load chart components for better performance
 const ExpenseByCategoryChart = lazy(() => import('@/components/ExpenseByCategoryChart').then(m => ({ default: m.ExpenseByCategoryChart })))
@@ -22,6 +24,7 @@ export function DashboardPage() {
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
+  const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
 
   if (!currentTrip) {
     return (
@@ -167,7 +170,7 @@ export function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {balanceCalculation.balances.map(balance => (
-              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} />
+              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} />
             ))}
           </div>
         )}
@@ -250,6 +253,21 @@ export function DashboardPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Cost Breakdown Dialog */}
+      {selectedBalance && (
+        <CostBreakdownDialog
+          open={!!selectedBalance}
+          onOpenChange={(open) => { if (!open) setSelectedBalance(null) }}
+          balance={selectedBalance}
+          expenses={expenses}
+          participants={participants}
+          families={families}
+          trackingMode={currentTrip.tracking_mode}
+          defaultCurrency={currentTrip.default_currency}
+          exchangeRates={currentTrip.exchange_rates}
+        />
       )}
     </div>
   )

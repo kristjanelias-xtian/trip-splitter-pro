@@ -203,7 +203,7 @@ function getEntityIdForParticipant(
  * Calculate how much each entity owes for a specific expense
  * Returns a map of entity ID -> amount owed
  */
-function calculateExpenseShares(
+export function calculateExpenseShares(
   expense: Expense,
   participants: Participant[],
   families: Family[],
