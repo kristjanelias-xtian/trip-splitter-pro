@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import type { Expense } from '@/types/expense'
+import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ExpenseByCategoryChartProps {
   expenses: Expense[]
   currency?: string
+  exchangeRates?: Record<string, number>
 }
 
 const CATEGORY_COLORS = {
@@ -17,15 +19,15 @@ const CATEGORY_COLORS = {
   Other: 'hsl(0, 0%, 60%)', // Gray
 }
 
-export function ExpenseByCategoryChart({ expenses, currency = 'EUR' }: ExpenseByCategoryChartProps) {
+export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRates = {} }: ExpenseByCategoryChartProps) {
   const chartData = useMemo(() => {
-    // Group expenses by category and sum amounts
+    // Group expenses by category and sum converted amounts
     const categoryTotals = expenses.reduce((acc, expense) => {
       const category = expense.category
       if (!acc[category]) {
         acc[category] = 0
       }
-      acc[category] += expense.amount
+      acc[category] += convertToBaseCurrency(expense.amount, expense.currency, currency, exchangeRates)
       return acc
     }, {} as Record<string, number>)
 
