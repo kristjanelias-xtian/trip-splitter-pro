@@ -1,20 +1,22 @@
+import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
-import { LogIn } from 'lucide-react'
 
 export function SignInButton() {
-  const { signInWithGoogle, loading } = useAuth()
+  const { signInWithGoogle } = useAuth()
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={signInWithGoogle}
-      disabled={loading}
-      className="gap-2"
-    >
-      <LogIn size={16} />
-      <span className="hidden sm:inline">Sign in</span>
-    </Button>
+    <GoogleLogin
+      onSuccess={(response) => {
+        if (response.credential) {
+          signInWithGoogle(response.credential)
+        }
+      }}
+      onError={() => {
+        console.error('Google Sign-In failed')
+      }}
+      size="medium"
+      type="standard"
+      theme="outline"
+    />
   )
 }
