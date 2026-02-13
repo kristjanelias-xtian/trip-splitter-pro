@@ -52,7 +52,7 @@ export function ExpenseForm({
 
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
-  const [currency, setCurrency] = useState(initialValues?.currency || 'EUR')
+  const [currency, setCurrency] = useState(initialValues?.currency || currentTrip?.default_currency || 'EUR')
   const [paidBy, setPaidBy] = useState(initialValues?.paid_by || '')
   const [category, setCategory] = useState<ExpenseCategory>(initialValues?.category || 'Food')
   const [expenseDate, setExpenseDate] = useState(
@@ -79,7 +79,7 @@ export function ExpenseForm({
 
   // Calculate balances to find suggested payer (including settlements)
   const balanceCalculation = currentTrip
-    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements)
+    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
@@ -453,6 +453,7 @@ export function ExpenseForm({
               <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="THB">THB</SelectItem>
             </SelectContent>
           </Select>
         </div>

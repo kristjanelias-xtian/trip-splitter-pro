@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface CostPerParticipantChartProps {
   balances: ParticipantBalance[]
+  currency?: string
 }
 
-export function CostPerParticipantChart({ balances }: CostPerParticipantChartProps) {
+export function CostPerParticipantChart({ balances, currency = 'EUR' }: CostPerParticipantChartProps) {
   const chartData = useMemo(() => {
     return balances
       .map(balance => ({
@@ -42,7 +43,7 @@ export function CostPerParticipantChart({ balances }: CostPerParticipantChartPro
           <p className="text-sm text-muted-foreground">
             Total Share: {new Intl.NumberFormat('en-US', {
               style: 'currency',
-              currency: 'EUR',
+              currency: currency,
             }).format(data.totalShare)}
           </p>
         </div>
@@ -72,7 +73,7 @@ export function CostPerParticipantChart({ balances }: CostPerParticipantChartPro
             />
             <YAxis
               tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
-              tickFormatter={(value) => `€${value}`}
+              tickFormatter={(value) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="totalShare" radius={[8, 8, 0, 0]}>

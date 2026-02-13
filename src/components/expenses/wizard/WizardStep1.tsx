@@ -97,6 +97,7 @@ export function WizardStep1({
               <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="THB">THB</SelectItem>
             </SelectContent>
           </Select>
         </div>

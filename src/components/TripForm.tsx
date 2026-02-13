@@ -4,6 +4,13 @@ import { CreateTripInput, TrackingMode } from '@/types/trip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
 
 interface TripFormProps {
@@ -27,6 +34,7 @@ export function TripForm({
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
+  const [defaultCurrency, setDefaultCurrency] = useState(initialValues?.default_currency || 'EUR')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,7 +60,8 @@ export function TripForm({
         name: name.trim(),
         start_date: startDate,
         end_date: endDate,
-        tracking_mode: trackingMode
+        tracking_mode: trackingMode,
+        default_currency: defaultCurrency,
       })
     } catch (err) {
       setError('Failed to save trip. Please try again.')
@@ -117,6 +126,28 @@ export function TripForm({
             disabled={isSubmitting}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="defaultCurrency">Default Currency</Label>
+        <Select
+          value={defaultCurrency}
+          onValueChange={setDefaultCurrency}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger id="defaultCurrency">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="EUR">EUR - Euro</SelectItem>
+            <SelectItem value="USD">USD - US Dollar</SelectItem>
+            <SelectItem value="GBP">GBP - British Pound</SelectItem>
+            <SelectItem value="THB">THB - Thai Baht</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          All balances and settlements will be shown in this currency
+        </p>
       </div>
 
       <div className="space-y-3">

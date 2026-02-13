@@ -18,6 +18,21 @@ export interface BalanceCalculation {
 }
 
 /**
+ * Convert an amount from one currency to the trip's base currency
+ */
+export function convertToBaseCurrency(
+  amount: number,
+  fromCurrency: string,
+  baseCurrency: string,
+  exchangeRates: Record<string, number>
+): number {
+  if (fromCurrency === baseCurrency) return amount
+  const rate = exchangeRates[fromCurrency]
+  if (!rate || rate === 0) return amount // fallback: no conversion if rate not set
+  return amount / rate // e.g., 385 THB / 38.5 = 10 EUR
+}
+
+/**
  * Calculate balances for all participants/families based on expenses and settlements
  *
  * @param expenses - All expenses for the trip
@@ -25,6 +40,8 @@ export interface BalanceCalculation {
  * @param families - All families in the trip (if in families mode)
  * @param trackingMode - 'individuals' or 'families'
  * @param settlements - All settlements for the trip (optional)
+ * @param defaultCurrency - Trip's base currency for conversion (optional, defaults to 'EUR')
+ * @param exchangeRates - Exchange rates relative to base currency (optional)
  * @returns Balance calculation with suggested next payer
  */
 export function calculateBalances(
@@ -32,7 +49,9 @@ export function calculateBalances(
   participants: Participant[],
   families: Family[],
   trackingMode: 'individuals' | 'families',
-  settlements: Settlement[] = []
+  settlements: Settlement[] = [],
+  defaultCurrency: string = 'EUR',
+  exchangeRates: Record<string, number> = {}
 ): BalanceCalculation {
   const balances = new Map<string, ParticipantBalance>()
 
@@ -75,26 +94,32 @@ export function calculateBalances(
     })
   }
 
-  // Calculate total expenses
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  // Calculate total expenses (converted to base currency)
+  const totalExpenses = expenses.reduce((sum, expense) => {
+    return sum + convertToBaseCurrency(expense.amount, expense.currency, defaultCurrency, exchangeRates)
+  }, 0)
 
   // Process each expense
   expenses.forEach(expense => {
-    // Add to payer's totalPaid
+    const convertedAmount = convertToBaseCurrency(expense.amount, expense.currency, defaultCurrency, exchangeRates)
+
+    // Add to payer's totalPaid (converted)
     const payerId = getPaidById(expense, participants, trackingMode)
     if (payerId && balances.has(payerId)) {
       const payer = balances.get(payerId)!
-      payer.totalPaid += expense.amount
+      payer.totalPaid += convertedAmount
     }
 
-    // Calculate shares based on distribution
+    // Calculate shares based on distribution (returns shares in original currency)
     const shares = calculateExpenseShares(expense, participants, families, trackingMode)
 
-    // Add to each participant's/family's totalShare
+    // Add to each participant's/family's totalShare (converted to base currency)
+    // Shares are proportional to expense.amount, so we need to convert them
+    const conversionFactor = expense.amount !== 0 ? convertedAmount / expense.amount : 1
     shares.forEach((share, entityId) => {
       if (balances.has(entityId)) {
         const entity = balances.get(entityId)!
-        entity.totalShare += share
+        entity.totalShare += share * conversionFactor
       }
     })
   })
@@ -111,15 +136,16 @@ export function calculateBalances(
   settlements.forEach(settlement => {
     const fromId = getEntityIdForParticipant(settlement.from_participant_id, participants, trackingMode)
     const toId = getEntityIdForParticipant(settlement.to_participant_id, participants, trackingMode)
+    const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
 
     if (fromId && balances.has(fromId)) {
       const fromEntity = balances.get(fromId)!
-      fromEntity.balance += settlement.amount // They paid out cash
+      fromEntity.balance += convertedAmount // They paid out cash
     }
 
     if (toId && balances.has(toId)) {
       const toEntity = balances.get(toId)!
-      toEntity.balance -= settlement.amount // They received cash
+      toEntity.balance -= convertedAmount // They received cash
     }
   })
 

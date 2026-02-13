@@ -71,7 +71,9 @@ export function ExpensesPage() {
       participants,
       families,
       currentTrip.tracking_mode,
-      settlements
+      settlements,
+      currentTrip.default_currency,
+      currentTrip.exchange_rates
     ).balances
 
     exportExpensesToExcel(currentTrip, expenses, participants, families, balances, settlements)
@@ -225,7 +227,10 @@ export function ExpensesPage() {
                     Showing {filteredExpenses.length} of {expenses.length} expenses
                   </p>
                   <p className="text-sm font-medium text-foreground tabular-nums">
-                    Total: €{filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+                    Total: {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: currentTrip.default_currency,
+                    }).format(filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
                   </p>
                 </div>
                 {filteredExpenses.map(expense => (

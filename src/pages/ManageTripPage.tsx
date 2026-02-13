@@ -10,8 +10,16 @@ import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
 import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
 import { TripForm } from '@/components/TripForm'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +54,16 @@ export function ManageTripPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Currency settings state
+  const ALL_CURRENCIES = ['EUR', 'USD', 'GBP', 'THB'] as const
+  const [currencyDefault, setCurrencyDefault] = useState(currentTrip?.default_currency || 'EUR')
+  const [exchangeRates, setExchangeRates] = useState<Record<string, string>>(
+    Object.fromEntries(
+      Object.entries(currentTrip?.exchange_rates || {}).map(([k, v]) => [k, String(v)])
+    )
+  )
+  const [isSavingCurrency, setIsSavingCurrency] = useState(false)
+
   if (!currentTrip) {
     return (
       <div className="space-y-4">
@@ -69,6 +87,7 @@ export function ManageTripPage() {
         start_date: values.start_date,
         end_date: values.end_date,
         tracking_mode: values.tracking_mode,
+        default_currency: values.default_currency,
       })
 
       if (success) {
@@ -92,6 +111,47 @@ export function ManageTripPage() {
       })
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleSaveCurrencySettings = async () => {
+    setIsSavingCurrency(true)
+    try {
+      const rates: Record<string, number> = {}
+      for (const [currency, rateStr] of Object.entries(exchangeRates)) {
+        if (currency !== currencyDefault) {
+          const rate = parseFloat(rateStr)
+          if (!isNaN(rate) && rate > 0) {
+            rates[currency] = rate
+          }
+        }
+      }
+
+      const success = await updateTrip(currentTrip.id, {
+        default_currency: currencyDefault,
+        exchange_rates: rates,
+      })
+
+      if (success) {
+        toast({
+          title: 'Currency settings saved',
+          description: 'Exchange rates have been updated.',
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Save failed',
+          description: 'Failed to save currency settings.',
+        })
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An error occurred while saving currency settings.',
+      })
+    } finally {
+      setIsSavingCurrency(false)
     }
   }
 
@@ -179,6 +239,76 @@ export function ManageTripPage() {
         </CardContent>
       </Card>
 
+      {/* Currency Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Currency Settings</CardTitle>
+          <CardDescription>Set your trip's default currency and exchange rates</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="defaultCurrency">Default Currency</Label>
+            <Select
+              value={currencyDefault}
+              onValueChange={(value) => {
+                setCurrencyDefault(value)
+                // Remove rate for the new default currency if it exists
+                const newRates = { ...exchangeRates }
+                delete newRates[value]
+                setExchangeRates(newRates)
+              }}
+            >
+              <SelectTrigger id="defaultCurrency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EUR">EUR - Euro</SelectItem>
+                <SelectItem value="USD">USD - US Dollar</SelectItem>
+                <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                <SelectItem value="THB">THB - Thai Baht</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              All balances and settlements will be displayed in this currency
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Exchange Rates</Label>
+            <p className="text-xs text-muted-foreground">
+              Set how much 1 {currencyDefault} equals in other currencies
+            </p>
+            {ALL_CURRENCIES.filter(c => c !== currencyDefault).map(currency => (
+              <div key={currency} className="flex items-center gap-3">
+                <Label className="w-32 text-sm text-muted-foreground shrink-0">
+                  1 {currencyDefault} =
+                </Label>
+                <Input
+                  type="number"
+                  value={exchangeRates[currency] || ''}
+                  onChange={(e) => setExchangeRates(prev => ({
+                    ...prev,
+                    [currency]: e.target.value,
+                  }))}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  className="w-32"
+                />
+                <span className="text-sm font-medium">{currency}</span>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            onClick={handleSaveCurrencySettings}
+            disabled={isSavingCurrency}
+          >
+            {isSavingCurrency ? 'Saving...' : 'Save Currency Settings'}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Participants Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">
@@ -258,6 +388,7 @@ export function ManageTripPage() {
               start_date: currentTrip.start_date,
               end_date: currentTrip.end_date,
               tracking_mode: currentTrip.tracking_mode,
+              default_currency: currentTrip.default_currency,
             }}
             onSubmit={handleEditTrip}
             onCancel={() => setShowEditDialog(false)}

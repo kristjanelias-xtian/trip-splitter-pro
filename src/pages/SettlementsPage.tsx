@@ -39,19 +39,21 @@ export function SettlementsPage() {
     )
   }
 
-  // Calculate balances (including settlements)
+  // Calculate balances (including settlements, with currency conversion)
   const balanceCalculation = calculateBalances(
     expenses,
     participants,
     families,
     currentTrip.tracking_mode,
-    settlements
+    settlements,
+    currentTrip.default_currency,
+    currentTrip.exchange_rates
   )
 
   // Calculate optimal settlement
   const optimalSettlement = calculateOptimalSettlement(
     balanceCalculation.balances,
-    'EUR' // TODO: Get from trip settings
+    currentTrip.default_currency
   )
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
@@ -117,7 +119,7 @@ export function SettlementsPage() {
               <div className="text-2xl font-bold text-foreground tabular-nums">
                 {new Intl.NumberFormat('en-US', {
                   style: 'currency',
-                  currency: 'EUR',
+                  currency: currentTrip.default_currency,
                 }).format(
                   balanceCalculation.balances
                     .filter(b => b.balance < 0)
