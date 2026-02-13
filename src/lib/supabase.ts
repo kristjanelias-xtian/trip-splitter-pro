@@ -8,35 +8,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-const LOCK_TIMEOUT_MS = 10_000
 const FETCH_TIMEOUT_MS = 15_000
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     flowType: 'implicit',
-    lock: async <R>(name: string, acquireTimeout: number, callback: () => Promise<R>): Promise<R> => {
-      if (typeof navigator === 'undefined' || !navigator.locks) {
-        // Fallback: no Web Locks API (SSR, older browsers)
-        return callback()
-      }
-
-      const ac = new AbortController()
-      const timeout = acquireTimeout === -1 ? LOCK_TIMEOUT_MS : Math.min(acquireTimeout, LOCK_TIMEOUT_MS)
-      const timer = setTimeout(() => ac.abort(), timeout)
-
-      try {
-        return await navigator.locks.request(name, { signal: ac.signal }, async () => {
-          clearTimeout(timer)
-          return callback()
-        })
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          // Lock acquisition timed out — proceed without the lock.
-          // Safe for implicit flow (no refresh tokens to coordinate across tabs).
-          return callback()
-        }
-        throw err
-      }
+    // Bypass navigator.locks entirely. The lock exists to prevent multiple
+    // tabs from racing to refresh the same refresh token — but implicit flow
+    // has no refresh tokens, so there's nothing to coordinate. Calling
+    // navigator.locks.request() at all can hang indefinitely when another tab
+    // holds the lock or the browser throttles background tabs.
+    lock: async <R>(_name: string, _acquireTimeout: number, callback: () => Promise<R>): Promise<R> => {
+      return callback()
     },
   },
   global: {
