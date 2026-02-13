@@ -15,7 +15,7 @@ export function SignInButton() {
         console.error('Google Sign-In failed')
       }}
       size="medium"
-      type="standard"
+      type="icon"
       theme="outline"
     />
   )
