@@ -1,4 +1,4 @@
-import { muteTrip } from '@/lib/mutedTripsStorage'
+import { hideTrip } from '@/lib/mutedTripsStorage'
 import { removeFromMyTrips } from '@/lib/myTripsStorage'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,16 +12,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { VolumeX, LogOut } from 'lucide-react'
+import { EyeOff, LogOut } from 'lucide-react'
 
 interface GroupActionsProps {
   tripCode: string
   tripName: string
-  onMuted?: () => void
+  onHidden?: () => void
   onLeft?: () => void
 }
 
-export function GroupActions({ tripCode, tripName, onMuted, onLeft }: GroupActionsProps) {
+export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActionsProps) {
   return (
     <div className="flex gap-2">
       <Button
@@ -29,12 +29,12 @@ export function GroupActions({ tripCode, tripName, onMuted, onLeft }: GroupActio
         size="sm"
         className="gap-1.5 text-muted-foreground"
         onClick={() => {
-          muteTrip(tripCode)
-          onMuted?.()
+          hideTrip(tripCode)
+          onHidden?.()
         }}
       >
-        <VolumeX size={14} />
-        Mute
+        <EyeOff size={14} />
+        Hide
       </Button>
 
       <AlertDialog>

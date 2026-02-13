@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
-import { getMutedTripCodes } from '@/lib/mutedTripsStorage'
+import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
 import { GroupActions } from '@/components/quick/GroupActions'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, ChevronRight, Plus } from 'lucide-react'
+import { Loader2, ChevronRight, Plus, Eye, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
@@ -14,20 +14,29 @@ export function QuickHomeScreen() {
   const navigate = useNavigate()
   const { userProfile } = useAuth()
   const { tripBalances, loading } = useMyTripBalances()
-  const [mutedCodes, setMutedCodes] = useState(() => new Set(getMutedTripCodes()))
+  const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
+  const [showHidden, setShowHidden] = useState(false)
 
   const firstName = userProfile?.display_name?.split(' ')[0] || 'there'
 
-  const visibleTrips = tripBalances.filter(tb => !mutedCodes.has(tb.trip.trip_code))
+  const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
+  const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
 
-  const handleMuted = useCallback((tripCode: string) => {
-    setMutedCodes(prev => new Set([...prev, tripCode]))
+  const handleHidden = useCallback((tripCode: string) => {
+    setHiddenCodes(prev => new Set([...prev, tripCode]))
+  }, [])
+
+  const handleShow = useCallback((tripCode: string) => {
+    showTrip(tripCode)
+    setHiddenCodes(prev => {
+      const next = new Set(prev)
+      next.delete(tripCode)
+      return next
+    })
   }, [])
 
   const handleLeft = useCallback((tripCode: string) => {
-    // Trip will disappear on next load since it's removed from My Trips
-    // Force a re-render by updating muted set (trip won't show either way)
-    setMutedCodes(prev => new Set([...prev, tripCode]))
+    setHiddenCodes(prev => new Set([...prev, tripCode]))
   }, [])
 
   return (
@@ -117,7 +126,7 @@ export function QuickHomeScreen() {
                     <GroupActions
                       tripCode={trip.trip_code}
                       tripName={trip.name}
-                      onMuted={() => handleMuted(trip.trip_code)}
+                      onHidden={() => handleHidden(trip.trip_code)}
                       onLeft={() => handleLeft(trip.trip_code)}
                     />
                   </div>
@@ -134,6 +143,46 @@ export function QuickHomeScreen() {
               <Plus size={16} />
               Create New Trip
             </Button>
+          </div>
+        )}
+
+        {/* Hidden trips section */}
+        {hiddenTrips.length > 0 && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowHidden(prev => !prev)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${showHidden ? 'rotate-180' : ''}`}
+              />
+              {hiddenTrips.length} hidden {hiddenTrips.length === 1 ? 'trip' : 'trips'}
+            </button>
+
+            {showHidden && (
+              <div className="mt-3 space-y-2">
+                {hiddenTrips.map(({ trip }) => (
+                  <div
+                    key={trip.id}
+                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-muted/30"
+                  >
+                    <span className="text-sm text-muted-foreground truncate">
+                      {trip.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-muted-foreground flex-shrink-0"
+                      onClick={() => handleShow(trip.trip_code)}
+                    >
+                      <Eye size={14} />
+                      Show
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
