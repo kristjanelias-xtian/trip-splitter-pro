@@ -25,6 +25,8 @@ interface ParticipantContextType {
   refreshParticipants: () => Promise<void>
   getAdultParticipants: () => Participant[]
   getParticipantsByFamily: (familyId: string) => Participant[]
+  linkUserToParticipant: (participantId: string, userId: string) => Promise<boolean>
+  unlinkUserFromParticipant: (participantId: string) => Promise<boolean>
 }
 
 const ParticipantContext = createContext<ParticipantContextType | undefined>(undefined)
@@ -223,6 +225,54 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Link a user to a participant ("This is me")
+  const linkUserToParticipant = async (participantId: string, userId: string): Promise<boolean> => {
+    try {
+      setError(null)
+
+      const { error: linkError } = await (supabase as any)
+        .from('participants')
+        .update({ user_id: userId })
+        .eq('id', participantId)
+
+      if (linkError) throw linkError
+
+      setParticipants(prev =>
+        prev.map(p => (p.id === participantId ? { ...p, user_id: userId } : p))
+      )
+
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to link user to participant')
+      console.error('Error linking user to participant:', err)
+      return false
+    }
+  }
+
+  // Unlink a user from a participant
+  const unlinkUserFromParticipant = async (participantId: string): Promise<boolean> => {
+    try {
+      setError(null)
+
+      const { error: unlinkError } = await (supabase as any)
+        .from('participants')
+        .update({ user_id: null })
+        .eq('id', participantId)
+
+      if (unlinkError) throw unlinkError
+
+      setParticipants(prev =>
+        prev.map(p => (p.id === participantId ? { ...p, user_id: null } : p))
+      )
+
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unlink user from participant')
+      console.error('Error unlinking user from participant:', err)
+      return false
+    }
+  }
+
   // Refresh data
   const refreshParticipants = async () => {
     await fetchData()
@@ -259,6 +309,8 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     refreshParticipants,
     getAdultParticipants,
     getParticipantsByFamily,
+    linkUserToParticipant,
+    unlinkUserFromParticipant,
   }
 
   return <ParticipantContext.Provider value={value}>{children}</ParticipantContext.Provider>

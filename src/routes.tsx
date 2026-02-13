@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { QuickLayout } from './components/QuickLayout'
 import { TripRouteGuard } from './components/TripRouteGuard'
-import { HomePage } from './pages/HomePage'
+import { ConditionalHomePage } from './pages/ConditionalHomePage'
 import { TripsPage } from './pages/TripsPage'
 import { ManageTripPage } from './pages/ManageTripPage'
 import { ExpensesPage } from './pages/ExpensesPage'
@@ -11,6 +12,9 @@ import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
+import { QuickHomeScreen } from './pages/QuickHomeScreen'
+import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
+import { QuickHistoryPage } from './pages/QuickHistoryPage'
 
 export function AppRoutes() {
   return (
@@ -19,8 +23,18 @@ export function AppRoutes() {
       <Route path="admin/all-trips" element={<AdminAllTripsPage />} />
       <Route path="trip-not-found/:tripCode" element={<TripNotFoundPage />} />
 
+      {/* Quick Mode routes */}
+      <Route path="/quick" element={<QuickLayout />}>
+        <Route index element={<QuickHomeScreen />} />
+      </Route>
+      <Route path="/t/:tripCode/quick" element={<QuickLayout />}>
+        <Route index element={<QuickGroupDetailPage />} />
+        <Route path="history" element={<QuickHistoryPage />} />
+      </Route>
+
+      {/* Full Mode routes */}
       <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<ConditionalHomePage />} />
         <Route path="create-trip" element={<TripsPage />} />
 
         {/* Trip routes - protected by TripRouteGuard */}
