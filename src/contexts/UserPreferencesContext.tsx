@@ -35,7 +35,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (!error && data) {
         const serverMode = data.preferred_mode as AppMode
