@@ -1,0 +1,78 @@
+import { TransactionItem as TxItem } from '@/services/transactionHistoryBuilder'
+import { DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
+
+interface TransactionItemProps {
+  transaction: TxItem
+}
+
+export function TransactionItem({ transaction: tx }: TransactionItemProps) {
+  const formatAmount = (amount: number, currency: string) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const getRoleDisplay = () => {
+    switch (tx.role) {
+      case 'you_paid':
+        return {
+          label: 'You paid',
+          icon: <DollarSign size={16} className="text-primary" />,
+          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountClass: 'text-foreground font-semibold',
+          bgClass: 'bg-primary/5',
+        }
+      case 'your_share':
+        return {
+          label: `${tx.payerName} paid`,
+          icon: <DollarSign size={16} className="text-muted-foreground" />,
+          amountText: `Your share: ${formatAmount(tx.roleAmount, tx.currency)}`,
+          amountClass: 'text-muted-foreground',
+          bgClass: 'bg-muted/30',
+        }
+      case 'you_settled':
+        return {
+          label: `You paid ${tx.recipientName}`,
+          icon: <ArrowUpRight size={16} className="text-red-500" />,
+          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountClass: 'text-red-600 dark:text-red-400 font-semibold',
+          bgClass: 'bg-red-50 dark:bg-red-950/20',
+        }
+      case 'you_received':
+        return {
+          label: `${tx.payerName} paid you`,
+          icon: <ArrowDownLeft size={16} className="text-green-500" />,
+          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountClass: 'text-green-600 dark:text-green-400 font-semibold',
+          bgClass: 'bg-green-50 dark:bg-green-950/20',
+        }
+    }
+  }
+
+  const display = getRoleDisplay()
+
+  return (
+    <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${display.bgClass}`}>
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex-shrink-0">{display.icon}</div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">
+            {tx.type === 'expense' ? tx.description : display.label}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {tx.type === 'expense' ? display.label : tx.description}
+            {' \u00B7 '}
+            {formatDate(tx.date)}
+          </p>
+        </div>
+      </div>
+      <div className="flex-shrink-0 ml-3 text-right">
+        <p className={`text-sm tabular-nums ${display.amountClass}`}>
+          {display.amountText}
+        </p>
+      </div>
+    </div>
+  )
+}

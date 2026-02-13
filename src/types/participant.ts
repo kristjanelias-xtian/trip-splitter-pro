@@ -12,6 +12,7 @@ export interface Participant {
   family_id: string | null
   name: string
   is_adult: boolean
+  user_id?: string | null
 }
 
 export interface CreateFamilyInput {

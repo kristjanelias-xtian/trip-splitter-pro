@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useAuth } from '@/contexts/AuthContext'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
@@ -13,6 +14,9 @@ import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
 import { TripBanner } from '@/components/TripBanner'
+import { SignInButton } from '@/components/auth/SignInButton'
+import { UserMenu } from '@/components/auth/UserMenu'
+import { ModeToggle } from '@/components/quick/ModeToggle'
 import {
   Sheet,
   SheetContent,
@@ -38,6 +42,7 @@ const iconMap = {
 export function Layout() {
   const location = useLocation()
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { user } = useAuth()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   // Desktop navigation - all items visible
@@ -120,6 +125,10 @@ export function Layout() {
                 Trip Splitter Pro
               </motion.h1>
             )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {user && <ModeToggle />}
+              {user ? <UserMenu /> : <SignInButton />}
+            </div>
           </div>
         </div>
       </header>
