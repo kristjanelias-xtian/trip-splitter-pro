@@ -10,11 +10,12 @@ import {
 import { LogOut } from 'lucide-react'
 
 export function UserMenu() {
-  const { userProfile, signOut } = useAuth()
+  const { user, userProfile, signOut } = useAuth()
 
-  if (!userProfile) return null
+  if (!user) return null
 
-  const initials = userProfile.display_name
+  const displayName = userProfile?.display_name || user.email?.split('@')[0] || 'User'
+  const initials = displayName
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -25,10 +26,10 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2 px-2">
-          {userProfile.avatar_url ? (
+          {userProfile?.avatar_url ? (
             <img
               src={userProfile.avatar_url}
-              alt={userProfile.display_name}
+              alt={displayName}
               className="w-7 h-7 rounded-full"
               referrerPolicy="no-referrer"
             />
@@ -38,15 +39,15 @@ export function UserMenu() {
             </div>
           )}
           <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
-            {userProfile.display_name}
+            {displayName}
           </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{userProfile.display_name}</p>
-          {userProfile.email && (
-            <p className="text-xs text-muted-foreground">{userProfile.email}</p>
+          <p className="text-sm font-medium">{displayName}</p>
+          {(userProfile?.email || user.email) && (
+            <p className="text-xs text-muted-foreground">{userProfile?.email || user.email}</p>
           )}
         </div>
         <DropdownMenuSeparator />
