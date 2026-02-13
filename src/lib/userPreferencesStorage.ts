@@ -16,12 +16,11 @@ function getDefaultMode(): AppMode {
   return typeof window !== 'undefined' && window.innerWidth < 1024 ? 'quick' : 'full'
 }
 
-const defaults: UserPreferencesLocal = {
-  preferredMode: getDefaultMode(),
-  defaultTripId: null,
-}
-
 export function getLocalPreferences(): UserPreferencesLocal {
+  const defaults: UserPreferencesLocal = {
+    preferredMode: getDefaultMode(),
+    defaultTripId: null,
+  }
   try {
     const stored = localStorage.getItem(PREFERENCES_KEY)
     if (!stored) return defaults

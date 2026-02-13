@@ -1,4 +1,4 @@
-import { Outlet, Link, useParams } from 'react-router-dom'
+import { Outlet, Link, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -14,10 +14,14 @@ import { Toaster } from '@/components/ui/toaster'
 
 export function QuickLayout() {
   const { tripCode } = useParams<{ tripCode: string }>()
+  const location = useLocation()
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
 
   const isInTrip = !!tripCode
+  // On sub-pages (e.g. history), back goes to trip detail; on trip detail, back goes to /quick
+  const isSubPage = isInTrip && location.pathname !== `/t/${tripCode}/quick`
+  const backTo = isSubPage ? `/t/${tripCode}/quick` : '/quick'
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,7 +32,7 @@ export function QuickLayout() {
             <div className="flex items-center gap-3 min-w-0">
               {isInTrip ? (
                 <>
-                  <Link to="/quick" className="text-muted-foreground hover:text-foreground">
+                  <Link to={backTo} className="text-muted-foreground hover:text-foreground">
                     <ArrowLeft size={20} />
                   </Link>
                   <h1 className="text-lg font-semibold text-foreground truncate">
