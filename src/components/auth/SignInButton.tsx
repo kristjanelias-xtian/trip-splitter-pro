@@ -16,6 +16,7 @@ export function SignInButton() {
       }}
       size="medium"
       type="icon"
+      shape="circle"
       theme="outline"
     />
   )
