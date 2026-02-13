@@ -116,14 +116,17 @@ export function Layout() {
                 <TripBanner tripName={currentTrip.name} compact />
               </div>
             ) : (
-              <motion.h1
-                className="text-2xl font-bold text-foreground"
+              <motion.div
+                className="flex items-center gap-2"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                Trip Splitter Pro
-              </motion.h1>
+                <img src="/logo.png" alt="Trip Splitter Pro" className="h-9 w-9 rounded-full" />
+                <h1 className="text-2xl font-bold text-foreground">
+                  Trip Splitter Pro
+                </h1>
+              </motion.div>
             )}
             <div className="flex items-center gap-2 flex-shrink-0">
               {user && <ModeToggle />}
