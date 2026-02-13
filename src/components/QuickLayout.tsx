@@ -8,6 +8,7 @@ import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { UserMenu } from '@/components/auth/UserMenu'
+import { SignInButton } from '@/components/auth/SignInButton'
 import { ModeToggle } from '@/components/quick/ModeToggle'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -42,7 +43,7 @@ export function QuickLayout() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <ModeToggle />
-              {user && <UserMenu />}
+              {user ? <UserMenu /> : <SignInButton />}
             </div>
           </div>
         </div>
