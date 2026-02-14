@@ -93,8 +93,8 @@ function SettlementTransactionCard({
 
   return (
     <Card>
-      <div className="p-4 flex items-start justify-between">
-        <div className="flex-1">
+      <div className="p-4 flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
           {/* Step Number */}
           <div className="flex items-center mb-2">
             <span className="flex items-center justify-center w-6 h-6 bg-accent text-accent-foreground text-xs font-bold rounded-full mr-2">
@@ -104,7 +104,7 @@ function SettlementTransactionCard({
           </div>
 
           {/* Transaction Details */}
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
             <div className="flex items-center gap-1">
               <span className="font-medium text-foreground">
                 {transaction.fromName}
@@ -114,7 +114,7 @@ function SettlementTransactionCard({
               )}
             </div>
 
-            <span className="text-muted-foreground">→</span>
+            <span className="text-muted-foreground flex-shrink-0">→</span>
 
             <div className="flex items-center gap-1">
               <span className="font-medium text-foreground">
@@ -150,7 +150,7 @@ function SettlementTransactionCard({
           <Button
             onClick={onRecord}
             size="sm"
-            className="ml-4"
+            className="flex-shrink-0"
           >
             <Check size={14} className="mr-1" />
             Record
