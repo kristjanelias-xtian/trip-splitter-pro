@@ -13,7 +13,7 @@ import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
-import { TripBanner } from '@/components/TripBanner'
+import { getTripGradientPattern } from '@/services/tripGradientService'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { ModeToggle } from '@/components/quick/ModeToggle'
@@ -105,15 +105,44 @@ export function Layout() {
     return location.pathname === path
   }
 
+  const pattern = currentTrip ? getTripGradientPattern(currentTrip.name) : null
+  const onGradient = !!pattern
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border soft-shadow-sm fixed top-0 left-0 right-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? '' : 'bg-card border-b border-border soft-shadow-sm'}`}>
+        {/* Gradient background when in a trip */}
+        {pattern && (
+          <>
+            <div className="absolute inset-0" style={{ background: pattern.gradient }} />
+            {pattern.icons.slice(0, 2).map((icon, i) => {
+              const Icon = icon.Icon
+              return (
+                <Icon
+                  key={i}
+                  size={icon.size * 0.6}
+                  className="absolute text-white pointer-events-none"
+                  style={{
+                    left: `${icon.x}%`,
+                    top: `${icon.y}%`,
+                    transform: `translate(-50%, -50%) rotate(${icon.rotation}deg)`,
+                    opacity: icon.opacity * 0.8,
+                  }}
+                />
+              )
+            })}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+          </>
+        )}
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             {currentTrip ? (
-              <div className="flex-1 max-w-md">
-                <TripBanner tripName={currentTrip.name} compact />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-white font-bold text-lg drop-shadow-md truncate">
+                  {currentTrip.name}
+                </h1>
               </div>
             ) : (
               <motion.div
@@ -129,8 +158,8 @@ export function Layout() {
               </motion.div>
             )}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {user && <ModeToggle />}
-              {user ? <UserMenu /> : <SignInButton />}
+              <ModeToggle onGradient={onGradient} />
+              {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>
           </div>
         </div>

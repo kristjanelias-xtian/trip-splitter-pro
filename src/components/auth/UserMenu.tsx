@@ -9,7 +9,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LogOut } from 'lucide-react'
 
-export function UserMenu() {
+interface UserMenuProps {
+  onGradient?: boolean
+}
+
+export function UserMenu({ onGradient = false }: UserMenuProps) {
   const { user, userProfile, signOut } = useAuth()
 
   if (!user) return null
@@ -25,20 +29,26 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 px-2">
+        <Button variant="ghost" size="sm" className={`gap-2 px-2 ${onGradient ? 'hover:bg-white/10' : ''}`}>
           {userProfile?.avatar_url ? (
             <img
               src={userProfile.avatar_url}
               alt={displayName}
-              className="w-7 h-7 rounded-full"
+              className={`w-7 h-7 rounded-full ${onGradient ? 'ring-2 ring-white/30' : ''}`}
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+              onGradient
+                ? 'bg-white/20 text-white'
+                : 'bg-primary/10 text-primary'
+            }`}>
               {initials}
             </div>
           )}
-          <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
+          <span className={`hidden sm:inline text-sm font-medium max-w-[120px] truncate ${
+            onGradient ? 'text-white' : ''
+          }`}>
             {displayName}
           </span>
         </Button>
