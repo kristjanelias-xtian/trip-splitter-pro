@@ -1,16 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
-import { CalendarDays, ChevronsDown, ChevronsUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CalendarDays } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useStayContext } from '@/contexts/StayContext'
 import type { MealWithIngredients } from '@/types/meal'
-import { DayAccordion } from '@/components/DayAccordion'
-import { Accordion } from '@/components/ui/accordion'
 import { PlannerGrid } from '@/components/PlannerGrid'
-import { Button } from '@/components/ui/button'
+import { DayDetailSheet } from '@/components/DayDetailSheet'
 import { Card, CardContent } from '@/components/ui/card'
-import { generateDateRange, getDayContext, getDayNumber } from '@/lib/dateUtils'
+import { generateDateRange } from '@/lib/dateUtils'
 
 export function PlannerPage() {
   const { currentTrip } = useCurrentTrip()
@@ -18,9 +16,7 @@ export function PlannerPage() {
   const { loading: activitiesLoading, getActivitiesForDate } = useActivityContext()
   const { loading: staysLoading, getStayForDate } = useStayContext()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
-  const [expandedDays, setExpandedDays] = useState<string[]>([])
-  const [allExpanded, setAllExpanded] = useState(false)
-  const dayRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const loading = mealsLoading || activitiesLoading || staysLoading
 
@@ -37,20 +33,6 @@ export function PlannerPage() {
     }
   }, [meals])
 
-  // Set default expanded day (only when trip is active)
-  useEffect(() => {
-    if (!currentTrip) return
-
-    const tripDates = generateDateRange(currentTrip.start_date, currentTrip.end_date)
-    const todayDate = new Date().toISOString().split('T')[0]
-
-    if (tripDates.includes(todayDate)) {
-      setExpandedDays([todayDate])
-    } else {
-      setExpandedDays([])
-    }
-  }, [currentTrip])
-
   if (!currentTrip) {
     return (
       <div className="space-y-4">
@@ -66,65 +48,28 @@ export function PlannerPage() {
     )
   }
 
-  const tripDates = currentTrip ? generateDateRange(currentTrip.start_date, currentTrip.end_date) : []
+  const tripDates = generateDateRange(currentTrip.start_date, currentTrip.end_date)
 
   const getMealsForDate = (date: string): MealWithIngredients[] => {
     return mealsWithIngredients.filter((meal) => meal.meal_date === date)
   }
 
-  const handleToggleAll = () => {
-    if (allExpanded) {
-      setExpandedDays([])
-      setAllExpanded(false)
-    } else {
-      setExpandedDays(tripDates)
-      setAllExpanded(true)
-    }
-  }
-
-  const handleAccordionChange = (value: string[]) => {
-    setExpandedDays(value)
-    setAllExpanded(value.length === tripDates.length)
-  }
-
   const handleGridDayClick = (date: string) => {
-    setExpandedDays(prev => prev.includes(date) ? prev : [...prev, date])
-    setTimeout(() => {
-      dayRefs.current[date]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 250)
+    setSelectedDate(date)
   }
+
+  const selectedMeals = selectedDate ? getMealsForDate(selectedDate) : []
+  const selectedActivities = selectedDate ? getActivitiesForDate(selectedDate) : []
+  const selectedStay = selectedDate ? getStayForDate(selectedDate) : undefined
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Day Planner</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {currentTrip.name} &bull; {tripDates.length} days
-          </p>
-        </div>
-
-        {!loading && tripDates.length > 0 && (
-          <Button
-            onClick={handleToggleAll}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            {allExpanded ? (
-              <>
-                <ChevronsUp size={16} />
-                Collapse All
-              </>
-            ) : (
-              <>
-                <ChevronsDown size={16} />
-                Expand All
-              </>
-            )}
-          </Button>
-        )}
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Day Planner</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {currentTrip.name} &bull; {tripDates.length} days
+        </p>
       </div>
 
       {/* Loading State */}
@@ -136,50 +81,26 @@ export function PlannerPage() {
         </Card>
       )}
 
-      {/* Grid Overview + Accordion Day Planner Calendar */}
+      {/* Grid Overview */}
       {!loading && tripDates.length > 0 && (
-        <>
-          <PlannerGrid
-            tripDates={tripDates}
-            tripStartDate={currentTrip.start_date}
-            getMealsForDate={getMealsForDate}
-            getActivitiesForDate={getActivitiesForDate}
-            getStayForDate={getStayForDate}
-            onDayClick={handleGridDayClick}
-          />
-          <Accordion
-            type="multiple"
-            value={expandedDays}
-            onValueChange={handleAccordionChange}
-            className="space-y-4"
-          >
-            {tripDates.map((date) => {
-              const mealsForDate = getMealsForDate(date)
-              const activitiesForDate = getActivitiesForDate(date)
-              const dayNumber = getDayNumber(date, currentTrip.start_date)
-              const context = getDayContext(date)
-              const stay = getStayForDate(date)
-
-              return (
-                <div key={date} ref={el => { dayRefs.current[date] = el }} className="scroll-mt-24">
-                  <DayAccordion
-                    date={date}
-                    meals={mealsForDate}
-                    activities={activitiesForDate}
-                    dayNumber={dayNumber}
-                    context={context}
-                    tripStartDate={currentTrip.start_date}
-                    stayName={stay?.name}
-                    onAddMeal={() => {
-                      // Handled within TimeSlotGrid component
-                    }}
-                  />
-                </div>
-              )
-            })}
-          </Accordion>
-        </>
+        <PlannerGrid
+          tripDates={tripDates}
+          getMealsForDate={getMealsForDate}
+          getActivitiesForDate={getActivitiesForDate}
+          getStayForDate={getStayForDate}
+          onDayClick={handleGridDayClick}
+        />
       )}
+
+      {/* Day Detail Sheet */}
+      <DayDetailSheet
+        date={selectedDate}
+        onOpenChange={(open) => { if (!open) setSelectedDate(null) }}
+        meals={selectedMeals}
+        activities={selectedActivities}
+        tripStartDate={currentTrip.start_date}
+        stayName={selectedStay?.name}
+      />
 
       {/* Empty State */}
       {!loading && tripDates.length === 0 && (
@@ -191,7 +112,7 @@ export function PlannerPage() {
                 No days planned yet
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Start planning activities and meals for your trip by expanding a day
+                Start planning activities and meals for your trip by tapping a day
               </p>
             </div>
           </CardContent>
