@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Lightbulb, Receipt, FileDown } from 'lucide-react'
+import { Lightbulb, Receipt, FileDown, Share2 } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -59,13 +59,22 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
           <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
         </div>
         <div className="flex gap-2">
-          <ShareTripDialog tripCode={tripCode!} tripName={currentTrip.name} />
+          <ShareTripDialog
+            tripCode={tripCode!}
+            tripName={currentTrip.name}
+            trigger={
+              <Button variant="outline" size="sm" className="gap-2">
+                <Share2 size={16} />
+                Share Trip
+              </Button>
+            }
+          />
           {expenses.length > 0 && (
             <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
               <FileDown size={16} />
