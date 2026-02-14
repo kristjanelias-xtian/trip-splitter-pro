@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -9,10 +9,11 @@ import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
 import type { CreateSettlementInput } from '@/types/settlement'
-import { SettlementPlan } from '@/components/SettlementPlan'
+import { SettlementPlan, BankDetails } from '@/components/SettlementPlan'
 import { SettlementForm } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase'
 
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
@@ -23,6 +24,7 @@ export function SettlementsPage() {
   const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
   const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
   const customSettlementRef = useRef<HTMLDivElement>(null)
+  const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
 
   if (!currentTrip) {
     return (
@@ -55,6 +57,46 @@ export function SettlementsPage() {
     balanceCalculation.balances,
     currentTrip.default_currency
   )
+
+  // Fetch bank details for settlement recipients
+  useEffect(() => {
+    const fetchBankDetails = async () => {
+      // Collect recipient participant IDs from the settlement plan
+      const recipientIds = optimalSettlement.transactions.map(t => t.toId)
+      if (recipientIds.length === 0) return
+
+      // Look up user_ids for these participants
+      const recipientParticipants = participants.filter(p => recipientIds.includes(p.id) && p.user_id)
+      if (recipientParticipants.length === 0) return
+
+      const userIds = recipientParticipants.map(p => p.user_id!).filter(Boolean)
+
+      const { data, error } = await (supabase as any)
+        .from('user_profiles')
+        .select('id, bank_account_holder, bank_iban')
+        .in('id', userIds)
+
+      if (error || !data) return
+
+      const map: Record<string, BankDetails> = {}
+      for (const profile of data) {
+        if (profile.bank_account_holder || profile.bank_iban) {
+          // Find participant(s) with this user_id
+          const matchingParticipants = recipientParticipants.filter(p => p.user_id === profile.id)
+          for (const p of matchingParticipants) {
+            map[p.id] = {
+              holder: profile.bank_account_holder || '',
+              iban: profile.bank_iban || '',
+            }
+          }
+        }
+      }
+
+      setBankDetailsMap(map)
+    }
+
+    fetchBankDetails()
+  }, [optimalSettlement.transactions, participants])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
     // Pre-populate the custom settlement form with amount and note
@@ -161,7 +203,7 @@ export function SettlementsPage() {
         {expenses.length > 0 && (
           <Card>
             <CardContent className="pt-6">
-              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} />
+              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} bankDetailsMap={bankDetailsMap} />
             </CardContent>
           </Card>
         )}

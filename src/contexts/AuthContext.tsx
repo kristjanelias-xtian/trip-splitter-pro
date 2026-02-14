@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean
   signInWithGoogle: (credential: string) => Promise<void>
   signOut: () => Promise<void>
+  updateBankDetails: (holder: string, iban: string) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Upsert user profile from auth metadata
   const upsertProfile = async (authUser: User) => {
     const metadata = authUser.user_metadata
-    const profile: Omit<UserProfile, 'created_at' | 'updated_at'> = {
+    const profile: Omit<UserProfile, 'created_at' | 'updated_at' | 'bank_account_holder' | 'bank_iban'> = {
       id: authUser.id,
       display_name: metadata?.full_name || metadata?.name || authUser.email?.split('@')[0] || 'User',
       email: authUser.email || null,
@@ -41,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Return a local profile if DB fails (e.g., table doesn't exist yet)
       return {
         ...profile,
+        bank_account_holder: null,
+        bank_iban: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as UserProfile
@@ -116,6 +119,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateBankDetails = async (holder: string, iban: string): Promise<boolean> => {
+    if (!user) return false
+
+    const { error } = await (supabase as any)
+      .from('user_profiles')
+      .update({
+        bank_account_holder: holder || null,
+        bank_iban: iban || null,
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error('Error updating bank details:', error)
+      return false
+    }
+
+    // Update local state
+    if (userProfile) {
+      setUserProfile({
+        ...userProfile,
+        bank_account_holder: holder || null,
+        bank_iban: iban || null,
+      })
+    }
+
+    return true
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -124,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, session, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, userProfile, session, loading, signInWithGoogle, signOut, updateBankDetails }}>
       {children}
     </AuthContext.Provider>
   )

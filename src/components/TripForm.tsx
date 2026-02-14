@@ -4,13 +4,7 @@ import { CreateTripInput, TrackingMode } from '@/types/trip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { fadeInUp } from '@/lib/animations'
 
 interface TripFormProps {
@@ -20,6 +14,7 @@ interface TripFormProps {
   submitLabel?: string
   isLoading?: boolean
   disableTrackingMode?: boolean
+  isEditMode?: boolean
 }
 
 export function TripForm({
@@ -28,13 +23,16 @@ export function TripForm({
   initialValues,
   submitLabel = 'Create Trip',
   isLoading: externalLoading,
-  disableTrackingMode = false
+  disableTrackingMode = false,
+  isEditMode = false,
 }: TripFormProps) {
   const [name, setName] = useState(initialValues?.name || '')
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
   const [defaultCurrency, setDefaultCurrency] = useState(initialValues?.default_currency || 'EUR')
+  const [enableMeals, setEnableMeals] = useState(initialValues?.enable_meals ?? false)
+  const [enableShopping, setEnableShopping] = useState(initialValues?.enable_shopping ?? false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,7 +59,9 @@ export function TripForm({
         start_date: startDate,
         end_date: endDate,
         tracking_mode: trackingMode,
-        default_currency: defaultCurrency,
+        default_currency: defaultCurrency.trim().toUpperCase() || 'EUR',
+        enable_meals: enableMeals,
+        enable_shopping: enableShopping,
       })
     } catch (err) {
       setError('Failed to save trip. Please try again.')
@@ -130,25 +130,47 @@ export function TripForm({
 
       <div className="space-y-2">
         <Label htmlFor="defaultCurrency">Default Currency</Label>
-        <Select
+        <Input
+          id="defaultCurrency"
           value={defaultCurrency}
-          onValueChange={setDefaultCurrency}
+          onChange={(e) => setDefaultCurrency(e.target.value.toUpperCase().slice(0, 3))}
+          placeholder="EUR"
+          maxLength={3}
+          className="w-32 uppercase"
           disabled={isSubmitting}
-        >
-          <SelectTrigger id="defaultCurrency">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="EUR">EUR - Euro</SelectItem>
-            <SelectItem value="USD">USD - US Dollar</SelectItem>
-            <SelectItem value="GBP">GBP - British Pound</SelectItem>
-            <SelectItem value="THB">THB - Thai Baht</SelectItem>
-          </SelectContent>
-        </Select>
+        />
         <p className="text-xs text-muted-foreground">
           All balances and settlements will be shown in this currency
         </p>
       </div>
+
+      {!isEditMode && (
+        <div className="space-y-4">
+          <Label>Features</Label>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Meal Planning</span>
+              <p className="text-xs text-muted-foreground">Plan meals and assign cooking responsibilities</p>
+            </div>
+            <Switch
+              checked={enableMeals}
+              onCheckedChange={setEnableMeals}
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Shopping List</span>
+              <p className="text-xs text-muted-foreground">Collaborative shopping list with real-time updates</p>
+            </div>
+            <Switch
+              checked={enableShopping}
+              onCheckedChange={setEnableShopping}
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <Label>Tracking Mode</Label>

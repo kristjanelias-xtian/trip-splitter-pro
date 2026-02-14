@@ -56,8 +56,14 @@ export function Layout() {
         { path: `/t/${tripCode}/manage`, label: 'Manage Trip', requiresTrip: true },
         { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
         { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
-        { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
-        { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
+      )
+      if (currentTrip?.enable_meals) {
+        items.push({ path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true })
+      }
+      if (currentTrip?.enable_shopping) {
+        items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
+      }
+      items.push(
         { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
       )
     }
@@ -73,12 +79,17 @@ export function Layout() {
       ]
     }
 
-    return [
+    const items = [
       { path: `/t/${tripCode}/dashboard`, label: 'Overview', requiresTrip: true },
       { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
-      { path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true },
-      { path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true },
     ]
+    if (currentTrip?.enable_meals) {
+      items.push({ path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true })
+    }
+    if (currentTrip?.enable_shopping) {
+      items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
+    }
+    return items
   }
 
   // Overflow menu items (mobile only)

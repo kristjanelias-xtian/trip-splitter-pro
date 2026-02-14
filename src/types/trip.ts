@@ -9,6 +9,8 @@ export interface Trip {
   tracking_mode: TrackingMode
   default_currency: string
   exchange_rates: Record<string, number>
+  enable_meals: boolean
+  enable_shopping: boolean
   created_at: string
 }
 
@@ -19,6 +21,8 @@ export interface CreateTripInput {
   tracking_mode: TrackingMode
   trip_code?: string // Optional: will be auto-generated if not provided
   default_currency?: string
+  enable_meals?: boolean
+  enable_shopping?: boolean
 }
 
 export interface UpdateTripInput {
@@ -28,4 +32,6 @@ export interface UpdateTripInput {
   tracking_mode?: TrackingMode
   default_currency?: string
   exchange_rates?: Record<string, number>
+  enable_meals?: boolean
+  enable_shopping?: boolean
 }
