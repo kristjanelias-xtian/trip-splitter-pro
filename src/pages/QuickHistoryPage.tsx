@@ -89,7 +89,12 @@ export function QuickHistoryPage() {
       ) : (
         <div className="space-y-1">
           {filtered.map(tx => (
-            <TransactionItem key={tx.id} transaction={tx} />
+            <TransactionItem
+              key={tx.id}
+              transaction={tx}
+              defaultCurrency={currentTrip?.default_currency}
+              exchangeRates={currentTrip?.exchange_rates}
+            />
           ))}
         </div>
       )}
