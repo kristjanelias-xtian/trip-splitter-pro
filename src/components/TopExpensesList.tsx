@@ -60,7 +60,7 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
           {topExpenses.map((expense, index) => (
             <div
               key={expense.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
@@ -70,15 +70,15 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
                   <p className="font-semibold text-foreground truncate">
                     {expense.description}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Paid by {expense.payerName} • {new Date(expense.expense_date).toLocaleDateString()}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                    <span>Paid by {expense.payerName} • {new Date(expense.expense_date).toLocaleDateString()}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {expense.category}
+                    </Badge>
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                <Badge variant="outline" className="text-xs">
-                  {expense.category}
-                </Badge>
+              <div className="ml-3 flex-shrink-0">
                 <div className="text-right">
                   <span className="font-bold text-foreground tabular-nums text-lg">
                     {new Intl.NumberFormat('en-US', {

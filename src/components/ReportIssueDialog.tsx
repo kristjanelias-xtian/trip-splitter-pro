@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
 import {
@@ -12,18 +12,45 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ImagePlus, X } from 'lucide-react'
 
 interface ReportIssueDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
   const { toast } = useToast()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
+  const [screenshot, setScreenshot] = useState<File | null>(null)
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setScreenshot(file)
+    const url = URL.createObjectURL(file)
+    setScreenshotPreview(url)
+  }
+
+  const removeScreenshot = () => {
+    setScreenshot(null)
+    if (screenshotPreview) URL.revokeObjectURL(screenshotPreview)
+    setScreenshotPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,11 +65,17 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         `**Time:** ${new Date().toISOString()}`,
       ].join('\n')
 
-      const body = description.trim()
-        ? `${description}\n\n---\n${metadata}`
-        : metadata
+      let screenshotMarkdown = ''
+      if (screenshot) {
+        const base64 = await fileToBase64(screenshot)
+        screenshotMarkdown = `\n\n**Screenshot:**\n![Screenshot](${base64})`
+      }
 
-      const { data, error } = await supabase.functions.invoke('create-github-issue', {
+      const body = description.trim()
+        ? `${description}${screenshotMarkdown}\n\n---\n${metadata}`
+        : `${screenshotMarkdown ? screenshotMarkdown.trimStart() + '\n\n---\n' : ''}${metadata}`
+
+      const { error } = await supabase.functions.invoke('create-github-issue', {
         body: { title: subject.trim(), body },
       })
 
@@ -50,13 +83,12 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
 
       toast({
         title: 'Feedback sent',
-        description: data?.url
-          ? 'Thank you! Your report has been submitted.'
-          : 'Thank you! Your report has been submitted.',
+        description: 'Thank you! Your report has been submitted.',
       })
 
       setSubject('')
       setDescription('')
+      removeScreenshot()
       onOpenChange(false)
     } catch (err) {
       console.error('Error submitting issue:', err)
@@ -102,6 +134,44 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Screenshot (optional)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            {screenshotPreview ? (
+              <div className="relative inline-block">
+                <img
+                  src={screenshotPreview}
+                  alt="Screenshot preview"
+                  className="h-24 rounded-md border border-border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeScreenshot}
+                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow-sm"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImagePlus size={16} />
+                Attach Screenshot
+              </Button>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">

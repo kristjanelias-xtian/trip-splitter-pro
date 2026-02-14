@@ -64,7 +64,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
   }
 
   const handleShareVia = (method: 'whatsapp' | 'email' | 'sms') => {
-    const message = `Join our trip "${tripName}" on Trip Splitter: ${shareUrl}`
+    const message = `Join our trip "${tripName}" on Split: ${shareUrl}`
 
     let url = ''
     switch (method) {
@@ -87,7 +87,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
       try {
         await navigator.share({
           title: `Join ${tripName}`,
-          text: `Join our trip "${tripName}" on Trip Splitter`,
+          text: `Join our trip "${tripName}" on Split`,
           url: shareUrl,
         })
       } catch (err) {
