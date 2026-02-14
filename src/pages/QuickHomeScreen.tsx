@@ -7,7 +7,7 @@ import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { GroupActions } from '@/components/quick/GroupActions'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, ChevronRight, Plus, Eye, ChevronDown } from 'lucide-react'
+import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
@@ -158,6 +158,19 @@ export function QuickHomeScreen() {
             </Button>
           </div>
         )}
+
+        {/* What's New link */}
+        <div className="mt-8 text-center">
+          <a
+            href="https://github.com/kristjanelias-xtian/trip-splitter-pro/blob/main/RELEASE_NOTES.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            What's New · v0.9.3
+            <ExternalLink size={12} />
+          </a>
+        </div>
 
         {/* Hidden trips section */}
         {hiddenTrips.length > 0 && (

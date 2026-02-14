@@ -24,14 +24,16 @@ interface SettlementFormProps {
   onCancel?: () => void
   initialAmount?: number
   initialNote?: string
+  initialFromId?: string
+  initialToId?: string
 }
 
-export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote }: SettlementFormProps) {
+export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId }: SettlementFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants, families } = useParticipantContext()
 
-  const [fromParticipantId, setFromParticipantId] = useState('')
-  const [toParticipantId, setToParticipantId] = useState('')
+  const [fromParticipantId, setFromParticipantId] = useState(initialFromId || '')
+  const [toParticipantId, setToParticipantId] = useState(initialToId || '')
   const [amount, setAmount] = useState(initialAmount?.toString() || '')
   const [currency, setCurrency] = useState(currentTrip?.default_currency || 'EUR')
   const [settlementDate, setSettlementDate] = useState(
@@ -62,6 +64,18 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote 
       setNote(initialNote)
     }
   }, [initialNote])
+
+  useEffect(() => {
+    if (initialFromId !== undefined) {
+      setFromParticipantId(initialFromId)
+    }
+  }, [initialFromId])
+
+  useEffect(() => {
+    if (initialToId !== undefined) {
+      setToParticipantId(initialToId)
+    }
+  }, [initialToId])
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
