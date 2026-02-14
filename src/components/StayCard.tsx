@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Trash2, MapPin, User, ExternalLink } from 'lucide-react'
-import { useActivityContext } from '@/contexts/ActivityContext'
-import { useParticipantContext } from '@/contexts/ParticipantContext'
-import type { Activity } from '@/types/activity'
-import { ActivityForm } from './ActivityForm'
+import { Trash2, ExternalLink, MessageSquare } from 'lucide-react'
+import { format } from 'date-fns'
+import { useStayContext } from '@/contexts/StayContext'
+import type { Stay } from '@/types/stay'
+import { StayForm } from './StayForm'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -16,25 +16,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-interface ActivityCardProps {
-  activity: Activity
+interface StayCardProps {
+  stay: Stay
 }
 
-export function ActivityCard({ activity }: ActivityCardProps) {
-  const { deleteActivity } = useActivityContext()
-  const { participants } = useParticipantContext()
+export function StayCard({ stay }: StayCardProps) {
+  const { deleteStay } = useStayContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const responsiblePerson = activity.responsible_participant_id
-    ? participants.find((p) => p.id === activity.responsible_participant_id)
-    : null
-
   const handleDelete = async () => {
-    const success = await deleteActivity(activity.id)
+    const success = await deleteStay(stay.id)
     if (success) {
       setShowDeleteConfirm(false)
     }
+  }
+
+  const formatDate = (dateStr: string) => {
+    return format(new Date(dateStr + 'T00:00:00'), 'MMM d, yyyy')
   }
 
   return (
@@ -44,12 +43,22 @@ export function ActivityCard({ activity }: ActivityCardProps) {
         transition={{ duration: 0.2 }}
       >
         <Card
-          className="p-3 hover:shadow-md transition-shadow cursor-pointer bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-900"
+          className="p-3 hover:shadow-md transition-shadow cursor-pointer bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"
           onClick={() => setShowEditForm(true)}
         >
           <div className="flex items-start justify-between mb-1">
-            <h4 className="font-semibold text-foreground">{activity.title}</h4>
+            <h4 className="font-semibold text-foreground">{stay.name}</h4>
             <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+              {stay.link && (
+                <Button
+                  onClick={() => window.open(stay.link!, '_blank', 'noopener,noreferrer')}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                >
+                  <ExternalLink size={14} />
+                </Button>
+              )}
               <Button
                 onClick={() => setShowDeleteConfirm(true)}
                 variant="ghost"
@@ -61,33 +70,14 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             </div>
           </div>
 
-          {activity.description && (
-            <p className="text-sm text-muted-foreground mb-1">{activity.description}</p>
-          )}
+          <p className="text-sm text-muted-foreground mb-1">
+            {formatDate(stay.check_in_date)} &ndash; {formatDate(stay.check_out_date)}
+          </p>
 
-          {activity.location && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
-              <MapPin size={14} />
-              <span>{activity.location}</span>
-            </div>
-          )}
-
-          {activity.link && (
-            <div
-              className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 mb-1 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); window.open(activity.link!, '_blank', 'noopener,noreferrer') }}
-            >
-              <ExternalLink size={14} className="shrink-0" />
-              <span className="underline truncate">
-                {(() => { try { return new URL(activity.link).hostname } catch { return activity.link } })()}
-              </span>
-            </div>
-          )}
-
-          {responsiblePerson && (
+          {stay.comment && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <User size={14} />
-              <span>{responsiblePerson.name}</span>
+              <MessageSquare size={14} className="shrink-0" />
+              <span className="truncate">{stay.comment}</span>
             </div>
           )}
         </Card>
@@ -97,12 +87,10 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Activity</DialogTitle>
+            <DialogTitle>Edit Accommodation</DialogTitle>
           </DialogHeader>
-          <ActivityForm
-            activity={activity}
-            date={activity.activity_date}
-            timeSlot={activity.time_slot}
+          <StayForm
+            stay={stay}
             onSuccess={() => setShowEditForm(false)}
             onCancel={() => setShowEditForm(false)}
           />
@@ -113,9 +101,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Activity?</DialogTitle>
+            <DialogTitle>Delete Accommodation?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{activity.title}"?
+              Are you sure you want to delete "{stay.name}"?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

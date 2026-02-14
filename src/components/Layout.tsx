@@ -12,6 +12,7 @@ import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ActivityProvider } from '@/contexts/ActivityContext'
+import { StayProvider } from '@/contexts/StayContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
@@ -186,9 +187,11 @@ export function Layout() {
             <SettlementProvider>
               <MealProvider>
                 <ActivityProvider>
-                  <ShoppingProvider>
-                    <Outlet />
-                  </ShoppingProvider>
+                  <StayProvider>
+                    <ShoppingProvider>
+                      <Outlet />
+                    </ShoppingProvider>
+                  </StayProvider>
                 </ActivityProvider>
               </MealProvider>
             </SettlementProvider>

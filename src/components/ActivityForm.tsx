@@ -54,6 +54,7 @@ export function ActivityForm({
     title: activity?.title || '',
     description: activity?.description || '',
     location: activity?.location || '',
+    link: activity?.link || '',
     responsible_participant_id: activity?.responsible_participant_id || 'none',
   })
 
@@ -91,6 +92,7 @@ export function ActivityForm({
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           location: formData.location.trim() || undefined,
+          link: formData.link.trim() || undefined,
           responsible_participant_id: responsibleId,
         }
 
@@ -108,6 +110,7 @@ export function ActivityForm({
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           location: formData.location.trim() || undefined,
+          link: formData.link.trim() || undefined,
           responsible_participant_id: responsibleId,
         }
 
@@ -179,6 +182,18 @@ export function ActivityForm({
           value={formData.location}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
           placeholder="e.g., Wat Pho, Phi Phi Island"
+          disabled={submitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="activity-link">Link (Optional)</Label>
+        <Input
+          type="url"
+          id="activity-link"
+          value={formData.link}
+          onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+          placeholder="https://..."
           disabled={submitting}
         />
       </div>

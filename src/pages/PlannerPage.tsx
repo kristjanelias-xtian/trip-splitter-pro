@@ -3,6 +3,7 @@ import { CalendarDays, ChevronsDown, ChevronsUp } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useActivityContext } from '@/contexts/ActivityContext'
+import { useStayContext } from '@/contexts/StayContext'
 import type { MealWithIngredients } from '@/types/meal'
 import { DayAccordion } from '@/components/DayAccordion'
 import { Accordion } from '@/components/ui/accordion'
@@ -14,11 +15,12 @@ export function PlannerPage() {
   const { currentTrip } = useCurrentTrip()
   const { meals, loading: mealsLoading, getMealsWithIngredients } = useMealContext()
   const { loading: activitiesLoading, getActivitiesForDate } = useActivityContext()
+  const { loading: staysLoading, getStayForDate } = useStayContext()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
   const [expandedDays, setExpandedDays] = useState<string[]>([])
   const [allExpanded, setAllExpanded] = useState(false)
 
-  const loading = mealsLoading || activitiesLoading
+  const loading = mealsLoading || activitiesLoading || staysLoading
 
   useEffect(() => {
     const loadMealsWithIngredients = async () => {
@@ -138,6 +140,7 @@ export function PlannerPage() {
             const activitiesForDate = getActivitiesForDate(date)
             const dayNumber = getDayNumber(date, currentTrip.start_date)
             const context = getDayContext(date)
+            const stay = getStayForDate(date)
 
             return (
               <DayAccordion
@@ -148,6 +151,7 @@ export function PlannerPage() {
                 dayNumber={dayNumber}
                 context={context}
                 tripStartDate={currentTrip.start_date}
+                stayName={stay?.name}
                 onAddMeal={() => {
                   // Handled within TimeSlotGrid component
                 }}

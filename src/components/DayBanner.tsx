@@ -1,3 +1,4 @@
+import { Building2 } from 'lucide-react'
 import { DateContext, formatDayHeader } from '@/lib/dateUtils'
 import { getGradientPattern } from '@/services/gradientService'
 import { MealWithIngredients } from '@/types/meal'
@@ -8,12 +9,14 @@ export interface DayBannerProps {
   dayNumber: number
   context: DateContext
   meals: MealWithIngredients[]
+  stayName?: string
 }
 
 export function DayBanner({
   date,
   dayNumber,
   context,
+  stayName,
 }: DayBannerProps) {
   // Get deterministic gradient pattern for this date
   const pattern = getGradientPattern(date)
@@ -73,14 +76,21 @@ export function DayBanner({
           </Badge>
         </div>
 
-        {/* Bottom Row: Date */}
-        <div className="flex items-end">
+        {/* Bottom Row: Date + Stay Badge */}
+        <div className="flex items-end justify-between gap-2">
           {/* Date Display */}
           <div>
             <h3 className="text-white font-bold text-lg md:text-xl lg:text-2xl drop-shadow-md">
               {formatDayHeader(date)}
             </h3>
           </div>
+
+          {stayName && (
+            <Badge variant="outline" className="bg-white/20 border-white/40 text-white backdrop-blur-sm text-xs max-w-[150px] truncate">
+              <Building2 size={12} className="mr-1 shrink-0" />
+              {stayName}
+            </Badge>
+          )}
         </div>
       </div>
     </div>

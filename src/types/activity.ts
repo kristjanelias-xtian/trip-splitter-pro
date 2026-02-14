@@ -8,6 +8,7 @@ export interface Activity {
   title: string
   description?: string | null
   location?: string | null
+  link?: string | null
   responsible_participant_id?: string | null
   created_at: string
   updated_at: string
@@ -20,6 +21,7 @@ export interface CreateActivityInput {
   title: string
   description?: string
   location?: string
+  link?: string
   responsible_participant_id?: string
 }
 
@@ -27,6 +29,7 @@ export interface UpdateActivityInput {
   title?: string
   description?: string
   location?: string
+  link?: string
   responsible_participant_id?: string
 }
 
