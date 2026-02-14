@@ -7,9 +7,7 @@ import { MealCard } from './MealCard'
 import { MealForm } from './MealForm'
 import { ActivityCard } from './ActivityCard'
 import { ActivityForm } from './ActivityForm'
-import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Card } from '@/components/ui/card'
 
 export interface TimeSlotGridProps {
   date: string
@@ -24,25 +22,24 @@ const TIME_SLOT_TO_MEAL: Record<ActivityTimeSlot, MealType> = {
   evening: 'dinner',
 }
 
-// Icons for time slots (reuse meal icons)
+// Icons for time slots
 const TIME_SLOT_ICONS = {
   morning: Sunrise,
   afternoon: Sun,
   evening: Moon,
 }
 
-// Color classes for time slots (reuse meal colors)
-const TIME_SLOT_COLORS = {
+// Left accent border colors for timeline feel
+const TIME_SLOT_ACCENT = {
+  morning: 'border-l-gold',
+  afternoon: 'border-l-primary',
+  evening: 'border-l-secondary',
+}
+
+const TIME_SLOT_ICON_COLORS = {
   morning: 'text-gold',
   afternoon: 'text-primary',
   evening: 'text-secondary',
-}
-
-// Background/border for time slot headers (reuse meal header styles)
-const TIME_SLOT_HEADER_BG = {
-  morning: 'bg-gold/10 border-gold/20',
-  afternoon: 'bg-primary/10 border-primary/20',
-  evening: 'bg-secondary/10 border-secondary/20',
 }
 
 const TIME_SLOTS: ActivityTimeSlot[] = ['morning', 'afternoon', 'evening']
@@ -86,75 +83,79 @@ export function TimeSlotGrid({ date, meals, activities }: TimeSlotGridProps) {
     const meal = getMealForSlot(mealType)
     const slotActivities = getActivitiesForSlot(timeSlot)
     const Icon = TIME_SLOT_ICONS[timeSlot]
-    const colorClass = TIME_SLOT_COLORS[timeSlot]
-    const headerBgClass = TIME_SLOT_HEADER_BG[timeSlot]
+    const hasContent = meal || slotActivities.length > 0
 
     return (
-      <Card key={timeSlot} className="overflow-hidden border-2">
-        {/* Time Slot Header */}
-        <div className={`${headerBgClass} px-4 py-3 border-b-2 border-current`}>
-          <div className="flex items-center gap-2">
-            <Icon size={24} className={colorClass} />
-            <span className="text-base font-semibold">{TIME_SLOT_LABELS[timeSlot]}</span>
-          </div>
+      <div
+        key={timeSlot}
+        className={`border-l-2 ${TIME_SLOT_ACCENT[timeSlot]} pl-3 py-2`}
+      >
+        {/* Compact header: icon + label inline */}
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Icon size={14} className={TIME_SLOT_ICON_COLORS[timeSlot]} />
+          <span className="text-xs font-semibold text-muted-foreground">
+            {TIME_SLOT_LABELS[timeSlot]}
+          </span>
         </div>
 
-        {/* Content: Activities (left) + Meal (right) — side-by-side on desktop, stacked on mobile */}
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Activities Column */}
-            <div className="space-y-2">
-              <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Activities</h5>
-              {slotActivities.length > 0 ? (
-                <div className="space-y-2">
-                  {slotActivities.map((activity) => (
-                    <ActivityCard key={activity.id} activity={activity} />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic mb-2">No activities</p>
-              )}
-              <Button
-                onClick={() => handleAddActivity(timeSlot)}
-                variant="outline"
-                size="sm"
-                className="gap-2 w-full"
+        {/* Items flow vertically */}
+        <div className="space-y-1.5">
+          {slotActivities.map((activity) => (
+            <ActivityCard key={activity.id} activity={activity} />
+          ))}
+
+          {meal && <MealCard meal={meal} />}
+
+          {/* Subtle inline add buttons */}
+          {!hasContent ? (
+            <div className="flex items-center gap-3 py-1">
+              <button
+                type="button"
+                onClick={() => handleAddMeal(mealType)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
               >
-                <Plus size={14} />
-                Add Activity
-              </Button>
+                <Plus size={12} />
+                Add {MEAL_TYPE_LABELS[mealType].toLowerCase()}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAddActivity(timeSlot)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                <Plus size={12} />
+                Add activity
+              </button>
             </div>
-
-            {/* Meal Column */}
-            <div>
-              <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{MEAL_TYPE_LABELS[mealType]}</h5>
-              {meal ? (
-                <MealCard meal={meal} />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center py-6">
-                  <Icon size={32} className={`${colorClass} opacity-20 mb-2`} />
-                  <p className="text-sm text-muted-foreground mb-3">No meal planned</p>
-                  <Button
-                    onClick={() => handleAddMeal(mealType)}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Plus size={14} />
-                    Add {MEAL_TYPE_LABELS[mealType]}
-                  </Button>
-                </div>
+          ) : (
+            <div className="flex items-center gap-3 pt-0.5">
+              {!meal && (
+                <button
+                  type="button"
+                  onClick={() => handleAddMeal(mealType)}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  <Plus size={12} />
+                  Add {MEAL_TYPE_LABELS[mealType].toLowerCase()}
+                </button>
               )}
+              <button
+                type="button"
+                onClick={() => handleAddActivity(timeSlot)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                <Plus size={12} />
+                Add activity
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      </Card>
+      </div>
     )
   }
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {TIME_SLOTS.map((timeSlot) => renderTimeSlotSection(timeSlot))}
       </div>
 
