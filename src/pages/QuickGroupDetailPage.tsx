@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   DollarSign, CreditCard, FileText,
-  ExternalLink, Loader2
+  ExternalLink, ArrowLeftRight, Loader2
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
@@ -98,6 +98,14 @@ export function QuickGroupDetailPage() {
 
       {/* Bottom actions */}
       <div className="space-y-3">
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => navigate('/quick')}
+        >
+          <ArrowLeftRight size={16} />
+          My Trips
+        </Button>
         <Button
           variant="outline"
           className="w-full gap-2"
