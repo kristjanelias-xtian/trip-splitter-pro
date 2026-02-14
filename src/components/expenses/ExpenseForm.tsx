@@ -65,7 +65,7 @@ export function ExpenseForm({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
   const [splitMode, setSplitMode] = useState<SplitMode>('equal')
-  const [accountForFamilySize, setAccountForFamilySize] = useState(false) // Default to false (families as units)
+  const [accountForFamilySize, setAccountForFamilySize] = useState(true)
 
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
@@ -88,13 +88,16 @@ export function ExpenseForm({
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
-  // Auto-select all participants/families on mount if not editing
+  // Auto-select all participants/families on mount if not editing and trip setting allows it
+  const defaultSplitAll = currentTrip?.default_split_all ?? true
   useEffect(() => {
-    if (!initialValues && participants.length > 0 && selectedParticipants.length === 0) {
-      setSelectedParticipants(participants.map(p => p.id))
-    }
-    if (!initialValues && families.length > 0 && selectedFamilies.length === 0) {
-      setSelectedFamilies(families.map(f => f.id))
+    if (!initialValues?.distribution && defaultSplitAll) {
+      if (participants.length > 0 && selectedParticipants.length === 0) {
+        setSelectedParticipants(participants.map(p => p.id))
+      }
+      if (families.length > 0 && selectedFamilies.length === 0) {
+        setSelectedFamilies(families.map(f => f.id))
+      }
     }
   }, [participants, families])
 

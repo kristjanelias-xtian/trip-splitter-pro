@@ -108,14 +108,20 @@ export function ManageTripPage() {
     }
   }
 
-  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_shopping', value: boolean) => {
+  const featureLabels: Record<string, string> = {
+    enable_meals: 'Meal planning',
+    enable_shopping: 'Shopping list',
+    default_split_all: 'Split between everyone',
+  }
+
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_shopping' | 'default_split_all', value: boolean) => {
     setIsTogglingFeature(true)
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
       if (success) {
         toast({
           title: 'Feature updated',
-          description: `${feature === 'enable_meals' ? 'Meal planning' : 'Shopping list'} ${value ? 'enabled' : 'disabled'}.`,
+          description: `${featureLabels[feature]} ${value ? 'enabled' : 'disabled'}.`,
         })
       } else {
         toast({
@@ -287,6 +293,17 @@ export function ManageTripPage() {
             <Switch
               checked={currentTrip.enable_shopping}
               onCheckedChange={(checked) => handleToggleFeature('enable_shopping', checked)}
+              disabled={isTogglingFeature}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Split Between Everyone</Label>
+              <p className="text-xs text-muted-foreground">New expenses default to splitting between all participants</p>
+            </div>
+            <Switch
+              checked={currentTrip.default_split_all ?? true}
+              onCheckedChange={(checked) => handleToggleFeature('default_split_all', checked)}
               disabled={isTogglingFeature}
             />
           </div>

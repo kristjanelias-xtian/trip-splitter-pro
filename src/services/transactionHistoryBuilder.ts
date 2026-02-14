@@ -12,6 +12,7 @@ export interface TransactionItem {
   currency: string
   role: 'you_paid' | 'your_share' | 'you_settled' | 'you_received'
   roleAmount: number
+  myShare?: number
   payerName: string | null
   recipientName: string | null
 }
@@ -61,6 +62,7 @@ export function buildTransactionHistory(
         currency: expense.currency,
         role: 'you_paid',
         roleAmount: expense.amount,
+        myShare,
         payerName: null,
         recipientName: null,
       })

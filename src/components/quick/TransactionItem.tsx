@@ -31,6 +31,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
           label: 'You paid',
           icon: <DollarSign size={16} className="text-primary" />,
           amountText: formatDualCurrency(tx.roleAmount, tx.currency),
+          subText: tx.myShare !== undefined ? `Your share: ${formatDualCurrency(tx.myShare, tx.currency)}` : null,
           amountClass: 'text-foreground font-semibold',
           bgClass: 'bg-primary/5',
         }
@@ -39,6 +40,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
           label: `${tx.payerName} paid`,
           icon: <DollarSign size={16} className="text-muted-foreground" />,
           amountText: `Your share: ${formatDualCurrency(tx.roleAmount, tx.currency)}`,
+          subText: null,
           amountClass: 'text-muted-foreground',
           bgClass: 'bg-muted/30',
         }
@@ -47,6 +49,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
           label: `You paid ${tx.recipientName}`,
           icon: <ArrowUpRight size={16} className="text-red-500" />,
           amountText: formatDualCurrency(tx.roleAmount, tx.currency),
+          subText: null,
           amountClass: 'text-red-600 dark:text-red-400 font-semibold',
           bgClass: 'bg-red-50 dark:bg-red-950/20',
         }
@@ -55,6 +58,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
           label: `${tx.payerName} paid you`,
           icon: <ArrowDownLeft size={16} className="text-green-500" />,
           amountText: formatDualCurrency(tx.roleAmount, tx.currency),
+          subText: null,
           amountClass: 'text-green-600 dark:text-green-400 font-semibold',
           bgClass: 'bg-green-50 dark:bg-green-950/20',
         }
@@ -82,6 +86,11 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
         <p className={`text-sm tabular-nums ${display.amountClass}`}>
           {display.amountText}
         </p>
+        {display.subText && (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {display.subText}
+          </p>
+        )}
       </div>
     </div>
   )
