@@ -1,11 +1,15 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { TripForm } from '@/components/TripForm'
+import { SignInButton } from '@/components/auth/SignInButton'
 import { CreateTripInput } from '@/types/trip'
 import { Card, CardContent } from '@/components/ui/card'
+import { LogIn } from 'lucide-react'
 
 export function TripsPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { createTrip, error } = useTripContext()
 
   const handleCreateTrip = async (input: CreateTripInput) => {
@@ -19,6 +23,37 @@ export function TripsPage() {
   const handleCancel = () => {
     // Go back to home page
     navigate('/')
+  }
+
+  // Require authentication to create trips
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Create New Trip</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Set up a new trip and get a shareable link
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <LogIn size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Sign in to create a trip
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                You need to be signed in to create and manage trips.
+              </p>
+              <div className="flex justify-center">
+                <SignInButton />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

@@ -60,7 +60,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       // Generate trip_code if not provided
       const tripCode = input.trip_code || generateTripCode(input.name)
-      const tripData = { ...input, trip_code: tripCode }
+
+      // Set created_by to the current authenticated user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const tripData = {
+        ...input,
+        trip_code: tripCode,
+        ...(currentUser ? { created_by: currentUser.id } : {}),
+      }
 
       const { data, error: createError } = await (supabase as any)
         .from('trips')

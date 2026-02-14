@@ -17,6 +17,7 @@ import { getTripGradientPattern } from '@/services/tripGradientService'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { ModeToggle } from '@/components/quick/ModeToggle'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 import {
   Sheet,
   SheetContent,
@@ -169,6 +170,7 @@ export function Layout() {
               </motion.div>
             )}
             <div className="flex items-center gap-2 flex-shrink-0">
+              <ReportIssueButton onGradient={onGradient} />
               <ModeToggle onGradient={onGradient} />
               {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>

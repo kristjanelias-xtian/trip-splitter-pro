@@ -10,6 +10,7 @@ import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { ModeToggle } from '@/components/quick/ModeToggle'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 
@@ -77,6 +78,7 @@ export function QuickLayout() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              <ReportIssueButton onGradient={onGradient} />
               <ModeToggle onGradient={onGradient} />
               {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>
