@@ -13,9 +13,10 @@ interface SettlementPlanProps {
   plan: OptimalSettlementPlan
   onRecordSettlement?: (transaction: SettlementTransaction) => void
   bankDetailsMap?: Record<string, BankDetails>
+  linkedParticipantIds?: Set<string>
 }
 
-export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap }: SettlementPlanProps) {
+export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds }: SettlementPlanProps) {
   if (plan.transactions.length === 0) {
     return (
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
@@ -60,6 +61,7 @@ export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap }: Set
             index={index + 1}
             onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
             bankDetails={bankDetailsMap?.[transaction.toId]}
+            linkedParticipantIds={linkedParticipantIds}
           />
         ))}
       </div>
@@ -73,6 +75,7 @@ interface SettlementTransactionCardProps {
   index: number
   onRecord?: () => void
   bankDetails?: BankDetails
+  linkedParticipantIds?: Set<string>
 }
 
 function SettlementTransactionCard({
@@ -81,6 +84,7 @@ function SettlementTransactionCard({
   index,
   onRecord,
   bankDetails,
+  linkedParticipantIds,
 }: SettlementTransactionCardProps) {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -133,6 +137,11 @@ function SettlementTransactionCard({
               {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
               {bankDetails.iban && <p>IBAN: {bankDetails.iban}</p>}
             </div>
+          )}
+          {!bankDetails && linkedParticipantIds?.has(transaction.toId) && (
+            <p className="mt-2 text-xs text-muted-foreground italic">
+              Ask {transaction.toName} to add their bank details
+            </p>
           )}
         </div>
 

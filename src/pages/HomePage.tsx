@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
+import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -52,6 +53,8 @@ export function HomePage() {
             Split costs fairly among groups with real-time collaboration
           </p>
         </div>
+
+        <OnboardingPrompts />
 
         {/* Action Buttons */}
         <div className="flex gap-3 mb-8">
