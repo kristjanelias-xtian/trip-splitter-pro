@@ -9,6 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 const FETCH_TIMEOUT_MS = 15_000
+const UPLOAD_TIMEOUT_MS = 60_000
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -24,8 +25,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url
+      const isLongRunning = url.includes('/storage/') || url.includes('/functions/')
+      const timeout = isLongRunning ? UPLOAD_TIMEOUT_MS : FETCH_TIMEOUT_MS
+
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+      const timer = setTimeout(() => controller.abort(), timeout)
 
       // Respect any existing signal from the caller
       if (init?.signal) {
