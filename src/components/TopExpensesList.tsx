@@ -62,12 +62,12 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
               key={expense.id}
               className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                   <span className="text-sm font-bold text-accent">#{index + 1}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">
+                  <p className="font-semibold text-foreground">
                     {expense.description}
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
