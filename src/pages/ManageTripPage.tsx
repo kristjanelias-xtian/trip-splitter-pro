@@ -110,7 +110,7 @@ export function ManageTripPage() {
   }
 
   const featureLabels: Record<string, string> = {
-    enable_meals: 'Meal planning',
+    enable_meals: 'Day planner',
     enable_shopping: 'Shopping list',
     default_split_all: 'Split between everyone',
   }
@@ -277,8 +277,8 @@ export function ManageTripPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Meal Planning</Label>
-              <p className="text-xs text-muted-foreground">Plan meals and assign cooking responsibilities</p>
+              <Label>Day Planner</Label>
+              <p className="text-xs text-muted-foreground">Plan activities and meals for each day of your trip</p>
             </div>
             <Switch
               checked={currentTrip.enable_meals}
