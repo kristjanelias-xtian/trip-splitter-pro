@@ -40,7 +40,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
           label: `${tx.payerName} paid`,
           icon: <DollarSign size={16} className="text-muted-foreground" />,
           amountText: `Your share: ${formatDualCurrency(tx.roleAmount, tx.currency)}`,
-          subText: null,
+          subText: `Total: ${formatDualCurrency(tx.amount, tx.currency)}`,
           amountClass: 'text-muted-foreground',
           bgClass: 'bg-muted/30',
         }

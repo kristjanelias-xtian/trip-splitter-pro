@@ -110,86 +110,87 @@ export function PlannerGrid({
 
   return (
     <Card className="overflow-hidden">
-      <div className="px-4 py-4 overflow-x-auto">
-        <div className="flex gap-3">
+      <div className="px-4 py-4">
+        <div className="grid grid-cols-5 md:grid-cols-7 gap-1">
           {groups.map((group, groupIdx) => {
             const colorIdx = group.stayId !== null ? stayColorMap.get(group.stayId) : undefined
             const stayColor = colorIdx !== undefined ? STAY_COLORS[colorIdx] : null
 
-            return (
-              <div key={groupIdx} className="flex flex-col gap-1 shrink-0">
-                {/* Stay label */}
-                {group.stayName ? (
-                  <div className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 mb-1 rounded',
+            return [
+              /* Stay header row — only for named stays */
+              group.stayName ? (
+                <div
+                  key={`stay-${groupIdx}`}
+                  className={cn(
+                    'col-span-full flex items-center gap-1 px-1.5 py-0.5 rounded',
+                    groupIdx > 0 && 'mt-2',
                     stayColor ? `${stayColor.bg} ${stayColor.text}` : ''
-                  )}>
-                    <Building2 size={12} className="shrink-0" />
-                    <span className="text-[10px] font-medium truncate">
-                      {group.stayName}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 mb-1">
-                    <span className="text-[10px] text-muted-foreground font-medium">No stay</span>
-                  </div>
-                )}
-
-                {/* Day cells row */}
-                <div className="flex gap-1">
-                  {group.dates.map((date) => {
-                    const calendarDate = getCalendarDate(date)
-                    const context = getDayContext(date)
-                    const meals = getMealsForDate(date)
-                    const activities = getActivitiesForDate(date)
-                    const weekday = getWeekdayAbbr(date)
-                    const activityCount = activities.length
-
-                    return (
-                      <button
-                        key={date}
-                        type="button"
-                        onClick={() => onDayClick(date)}
-                        className={cn(
-                          'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
-                          'w-12 h-20 md:w-14 md:h-24 shrink-0',
-                          'hover:bg-accent/50 cursor-pointer',
-                          stayColor
-                            ? `${stayColor.bg} ${stayColor.cellBorder}`
-                            : 'bg-muted/30 border-border',
-                          context === 'today' && 'ring-2 ring-primary',
-                          context === 'past' && 'opacity-60'
-                        )}
-                      >
-                        <span className="text-xs font-bold leading-none">{calendarDate}</span>
-                        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                          {weekday}
-                        </span>
-                        <div className="flex gap-1 mt-1.5">
-                          {TIME_SLOTS.map((slot) => {
-                            const filled = slotHasContent(slot, meals, activities)
-                            return (
-                              <div
-                                key={slot}
-                                className={cn(
-                                  'w-2 h-2 rounded-full',
-                                  filled ? DOT_FILLED_COLORS[slot] : 'bg-muted-foreground/20'
-                                )}
-                              />
-                            )
-                          })}
-                        </div>
-                        {activityCount > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                            {activityCount}
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
+                  )}
+                >
+                  <Building2 size={12} className="shrink-0" />
+                  <span className="text-[10px] font-medium truncate">
+                    {group.stayName}
+                  </span>
                 </div>
-              </div>
-            )
+              ) : (
+                /* No stay — add spacing between groups but no label (#78) */
+                groupIdx > 0 ? (
+                  <div key={`stay-${groupIdx}`} className="col-span-full mt-2" />
+                ) : null
+              ),
+
+              /* Day cells */
+              ...group.dates.map((date) => {
+                const calendarDate = getCalendarDate(date)
+                const context = getDayContext(date)
+                const meals = getMealsForDate(date)
+                const activities = getActivitiesForDate(date)
+                const weekday = getWeekdayAbbr(date)
+                const activityCount = activities.length
+
+                return (
+                  <button
+                    key={date}
+                    type="button"
+                    onClick={() => onDayClick(date)}
+                    className={cn(
+                      'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
+                      'h-20 md:h-24',
+                      'hover:bg-accent/50 cursor-pointer',
+                      stayColor
+                        ? `${stayColor.bg} ${stayColor.cellBorder}`
+                        : 'bg-muted/30 border-border',
+                      context === 'today' && 'ring-2 ring-primary',
+                      context === 'past' && 'opacity-60'
+                    )}
+                  >
+                    <span className="text-xs font-bold leading-none">{calendarDate}</span>
+                    <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
+                      {weekday}
+                    </span>
+                    <div className="flex gap-1 mt-1.5">
+                      {TIME_SLOTS.map((slot) => {
+                        const filled = slotHasContent(slot, meals, activities)
+                        return (
+                          <div
+                            key={slot}
+                            className={cn(
+                              'w-2 h-2 rounded-full',
+                              filled ? DOT_FILLED_COLORS[slot] : 'bg-muted-foreground/20'
+                            )}
+                          />
+                        )
+                      })}
+                    </div>
+                    {activityCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {activityCount}
+                      </span>
+                    )}
+                  </button>
+                )
+              }),
+            ]
           })}
         </div>
       </div>
