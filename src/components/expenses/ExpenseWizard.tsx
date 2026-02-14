@@ -109,7 +109,7 @@ function MobileWizard({
     initialValues?.expense_date || new Date().toISOString().split('T')[0]
   )
   const [comment, setComment] = useState(initialValues?.comment || '')
-  const [accountForFamilySize, setAccountForFamilySize] = useState(false)
+  const [accountForFamilySize, setAccountForFamilySize] = useState(true)
 
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
@@ -125,13 +125,16 @@ function MobileWizard({
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
-  // Auto-select all participants/families on mount
+  // Auto-select all participants/families on mount if trip setting allows it
+  const defaultSplitAll = currentTrip?.default_split_all ?? true
   useEffect(() => {
-    if (open && participants.length > 0 && selectedParticipants.length === 0) {
-      setSelectedParticipants(participants.map((p) => p.id))
-    }
-    if (open && families.length > 0 && selectedFamilies.length === 0) {
-      setSelectedFamilies(families.map((f) => f.id))
+    if (open && !initialValues?.distribution && defaultSplitAll) {
+      if (participants.length > 0 && selectedParticipants.length === 0) {
+        setSelectedParticipants(participants.map((p) => p.id))
+      }
+      if (families.length > 0 && selectedFamilies.length === 0) {
+        setSelectedFamilies(families.map((f) => f.id))
+      }
     }
   }, [open, participants, families])
 

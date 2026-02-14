@@ -11,6 +11,7 @@ export interface Trip {
   exchange_rates: Record<string, number>
   enable_meals: boolean
   enable_shopping: boolean
+  default_split_all: boolean
   created_by?: string
   created_at: string
 }
@@ -35,4 +36,5 @@ export interface UpdateTripInput {
   exchange_rates?: Record<string, number>
   enable_meals?: boolean
   enable_shopping?: boolean
+  default_split_all?: boolean
 }
