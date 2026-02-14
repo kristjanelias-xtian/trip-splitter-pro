@@ -12,6 +12,7 @@ interface StayContextValue {
   deleteStay: (id: string) => Promise<boolean>
   getStayById: (id: string) => Stay | undefined
   getStayForDate: (date: string) => Stay | undefined
+  getStaysForDate: (date: string) => Stay[]
   refreshStays: () => Promise<void>
 }
 
@@ -141,6 +142,10 @@ export function StayProvider({ children }: { children: ReactNode }) {
     return stays.find((s) => s.check_in_date <= date && date < s.check_out_date)
   }
 
+  const getStaysForDate = (date: string): Stay[] => {
+    return stays.filter((s) => s.check_in_date <= date && date <= s.check_out_date)
+  }
+
   const value: StayContextValue = {
     stays,
     loading,
@@ -149,6 +154,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
     deleteStay,
     getStayById,
     getStayForDate,
+    getStaysForDate,
     refreshStays,
   }
 

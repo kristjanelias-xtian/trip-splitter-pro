@@ -28,6 +28,15 @@ const STAY_COLORS = [
   { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', cellBorder: 'border-indigo-200', dot: 'bg-indigo-400' },
 ]
 
+const STAY_HEX_BG = [
+  '#fffbeb', // amber-50
+  '#f0f9ff', // sky-50
+  '#fff1f2', // rose-50
+  '#ecfdf5', // emerald-50
+  '#f5f3ff', // violet-50
+  '#eef2ff', // indigo-50
+]
+
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 interface PlannerGridProps {
@@ -35,6 +44,7 @@ interface PlannerGridProps {
   getMealsForDate: (date: string) => MealWithIngredients[]
   getActivitiesForDate: (date: string) => Activity[]
   getStayForDate: (date: string) => Stay | undefined
+  getStaysForDate: (date: string) => Stay[]
   onDayClick: (date: string) => void
 }
 
@@ -86,18 +96,21 @@ function getCalendarWeeks(dates: string[]): (string | null)[][] {
 
 /**
  * Maps unique stay IDs to color indices by scanning all trip dates.
+ * Uses getStaysForDate to also pick up departing stays on checkout day.
  */
 function getStayColorMap(
   dates: string[],
-  getStayForDate: (date: string) => Stay | undefined
+  getStaysForDate: (date: string) => Stay[]
 ): Map<string, number> {
   const colorMap = new Map<string, number>()
   let colorIdx = 0
   for (const date of dates) {
-    const stay = getStayForDate(date)
-    if (stay && !colorMap.has(stay.id)) {
-      colorMap.set(stay.id, colorIdx % STAY_COLORS.length)
-      colorIdx++
+    const staysOnDate = getStaysForDate(date)
+    for (const stay of staysOnDate) {
+      if (!colorMap.has(stay.id)) {
+        colorMap.set(stay.id, colorIdx % STAY_COLORS.length)
+        colorIdx++
+      }
     }
   }
   return colorMap
@@ -124,10 +137,11 @@ export function PlannerGrid({
   getMealsForDate,
   getActivitiesForDate,
   getStayForDate,
+  getStaysForDate,
   onDayClick,
 }: PlannerGridProps) {
   const weeks = getCalendarWeeks(tripDates)
-  const stayColorMap = getStayColorMap(tripDates, getStayForDate)
+  const stayColorMap = getStayColorMap(tripDates, getStaysForDate)
 
   // Build legend: collect unique stays in order + track if there are home days
   const legendStays: { id: string; name: string; colorIdx: number }[] = []
@@ -177,9 +191,29 @@ export function PlannerGrid({
               )
             }
 
-            const stay = getStayForDate(date)
+            const staysOnDate = getStaysForDate(date)
+            const isSplit = staysOnDate.length === 2
+
+            // For single-stay rendering, use getStayForDate (excludes checkout-only)
+            const stay = isSplit ? null : getStayForDate(date)
             const colorIdx = stay ? stayColorMap.get(stay.id) : undefined
             const stayColor = colorIdx !== undefined ? STAY_COLORS[colorIdx] : null
+
+            // For split days, determine departing (checkout) and arriving (checkin) stays
+            let splitStyle: React.CSSProperties | undefined
+            let splitBorderClass: string | undefined
+            if (isSplit) {
+              const departingStay = staysOnDate.find((s) => s.check_out_date === date)
+              const arrivingStay = staysOnDate.find((s) => s.check_in_date === date)
+              if (departingStay && arrivingStay) {
+                const departIdx = stayColorMap.get(departingStay.id) ?? 0
+                const arriveIdx = stayColorMap.get(arrivingStay.id) ?? 0
+                splitStyle = {
+                  background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${STAY_HEX_BG[arriveIdx % STAY_HEX_BG.length]} 50%)`,
+                }
+                splitBorderClass = STAY_COLORS[arriveIdx % STAY_COLORS.length].cellBorder
+              }
+            }
 
             const calendarDate = getCalendarDate(date)
             const context = getDayContext(date)
@@ -196,12 +230,15 @@ export function PlannerGrid({
                   'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
                   'h-20 md:h-24',
                   'hover:bg-accent/50 cursor-pointer',
-                  stayColor
-                    ? `${stayColor.bg} ${stayColor.cellBorder}`
-                    : 'bg-muted/30 border-border',
+                  isSplit
+                    ? splitBorderClass
+                    : stayColor
+                      ? `${stayColor.bg} ${stayColor.cellBorder}`
+                      : 'bg-muted/30 border-border',
                   context === 'today' && 'ring-2 ring-primary',
                   context === 'past' && 'opacity-60'
                 )}
+                style={splitStyle}
               >
                 <span className="text-xs font-bold leading-none">{calendarDate}</span>
                 <div className="flex gap-1 mt-1.5">

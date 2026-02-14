@@ -14,7 +14,7 @@ export function PlannerPage() {
   const { currentTrip } = useCurrentTrip()
   const { meals, loading: mealsLoading, getMealsWithIngredients } = useMealContext()
   const { loading: activitiesLoading, getActivitiesForDate } = useActivityContext()
-  const { loading: staysLoading, getStayForDate } = useStayContext()
+  const { loading: staysLoading, getStayForDate, getStaysForDate } = useStayContext()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
@@ -88,6 +88,7 @@ export function PlannerPage() {
           getMealsForDate={getMealsForDate}
           getActivitiesForDate={getActivitiesForDate}
           getStayForDate={getStayForDate}
+          getStaysForDate={getStaysForDate}
           onDayClick={handleGridDayClick}
         />
       )}
