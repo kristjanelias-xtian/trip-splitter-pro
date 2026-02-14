@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Bug } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { ReportIssueDialog } from '@/components/ReportIssueDialog'
 
 interface ReportIssueButtonProps {
@@ -7,7 +8,10 @@ interface ReportIssueButtonProps {
 }
 
 export function ReportIssueButton({ onGradient = false }: ReportIssueButtonProps) {
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
+
+  if (!user) return null
 
   return (
     <>
