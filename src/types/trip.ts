@@ -11,6 +11,7 @@ export interface Trip {
   exchange_rates: Record<string, number>
   enable_meals: boolean
   enable_shopping: boolean
+  created_by?: string
   created_at: string
 }
 

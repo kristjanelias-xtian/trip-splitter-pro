@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, LogOut, ExternalLink, Calendar, Users } from 'lucide-react'
+import { Search, LogOut, ExternalLink, Calendar, Users, UserCircle } from 'lucide-react'
 import { useTripContext } from '@/contexts/TripContext'
+import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -32,10 +33,36 @@ export function AdminAllTripsPage() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent')
+  const [ownerMap, setOwnerMap] = useState<Record<string, { name: string; email: string | null }>>({})
 
   useEffect(() => {
     setAuthenticated(isAdminAuthenticated())
   }, [])
+
+  // Fetch owner info for all trips
+  useEffect(() => {
+    if (!authenticated || trips.length === 0) return
+
+    const ownerIds = [...new Set(trips.map(t => t.created_by).filter(Boolean))] as string[]
+    if (ownerIds.length === 0) return
+
+    const fetchOwners = async () => {
+      const { data, error: fetchError } = await (supabase as any)
+        .from('user_profiles')
+        .select('id, display_name, email')
+        .in('id', ownerIds)
+
+      if (fetchError || !data) return
+
+      const map: Record<string, { name: string; email: string | null }> = {}
+      for (const profile of data) {
+        map[profile.id] = { name: profile.display_name, email: profile.email }
+      }
+      setOwnerMap(map)
+    }
+
+    fetchOwners()
+  }, [authenticated, trips])
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,6 +230,7 @@ export function AdminAllTripsPage() {
                   <TableHead>Trip Code</TableHead>
                   <TableHead>Tracking Mode</TableHead>
                   <TableHead>Start Date</TableHead>
+                  <TableHead>Owner</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -231,6 +259,21 @@ export function AdminAllTripsPage() {
                         <Calendar size={14} />
                         {formatDate(trip.start_date)}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {trip.created_by && ownerMap[trip.created_by] ? (
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <UserCircle size={14} className="text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{ownerMap[trip.created_by].name}</div>
+                            {ownerMap[trip.created_by].email && (
+                              <div className="text-xs text-muted-foreground truncate">{ownerMap[trip.created_by].email}</div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">&mdash;</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(trip.created_at)}

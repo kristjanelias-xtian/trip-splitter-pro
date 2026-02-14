@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
+import { getActiveTripId } from '@/lib/activeTripDetection'
 import { GroupActions } from '@/components/quick/GroupActions'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, ChevronRight, Plus, Eye, ChevronDown } from 'lucide-react'
@@ -21,6 +22,11 @@ export function QuickHomeScreen() {
 
   const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
   const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
+
+  const activeTripId = useMemo(
+    () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
+    [visibleTrips]
+  )
 
   const handleHidden = useCallback((tripCode: string) => {
     setHiddenCodes(prev => new Set([...prev, tripCode]))
@@ -100,9 +106,16 @@ export function QuickHomeScreen() {
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-foreground truncate">
-                            {trip.name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {trip.name}
+                            </h3>
+                            {trip.id === activeTripId && (
+                              <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                Active
+                              </span>
+                            )}
+                          </div>
                           {myBalance ? (
                             <p className={`text-lg font-bold tabular-nums ${getBalanceColorClass(myBalance.balance)}`}>
                               {myBalance.balance === 0

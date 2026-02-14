@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
@@ -17,6 +18,7 @@ import { supabase } from '@/lib/supabase'
 
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
+  const { user } = useAuth()
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { createSettlement, settlements } = useSettlementContext()
@@ -58,8 +60,10 @@ export function SettlementsPage() {
     currentTrip.default_currency
   )
 
-  // Fetch bank details for settlement recipients
+  // Fetch bank details for settlement recipients (only for signed-in users)
   useEffect(() => {
+    if (!user) return
+
     const fetchBankDetails = async () => {
       // Collect recipient participant IDs from the settlement plan
       const recipientIds = optimalSettlement.transactions.map(t => t.toId)
@@ -96,7 +100,7 @@ export function SettlementsPage() {
     }
 
     fetchBankDetails()
-  }, [optimalSettlement.transactions, participants])
+  }, [user, optimalSettlement.transactions, participants])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
     // Pre-populate the custom settlement form with amount and note

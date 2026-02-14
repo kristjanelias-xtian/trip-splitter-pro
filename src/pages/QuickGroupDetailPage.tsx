@@ -5,7 +5,6 @@ import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
-import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { LinkParticipantDialog } from '@/components/LinkParticipantDialog'
 import { QuickBalanceHero } from '@/components/quick/QuickBalanceHero'
@@ -15,7 +14,7 @@ import { QuickSettlementSheet } from '@/components/quick/QuickSettlementSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  DollarSign, CreditCard, FileText, Star, StarOff,
+  DollarSign, CreditCard, FileText,
   ExternalLink, Loader2
 } from 'lucide-react'
 
@@ -26,7 +25,6 @@ export function QuickGroupDetailPage() {
   const { participants, families, loading: participantsLoading } = useParticipantContext()
   const { expenses, loading: expensesLoading } = useExpenseContext()
   const { settlements, loading: settlementsLoading } = useSettlementContext()
-  const { defaultTripId, setDefaultTripId } = useUserPreferences()
 
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
@@ -34,8 +32,6 @@ export function QuickGroupDetailPage() {
   const loading = participantsLoading || expensesLoading || settlementsLoading
 
   if (!currentTrip) return null
-
-  const isDefaultTrip = defaultTripId === currentTrip.id
 
   // Calculate balance (with currency conversion)
   const balanceCalc = calculateBalances(
@@ -55,14 +51,6 @@ export function QuickGroupDetailPage() {
       myBalance = balanceCalc.balances.find(b => b.id === myParticipant.family_id) || null
     } else {
       myBalance = balanceCalc.balances.find(b => b.id === myParticipant.id) || null
-    }
-  }
-
-  const handleToggleDefault = async () => {
-    if (isDefaultTrip) {
-      await setDefaultTripId(null)
-    } else {
-      await setDefaultTripId(currentTrip.id)
     }
   }
 
@@ -110,23 +98,6 @@ export function QuickGroupDetailPage() {
 
       {/* Bottom actions */}
       <div className="space-y-3">
-        <button
-          onClick={handleToggleDefault}
-          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isDefaultTrip ? (
-            <>
-              <StarOff size={16} />
-              Remove as default view
-            </>
-          ) : (
-            <>
-              <Star size={16} />
-              Set as default view
-            </>
-          )}
-        </button>
-
         <Button
           variant="outline"
           className="w-full gap-2"
