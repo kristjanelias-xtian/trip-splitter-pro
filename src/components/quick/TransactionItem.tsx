@@ -1,11 +1,14 @@
 import { TransactionItem as TxItem } from '@/services/transactionHistoryBuilder'
+import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 
 interface TransactionItemProps {
   transaction: TxItem
+  defaultCurrency?: string
+  exchangeRates?: Record<string, number>
 }
 
-export function TransactionItem({ transaction: tx }: TransactionItemProps) {
+export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRates }: TransactionItemProps) {
   const formatAmount = (amount: number, currency: string) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
 
@@ -14,13 +17,20 @@ export function TransactionItem({ transaction: tx }: TransactionItemProps) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
+  const formatDualCurrency = (amount: number, currency: string) => {
+    const base = formatAmount(amount, currency)
+    if (!defaultCurrency || !exchangeRates || currency === defaultCurrency) return base
+    const converted = convertToBaseCurrency(amount, currency, defaultCurrency, exchangeRates)
+    return `${formatAmount(converted, defaultCurrency)} (${base})`
+  }
+
   const getRoleDisplay = () => {
     switch (tx.role) {
       case 'you_paid':
         return {
           label: 'You paid',
           icon: <DollarSign size={16} className="text-primary" />,
-          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountText: formatDualCurrency(tx.roleAmount, tx.currency),
           amountClass: 'text-foreground font-semibold',
           bgClass: 'bg-primary/5',
         }
@@ -28,7 +38,7 @@ export function TransactionItem({ transaction: tx }: TransactionItemProps) {
         return {
           label: `${tx.payerName} paid`,
           icon: <DollarSign size={16} className="text-muted-foreground" />,
-          amountText: `Your share: ${formatAmount(tx.roleAmount, tx.currency)}`,
+          amountText: `Your share: ${formatDualCurrency(tx.roleAmount, tx.currency)}`,
           amountClass: 'text-muted-foreground',
           bgClass: 'bg-muted/30',
         }
@@ -36,7 +46,7 @@ export function TransactionItem({ transaction: tx }: TransactionItemProps) {
         return {
           label: `You paid ${tx.recipientName}`,
           icon: <ArrowUpRight size={16} className="text-red-500" />,
-          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountText: formatDualCurrency(tx.roleAmount, tx.currency),
           amountClass: 'text-red-600 dark:text-red-400 font-semibold',
           bgClass: 'bg-red-50 dark:bg-red-950/20',
         }
@@ -44,7 +54,7 @@ export function TransactionItem({ transaction: tx }: TransactionItemProps) {
         return {
           label: `${tx.payerName} paid you`,
           icon: <ArrowDownLeft size={16} className="text-green-500" />,
-          amountText: formatAmount(tx.roleAmount, tx.currency),
+          amountText: formatDualCurrency(tx.roleAmount, tx.currency),
           amountClass: 'text-green-600 dark:text-green-400 font-semibold',
           bgClass: 'bg-green-50 dark:bg-green-950/20',
         }

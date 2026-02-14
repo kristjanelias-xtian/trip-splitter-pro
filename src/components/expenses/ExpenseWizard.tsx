@@ -144,7 +144,7 @@ function MobileWizard({
         setShowAdvanced(false)
         setDescription('')
         setAmount('')
-        setPaidBy('')
+        setPaidBy(initialValues?.paid_by || '')
         setComment('')
         setError(null)
         // Don't reset category, currency, date - likely to be reused
