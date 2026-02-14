@@ -42,6 +42,13 @@ interface PlannerGridProps {
  * Organizes trip dates into Mon→Sun week rows.
  * Pads with null for days outside the trip range.
  */
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function getCalendarWeeks(dates: string[]): (string | null)[][] {
   if (dates.length === 0) return []
 
@@ -67,7 +74,7 @@ function getCalendarWeeks(dates: string[]): (string | null)[][] {
   while (current <= endSunday) {
     const week: (string | null)[] = []
     for (let i = 0; i < 7; i++) {
-      const iso = current.toISOString().split('T')[0]
+      const iso = formatLocalDate(current)
       week.push(tripDateSet.has(iso) ? iso : null)
       current.setDate(current.getDate() + 1)
     }
