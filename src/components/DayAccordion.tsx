@@ -1,12 +1,14 @@
 import { MealWithIngredients, MealType } from '@/types/meal'
+import type { Activity } from '@/types/activity'
 import { DateContext } from '@/lib/dateUtils'
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { DayBanner } from './DayBanner'
-import { MealGrid } from './MealGrid'
+import { TimeSlotGrid } from './TimeSlotGrid'
 
 export interface DayAccordionProps {
   date: string
   meals: MealWithIngredients[]
+  activities?: Activity[]
   dayNumber: number
   context: DateContext
   defaultExpanded?: boolean
@@ -17,9 +19,9 @@ export interface DayAccordionProps {
 export function DayAccordion({
   date,
   meals,
+  activities = [],
   dayNumber,
   context,
-  onAddMeal,
 }: DayAccordionProps) {
   return (
     <AccordionItem value={date} className="border-0 mb-4">
@@ -36,10 +38,10 @@ export function DayAccordion({
 
       <AccordionContent>
         <div className="pt-4">
-          <MealGrid
+          <TimeSlotGrid
             date={date}
             meals={meals}
-            onAddMeal={onAddMeal}
+            activities={activities}
           />
         </div>
       </AccordionContent>

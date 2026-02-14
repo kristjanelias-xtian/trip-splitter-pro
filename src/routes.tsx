@@ -6,7 +6,7 @@ import { ConditionalHomePage } from './pages/ConditionalHomePage'
 import { TripsPage } from './pages/TripsPage'
 import { ManageTripPage } from './pages/ManageTripPage'
 import { ExpensesPage } from './pages/ExpensesPage'
-import { MealsPage } from './pages/MealsPage'
+import { PlannerPage } from './pages/PlannerPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
@@ -48,7 +48,8 @@ export function AppRoutes() {
         <Route path="t/:tripCode/manage" element={<TripRouteGuard><ManageTripPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ExpensesPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/settlements" element={<TripRouteGuard><SettlementsPage /></TripRouteGuard>} />
-        <Route path="t/:tripCode/meals" element={<TripRouteGuard><MealsPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/planner" element={<TripRouteGuard><PlannerPage /></TripRouteGuard>} />
+        <Route path="t/:tripCode/meals" element={<Navigate to="../planner" replace />} />
         <Route path="t/:tripCode/shopping" element={<TripRouteGuard><ShoppingPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/dashboard" element={<TripRouteGuard><DashboardPage /></TripRouteGuard>} />
       </Route>
