@@ -111,7 +111,7 @@ export function PlannerGrid({
         <div className="px-4 pb-4 overflow-x-auto">
           <div className="flex gap-3">
             {groups.map((group, groupIdx) => (
-              <div key={groupIdx} className="flex flex-col gap-1 min-w-0">
+              <div key={groupIdx} className="flex flex-col gap-1 shrink-0">
                 {/* Stay label */}
                 {group.stayName && (
                   <div className="flex items-center gap-1 px-1 mb-1">
@@ -138,7 +138,7 @@ export function PlannerGrid({
                         onClick={() => onDayClick(date)}
                         className={cn(
                           'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors',
-                          'w-12 h-16 md:w-14 md:h-[72px]',
+                          'w-12 h-16 md:w-14 md:h-[72px] shrink-0',
                           'hover:bg-accent/50 cursor-pointer',
                           context === 'today' && 'ring-2 ring-primary bg-primary/5',
                           context === 'past' && 'opacity-60'
