@@ -2,7 +2,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { Zap, Settings2 } from 'lucide-react'
 
-export function ModeToggle() {
+interface ModeToggleProps {
+  onGradient?: boolean
+}
+
+export function ModeToggle({ onGradient = false }: ModeToggleProps) {
   const navigate = useNavigate()
   const { tripCode } = useParams<{ tripCode: string }>()
   const { mode, setMode } = useUserPreferences()
@@ -28,14 +32,24 @@ export function ModeToggle() {
     }
   }
 
+  const containerClass = onGradient
+    ? 'flex items-center bg-white/20 rounded-lg p-0.5'
+    : 'flex items-center bg-muted rounded-lg p-0.5'
+
+  const activeClass = onGradient
+    ? 'bg-white/30 text-white shadow-sm'
+    : 'bg-background text-foreground shadow-sm'
+
+  const inactiveClass = onGradient
+    ? 'text-white/70 hover:text-white'
+    : 'text-muted-foreground hover:text-foreground'
+
   return (
-    <div className="flex items-center bg-muted rounded-lg p-0.5">
+    <div className={containerClass}>
       <button
         onClick={() => handleModeChange('quick')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          mode === 'quick'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          mode === 'quick' ? activeClass : inactiveClass
         }`}
       >
         <Zap size={14} />
@@ -44,9 +58,7 @@ export function ModeToggle() {
       <button
         onClick={() => handleModeChange('full')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          mode === 'full'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          mode === 'full' ? activeClass : inactiveClass
         }`}
       >
         <Settings2 size={14} />

@@ -15,20 +15,28 @@ export function ConditionalHomePage() {
   const { mode, defaultTripId, loading: prefsLoading } = useUserPreferences()
   const { trips, loading: tripsLoading } = useTripContext()
 
+  // Fast path: redirect unauthenticated quick-mode users immediately
+  // (no need to wait for trips to load)
+  useEffect(() => {
+    if (authLoading || prefsLoading) return
+
+    if (mode === 'quick' && (!user || !defaultTripId)) {
+      navigate('/quick', { replace: true })
+    }
+  }, [authLoading, prefsLoading, user, mode, defaultTripId, navigate])
+
+  // Default-trip shortcut: authenticated quick-mode users with a default trip
   useEffect(() => {
     if (authLoading || prefsLoading || tripsLoading) return
 
-    if (mode === 'quick') {
-      // If user has a default trip set, go directly to that group
-      if (user && defaultTripId) {
-        const defaultTrip = trips.find(t => t.id === defaultTripId)
-        if (defaultTrip) {
-          navigate(`/t/${defaultTrip.trip_code}/quick`, { replace: true })
-          return
-        }
+    if (mode === 'quick' && user && defaultTripId) {
+      const defaultTrip = trips.find(t => t.id === defaultTripId)
+      if (defaultTrip) {
+        navigate(`/t/${defaultTrip.trip_code}/quick`, { replace: true })
+      } else {
+        // Default trip not found, fall back to quick home
+        navigate('/quick', { replace: true })
       }
-      // Otherwise go to Quick home
-      navigate('/quick', { replace: true })
     }
   }, [authLoading, prefsLoading, tripsLoading, user, mode, defaultTripId, trips, navigate])
 
