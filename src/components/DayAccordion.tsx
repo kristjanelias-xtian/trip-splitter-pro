@@ -13,6 +13,7 @@ export interface DayAccordionProps {
   context: DateContext
   defaultExpanded?: boolean
   tripStartDate: string
+  stayName?: string
   onAddMeal: (date: string, mealType: MealType) => void
 }
 
@@ -22,6 +23,7 @@ export function DayAccordion({
   activities = [],
   dayNumber,
   context,
+  stayName,
 }: DayAccordionProps) {
   return (
     <AccordionItem value={date} className="border-0 mb-4">
@@ -32,6 +34,7 @@ export function DayAccordion({
             dayNumber={dayNumber}
             context={context}
             meals={meals}
+            stayName={stayName}
           />
         </div>
       </AccordionTrigger>

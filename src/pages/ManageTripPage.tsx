@@ -35,6 +35,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { CreateTripInput } from '@/types/trip'
+import { StaySection } from '@/components/StaySection'
 
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -406,6 +407,9 @@ export function ManageTripPage() {
           <FamiliesSetup />
         )}
       </div>
+
+      {/* Accommodations Section */}
+      <StaySection />
 
       {/* Danger Zone */}
       <Card className="border-destructive">
