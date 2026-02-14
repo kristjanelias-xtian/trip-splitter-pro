@@ -19,12 +19,34 @@ interface ReportIssueDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-function fileToBase64(file: File): Promise<string> {
+function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const maxWidth = 1200
+      let { width, height } = img
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width)
+        width = maxWidth
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+        'image/jpeg',
+        0.8
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load image'))
+    }
+    img.src = url
   })
 }
 
@@ -67,8 +89,16 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
 
       let screenshotMarkdown = ''
       if (screenshot) {
-        const base64 = await fileToBase64(screenshot)
-        screenshotMarkdown = `\n\n**Screenshot:**\n![Screenshot](${base64})`
+        const compressed = await compressImage(screenshot)
+        const fileName = `${Date.now()}-${crypto.randomUUID()}.jpg`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('feedback-screenshots')
+          .upload(fileName, compressed, { contentType: 'image/jpeg' })
+        if (uploadError) throw uploadError
+        const { data: { publicUrl } } = supabase.storage
+          .from('feedback-screenshots')
+          .getPublicUrl(uploadData.path)
+        screenshotMarkdown = `\n\n**Screenshot:**\n![Screenshot](${publicUrl})`
       }
 
       const body = description.trim()
