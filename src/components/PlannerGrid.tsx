@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { Building2, Grid3x3, ChevronUp, ChevronDown } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getDayContext, getDayNumber } from '@/lib/dateUtils'
+import { getDayContext } from '@/lib/dateUtils'
 import { Card } from '@/components/ui/card'
 import type { MealWithIngredients, MealType } from '@/types/meal'
 import type { Activity, ActivityTimeSlot } from '@/types/activity'
@@ -21,9 +20,17 @@ const DOT_FILLED_COLORS: Record<ActivityTimeSlot, string> = {
   evening: 'bg-secondary',
 }
 
+const STAY_COLORS = [
+  { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', cellBorder: 'border-amber-200' },
+  { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', cellBorder: 'border-sky-200' },
+  { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', cellBorder: 'border-rose-200' },
+  { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', cellBorder: 'border-emerald-200' },
+  { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', cellBorder: 'border-violet-200' },
+  { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', cellBorder: 'border-indigo-200' },
+]
+
 interface PlannerGridProps {
   tripDates: string[]
-  tripStartDate: string
   getMealsForDate: (date: string) => MealWithIngredients[]
   getActivitiesForDate: (date: string) => Activity[]
   getStayForDate: (date: string) => Stay | undefined
@@ -58,8 +65,12 @@ function groupDatesByStay(
   return groups
 }
 
+function getCalendarDate(date: string): number {
+  return new Date(date + 'T00:00:00').getDate()
+}
+
 function getWeekdayAbbr(date: string): string {
-  const d = new Date(date)
+  const d = new Date(date + 'T00:00:00')
   return d.toLocaleDateString('en-US', { weekday: 'short' })
 }
 
@@ -75,61 +86,64 @@ function slotHasContent(
   )
 }
 
+function getStayColorIndex(groups: StayGroup[]): Map<string | null, number> {
+  const colorMap = new Map<string | null, number>()
+  let colorIdx = 0
+  for (const group of groups) {
+    if (group.stayId !== null && !colorMap.has(group.stayId)) {
+      colorMap.set(group.stayId, colorIdx % STAY_COLORS.length)
+      colorIdx++
+    }
+  }
+  return colorMap
+}
+
 export function PlannerGrid({
   tripDates,
-  tripStartDate,
   getMealsForDate,
   getActivitiesForDate,
   getStayForDate,
   onDayClick,
 }: PlannerGridProps) {
-  const [isOpen, setIsOpen] = useState(true)
-
   const groups = groupDatesByStay(tripDates, getStayForDate)
+  const stayColorMap = getStayColorIndex(groups)
 
   return (
     <Card className="overflow-hidden">
-      {/* Header */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Grid3x3 size={16} className="text-muted-foreground" />
-          <span className="text-sm font-medium">Trip Overview</span>
-        </div>
-        {isOpen ? (
-          <ChevronUp size={16} className="text-muted-foreground" />
-        ) : (
-          <ChevronDown size={16} className="text-muted-foreground" />
-        )}
-      </button>
+      <div className="px-4 py-4 overflow-x-auto">
+        <div className="flex gap-3">
+          {groups.map((group, groupIdx) => {
+            const colorIdx = group.stayId !== null ? stayColorMap.get(group.stayId) : undefined
+            const stayColor = colorIdx !== undefined ? STAY_COLORS[colorIdx] : null
 
-      {/* Grid content */}
-      {isOpen && (
-        <div className="px-4 pb-4 overflow-x-auto">
-          <div className="flex gap-3">
-            {groups.map((group, groupIdx) => (
+            return (
               <div key={groupIdx} className="flex flex-col gap-1 shrink-0">
                 {/* Stay label */}
-                {group.stayName && (
-                  <div className="flex items-center gap-1 px-1 mb-1">
-                    <Building2 size={12} className="text-muted-foreground shrink-0" />
-                    <span className="text-[10px] text-muted-foreground font-medium truncate">
+                {group.stayName ? (
+                  <div className={cn(
+                    'flex items-center gap-1 px-1.5 py-0.5 mb-1 rounded',
+                    stayColor ? `${stayColor.bg} ${stayColor.text}` : ''
+                  )}>
+                    <Building2 size={12} className="shrink-0" />
+                    <span className="text-[10px] font-medium truncate">
                       {group.stayName}
                     </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 mb-1">
+                    <span className="text-[10px] text-muted-foreground font-medium">No stay</span>
                   </div>
                 )}
 
                 {/* Day cells row */}
                 <div className="flex gap-1">
                   {group.dates.map((date) => {
-                    const dayNumber = getDayNumber(date, tripStartDate)
+                    const calendarDate = getCalendarDate(date)
                     const context = getDayContext(date)
                     const meals = getMealsForDate(date)
                     const activities = getActivitiesForDate(date)
                     const weekday = getWeekdayAbbr(date)
+                    const activityCount = activities.length
 
                     return (
                       <button
@@ -137,14 +151,17 @@ export function PlannerGrid({
                         type="button"
                         onClick={() => onDayClick(date)}
                         className={cn(
-                          'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors',
-                          'w-12 h-16 md:w-14 md:h-[72px] shrink-0',
+                          'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
+                          'w-12 h-20 md:w-14 md:h-24 shrink-0',
                           'hover:bg-accent/50 cursor-pointer',
-                          context === 'today' && 'ring-2 ring-primary bg-primary/5',
+                          stayColor
+                            ? `${stayColor.bg} ${stayColor.cellBorder}`
+                            : 'bg-muted/30 border-border',
+                          context === 'today' && 'ring-2 ring-primary',
                           context === 'past' && 'opacity-60'
                         )}
                       >
-                        <span className="text-xs font-bold leading-none">{dayNumber}</span>
+                        <span className="text-xs font-bold leading-none">{calendarDate}</span>
                         <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
                           {weekday}
                         </span>
@@ -162,15 +179,20 @@ export function PlannerGrid({
                             )
                           })}
                         </div>
+                        {activityCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                            {activityCount}
+                          </span>
+                        )}
                       </button>
                     )
                   })}
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
-      )}
+      </div>
     </Card>
   )
 }
