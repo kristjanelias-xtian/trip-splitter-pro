@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import {
-  Home, DollarSign, CreditCard, UtensilsCrossed,
+  Home, DollarSign, CreditCard, CalendarDays,
   ShoppingCart, BarChart3, Settings2, MoreHorizontal
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -11,6 +11,7 @@ import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
+import { ActivityProvider } from '@/contexts/ActivityContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
@@ -34,7 +35,7 @@ const iconMap = {
   'Manage Trip': Settings2,
   'Expenses': DollarSign,
   'Settlements': CreditCard,
-  'Meals': UtensilsCrossed,
+  'Day Planner': CalendarDays,
   'Shopping': ShoppingCart,
   'Dashboard': BarChart3,
   'More': MoreHorizontal,
@@ -59,7 +60,7 @@ export function Layout() {
         { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
       )
       if (currentTrip?.enable_meals) {
-        items.push({ path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true })
+        items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
       }
       if (currentTrip?.enable_shopping) {
         items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
@@ -85,7 +86,7 @@ export function Layout() {
       { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
     ]
     if (currentTrip?.enable_meals) {
-      items.push({ path: `/t/${tripCode}/meals`, label: 'Meals', requiresTrip: true })
+      items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
     }
     if (currentTrip?.enable_shopping) {
       items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
@@ -184,9 +185,11 @@ export function Layout() {
           <ExpenseProvider>
             <SettlementProvider>
               <MealProvider>
-                <ShoppingProvider>
-                  <Outlet />
-                </ShoppingProvider>
+                <ActivityProvider>
+                  <ShoppingProvider>
+                    <Outlet />
+                  </ShoppingProvider>
+                </ActivityProvider>
               </MealProvider>
             </SettlementProvider>
           </ExpenseProvider>
