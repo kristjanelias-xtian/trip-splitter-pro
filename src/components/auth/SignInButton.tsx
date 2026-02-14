@@ -1,7 +1,11 @@
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/contexts/AuthContext'
 
-export function SignInButton() {
+interface SignInButtonProps {
+  type?: 'icon' | 'standard'
+}
+
+export function SignInButton({ type = 'icon' }: SignInButtonProps) {
   const { signInWithGoogle } = useAuth()
 
   return (
@@ -15,8 +19,8 @@ export function SignInButton() {
         console.error('Google Sign-In failed')
       }}
       size="medium"
-      type="icon"
-      shape="circle"
+      type={type}
+      shape={type === 'icon' ? 'circle' : undefined}
       theme="outline"
     />
   )

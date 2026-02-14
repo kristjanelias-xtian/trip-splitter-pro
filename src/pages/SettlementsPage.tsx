@@ -27,6 +27,7 @@ export function SettlementsPage() {
   const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
   const customSettlementRef = useRef<HTMLDivElement>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
+  const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
 
   if (!currentTrip) {
     return (
@@ -71,6 +72,7 @@ export function SettlementsPage() {
 
       // Look up user_ids for these participants
       const recipientParticipants = participants.filter(p => recipientIds.includes(p.id) && p.user_id)
+      setLinkedParticipantIds(new Set(recipientParticipants.map(p => p.id)))
       if (recipientParticipants.length === 0) return
 
       const userIds = recipientParticipants.map(p => p.user_id!).filter(Boolean)
@@ -207,7 +209,7 @@ export function SettlementsPage() {
         {expenses.length > 0 && (
           <Card>
             <CardContent className="pt-6">
-              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} bankDetailsMap={bankDetailsMap} />
+              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} bankDetailsMap={bankDetailsMap} linkedParticipantIds={linkedParticipantIds} />
             </CardContent>
           </Card>
         )}
