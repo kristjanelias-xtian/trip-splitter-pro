@@ -52,7 +52,7 @@ export function DayDetailSheet({
 
   return (
     <Sheet open={!!date} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+      <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle className="text-left">
             {formatSheetDate(date)}

@@ -1,4 +1,4 @@
-import { Building2 } from 'lucide-react'
+import { Building2, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getDayContext } from '@/lib/dateUtils'
 import { Card } from '@/components/ui/card'
@@ -133,10 +133,18 @@ export function PlannerGrid({
                   </span>
                 </div>
               ) : (
-                /* No stay — add spacing between groups but no label (#78) */
-                groupIdx > 0 ? (
-                  <div key={`stay-${groupIdx}`} className="col-span-full mt-2" />
-                ) : null
+                /* No stay — show "Home" label */
+                <div
+                  key={`stay-${groupIdx}`}
+                  className={cn(
+                    'col-span-full flex items-center gap-1 px-1.5 py-0.5 rounded',
+                    groupIdx > 0 && 'mt-2',
+                    'bg-muted text-muted-foreground'
+                  )}
+                >
+                  <Home size={12} className="shrink-0" />
+                  <span className="text-[10px] font-medium truncate">Home</span>
+                </div>
               ),
 
               /* Day cells */
