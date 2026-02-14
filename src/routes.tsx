@@ -15,6 +15,12 @@ import { TripNotFoundPage } from './pages/TripNotFoundPage'
 import { QuickHomeScreen } from './pages/QuickHomeScreen'
 import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
 import { QuickHistoryPage } from './pages/QuickHistoryPage'
+import { useUserPreferences } from './contexts/UserPreferencesContext'
+
+function TripModeRedirect() {
+  const { mode } = useUserPreferences()
+  return <Navigate to={mode === 'quick' ? 'quick' : 'dashboard'} replace />
+}
 
 export function AppRoutes() {
   return (
@@ -22,6 +28,9 @@ export function AppRoutes() {
       {/* Special routes - outside Layout */}
       <Route path="admin/all-trips" element={<AdminAllTripsPage />} />
       <Route path="trip-not-found/:tripCode" element={<TripNotFoundPage />} />
+
+      {/* Mode-aware redirect for shared trip links */}
+      <Route path="t/:tripCode" element={<TripModeRedirect />} />
 
       {/* Quick Mode routes */}
       <Route path="/quick" element={<QuickLayout />}>
@@ -36,10 +45,6 @@ export function AppRoutes() {
       <Route path="/" element={<Layout />}>
         <Route index element={<ConditionalHomePage />} />
         <Route path="create-trip" element={<TripsPage />} />
-
-        {/* Trip routes - protected by TripRouteGuard */}
-        {/* Redirect base trip URL to dashboard */}
-        <Route path="t/:tripCode" element={<Navigate to="dashboard" replace />} />
         <Route path="t/:tripCode/manage" element={<TripRouteGuard><ManageTripPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ExpensesPage /></TripRouteGuard>} />
         <Route path="t/:tripCode/settlements" element={<TripRouteGuard><SettlementsPage /></TripRouteGuard>} />

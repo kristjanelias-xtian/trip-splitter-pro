@@ -1,4 +1,5 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { Zap, Settings2 } from 'lucide-react'
 
@@ -8,8 +9,19 @@ interface ModeToggleProps {
 
 export function ModeToggle({ onGradient = false }: ModeToggleProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { tripCode } = useParams<{ tripCode: string }>()
   const { mode, setMode } = useUserPreferences()
+
+  // Sync mode state with actual route to fix mismatches (e.g. direct URL access)
+  useEffect(() => {
+    const path = location.pathname
+    if (path.includes('/quick') && mode !== 'quick') {
+      setMode('quick')
+    } else if (tripCode && !path.includes('/quick') && mode !== 'full') {
+      setMode('full')
+    }
+  }, [location.pathname, tripCode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleModeChange = async (newMode: 'quick' | 'full') => {
     if (newMode === mode) return
