@@ -40,6 +40,9 @@ export function ConditionalHomePage() {
     }
   }, [authLoading, prefsLoading, tripsLoading, user, mode, defaultTripId, trips, navigate])
 
+  // Don't render HomePage when we're about to redirect to quick mode
+  if (mode === 'quick') return null
+
   // Show Full Mode home page by default
   return <HomePage />
 }

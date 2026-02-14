@@ -23,7 +23,7 @@ interface TripRouteGuardProps {
 export function TripRouteGuard({ children }: TripRouteGuardProps) {
   const { currentTrip, tripCode, loading } = useCurrentTrip()
   const { user } = useAuth()
-  const { isLinked } = useMyParticipant()
+  const { isLinked, loading: participantsLoading } = useMyParticipant()
   const { error, refreshTrips } = useTripContext()
   const navigate = useNavigate()
 
@@ -76,7 +76,7 @@ export function TripRouteGuard({ children }: TripRouteGuardProps) {
 
   return (
     <>
-      {user && !isLinked && (
+      {user && !participantsLoading && !isLinked && (
         <div className="mb-4 p-3 rounded-lg border border-border bg-accent/30 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <UserCheck size={16} />

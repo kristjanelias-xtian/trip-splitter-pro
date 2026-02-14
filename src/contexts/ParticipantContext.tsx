@@ -35,6 +35,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [families, setFamilies] = useState<Family[]>([])
   const [loading, setLoading] = useState(false)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -45,6 +46,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     if (!currentTrip) {
       setParticipants([])
       setFamilies([])
+      setInitialLoadDone(true)
       return
     }
 
@@ -81,6 +83,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching participants/families:', err)
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -291,6 +294,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   // Fetch data when current trip changes
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchData()
     }
   }, [tripCode, currentTrip?.id, trips.length])
@@ -298,7 +302,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const value: ParticipantContextType = {
     participants,
     families,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     error,
     createParticipant,
     updateParticipant,

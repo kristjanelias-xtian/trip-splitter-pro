@@ -29,6 +29,7 @@ const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined)
 export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(false)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -38,6 +39,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const fetchExpenses = async () => {
     if (!currentTrip) {
       setExpenses([])
+      setInitialLoadDone(true)
       return
     }
 
@@ -60,6 +62,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching expenses:', err)
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -177,13 +180,14 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   // Fetch expenses when current trip changes
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchExpenses()
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
   const value: ExpenseContextType = {
     expenses,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     error,
     createExpense,
     updateExpense,
