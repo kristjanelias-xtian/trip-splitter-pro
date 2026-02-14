@@ -18,6 +18,7 @@ interface WizardStep1Props {
   onDescriptionChange: (value: string) => void
   onAmountChange: (value: string) => void
   onCurrencyChange: (value: string) => void
+  availableCurrencies?: string[]
   disabled?: boolean
 }
 
@@ -28,8 +29,12 @@ export function WizardStep1({
   onDescriptionChange,
   onAmountChange,
   onCurrencyChange,
+  availableCurrencies,
   disabled = false,
 }: WizardStep1Props) {
+  const currencies = availableCurrencies && availableCurrencies.length > 0
+    ? availableCurrencies
+    : ['EUR', 'USD', 'GBP', 'THB']
   const descriptionRef = useRef<HTMLInputElement>(null)
 
   // Auto-focus description on mount
@@ -94,10 +99,9 @@ export function WizardStep1({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="GBP">GBP</SelectItem>
-              <SelectItem value="THB">THB</SelectItem>
+              {currencies.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

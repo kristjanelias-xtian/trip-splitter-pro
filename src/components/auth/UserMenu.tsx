@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,7 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut } from 'lucide-react'
+import { LogOut, Landmark } from 'lucide-react'
+import { BankDetailsDialog } from './BankDetailsDialog'
 
 interface UserMenuProps {
   onGradient?: boolean
@@ -15,6 +17,7 @@ interface UserMenuProps {
 
 export function UserMenu({ onGradient = false }: UserMenuProps) {
   const { user, userProfile, signOut } = useAuth()
+  const [showBankDetails, setShowBankDetails] = useState(false)
 
   if (!user) return null
 
@@ -61,11 +64,18 @@ export function UserMenu({ onGradient = false }: UserMenuProps) {
           )}
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setShowBankDetails(true)} className="gap-2">
+          <Landmark size={16} />
+          Bank Details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut} className="gap-2 text-destructive focus:text-destructive">
           <LogOut size={16} />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <BankDetailsDialog open={showBankDetails} onOpenChange={setShowBankDetails} />
     </DropdownMenu>
   )
 }

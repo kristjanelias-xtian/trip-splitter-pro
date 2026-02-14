@@ -114,6 +114,11 @@ function MobileWizard({
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
+  // Compute available currencies from trip settings
+  const availableCurrencies = currentTrip
+    ? [currentTrip.default_currency, ...Object.keys(currentTrip.exchange_rates || {})]
+    : undefined
+
   // Calculate balances for smart payer suggestion
   const balanceCalculation = currentTrip
     ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
@@ -315,6 +320,7 @@ function MobileWizard({
               onDescriptionChange={setDescription}
               onAmountChange={setAmount}
               onCurrencyChange={setCurrency}
+              availableCurrencies={availableCurrencies}
               disabled={isSubmitting}
             />
           )}

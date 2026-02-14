@@ -22,7 +22,7 @@ export function QuickExpenseSheet({ open, onOpenChange }: QuickExpenseSheetProps
   const initialValues: Partial<CreateExpenseInput> = {
     trip_id: currentTrip.id,
     paid_by: myParticipant?.id || '',
-    currency: 'EUR',
+    currency: currentTrip.default_currency,
     expense_date: new Date().toISOString().split('T')[0],
   }
 

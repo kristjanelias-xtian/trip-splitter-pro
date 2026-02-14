@@ -4,12 +4,18 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 
+export interface BankDetails {
+  holder: string
+  iban: string
+}
+
 interface SettlementPlanProps {
   plan: OptimalSettlementPlan
   onRecordSettlement?: (transaction: SettlementTransaction) => void
+  bankDetailsMap?: Record<string, BankDetails>
 }
 
-export function SettlementPlan({ plan, onRecordSettlement }: SettlementPlanProps) {
+export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap }: SettlementPlanProps) {
   if (plan.transactions.length === 0) {
     return (
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
@@ -53,6 +59,7 @@ export function SettlementPlan({ plan, onRecordSettlement }: SettlementPlanProps
             currency={plan.currency}
             index={index + 1}
             onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
+            bankDetails={bankDetailsMap?.[transaction.toId]}
           />
         ))}
       </div>
@@ -65,6 +72,7 @@ interface SettlementTransactionCardProps {
   currency: string
   index: number
   onRecord?: () => void
+  bankDetails?: BankDetails
 }
 
 function SettlementTransactionCard({
@@ -72,6 +80,7 @@ function SettlementTransactionCard({
   currency,
   index,
   onRecord,
+  bankDetails,
 }: SettlementTransactionCardProps) {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -117,6 +126,14 @@ function SettlementTransactionCard({
           <div className="mt-2">
             <span className="text-2xl font-bold text-accent tabular-nums">{formattedAmount}</span>
           </div>
+
+          {/* Bank Details */}
+          {bankDetails && (bankDetails.iban || bankDetails.holder) && (
+            <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+              {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
+              {bankDetails.iban && <p>IBAN: {bankDetails.iban}</p>}
+            </div>
+          )}
         </div>
 
         {/* Record Button */}

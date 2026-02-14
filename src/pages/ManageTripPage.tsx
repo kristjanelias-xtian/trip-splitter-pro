@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Edit, Trash2, Info } from 'lucide-react'
+import { Edit, Trash2, Info, X, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
@@ -13,13 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -55,14 +49,14 @@ export function ManageTripPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   // Currency settings state
-  const ALL_CURRENCIES = ['EUR', 'USD', 'GBP', 'THB'] as const
   const [currencyDefault, setCurrencyDefault] = useState(currentTrip?.default_currency || 'EUR')
-  const [exchangeRates, setExchangeRates] = useState<Record<string, string>>(
-    Object.fromEntries(
-      Object.entries(currentTrip?.exchange_rates || {}).map(([k, v]) => [k, String(v)])
-    )
+  const [currencyRows, setCurrencyRows] = useState<{ code: string; rate: string }[]>(
+    Object.entries(currentTrip?.exchange_rates || {}).map(([k, v]) => ({ code: k, rate: String(v) }))
   )
   const [isSavingCurrency, setIsSavingCurrency] = useState(false)
+
+  // Feature toggle state
+  const [isTogglingFeature, setIsTogglingFeature] = useState(false)
 
   if (!currentTrip) {
     return (
@@ -114,21 +108,49 @@ export function ManageTripPage() {
     }
   }
 
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_shopping', value: boolean) => {
+    setIsTogglingFeature(true)
+    try {
+      const success = await updateTrip(currentTrip.id, { [feature]: value })
+      if (success) {
+        toast({
+          title: 'Feature updated',
+          description: `${feature === 'enable_meals' ? 'Meal planning' : 'Shopping list'} ${value ? 'enabled' : 'disabled'}.`,
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Update failed',
+          description: 'Failed to update feature toggle.',
+        })
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An error occurred while updating the feature.',
+      })
+    } finally {
+      setIsTogglingFeature(false)
+    }
+  }
+
   const handleSaveCurrencySettings = async () => {
     setIsSavingCurrency(true)
     try {
       const rates: Record<string, number> = {}
-      for (const [currency, rateStr] of Object.entries(exchangeRates)) {
-        if (currency !== currencyDefault) {
-          const rate = parseFloat(rateStr)
+      for (const row of currencyRows) {
+        const code = row.code.trim().toUpperCase()
+        if (code && code !== currencyDefault) {
+          const rate = parseFloat(row.rate)
           if (!isNaN(rate) && rate > 0) {
-            rates[currency] = rate
+            rates[code] = rate
           }
         }
       }
 
       const success = await updateTrip(currentTrip.id, {
-        default_currency: currencyDefault,
+        default_currency: currencyDefault.trim().toUpperCase() || 'EUR',
         exchange_rates: rates,
       })
 
@@ -239,6 +261,38 @@ export function ManageTripPage() {
         </CardContent>
       </Card>
 
+      {/* Features Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Features</CardTitle>
+          <CardDescription>Enable or disable optional features for this trip</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Meal Planning</Label>
+              <p className="text-xs text-muted-foreground">Plan meals and assign cooking responsibilities</p>
+            </div>
+            <Switch
+              checked={currentTrip.enable_meals}
+              onCheckedChange={(checked) => handleToggleFeature('enable_meals', checked)}
+              disabled={isTogglingFeature}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Shopping List</Label>
+              <p className="text-xs text-muted-foreground">Collaborative shopping list with real-time updates</p>
+            </div>
+            <Switch
+              checked={currentTrip.enable_shopping}
+              onCheckedChange={(checked) => handleToggleFeature('enable_shopping', checked)}
+              disabled={isTogglingFeature}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Currency Settings Card */}
       <Card>
         <CardHeader>
@@ -248,26 +302,14 @@ export function ManageTripPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="defaultCurrency">Default Currency</Label>
-            <Select
+            <Input
+              id="defaultCurrency"
               value={currencyDefault}
-              onValueChange={(value) => {
-                setCurrencyDefault(value)
-                // Remove rate for the new default currency if it exists
-                const newRates = { ...exchangeRates }
-                delete newRates[value]
-                setExchangeRates(newRates)
-              }}
-            >
-              <SelectTrigger id="defaultCurrency">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                <SelectItem value="THB">THB - Thai Baht</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(e) => setCurrencyDefault(e.target.value.toUpperCase().slice(0, 3))}
+              placeholder="EUR"
+              maxLength={3}
+              className="w-32 uppercase"
+            />
             <p className="text-xs text-muted-foreground">
               All balances and settlements will be displayed in this currency
             </p>
@@ -276,28 +318,55 @@ export function ManageTripPage() {
           <div className="space-y-3">
             <Label>Exchange Rates</Label>
             <p className="text-xs text-muted-foreground">
-              Set how much 1 {currencyDefault} equals in other currencies
+              Set how much 1 {currencyDefault || '...'} equals in other currencies
             </p>
-            {ALL_CURRENCIES.filter(c => c !== currencyDefault).map(currency => (
-              <div key={currency} className="flex items-center gap-3">
-                <Label className="w-32 text-sm text-muted-foreground shrink-0">
-                  1 {currencyDefault} =
+            {currencyRows.map((row, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground shrink-0">
+                  1 {currencyDefault || '...'} =
                 </Label>
                 <Input
                   type="number"
-                  value={exchangeRates[currency] || ''}
-                  onChange={(e) => setExchangeRates(prev => ({
-                    ...prev,
-                    [currency]: e.target.value,
-                  }))}
+                  value={row.rate}
+                  onChange={(e) => {
+                    const updated = [...currencyRows]
+                    updated[index] = { ...updated[index], rate: e.target.value }
+                    setCurrencyRows(updated)
+                  }}
                   placeholder="0.00"
                   step="0.01"
                   min="0"
-                  className="w-32"
+                  className="w-28"
                 />
-                <span className="text-sm font-medium">{currency}</span>
+                <Input
+                  value={row.code}
+                  onChange={(e) => {
+                    const updated = [...currencyRows]
+                    updated[index] = { ...updated[index], code: e.target.value.toUpperCase().slice(0, 3) }
+                    setCurrencyRows(updated)
+                  }}
+                  placeholder="USD"
+                  maxLength={3}
+                  className="w-20 uppercase"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrencyRows(rows => rows.filter((_, i) => i !== index))}
+                  className="px-2"
+                >
+                  <X size={16} />
+                </Button>
               </div>
             ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrencyRows(rows => [...rows, { code: '', rate: '' }])}
+            >
+              <Plus size={16} className="mr-1" />
+              Add Currency
+            </Button>
           </div>
 
           <Button
@@ -395,6 +464,7 @@ export function ManageTripPage() {
             submitLabel="Save Changes"
             isLoading={isUpdating}
             disableTrackingMode={participants.length > 0}
+            isEditMode
           />
         </DialogContent>
       </Dialog>

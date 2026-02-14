@@ -65,6 +65,11 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote 
 
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
+  // Compute available currencies from trip settings
+  const availableCurrencies = currentTrip
+    ? [currentTrip.default_currency, ...Object.keys(currentTrip.exchange_rates || {})]
+    : ['EUR', 'USD', 'GBP', 'THB']
+
   // Get all adults for selection
   // Note: Settlements always use participant IDs (adults), even in families mode
   // In families mode, we show which family they belong to
@@ -266,10 +271,9 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="GBP">GBP</SelectItem>
-              <SelectItem value="THB">THB</SelectItem>
+              {availableCurrencies.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
