@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CalendarDays, ChevronsDown, ChevronsUp } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
@@ -7,6 +7,7 @@ import { useStayContext } from '@/contexts/StayContext'
 import type { MealWithIngredients } from '@/types/meal'
 import { DayAccordion } from '@/components/DayAccordion'
 import { Accordion } from '@/components/ui/accordion'
+import { PlannerGrid } from '@/components/PlannerGrid'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { generateDateRange, getDayContext, getDayNumber } from '@/lib/dateUtils'
@@ -19,6 +20,7 @@ export function PlannerPage() {
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
   const [expandedDays, setExpandedDays] = useState<string[]>([])
   const [allExpanded, setAllExpanded] = useState(false)
+  const dayRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const loading = mealsLoading || activitiesLoading || staysLoading
 
@@ -85,6 +87,13 @@ export function PlannerPage() {
     setAllExpanded(value.length === tripDates.length)
   }
 
+  const handleGridDayClick = (date: string) => {
+    setExpandedDays(prev => prev.includes(date) ? prev : [...prev, date])
+    setTimeout(() => {
+      dayRefs.current[date]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 250)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -127,38 +136,49 @@ export function PlannerPage() {
         </Card>
       )}
 
-      {/* Accordion Day Planner Calendar */}
+      {/* Grid Overview + Accordion Day Planner Calendar */}
       {!loading && tripDates.length > 0 && (
-        <Accordion
-          type="multiple"
-          value={expandedDays}
-          onValueChange={handleAccordionChange}
-          className="space-y-4"
-        >
-          {tripDates.map((date) => {
-            const mealsForDate = getMealsForDate(date)
-            const activitiesForDate = getActivitiesForDate(date)
-            const dayNumber = getDayNumber(date, currentTrip.start_date)
-            const context = getDayContext(date)
-            const stay = getStayForDate(date)
+        <>
+          <PlannerGrid
+            tripDates={tripDates}
+            tripStartDate={currentTrip.start_date}
+            getMealsForDate={getMealsForDate}
+            getActivitiesForDate={getActivitiesForDate}
+            getStayForDate={getStayForDate}
+            onDayClick={handleGridDayClick}
+          />
+          <Accordion
+            type="multiple"
+            value={expandedDays}
+            onValueChange={handleAccordionChange}
+            className="space-y-4"
+          >
+            {tripDates.map((date) => {
+              const mealsForDate = getMealsForDate(date)
+              const activitiesForDate = getActivitiesForDate(date)
+              const dayNumber = getDayNumber(date, currentTrip.start_date)
+              const context = getDayContext(date)
+              const stay = getStayForDate(date)
 
-            return (
-              <DayAccordion
-                key={date}
-                date={date}
-                meals={mealsForDate}
-                activities={activitiesForDate}
-                dayNumber={dayNumber}
-                context={context}
-                tripStartDate={currentTrip.start_date}
-                stayName={stay?.name}
-                onAddMeal={() => {
-                  // Handled within TimeSlotGrid component
-                }}
-              />
-            )
-          })}
-        </Accordion>
+              return (
+                <div key={date} ref={el => { dayRefs.current[date] = el }} className="scroll-mt-24">
+                  <DayAccordion
+                    date={date}
+                    meals={mealsForDate}
+                    activities={activitiesForDate}
+                    dayNumber={dayNumber}
+                    context={context}
+                    tripStartDate={currentTrip.start_date}
+                    stayName={stay?.name}
+                    onAddMeal={() => {
+                      // Handled within TimeSlotGrid component
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </Accordion>
+        </>
       )}
 
       {/* Empty State */}
