@@ -7,14 +7,15 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
  */
 export function useMyParticipant() {
   const { user } = useAuth()
-  const { participants } = useParticipantContext()
+  const { participants, loading } = useParticipantContext()
 
-  if (!user) return { myParticipant: null, isLinked: false }
+  if (!user) return { myParticipant: null, isLinked: false, loading }
 
   const myParticipant = participants.find(p => p.user_id === user.id) || null
 
   return {
     myParticipant,
     isLinked: myParticipant !== null,
+    loading,
   }
 }

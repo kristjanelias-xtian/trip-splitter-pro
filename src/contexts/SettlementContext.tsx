@@ -24,6 +24,7 @@ const SettlementContext = createContext<SettlementContextType | undefined>(undef
 export function SettlementProvider({ children }: { children: ReactNode }) {
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(false)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -33,6 +34,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   const fetchSettlements = async () => {
     if (!currentTrip) {
       setSettlements([])
+      setInitialLoadDone(true)
       return
     }
 
@@ -55,6 +57,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching settlements:', err)
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -149,15 +152,17 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   // Fetch settlements when current trip changes
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchSettlements()
     } else {
       setSettlements([])
+      setInitialLoadDone(true)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
   const value: SettlementContextType = {
     settlements,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     error,
     createSettlement,
     updateSettlement,
