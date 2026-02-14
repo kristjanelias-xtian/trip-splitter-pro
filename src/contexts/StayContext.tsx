@@ -71,15 +71,15 @@ export function StayProvider({ children }: { children: ReactNode }) {
         .from('stays' as any) as any)
         .insert([input])
         .select()
-        .single()
 
-      if (error) {
+      if (error || !data?.[0]) {
         console.error('Error creating stay:', error)
         return null
       }
 
-      setStays((prev) => [...prev, data as Stay].sort((a, b) => a.check_in_date.localeCompare(b.check_in_date)))
-      return data as Stay
+      const stay = data[0] as Stay
+      setStays((prev) => [...prev, stay].sort((a, b) => a.check_in_date.localeCompare(b.check_in_date)))
+      return stay
     } catch (error) {
       console.error('Error creating stay:', error)
       return null
@@ -96,20 +96,20 @@ export function StayProvider({ children }: { children: ReactNode }) {
         .update({ ...input, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
-        .single()
 
-      if (error) {
+      if (error || !data?.[0]) {
         console.error('Error updating stay:', error)
         return null
       }
 
+      const updated = data[0] as Stay
       setStays((prev) =>
         prev
-          .map((stay) => (stay.id === id ? data : stay))
+          .map((stay) => (stay.id === id ? updated : stay))
           .sort((a, b) => a.check_in_date.localeCompare(b.check_in_date))
       )
 
-      return data
+      return updated
     } catch (error) {
       console.error('Error updating stay:', error)
       return null
