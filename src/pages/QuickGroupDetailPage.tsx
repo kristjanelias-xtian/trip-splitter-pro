@@ -20,7 +20,7 @@ import {
 
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
-  const { currentTrip } = useCurrentTrip()
+  const { currentTrip, loading: tripLoading } = useCurrentTrip()
   const { myParticipant, isLinked } = useMyParticipant()
   const { participants, families, loading: participantsLoading } = useParticipantContext()
   const { expenses, loading: expensesLoading } = useExpenseContext()
@@ -31,7 +31,30 @@ export function QuickGroupDetailPage() {
 
   const loading = participantsLoading || expensesLoading || settlementsLoading
 
-  if (!currentTrip) return null
+  if (tripLoading) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-6">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentTrip) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-6">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">Trip not found</p>
+            <Button onClick={() => navigate('/quick')} variant="outline" size="sm">
+              Go to My Trips
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   // Calculate balance (with currency conversion)
   const balanceCalc = calculateBalances(

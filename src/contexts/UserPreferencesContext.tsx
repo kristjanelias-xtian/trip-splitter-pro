@@ -23,7 +23,13 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   const [defaultTripId, setDefaultTripIdState] = useState<string | null>(
     () => getLocalPreferences().defaultTripId
   )
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('trip-splitter:user-preferences')
+    } catch {
+      return true
+    }
+  })
   const hasInitialized = useRef(false)
 
   // Sync from Supabase when user signs in

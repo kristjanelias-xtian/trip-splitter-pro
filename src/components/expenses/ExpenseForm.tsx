@@ -445,6 +445,7 @@ export function ExpenseForm({
         <div className="flex gap-2">
           <Input
             type="number"
+            inputMode="decimal"
             id="amount"
             value={amount}
             onChange={e => setAmount(e.target.value)}
@@ -643,6 +644,7 @@ export function ExpenseForm({
                 {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
                   <Input
                     type="number"
+                    inputMode="decimal"
                     value={participantSplitValues[participant.id] || ''}
                     onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
                     placeholder={splitMode === 'percentage' ? '%' : currency}
@@ -680,6 +682,7 @@ export function ExpenseForm({
                       {splitMode !== 'equal' && selectedFamilies.includes(family.id) && (
                         <Input
                           type="number"
+                          inputMode="decimal"
                           value={familySplitValues[family.id] || ''}
                           onChange={(e) => handleFamilySplitChange(family.id, e.target.value)}
                           placeholder={splitMode === 'percentage' ? '%' : currency}
@@ -718,6 +721,7 @@ export function ExpenseForm({
                         {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
                           <Input
                             type="number"
+                            inputMode="decimal"
                             value={participantSplitValues[participant.id] || ''}
                             onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
                             placeholder={splitMode === 'percentage' ? '%' : currency}
@@ -758,6 +762,7 @@ export function ExpenseForm({
                     {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
                       <Input
                         type="number"
+                        inputMode="decimal"
                         value={participantSplitValues[participant.id] || ''}
                         onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
                         placeholder={splitMode === 'percentage' ? '%' : currency}

@@ -85,7 +85,7 @@ describe('ConditionalHomePage', () => {
   })
 
   it('shows spinner while loading', () => {
-    mockAuth.loading = true
+    mockPrefs.loading = true
 
     render(
       <MemoryRouter>

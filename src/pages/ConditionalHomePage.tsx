@@ -17,11 +17,11 @@ import { Loader2 } from 'lucide-react'
  */
 export function ConditionalHomePage() {
   const navigate = useNavigate()
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const { mode, loading: prefsLoading } = useUserPreferences()
   const { trips, loading: tripsLoading } = useTripContext()
 
-  const isLoading = authLoading || prefsLoading || tripsLoading
+  const isLoading = prefsLoading || (mode === 'quick' && tripsLoading)
 
   useEffect(() => {
     if (isLoading) return
