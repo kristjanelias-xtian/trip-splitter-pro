@@ -270,14 +270,14 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
         <Label htmlFor="amount">Amount</Label>
         <div className="flex gap-2">
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             id="amount"
             value={amount}
-            onChange={e => setAmount(e.target.value)}
+            onChange={e => setAmount(e.target.value.replace(',', '.'))}
             className="flex-1 text-2xl h-14 tabular-nums"
             placeholder="0.00"
-            step="0.01"
-            min="0.01"
+            pattern="[0-9]*[.,]?[0-9]*"
             required
             disabled={loading}
           />

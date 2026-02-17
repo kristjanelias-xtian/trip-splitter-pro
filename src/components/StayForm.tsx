@@ -163,21 +163,23 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
         <Label>Coordinates (Optional)</Label>
         <div className="grid grid-cols-2 gap-4">
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             id="stay-latitude"
             value={formData.latitude}
-            onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, latitude: e.target.value.replace(',', '.') })}
             placeholder="Latitude"
-            step="any"
+            pattern="-?[0-9]*[.,]?[0-9]*"
             disabled={submitting}
           />
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             id="stay-longitude"
             value={formData.longitude}
-            onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, longitude: e.target.value.replace(',', '.') })}
             placeholder="Longitude"
-            step="any"
+            pattern="-?[0-9]*[.,]?[0-9]*"
             disabled={submitting}
           />
         </div>

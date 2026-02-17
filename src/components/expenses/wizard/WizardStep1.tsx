@@ -78,15 +78,14 @@ export function WizardStep1({
         </Label>
         <div className="flex gap-3">
           <Input
-            type="number"
+            type="text"
             id="amount"
             value={amount}
-            onChange={(e) => onAmountChange(e.target.value)}
+            onChange={(e) => onAmountChange(e.target.value.replace(',', '.'))}
             className="flex-1 text-2xl h-14 tabular-nums"
             placeholder="0.00"
             inputMode="decimal"
-            step="0.01"
-            min="0.01"
+            pattern="[0-9]*[.,]?[0-9]*"
             required
             disabled={disabled}
           />
