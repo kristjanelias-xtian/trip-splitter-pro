@@ -63,7 +63,7 @@ function StayMap({ stays }: StayMapProps) {
   const center: L.LatLngTuple = [staysWithCoords[0].latitude, staysWithCoords[0].longitude]
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden isolate">
       <MapContainer
         center={center}
         zoom={10}
