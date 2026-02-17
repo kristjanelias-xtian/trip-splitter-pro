@@ -84,6 +84,7 @@ export function buildTrip(overrides: Partial<Trip> = {}): Trip {
     default_currency: 'EUR',
     exchange_rates: {},
     enable_meals: true,
+    enable_activities: true,
     enable_shopping: true,
     default_split_all: true,
     created_at: '2025-06-01T00:00:00Z',

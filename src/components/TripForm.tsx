@@ -32,6 +32,7 @@ export function TripForm({
   const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
   const [defaultCurrency, setDefaultCurrency] = useState(initialValues?.default_currency || 'EUR')
   const [enableMeals, setEnableMeals] = useState(initialValues?.enable_meals ?? false)
+  const [enableActivities, setEnableActivities] = useState(initialValues?.enable_activities ?? false)
   const [enableShopping, setEnableShopping] = useState(initialValues?.enable_shopping ?? false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,6 +62,7 @@ export function TripForm({
         tracking_mode: trackingMode,
         default_currency: defaultCurrency.trim().toUpperCase() || 'EUR',
         enable_meals: enableMeals,
+        enable_activities: enableActivities,
         enable_shopping: enableShopping,
       })
     } catch (err) {
@@ -155,6 +157,17 @@ export function TripForm({
             <Switch
               checked={enableMeals}
               onCheckedChange={setEnableMeals}
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium">Activity Planning</span>
+              <p className="text-xs text-muted-foreground">Plan activities for each day of your trip</p>
+            </div>
+            <Switch
+              checked={enableActivities}
+              onCheckedChange={setEnableActivities}
               disabled={isSubmitting}
             />
           </div>

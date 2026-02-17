@@ -26,6 +26,8 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
     name: stay?.name || '',
     link: stay?.link || '',
     comment: stay?.comment || '',
+    latitude: stay?.latitude != null ? String(stay.latitude) : '',
+    longitude: stay?.longitude != null ? String(stay.longitude) : '',
     check_in_date: stay?.check_in_date || currentTrip?.start_date || '',
     check_out_date: stay?.check_out_date || currentTrip?.end_date || '',
   })
@@ -54,6 +56,9 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
     setSubmitting(true)
 
     try {
+      const parsedLat = formData.latitude.trim() ? parseFloat(formData.latitude) : null
+      const parsedLng = formData.longitude.trim() ? parseFloat(formData.longitude) : null
+
       if (stay) {
         const updateData: UpdateStayInput = {
           name: formData.name.trim(),
@@ -61,6 +66,8 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           comment: formData.comment.trim() || undefined,
           check_in_date: formData.check_in_date,
           check_out_date: formData.check_out_date,
+          latitude: parsedLat != null && !isNaN(parsedLat) ? parsedLat : null,
+          longitude: parsedLng != null && !isNaN(parsedLng) ? parsedLng : null,
         }
 
         const result = await updateStay(stay.id, updateData)
@@ -77,6 +84,8 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           comment: formData.comment.trim() || undefined,
           check_in_date: formData.check_in_date,
           check_out_date: formData.check_out_date,
+          latitude: parsedLat != null && !isNaN(parsedLat) ? parsedLat : null,
+          longitude: parsedLng != null && !isNaN(parsedLng) ? parsedLng : null,
         }
 
         const result = await createStay(createData)
@@ -148,6 +157,31 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           disabled={submitting}
           required={false}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Coordinates (Optional)</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            type="number"
+            id="stay-latitude"
+            value={formData.latitude}
+            onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+            placeholder="Latitude"
+            step="any"
+            disabled={submitting}
+          />
+          <Input
+            type="number"
+            id="stay-longitude"
+            value={formData.longitude}
+            onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+            placeholder="Longitude"
+            step="any"
+            disabled={submitting}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">Add coordinates to show on the planner map</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -110,12 +110,13 @@ export function ManageTripPage() {
   }
 
   const featureLabels: Record<string, string> = {
-    enable_meals: 'Day planner',
+    enable_meals: 'Meal planning',
+    enable_activities: 'Activity planning',
     enable_shopping: 'Shopping list',
     default_split_all: 'Split between everyone',
   }
 
-  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_shopping' | 'default_split_all', value: boolean) => {
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all', value: boolean) => {
     setIsTogglingFeature(true)
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
@@ -277,12 +278,23 @@ export function ManageTripPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Day Planner</Label>
-              <p className="text-xs text-muted-foreground">Plan activities and meals for each day of your trip</p>
+              <Label>Meal Planning</Label>
+              <p className="text-xs text-muted-foreground">Plan meals for each day of your trip</p>
             </div>
             <Switch
               checked={currentTrip.enable_meals}
               onCheckedChange={(checked) => handleToggleFeature('enable_meals', checked)}
+              disabled={isTogglingFeature}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Activity Planning</Label>
+              <p className="text-xs text-muted-foreground">Plan activities for each day of your trip</p>
+            </div>
+            <Switch
+              checked={currentTrip.enable_activities}
+              onCheckedChange={(checked) => handleToggleFeature('enable_activities', checked)}
               disabled={isTogglingFeature}
             />
           </div>
