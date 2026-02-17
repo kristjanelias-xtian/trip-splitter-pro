@@ -91,6 +91,11 @@ function MobileWizard({
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => { isMounted.current = false }
+  }, [])
 
   const totalSteps = showAdvanced ? 4 : 3
 
@@ -141,17 +146,20 @@ function MobileWizard({
   // Reset form when closed
   useEffect(() => {
     if (!open) {
-      // Reset to initial state
-      setTimeout(() => {
+      // Reset to initial state after animation completes
+      const timer = setTimeout(() => {
+        if (!isMounted.current) return
         setCurrentStep(1)
         setShowAdvanced(false)
+        setIsSubmitting(false)
         setDescription('')
         setAmount('')
         setPaidBy(initialValues?.paid_by || '')
         setComment('')
         setError(null)
         // Don't reset category, currency, date - likely to be reused
-      }, 300) // Delay to allow animation to complete
+      }, 300)
+      return () => clearTimeout(timer)
     }
   }, [open])
 
@@ -195,6 +203,7 @@ function MobileWizard({
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     if (!currentTrip || !canProceed()) return
 
     setError(null)
@@ -269,7 +278,7 @@ function MobileWizard({
       console.error('Error submitting expense:', err)
       setError('Failed to create expense. Please try again.')
     } finally {
-      setIsSubmitting(false)
+      if (isMounted.current) setIsSubmitting(false)
     }
   }
 
