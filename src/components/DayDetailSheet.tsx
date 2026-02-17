@@ -19,6 +19,8 @@ interface DayDetailSheetProps {
   activities: Activity[]
   tripStartDate: string
   stayName?: string
+  enableMeals?: boolean
+  enableActivities?: boolean
 }
 
 function formatSheetDate(date: string): string {
@@ -44,6 +46,8 @@ export function DayDetailSheet({
   activities,
   tripStartDate,
   stayName,
+  enableMeals = true,
+  enableActivities = true,
 }: DayDetailSheetProps) {
   if (!date) return null
 
@@ -78,7 +82,7 @@ export function DayDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <TimeSlotGrid date={date} meals={meals} activities={activities} />
+        <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
       </SheetContent>
     </Sheet>
   )

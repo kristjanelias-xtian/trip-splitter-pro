@@ -10,6 +10,7 @@ export interface Trip {
   default_currency: string
   exchange_rates: Record<string, number>
   enable_meals: boolean
+  enable_activities: boolean
   enable_shopping: boolean
   default_split_all: boolean
   created_by?: string
@@ -24,6 +25,7 @@ export interface CreateTripInput {
   trip_code?: string // Optional: will be auto-generated if not provided
   default_currency?: string
   enable_meals?: boolean
+  enable_activities?: boolean
   enable_shopping?: boolean
 }
 
@@ -35,6 +37,7 @@ export interface UpdateTripInput {
   default_currency?: string
   exchange_rates?: Record<string, number>
   enable_meals?: boolean
+  enable_activities?: boolean
   enable_shopping?: boolean
   default_split_all?: boolean
 }

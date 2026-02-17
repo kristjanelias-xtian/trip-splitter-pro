@@ -13,6 +13,8 @@ export interface TimeSlotGridProps {
   date: string
   meals: MealWithIngredients[]
   activities: Activity[]
+  enableMeals?: boolean
+  enableActivities?: boolean
 }
 
 // Mapping between time slots and meal types
@@ -44,7 +46,7 @@ const TIME_SLOT_ICON_COLORS = {
 
 const TIME_SLOTS: ActivityTimeSlot[] = ['morning', 'afternoon', 'evening']
 
-export function TimeSlotGrid({ date, meals, activities }: TimeSlotGridProps) {
+export function TimeSlotGrid({ date, meals, activities, enableMeals = true, enableActivities = true }: TimeSlotGridProps) {
   const [showAddMealForm, setShowAddMealForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null)
   const [showAddActivityForm, setShowAddActivityForm] = useState(false)
@@ -80,10 +82,13 @@ export function TimeSlotGrid({ date, meals, activities }: TimeSlotGridProps) {
 
   const renderTimeSlotSection = (timeSlot: ActivityTimeSlot) => {
     const mealType = TIME_SLOT_TO_MEAL[timeSlot]
-    const meal = getMealForSlot(mealType)
-    const slotActivities = getActivitiesForSlot(timeSlot)
+    const meal = enableMeals ? getMealForSlot(mealType) : undefined
+    const slotActivities = enableActivities ? getActivitiesForSlot(timeSlot) : []
     const Icon = TIME_SLOT_ICONS[timeSlot]
     const hasContent = meal || slotActivities.length > 0
+
+    const showAddMealButton = enableMeals && !meal
+    const showAddActivityButton = enableActivities
 
     return (
       <div
@@ -107,28 +112,9 @@ export function TimeSlotGrid({ date, meals, activities }: TimeSlotGridProps) {
           {meal && <MealCard meal={meal} />}
 
           {/* Subtle inline add buttons */}
-          {!hasContent ? (
-            <div className="flex items-center gap-3 py-1">
-              <button
-                type="button"
-                onClick={() => handleAddMeal(mealType)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                <Plus size={12} />
-                Add {MEAL_TYPE_LABELS[mealType].toLowerCase()}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddActivity(timeSlot)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                <Plus size={12} />
-                Add activity
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 pt-0.5">
-              {!meal && (
+          {(showAddMealButton || showAddActivityButton) && (
+            <div className={`flex items-center gap-3 ${hasContent ? 'pt-0.5' : 'py-1'}`}>
+              {showAddMealButton && (
                 <button
                   type="button"
                   onClick={() => handleAddMeal(mealType)}
@@ -138,14 +124,16 @@ export function TimeSlotGrid({ date, meals, activities }: TimeSlotGridProps) {
                   Add {MEAL_TYPE_LABELS[mealType].toLowerCase()}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => handleAddActivity(timeSlot)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                <Plus size={12} />
-                Add activity
-              </button>
+              {showAddActivityButton && (
+                <button
+                  type="button"
+                  onClick={() => handleAddActivity(timeSlot)}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  <Plus size={12} />
+                  Add activity
+                </button>
+              )}
             </div>
           )}
         </div>

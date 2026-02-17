@@ -6,6 +6,8 @@ export interface Stay {
   comment?: string | null
   check_in_date: string
   check_out_date: string
+  latitude?: number | null
+  longitude?: number | null
   created_at: string
   updated_at: string
 }
@@ -17,6 +19,8 @@ export interface CreateStayInput {
   comment?: string
   check_in_date: string
   check_out_date: string
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface UpdateStayInput {
@@ -25,4 +29,6 @@ export interface UpdateStayInput {
   comment?: string
   check_in_date?: string
   check_out_date?: string
+  latitude?: number | null
+  longitude?: number | null
 }
