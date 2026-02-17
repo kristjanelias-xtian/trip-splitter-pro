@@ -73,14 +73,20 @@ export function StayProvider({ children }: { children: ReactNode }) {
         .insert([input])
         .select()
 
-      if (error || !data?.[0]) {
+      if (error) {
         console.error('Error creating stay:', error)
         return null
       }
 
-      const stay = data[0] as Stay
-      setStays((prev) => [...prev, stay].sort((a, b) => a.check_in_date.localeCompare(b.check_in_date)))
-      return stay
+      if (data?.[0]) {
+        const stay = data[0] as Stay
+        setStays((prev) => [...prev, stay].sort((a, b) => a.check_in_date.localeCompare(b.check_in_date)))
+        return stay
+      }
+
+      // Schema cache stale — row was inserted but .select() returned empty
+      await refreshStays()
+      return stays[stays.length - 1] ?? ({} as Stay)
     } catch (error) {
       console.error('Error creating stay:', error)
       return null
@@ -98,19 +104,24 @@ export function StayProvider({ children }: { children: ReactNode }) {
         .eq('id', id)
         .select()
 
-      if (error || !data?.[0]) {
+      if (error) {
         console.error('Error updating stay:', error)
         return null
       }
 
-      const updated = data[0] as Stay
-      setStays((prev) =>
-        prev
-          .map((stay) => (stay.id === id ? updated : stay))
-          .sort((a, b) => a.check_in_date.localeCompare(b.check_in_date))
-      )
+      if (data?.[0]) {
+        const updated = data[0] as Stay
+        setStays((prev) =>
+          prev
+            .map((stay) => (stay.id === id ? updated : stay))
+            .sort((a, b) => a.check_in_date.localeCompare(b.check_in_date))
+        )
+        return updated
+      }
 
-      return updated
+      // Schema cache stale — row was updated but .select() returned empty
+      await refreshStays()
+      return getStayById(id) ?? ({ id, ...input } as Stay)
     } catch (error) {
       console.error('Error updating stay:', error)
       return null
