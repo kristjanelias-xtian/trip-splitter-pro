@@ -86,7 +86,7 @@ export function Layout() {
       { path: `/t/${tripCode}/dashboard`, label: 'Overview', requiresTrip: true },
       { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
     ]
-    if (currentTrip?.enable_meals) {
+    if (currentTrip?.enable_meals || currentTrip?.enable_activities) {
       items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
     }
     if (currentTrip?.enable_shopping) {
