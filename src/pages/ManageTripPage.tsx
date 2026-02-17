@@ -356,16 +356,16 @@ export function ManageTripPage() {
                   1 {currencyDefault || '...'} =
                 </Label>
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={row.rate}
                   onChange={(e) => {
                     const updated = [...currencyRows]
-                    updated[index] = { ...updated[index], rate: e.target.value }
+                    updated[index] = { ...updated[index], rate: e.target.value.replace(',', '.') }
                     setCurrencyRows(updated)
                   }}
                   placeholder="0.00"
-                  step="0.01"
-                  min="0"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   className="w-28"
                 />
                 <Input
