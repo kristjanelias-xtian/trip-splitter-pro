@@ -6,6 +6,7 @@ import { useTripContext } from '@/contexts/TripContext'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { getMyTrips } from '@/lib/myTripsStorage'
 import { HomePage } from './HomePage'
+import { Loader2 } from 'lucide-react'
 
 /**
  * Renders at `/` - redirects to Quick Mode if user has it set,
@@ -20,8 +21,10 @@ export function ConditionalHomePage() {
   const { mode, loading: prefsLoading } = useUserPreferences()
   const { trips, loading: tripsLoading } = useTripContext()
 
+  const isLoading = authLoading || prefsLoading || tripsLoading
+
   useEffect(() => {
-    if (authLoading || prefsLoading || tripsLoading) return
+    if (isLoading) return
     if (mode !== 'quick') return
 
     // For quick mode, auto-detect active trip from user's linked trips
@@ -39,7 +42,16 @@ export function ConditionalHomePage() {
 
     // No active trip found, show the quick home screen
     navigate('/quick', { replace: true })
-  }, [authLoading, prefsLoading, tripsLoading, user, mode, trips, navigate])
+  }, [isLoading, user, mode, trips, navigate])
+
+  // Show spinner while any context is still loading
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   // Don't render HomePage when we're about to redirect to quick mode
   if (mode === 'quick') return null

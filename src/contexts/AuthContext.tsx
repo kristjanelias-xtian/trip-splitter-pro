@@ -68,8 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    let initialSessionHandled = false
+
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+      initialSessionHandled = true
       setSession(initialSession)
       setUser(initialSession?.user ?? null)
 
@@ -82,9 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    // Listen for auth changes
+    // Listen for auth changes — skip the INITIAL_SESSION event that fires
+    // concurrently with getSession() to avoid double profile fetches
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (event === 'INITIAL_SESSION') return
+
+        // Skip if this fires before getSession resolved (race condition)
+        if (!initialSessionHandled && event !== 'SIGNED_IN') return
+
         setSession(newSession)
         setUser(newSession?.user ?? null)
 

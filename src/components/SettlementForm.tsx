@@ -42,6 +42,11 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
   const [note, setNote] = useState(initialNote || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => { isMounted.current = false }
+  }, [])
 
   // Keyboard detection for mobile
   const formRef = useRef<HTMLFormElement>(null)
@@ -162,7 +167,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
     } catch (err) {
       setError('Failed to record settlement. Please try again.')
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }
 

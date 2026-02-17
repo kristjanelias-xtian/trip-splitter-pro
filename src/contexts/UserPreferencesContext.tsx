@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -18,19 +18,30 @@ interface UserPreferencesContextType {
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined)
 
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [mode, setModeState] = useState<AppMode>(() => getLocalPreferences().preferredMode)
   const [defaultTripId, setDefaultTripIdState] = useState<string | null>(
     () => getLocalPreferences().defaultTripId
   )
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const hasInitialized = useRef(false)
 
   // Sync from Supabase when user signs in
   useEffect(() => {
-    if (!user) return
+    // Wait for auth to finish before deciding
+    if (authLoading) return
+
+    if (!user) {
+      // No user — local preferences are authoritative, done loading
+      hasInitialized.current = true
+      setLoading(false)
+      return
+    }
+
+    // Already fetched for this user session
+    if (hasInitialized.current) return
 
     const fetchPreferences = async () => {
-      setLoading(true)
       const { data, error } = await (supabase as any)
         .from('user_preferences')
         .select('*')
@@ -44,11 +55,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         setDefaultTripIdState(serverTripId)
         setLocalPreferences({ preferredMode: serverMode, defaultTripId: serverTripId })
       }
+      hasInitialized.current = true
       setLoading(false)
     }
 
     fetchPreferences()
-  }, [user])
+  }, [user, authLoading])
 
   const upsertPreferences = useCallback(async (updates: Record<string, unknown>) => {
     if (!user) return

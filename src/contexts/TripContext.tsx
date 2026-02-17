@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { Trip, CreateTripInput, UpdateTripInput } from '@/types/trip'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
 
@@ -18,6 +19,7 @@ interface TripContextType {
 const TripContext = createContext<TripContextType | undefined>(undefined)
 
 export function TripProvider({ children }: { children: ReactNode }) {
+  const { loading: authLoading } = useAuth()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -141,10 +143,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
     await fetchTrips()
   }
 
-  // Fetch trips on mount
+  // Fetch trips after auth has resolved
   useEffect(() => {
+    if (authLoading) return
     fetchTrips()
-  }, [])
+  }, [authLoading])
 
   const value: TripContextType = {
     trips,

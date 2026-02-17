@@ -20,34 +20,39 @@ interface ReportIssueDialogProps {
 }
 
 function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const maxWidth = 1200
-      let { width, height } = img
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width)
-        width = maxWidth
+  return Promise.race([
+    new Promise<Blob>((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const maxWidth = 1200
+        let { width, height } = img
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+          'image/jpeg',
+          0.8
+        )
       }
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, width, height)
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
-        'image/jpeg',
-        0.8
-      )
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Failed to load image'))
-    }
-    img.src = url
-  })
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Failed to load image'))
+      }
+      img.src = url
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Image compression timed out')), 10000)
+    ),
+  ])
 }
 
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
@@ -76,6 +81,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
     if (!subject.trim()) return
 
     setSubmitting(true)
@@ -105,11 +111,23 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         ? `${description}${screenshotMarkdown}\n\n---\n${metadata}`
         : `${screenshotMarkdown ? screenshotMarkdown.trimStart() + '\n\n---\n' : ''}${metadata}`
 
-      const { error } = await supabase.functions.invoke('create-github-issue', {
-        body: { title: subject.trim(), body },
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
 
-      if (error) throw error
+      try {
+        const { error } = await supabase.functions.invoke('create-github-issue', {
+          body: { title: subject.trim(), body },
+        })
+        clearTimeout(timeoutId)
+
+        if (error) throw error
+      } catch (err) {
+        clearTimeout(timeoutId)
+        if (controller.signal.aborted) {
+          throw new Error('Request timed out')
+        }
+        throw err
+      }
 
       toast({
         title: 'Feedback sent',
