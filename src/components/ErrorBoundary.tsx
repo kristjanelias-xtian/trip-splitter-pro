@@ -24,6 +24,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
+    import('@/lib/logger').then(({ logger }) => {
+      logger.error('React ErrorBoundary caught error', {
+        errorMessage: error.message,
+        errorName: error.name,
+        componentStack: errorInfo.componentStack?.slice(0, 1000) ?? '',
+      })
+    }).catch(() => {})
   }
 
   private handleReset = () => {
