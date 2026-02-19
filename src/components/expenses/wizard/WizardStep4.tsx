@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
+import type { Participant, Family } from '@/types/participant'
 
 type ExpenseCategory = 'Food' | 'Accommodation' | 'Transport' | 'Activities' | 'Training' | 'Other'
 type SplitMode = 'equal' | 'percentage' | 'amount'
@@ -34,6 +35,18 @@ interface WizardStep4Props {
   comment: string
   onCommentChange: (comment: string) => void
   disabled?: boolean
+  // Custom split props
+  amount?: string
+  currency?: string
+  isIndividualsMode?: boolean
+  participants?: Participant[]
+  families?: Family[]
+  selectedParticipants?: string[]
+  selectedFamilies?: string[]
+  participantSplitValues?: Record<string, string>
+  familySplitValues?: Record<string, string>
+  onParticipantSplitChange?: (id: string, value: string) => void
+  onFamilySplitChange?: (id: string, value: string) => void
 }
 
 export function WizardStep4({
@@ -46,7 +59,49 @@ export function WizardStep4({
   comment,
   onCommentChange,
   disabled = false,
+  amount,
+  currency,
+  isIndividualsMode,
+  participants,
+  families,
+  selectedParticipants,
+  selectedFamilies,
+  participantSplitValues,
+  familySplitValues,
+  onParticipantSplitChange,
+  onFamilySplitChange,
 }: WizardStep4Props) {
+  // Compute running total for custom split modes
+  const computeTotal = () => {
+    let total = 0
+    if (selectedParticipants && participantSplitValues) {
+      for (const id of selectedParticipants) {
+        const v = parseFloat(participantSplitValues[id] || '0')
+        if (!isNaN(v)) total += v
+      }
+    }
+    if (selectedFamilies && familySplitValues) {
+      for (const id of selectedFamilies) {
+        const v = parseFloat(familySplitValues[id] || '0')
+        if (!isNaN(v)) total += v
+      }
+    }
+    return total
+  }
+
+  const isSplitValid = () => {
+    if (splitMode === 'equal') return true
+    const total = computeTotal()
+    if (splitMode === 'percentage') return Math.abs(total - 100) <= 0.01
+    if (splitMode === 'amount') {
+      const amtNum = parseFloat(amount || '0')
+      return !isNaN(amtNum) && Math.abs(total - amtNum) <= 0.01
+    }
+    return true
+  }
+
+  const hasCustomSplitProps = participants !== undefined && onParticipantSplitChange !== undefined
+
   return (
     <motion.div
       className="space-y-6"
@@ -102,15 +157,87 @@ export function WizardStep4({
             </label>
           </div>
         </RadioGroup>
-
-        {splitMode !== 'equal' && (
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg">
-            <p className="text-sm text-amber-900 dark:text-amber-100">
-              Note: You'll need to specify values for each participant in the previous step
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* Custom split inputs */}
+      {splitMode !== 'equal' && hasCustomSplitProps && (
+        <div className="space-y-3">
+          <Label className="text-base font-medium">
+            {splitMode === 'percentage' ? 'Percentages' : 'Amounts'}
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            {splitMode === 'percentage'
+              ? 'Enter percentages for each party (must sum to 100%)'
+              : `Enter amounts for each party (must sum to ${currency || 'EUR'} ${amount || '0.00'})`
+            }
+          </p>
+
+          <div className="space-y-2 rounded-lg border border-input p-3">
+            {/* Families */}
+            {!isIndividualsMode && selectedFamilies && selectedFamilies.length > 0 && families && (
+              <>
+                {families
+                  .filter(f => selectedFamilies.includes(f.id))
+                  .map(family => (
+                    <div key={family.id} className="flex items-center justify-between min-h-[44px] gap-3">
+                      <span className="text-sm text-foreground flex-1">
+                        {family.family_name}
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={familySplitValues?.[family.id] || ''}
+                        onChange={(e) => onFamilySplitChange?.(family.id, e.target.value.replace(',', '.'))}
+                        placeholder={splitMode === 'percentage' ? '%' : currency || 'EUR'}
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        disabled={disabled}
+                        className="w-24 h-10"
+                      />
+                    </div>
+                  ))}
+              </>
+            )}
+
+            {/* Participants */}
+            {selectedParticipants && selectedParticipants.length > 0 && participants && (
+              <>
+                {participants
+                  .filter(p => selectedParticipants.includes(p.id))
+                  .map(participant => (
+                    <div key={participant.id} className="flex items-center justify-between min-h-[44px] gap-3">
+                      <span className="text-sm text-foreground flex-1">
+                        {participant.name} {participant.is_adult ? '' : '(child)'}
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={participantSplitValues?.[participant.id] || ''}
+                        onChange={(e) => onParticipantSplitChange?.(participant.id, e.target.value.replace(',', '.'))}
+                        placeholder={splitMode === 'percentage' ? '%' : currency || 'EUR'}
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        disabled={disabled}
+                        className="w-24 h-10"
+                      />
+                    </div>
+                  ))}
+              </>
+            )}
+          </div>
+
+          {/* Running total indicator */}
+          <div className={`p-2 rounded-lg text-sm font-medium ${
+            isSplitValid()
+              ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-300'
+              : 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300'
+          }`}>
+            {splitMode === 'percentage'
+              ? `Total: ${computeTotal().toFixed(1)}% / 100%`
+              : `Total: ${currency || 'EUR'} ${computeTotal().toFixed(2)} / ${currency || 'EUR'} ${parseFloat(amount || '0').toFixed(2)}`
+            }
+            {isSplitValid() && ' ✓'}
+          </div>
+        </div>
+      )}
 
       {/* Date */}
       <div className="space-y-2">
