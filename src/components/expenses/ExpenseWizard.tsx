@@ -116,6 +116,10 @@ function MobileWizard({
   const [comment, setComment] = useState(initialValues?.comment || '')
   const [accountForFamilySize, setAccountForFamilySize] = useState(true)
 
+  // Custom split values for percentage/amount modes
+  const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
+  const [familySplitValues, setFamilySplitValues] = useState<Record<string, string>>({})
+
   const adults = getAdultParticipants()
   const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
@@ -157,6 +161,9 @@ function MobileWizard({
         setPaidBy(initialValues?.paid_by || '')
         setComment('')
         setError(null)
+        setSplitMode('equal')
+        setParticipantSplitValues({})
+        setFamilySplitValues({})
         // Don't reset category, currency, date - likely to be reused
       }, 300)
       return () => clearTimeout(timer)
@@ -184,6 +191,43 @@ function MobileWizard({
     setSelectedParticipants([])
     setSelectedFamilies([])
   }
+
+  const handleParticipantSplitChange = (id: string, value: string) => {
+    setParticipantSplitValues(prev => ({ ...prev, [id]: value }))
+  }
+
+  const handleFamilySplitChange = (id: string, value: string) => {
+    setFamilySplitValues(prev => ({ ...prev, [id]: value }))
+  }
+
+  const handleSplitModeChange = (mode: SplitMode) => {
+    setSplitMode(mode)
+    setParticipantSplitValues({})
+    setFamilySplitValues({})
+  }
+
+  // Auto-fill split value when exactly one party is selected in "By Amount" mode
+  useEffect(() => {
+    if (splitMode !== 'amount') return
+    const amountNum = parseFloat(amount)
+    if (isNaN(amountNum) || amountNum <= 0) return
+    const totalSelected = selectedParticipants.length + selectedFamilies.length
+    if (totalSelected !== 1) return
+
+    if (selectedFamilies.length === 1) {
+      const id = selectedFamilies[0]
+      const current = familySplitValues[id]
+      if (!current || current === '' || current === '0') {
+        setFamilySplitValues(prev => ({ ...prev, [id]: amount }))
+      }
+    } else if (selectedParticipants.length === 1) {
+      const id = selectedParticipants[0]
+      const current = participantSplitValues[id]
+      if (!current || current === '' || current === '0') {
+        setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
+      }
+    }
+  }, [splitMode, selectedFamilies, selectedParticipants, amount])
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
@@ -222,6 +266,60 @@ function MobileWizard({
         return
       }
 
+      // Validate custom split values
+      const amountNum = parseFloat(amount)
+      if (splitMode === 'percentage') {
+        let totalPercentage = 0
+        for (const id of selectedParticipants) {
+          const value = parseFloat(participantSplitValues[id] || '0')
+          if (isNaN(value) || value <= 0) {
+            setError('Please enter valid percentages for all selected participants')
+            setIsSubmitting(false)
+            return
+          }
+          totalPercentage += value
+        }
+        for (const id of selectedFamilies) {
+          const value = parseFloat(familySplitValues[id] || '0')
+          if (isNaN(value) || value <= 0) {
+            setError('Please enter valid percentages for all selected families')
+            setIsSubmitting(false)
+            return
+          }
+          totalPercentage += value
+        }
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+          setError(`Percentages must sum to 100% (currently ${totalPercentage.toFixed(1)}%)`)
+          setIsSubmitting(false)
+          return
+        }
+      } else if (splitMode === 'amount') {
+        let totalAmount = 0
+        for (const id of selectedParticipants) {
+          const value = parseFloat(participantSplitValues[id] || '0')
+          if (isNaN(value) || value <= 0) {
+            setError('Please enter valid amounts for all selected participants')
+            setIsSubmitting(false)
+            return
+          }
+          totalAmount += value
+        }
+        for (const id of selectedFamilies) {
+          const value = parseFloat(familySplitValues[id] || '0')
+          if (isNaN(value) || value <= 0) {
+            setError('Please enter valid amounts for all selected families')
+            setIsSubmitting(false)
+            return
+          }
+          totalAmount += value
+        }
+        if (Math.abs(totalAmount - amountNum) > 0.01) {
+          setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
+          setIsSubmitting(false)
+          return
+        }
+      }
+
       // Build distribution based on tracking mode
       let distribution: ExpenseDistribution
 
@@ -230,6 +328,12 @@ function MobileWizard({
           type: 'individuals',
           participants: selectedParticipants,
           splitMode: splitMode,
+          participantSplits: splitMode !== 'equal'
+            ? selectedParticipants.map(id => ({
+                participantId: id,
+                value: parseFloat(participantSplitValues[id] || '0')
+              }))
+            : undefined,
         }
       } else {
         // Families mode or mixed
@@ -237,12 +341,32 @@ function MobileWizard({
         const hasFamilies = selectedFamilies.length > 0
 
         if (hasIndividuals && hasFamilies) {
+          // Filter out family members from participants to avoid double-counting
+          const standaloneParticipants = selectedParticipants.filter(participantId => {
+            const participant = participants.find(p => p.id === participantId)
+            if (!participant) return false
+            if (participant.family_id === null) return true
+            return !selectedFamilies.includes(participant.family_id)
+          })
+
           distribution = {
             type: 'mixed',
             families: selectedFamilies,
-            participants: selectedParticipants,
+            participants: standaloneParticipants,
             splitMode: splitMode,
             accountForFamilySize,
+            familySplits: splitMode !== 'equal'
+              ? selectedFamilies.map(id => ({
+                  familyId: id,
+                  value: parseFloat(familySplitValues[id] || '0')
+                }))
+              : undefined,
+            participantSplits: splitMode !== 'equal'
+              ? standaloneParticipants.map(id => ({
+                  participantId: id,
+                  value: parseFloat(participantSplitValues[id] || '0')
+                }))
+              : undefined,
           }
         } else if (hasFamilies) {
           distribution = {
@@ -250,12 +374,24 @@ function MobileWizard({
             families: selectedFamilies,
             splitMode: splitMode,
             accountForFamilySize,
+            familySplits: splitMode !== 'equal'
+              ? selectedFamilies.map(id => ({
+                  familyId: id,
+                  value: parseFloat(familySplitValues[id] || '0')
+                }))
+              : undefined,
           }
         } else {
           distribution = {
             type: 'individuals',
             participants: selectedParticipants,
             splitMode: splitMode,
+            participantSplits: splitMode !== 'equal'
+              ? selectedParticipants.map(id => ({
+                  participantId: id,
+                  value: parseFloat(participantSplitValues[id] || '0')
+                }))
+              : undefined,
           }
         }
       }
@@ -290,8 +426,39 @@ function MobileWizard({
         return paidBy !== ''
       case 3:
         return selectedParticipants.length > 0 || selectedFamilies.length > 0
-      case 4:
-        return true // Advanced options are optional
+      case 4: {
+        if (splitMode === 'equal') return true
+        const amtNum = parseFloat(amount)
+        if (splitMode === 'percentage') {
+          let total = 0
+          for (const id of selectedParticipants) {
+            const v = parseFloat(participantSplitValues[id] || '0')
+            if (isNaN(v) || v <= 0) return false
+            total += v
+          }
+          for (const id of selectedFamilies) {
+            const v = parseFloat(familySplitValues[id] || '0')
+            if (isNaN(v) || v <= 0) return false
+            total += v
+          }
+          return Math.abs(total - 100) <= 0.01
+        }
+        if (splitMode === 'amount') {
+          let total = 0
+          for (const id of selectedParticipants) {
+            const v = parseFloat(participantSplitValues[id] || '0')
+            if (isNaN(v) || v <= 0) return false
+            total += v
+          }
+          for (const id of selectedFamilies) {
+            const v = parseFloat(familySplitValues[id] || '0')
+            if (isNaN(v) || v <= 0) return false
+            total += v
+          }
+          return !isNaN(amtNum) && Math.abs(total - amtNum) <= 0.01
+        }
+        return true
+      }
       default:
         return false
     }
@@ -377,7 +544,7 @@ function MobileWizard({
           {currentStep === 4 && (
             <WizardStep4
               splitMode={splitMode}
-              onSplitModeChange={setSplitMode}
+              onSplitModeChange={handleSplitModeChange}
               category={category}
               onCategoryChange={setCategory}
               expenseDate={expenseDate}
@@ -385,6 +552,17 @@ function MobileWizard({
               comment={comment}
               onCommentChange={setComment}
               disabled={isSubmitting}
+              amount={amount}
+              currency={currency}
+              isIndividualsMode={isIndividualsMode || false}
+              participants={participants}
+              families={families}
+              selectedParticipants={selectedParticipants}
+              selectedFamilies={selectedFamilies}
+              participantSplitValues={participantSplitValues}
+              familySplitValues={familySplitValues}
+              onParticipantSplitChange={handleParticipantSplitChange}
+              onFamilySplitChange={handleFamilySplitChange}
             />
           )}
         </div>

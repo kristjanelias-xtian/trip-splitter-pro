@@ -71,6 +71,29 @@ export function ExpenseForm({
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
   const [familySplitValues, setFamilySplitValues] = useState<Record<string, string>>({})
 
+  // Auto-fill split value when exactly one party is selected in "By Amount" mode
+  useEffect(() => {
+    if (splitMode !== 'amount') return
+    const amountNum = parseFloat(amount)
+    if (isNaN(amountNum) || amountNum <= 0) return
+    const totalSelected = selectedParticipants.length + selectedFamilies.length
+    if (totalSelected !== 1) return
+
+    if (selectedFamilies.length === 1) {
+      const id = selectedFamilies[0]
+      const current = familySplitValues[id]
+      if (!current || current === '' || current === '0') {
+        setFamilySplitValues(prev => ({ ...prev, [id]: amount }))
+      }
+    } else if (selectedParticipants.length === 1) {
+      const id = selectedParticipants[0]
+      const current = participantSplitValues[id]
+      if (!current || current === '' || current === '0') {
+        setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
+      }
+    }
+  }, [splitMode, selectedFamilies, selectedParticipants, amount])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)

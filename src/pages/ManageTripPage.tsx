@@ -56,8 +56,8 @@ export function ManageTripPage() {
   )
   const [isSavingCurrency, setIsSavingCurrency] = useState(false)
 
-  // Feature toggle state
-  const [isTogglingFeature, setIsTogglingFeature] = useState(false)
+  // Feature toggle state - track which features are currently being toggled
+  const [togglingFeatures, setTogglingFeatures] = useState<Set<string>>(new Set())
 
   if (!currentTrip) {
     return (
@@ -117,7 +117,7 @@ export function ManageTripPage() {
   }
 
   const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all', value: boolean) => {
-    setIsTogglingFeature(true)
+    setTogglingFeatures(prev => new Set(prev).add(feature))
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
       if (success) {
@@ -139,7 +139,7 @@ export function ManageTripPage() {
         description: 'An error occurred while updating the feature.',
       })
     } finally {
-      setIsTogglingFeature(false)
+      setTogglingFeatures(prev => { const next = new Set(prev); next.delete(feature); return next })
     }
   }
 
@@ -284,7 +284,7 @@ export function ManageTripPage() {
             <Switch
               checked={currentTrip.enable_meals}
               onCheckedChange={(checked) => handleToggleFeature('enable_meals', checked)}
-              disabled={isTogglingFeature}
+              disabled={togglingFeatures.has('enable_meals')}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -295,7 +295,7 @@ export function ManageTripPage() {
             <Switch
               checked={currentTrip.enable_activities}
               onCheckedChange={(checked) => handleToggleFeature('enable_activities', checked)}
-              disabled={isTogglingFeature}
+              disabled={togglingFeatures.has('enable_activities')}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -306,7 +306,7 @@ export function ManageTripPage() {
             <Switch
               checked={currentTrip.enable_shopping}
               onCheckedChange={(checked) => handleToggleFeature('enable_shopping', checked)}
-              disabled={isTogglingFeature}
+              disabled={togglingFeatures.has('enable_shopping')}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -317,7 +317,7 @@ export function ManageTripPage() {
             <Switch
               checked={currentTrip.default_split_all ?? true}
               onCheckedChange={(checked) => handleToggleFeature('default_split_all', checked)}
-              disabled={isTogglingFeature}
+              disabled={togglingFeatures.has('default_split_all')}
             />
           </div>
         </CardContent>
