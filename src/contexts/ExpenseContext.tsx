@@ -7,7 +7,7 @@ import {
   ExpenseCategory,
 } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from '@/contexts/TripContext'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface ExpenseContextType {
   expenses: Expense[]
@@ -33,7 +33,6 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
@@ -47,12 +46,16 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('expense_date', { ascending: false })
-        .order('created_at', { ascending: false })
+      const { data, error: fetchError } = await withTimeout(
+        supabase
+          .from('expenses')
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('expense_date', { ascending: false })
+          .order('created_at', { ascending: false }),
+        15000,
+        'Loading expenses timed out. Please check your connection and try again.'
+      )
 
       if (fetchError) throw fetchError
 
@@ -77,11 +80,15 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         expense_date: input.expense_date || new Date().toISOString().split('T')[0],
       }
 
-      const { data, error: createError } = await (supabase as any)
-        .from('expenses')
-        .insert([expenseData])
-        .select()
-        .single()
+      const { data, error: createError } = await withTimeout<any>(
+        (supabase as any)
+          .from('expenses')
+          .insert([expenseData])
+          .select()
+          .single(),
+        15000,
+        'Saving expense timed out. Please check your connection and try again.'
+      )
 
       if (createError) throw createError
 
@@ -183,7 +190,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchExpenses()
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const value: ExpenseContextType = {
     expenses,

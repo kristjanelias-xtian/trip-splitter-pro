@@ -9,7 +9,7 @@ import {
   UpdateFamilyInput,
 } from '@/types/participant'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from '@/contexts/TripContext'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface ParticipantContextType {
   participants: Participant[]
@@ -39,7 +39,6 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
 
   // Fetch participants and families for current trip
   const fetchData = async () => {
@@ -55,21 +54,29 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       setError(null)
 
       // Fetch participants
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('participants')
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('name')
+      const { data: participantsData, error: participantsError } = await withTimeout(
+        supabase
+          .from('participants')
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('name'),
+        15000,
+        'Loading participants timed out. Please check your connection and try again.'
+      )
 
       if (participantsError) throw participantsError
 
       // Fetch families if in families mode
       if (currentTrip.tracking_mode === 'families') {
-        const { data: familiesData, error: familiesError } = await supabase
-          .from('families')
-          .select('*')
-          .eq('trip_id', currentTrip.id)
-          .order('family_name')
+        const { data: familiesData, error: familiesError } = await withTimeout(
+          supabase
+            .from('families')
+            .select('*')
+            .eq('trip_id', currentTrip.id)
+            .order('family_name'),
+          15000,
+          'Loading families timed out. Please check your connection and try again.'
+        )
 
         if (familiesError) throw familiesError
         setFamilies((familiesData as Family[]) || [])
@@ -297,7 +304,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchData()
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const value: ParticipantContextType = {
     participants,

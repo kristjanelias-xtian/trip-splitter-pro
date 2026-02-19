@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
@@ -15,21 +15,43 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   DollarSign, CreditCard, FileText,
-  ExternalLink, ArrowLeftRight, Loader2
+  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
   const { currentTrip, loading: tripLoading } = useCurrentTrip()
   const { myParticipant, isLinked } = useMyParticipant()
-  const { participants, families, loading: participantsLoading } = useParticipantContext()
-  const { expenses, loading: expensesLoading } = useExpenseContext()
-  const { settlements, loading: settlementsLoading } = useSettlementContext()
+  const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
+  const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
+  const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
 
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
+  const [slowLoading, setSlowLoading] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   const loading = participantsLoading || expensesLoading || settlementsLoading
+  const contextError = participantError || expenseError || settlementError
+
+  // Show "taking longer than expected" after 8 seconds of loading
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoading(false)
+      return
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 8000)
+    return () => clearTimeout(timer)
+  }, [loading])
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      await Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()])
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   if (tripLoading) {
     return (
@@ -81,9 +103,33 @@ export function QuickGroupDetailPage() {
     <div className="max-w-lg mx-auto px-4 py-6">
       {/* Balance hero */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          {slowLoading && (
+            <p className="text-sm text-muted-foreground">Taking longer than expected...</p>
+          )}
         </div>
+      ) : contextError ? (
+        <Card className="mb-6 border-destructive/50">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+            <p className="text-sm text-destructive mb-3">{contextError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              disabled={retrying}
+              className="gap-2"
+            >
+              {retrying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       ) : !isLinked ? (
         <Card className="mb-6">
           <CardContent className="pt-6 text-center">
