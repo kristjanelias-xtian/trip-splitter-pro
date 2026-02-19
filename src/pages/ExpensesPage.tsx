@@ -43,17 +43,19 @@ export function ExpensesPage() {
 
   const handleCreateExpense = async (input: CreateExpenseInput) => {
     const result = await createExpense(input)
-    if (result) {
-      setShowForm(false)
+    if (!result) {
+      throw new Error('Failed to create expense')
     }
+    setShowForm(false)
   }
 
   const handleUpdateExpense = async (input: CreateExpenseInput) => {
     if (!editingExpense) return
     const result = await updateExpense(editingExpense.id, input)
-    if (result) {
-      setEditingExpense(null)
+    if (!result) {
+      throw new Error('Failed to update expense')
     }
+    setEditingExpense(null)
   }
 
   const handleDeleteExpense = async () => {

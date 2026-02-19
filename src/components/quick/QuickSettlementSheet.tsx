@@ -100,16 +100,16 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const handleSubmit = async (input: CreateSettlementInput) => {
     const result = await createSettlement(input)
-    if (result) {
-      toast({
-        title: 'Payment recorded',
-        description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,
-      })
-      // Reset to suggestions view for next time
-      setView('suggestions')
-      setPrefill(null)
-      onOpenChange(false)
+    if (!result) {
+      throw new Error('Failed to record settlement')
     }
+    toast({
+      title: 'Payment recorded',
+      description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,
+    })
+    setView('suggestions')
+    setPrefill(null)
+    onOpenChange(false)
   }
 
   const handleOpenChange = (isOpen: boolean) => {

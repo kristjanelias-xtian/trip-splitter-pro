@@ -21,13 +21,14 @@ const StayContext = createContext<StayContextValue | undefined>(undefined)
 export function StayProvider({ children }: { children: ReactNode }) {
   const [stays, setStays] = useState<Stay[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
   const fetchStays = async () => {
     if (!currentTrip) {
       setStays([])
-      setLoading(false)
+      setInitialLoadDone(true)
       return
     }
 
@@ -50,6 +51,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
       setStays([])
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -59,10 +61,8 @@ export function StayProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchStays()
-    } else {
-      setStays([])
-      setLoading(false)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
@@ -159,7 +159,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
 
   const value: StayContextValue = {
     stays,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     createStay,
     updateStay,
     deleteStay,

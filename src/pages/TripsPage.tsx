@@ -14,10 +14,10 @@ export function TripsPage() {
 
   const handleCreateTrip = async (input: CreateTripInput) => {
     const newTrip = await createTrip(input)
-    if (newTrip) {
-      // Navigate to manage page for new trip using trip code
-      navigate(`/t/${newTrip.trip_code}/manage`)
+    if (!newTrip) {
+      throw new Error('Failed to create trip')
     }
+    navigate(`/t/${newTrip.trip_code}/manage`)
   }
 
   const handleCancel = () => {
