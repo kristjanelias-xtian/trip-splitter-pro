@@ -6,7 +6,7 @@ import {
   UpdateSettlementInput,
 } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from '@/contexts/TripContext'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface SettlementContextType {
   settlements: Settlement[]
@@ -28,7 +28,6 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
 
   // Fetch settlements for current trip
   const fetchSettlements = async () => {
@@ -42,12 +41,16 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
-        .from('settlements')
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('settlement_date', { ascending: false })
-        .order('created_at', { ascending: false })
+      const { data, error: fetchError } = await withTimeout(
+        supabase
+          .from('settlements')
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('settlement_date', { ascending: false })
+          .order('created_at', { ascending: false }),
+        15000,
+        'Loading settlements timed out. Please check your connection and try again.'
+      )
 
       if (fetchError) throw fetchError
 
@@ -72,11 +75,15 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
         settlement_date: input.settlement_date || new Date().toISOString().split('T')[0],
       }
 
-      const { data, error: createError } = await (supabase as any)
-        .from('settlements')
-        .insert([settlementData])
-        .select()
-        .single()
+      const { data, error: createError } = await withTimeout<any>(
+        (supabase as any)
+          .from('settlements')
+          .insert([settlementData])
+          .select()
+          .single(),
+        15000,
+        'Saving settlement timed out. Please check your connection and try again.'
+      )
 
       if (createError) throw createError
 
@@ -158,7 +165,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       setSettlements([])
       setInitialLoadDone(true)
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const value: SettlementContextType = {
     settlements,
