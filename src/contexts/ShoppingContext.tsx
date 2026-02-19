@@ -28,6 +28,7 @@ const ShoppingContext = createContext<ShoppingContextValue | undefined>(undefine
 export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
@@ -35,7 +36,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const fetchShoppingItems = async () => {
     if (!currentTrip) {
       setShoppingItems([])
-      setLoading(false)
+      setInitialLoadDone(true)
       return
     }
 
@@ -59,6 +60,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       setShoppingItems([])
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -75,11 +77,11 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         setChannel(null)
       }
       setShoppingItems([])
-      setLoading(false)
       return
     }
 
     // Initial fetch
+    setInitialLoadDone(false)
     fetchShoppingItems()
 
     // Setup real-time subscription for this trip's shopping items
@@ -219,7 +221,11 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         return null
       }
 
-      // Note: Real-time subscription will handle updating state
+      // Optimistic update for instant feedback
+      setShoppingItems((prev) =>
+        prev.map((item) => item.id === id ? { ...item, ...input, ...data } : item)
+      )
+
       return data
     } catch (error) {
       console.error('Error updating shopping item:', error)
@@ -228,6 +234,9 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteShoppingItem = async (id: string): Promise<boolean> => {
+    // Save for potential rollback
+    const previousItems = shoppingItems
+
     try {
       // First, delete all meal-shopping links
       const { error: linkError } = await supabase
@@ -248,14 +257,16 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error deleting shopping item:', error)
-        // Rollback optimistic update on error - refetch items
+        // Rollback optimistic update on error
+        setShoppingItems(previousItems)
         return false
       }
 
-      // Note: Real-time subscription will also fire, but optimistic update provides instant feedback
       return true
     } catch (error) {
       console.error('Error deleting shopping item:', error)
+      // Rollback optimistic update on error
+      setShoppingItems(previousItems)
       return false
     }
   }
@@ -399,7 +410,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
   const value: ShoppingContextValue = {
     shoppingItems,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     createShoppingItem,
     updateShoppingItem,
     deleteShoppingItem,

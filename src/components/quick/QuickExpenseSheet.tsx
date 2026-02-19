@@ -28,12 +28,13 @@ export function QuickExpenseSheet({ open, onOpenChange }: QuickExpenseSheetProps
 
   const handleSubmit = async (input: CreateExpenseInput) => {
     const result = await createExpense(input)
-    if (result) {
-      toast({
-        title: 'Expense added',
-        description: `${input.description} - ${input.currency} ${input.amount.toFixed(2)}`,
-      })
+    if (!result) {
+      throw new Error('Failed to create expense')
     }
+    toast({
+      title: 'Expense added',
+      description: `${input.description} - ${input.currency} ${input.amount.toFixed(2)}`,
+    })
   }
 
   return (

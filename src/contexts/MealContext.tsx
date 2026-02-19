@@ -22,13 +22,14 @@ const MealContext = createContext<MealContextValue | undefined>(undefined)
 export function MealProvider({ children }: { children: ReactNode }) {
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
   const fetchMeals = async () => {
     if (!currentTrip) {
       setMeals([])
-      setLoading(false)
+      setInitialLoadDone(true)
       return
     }
 
@@ -52,6 +53,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
       setMeals([])
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -61,10 +63,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchMeals()
-    } else {
-      setMeals([])
-      setLoading(false)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
@@ -269,7 +269,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
   const value: MealContextValue = {
     meals,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     createMeal,
     updateMeal,
     deleteMeal,

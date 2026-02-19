@@ -28,13 +28,14 @@ function sortActivities(a: Activity, b: Activity): number {
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
 
   const fetchActivities = async () => {
     if (!currentTrip) {
       setActivities([])
-      setLoading(false)
+      setInitialLoadDone(true)
       return
     }
 
@@ -57,6 +58,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setActivities([])
     } finally {
       setLoading(false)
+      setInitialLoadDone(true)
     }
   }
 
@@ -66,10 +68,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (tripCode && currentTrip) {
+      setInitialLoadDone(false)
       fetchActivities()
-    } else {
-      setActivities([])
-      setLoading(false)
     }
   }, [tripCode, currentTrip?.id, trips.length])
 
@@ -151,7 +151,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
 
   const value: ActivityContextValue = {
     activities,
-    loading,
+    loading: loading || (!!currentTrip && !initialLoadDone),
     createActivity,
     updateActivity,
     deleteActivity,

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
@@ -45,7 +45,7 @@ export function SettlementsPage() {
   }
 
   // Calculate balances (including settlements, with currency conversion)
-  const balanceCalculation = calculateBalances(
+  const balanceCalculation = useMemo(() => calculateBalances(
     expenses,
     participants,
     families,
@@ -53,12 +53,18 @@ export function SettlementsPage() {
     settlements,
     currentTrip.default_currency,
     currentTrip.exchange_rates
-  )
+  ), [expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates])
 
   // Calculate optimal settlement
-  const optimalSettlement = calculateOptimalSettlement(
+  const optimalSettlement = useMemo(() => calculateOptimalSettlement(
     balanceCalculation.balances,
     currentTrip.default_currency
+  ), [balanceCalculation.balances, currentTrip.default_currency])
+
+  // Stable string key for recipient IDs to avoid infinite re-fetch
+  const recipientKey = useMemo(
+    () => optimalSettlement.transactions.map(t => t.toId).join(','),
+    [optimalSettlement.transactions]
   )
 
   // Fetch bank details for settlement recipients (only for signed-in users)
@@ -102,7 +108,7 @@ export function SettlementsPage() {
     }
 
     fetchBankDetails()
-  }, [user, optimalSettlement.transactions, participants])
+  }, [user, recipientKey, participants])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
     // Pre-populate the custom settlement form with amount and note
@@ -122,18 +128,13 @@ export function SettlementsPage() {
   }
 
   const handleCustomSettlement = async (input: CreateSettlementInput) => {
-    try {
-      const result = await createSettlement(input)
-
-      if (result) {
-        setShowCustomSettlement(false)
-        // Clear pre-filled values after successful submission
-        setPrefilledAmount(undefined)
-        setPrefilledNote(undefined)
-      }
-    } catch (error) {
-      console.error('Error recording custom settlement:', error)
+    const result = await createSettlement(input)
+    if (!result) {
+      throw new Error('Failed to record settlement')
     }
+    setShowCustomSettlement(false)
+    setPrefilledAmount(undefined)
+    setPrefilledNote(undefined)
   }
 
   const handleExportPDF = () => {

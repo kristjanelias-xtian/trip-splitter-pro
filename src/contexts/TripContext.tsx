@@ -19,7 +19,7 @@ interface TripContextType {
 const TripContext = createContext<TripContextType | undefined>(undefined)
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const { loading: authLoading } = useAuth()
+  const { loading: authLoading, user } = useAuth()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -143,11 +143,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
     await fetchTrips()
   }
 
-  // Fetch trips after auth has resolved
+  // Fetch trips after auth has resolved or user changes
   useEffect(() => {
     if (authLoading) return
     fetchTrips()
-  }, [authLoading])
+  }, [authLoading, user?.id])
 
   const value: TripContextType = {
     trips,
