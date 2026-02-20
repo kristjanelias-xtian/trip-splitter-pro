@@ -81,6 +81,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         expense_date: input.expense_date || new Date().toISOString().split('T')[0],
       }
 
+      logger.info('Creating expense', { trip_id: expenseData.trip_id, amount: expenseData.amount })
+
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('expenses')
@@ -110,6 +112,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      logger.info('Updating expense', { expense_id: id, trip_id: currentTrip?.id })
+
       const { error: updateError } = await (supabase as any)
         .from('expenses')
         .update(input)
@@ -133,6 +137,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const deleteExpense = async (id: string): Promise<boolean> => {
     try {
       setError(null)
+
+      logger.info('Deleting expense', { expense_id: id, trip_id: currentTrip?.id })
 
       const { error: deleteError } = await supabase
         .from('expenses')
