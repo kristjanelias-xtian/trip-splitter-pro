@@ -468,7 +468,12 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[90vh] flex flex-col p-6 gap-0"
+        className="flex flex-col p-6 gap-0"
+        style={{
+          height: keyboard.isVisible
+            ? `${keyboard.availableHeight}px`
+            : '90vh',
+        }}
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside during submission
           if (isSubmitting) {
@@ -486,10 +491,7 @@ function MobileWizard({
 
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto -mx-6 px-6"
-          style={{
-            paddingBottom: keyboard.isVisible ? `${keyboard.keyboardHeight + 80}px` : '20px'
-          }}
+          className="flex-1 overflow-y-auto -mx-6 px-6 pb-4"
         >
           {currentStep === 1 && (
             <WizardStep1
