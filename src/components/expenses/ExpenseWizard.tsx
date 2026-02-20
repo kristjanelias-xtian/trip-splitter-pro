@@ -473,6 +473,9 @@ function MobileWizard({
           height: keyboard.isVisible
             ? `${keyboard.availableHeight}px`
             : '90vh',
+          bottom: keyboard.isVisible
+            ? `${keyboard.keyboardHeight}px`
+            : undefined,
         }}
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside during submission
