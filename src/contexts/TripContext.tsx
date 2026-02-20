@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Trip, CreateTripInput, UpdateTripInput } from '@/types/trip'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
+import { logger } from '@/lib/logger'
 
 interface TripContextType {
   trips: Trip[]
@@ -39,7 +40,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setTrips((data as unknown as Trip[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
-      console.error('Error fetching trips:', err)
+      logger.error('Failed to fetch trips', { error: err instanceof Error ? err.message : String(err) })
     } finally {
       setLoading(false)
     }
@@ -81,11 +82,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       const newTrip = data as Trip
       setTrips(prev => [newTrip, ...prev])
+      logger.info('Trip created', { trip_id: newTrip.id, name: newTrip.name })
 
       return newTrip
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create trip')
-      console.error('Error creating trip:', err)
+      logger.error('Failed to create trip', { error: err instanceof Error ? err.message : String(err) })
       return null
     }
   }
@@ -111,7 +113,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update trip')
-      console.error('Error updating trip:', err)
+      logger.error('Failed to update trip', { trip_id: id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }
@@ -129,11 +131,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (deleteError) throw deleteError
 
       setTrips(prev => prev.filter(trip => trip.id !== id))
+      logger.info('Trip deleted', { trip_id: id })
 
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete trip')
-      console.error('Error deleting trip:', err)
+      logger.error('Failed to delete trip', { trip_id: id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }

@@ -8,6 +8,7 @@ import {
 } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { logger } from '@/lib/logger'
 
 interface ExpenseContextType {
   expenses: Expense[]
@@ -62,7 +63,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       setExpenses((data as unknown as Expense[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch expenses')
-      console.error('Error fetching expenses:', err)
+      logger.error('Failed to fetch expenses', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
     } finally {
       setLoading(false)
       setInitialLoadDone(true)
@@ -94,11 +95,12 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       const newExpense = data as Expense
       setExpenses(prev => [newExpense, ...prev])
+      logger.info('Expense created', { expense_id: newExpense.id, trip_id: newExpense.trip_id, amount: newExpense.amount })
 
       return newExpense
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create expense')
-      console.error('Error creating expense:', err)
+      logger.error('Failed to create expense', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return null
     }
   }
@@ -122,7 +124,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update expense')
-      console.error('Error updating expense:', err)
+      logger.error('Failed to update expense', { expense_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }
@@ -140,11 +142,12 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       if (deleteError) throw deleteError
 
       setExpenses(prev => prev.filter(e => e.id !== id))
+      logger.info('Expense deleted', { expense_id: id, trip_id: currentTrip?.id })
 
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete expense')
-      console.error('Error deleting expense:', err)
+      logger.error('Failed to delete expense', { expense_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }
