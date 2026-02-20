@@ -18,6 +18,9 @@ function pushToLoki(
   const grafanaToken = Deno.env.get('GRAFANA_API_TOKEN')
 
   if (!lokiUrl || !lokiUsername || !grafanaToken) {
+    console.warn('[loki] skipping push — missing env vars', {
+      hasUrl: !!lokiUrl, hasUsername: !!lokiUsername, hasToken: !!grafanaToken,
+    })
     return Promise.resolve()
   }
 
@@ -42,11 +45,20 @@ function pushToLoki(
       Authorization: `Basic ${credentials}`,
     },
     body,
-  }).then(() => undefined)
+  }).then(async (res) => {
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      console.error(`[loki] push failed: ${res.status} ${res.statusText} — ${text}`)
+    } else {
+      console.log(`[loki] push ok: ${res.status}`)
+    }
+  })
 }
 
 function fireAndForget(service: string, level: LogLevel, message: string, context?: Record<string, unknown>): void {
-  const promise = pushToLoki(service, level, message, context).catch(() => {})
+  const promise = pushToLoki(service, level, message, context).catch((err) => {
+    console.error(`[loki] push threw: ${err?.message ?? err}`)
+  })
   try {
     if (typeof EdgeRuntime !== 'undefined') {
       EdgeRuntime.waitUntil(promise)
