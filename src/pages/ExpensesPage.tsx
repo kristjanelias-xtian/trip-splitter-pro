@@ -120,8 +120,8 @@ export function ExpensesPage() {
     <>
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">Expenses</h2>
+        <div className="flex flex-wrap items-center justify-between gap-y-2">
+          <h2 className="text-xl font-bold text-foreground">Expenses</h2>
           <div className="flex items-center gap-2">
             {expenses.length > 0 && (
               <Button onClick={handleExportExcel} variant="outline" size="sm" className="gap-2">
@@ -129,7 +129,7 @@ export function ExpensesPage() {
                 Export Excel
               </Button>
             )}
-            <Button onClick={() => setShowForm(!showForm)}>
+            <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
               {showForm ? 'Cancel' : 'Add Expense'}
             </Button>

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,15 +34,6 @@ export function WizardStep1({
   const currencies = availableCurrencies && availableCurrencies.length > 0
     ? availableCurrencies
     : ['EUR', 'USD', 'GBP', 'THB']
-  const descriptionRef = useRef<HTMLInputElement>(null)
-
-  // Auto-focus description on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      descriptionRef.current?.focus()
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
 
   return (
     <motion.div
@@ -58,7 +48,6 @@ export function WizardStep1({
           Description
         </Label>
         <Input
-          ref={descriptionRef}
           type="text"
           id="description"
           value={description}
