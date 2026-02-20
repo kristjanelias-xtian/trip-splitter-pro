@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from './TripContext'
 import type { Meal, CreateMealInput, UpdateMealInput, MealWithIngredients } from '@/types/meal'
+import { logger } from '@/lib/logger'
 
 interface MealContextValue {
   meals: Meal[]
@@ -43,13 +44,13 @@ export function MealProvider({ children }: { children: ReactNode }) {
         .order('meal_type', { ascending: true })
 
       if (error) {
-        console.error('Error fetching meals:', error)
+        logger.error('Failed to fetch meals', { trip_id: currentTrip?.id, error: error.message })
         setMeals([])
       } else {
         setMeals((data as Meal[]) || [])
       }
     } catch (error) {
-      console.error('Error fetching meals:', error)
+      logger.error('Failed to fetch meals', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       setMeals([])
     } finally {
       setLoading(false)
@@ -77,7 +78,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error creating meal:', error)
+        logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
@@ -89,7 +90,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
       return data as Meal
     } catch (error) {
-      console.error('Error creating meal:', error)
+      logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
@@ -107,7 +108,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
         .single())
 
       if (error) {
-        console.error('Error updating meal:', error)
+        logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
@@ -123,7 +124,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      console.error('Error updating meal:', error)
+      logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
@@ -137,7 +138,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
         .eq('meal_id', id)
 
       if (linkError) {
-        console.error('Error deleting meal shopping links:', linkError)
+        logger.error('Failed to delete meal shopping links', { meal_id: id, error: linkError.message })
         return false
       }
 
@@ -145,14 +146,14 @@ export function MealProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('meals').delete().eq('id', id)
 
       if (error) {
-        console.error('Error deleting meal:', error)
+        logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
         return false
       }
 
       setMeals((prev) => prev.filter((meal) => meal.id !== id))
       return true
     } catch (error) {
-      console.error('Error deleting meal:', error)
+      logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return false
     }
   }

@@ -7,6 +7,7 @@ import {
 } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { logger } from '@/lib/logger'
 
 interface SettlementContextType {
   settlements: Settlement[]
@@ -57,7 +58,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       setSettlements((data as Settlement[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch settlements')
-      console.error('Error fetching settlements:', err)
+      logger.error('Failed to fetch settlements', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
     } finally {
       setLoading(false)
       setInitialLoadDone(true)
@@ -89,11 +90,12 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
 
       const newSettlement = data as Settlement
       setSettlements(prev => [newSettlement, ...prev])
+      logger.info('Settlement created', { settlement_id: newSettlement.id, trip_id: newSettlement.trip_id, amount: newSettlement.amount })
 
       return newSettlement
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create settlement')
-      console.error('Error creating settlement:', err)
+      logger.error('Failed to create settlement', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return null
     }
   }
@@ -117,7 +119,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update settlement')
-      console.error('Error updating settlement:', err)
+      logger.error('Failed to update settlement', { settlement_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }
@@ -135,11 +137,12 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       if (deleteError) throw deleteError
 
       setSettlements(prev => prev.filter(s => s.id !== id))
+      logger.info('Settlement deleted', { settlement_id: id, trip_id: currentTrip?.id })
 
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete settlement')
-      console.error('Error deleting settlement:', err)
+      logger.error('Failed to delete settlement', { settlement_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
       return false
     }
   }

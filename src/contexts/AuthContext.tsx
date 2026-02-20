@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { UserProfile } from '@/types/auth'
+import { logger } from '@/lib/logger'
 
 interface AuthContextType {
   user: User | null
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (error) {
-      console.error('Error upserting profile:', error)
+      logger.error('Failed to upsert user profile', { error: error.message })
       // Return a local profile if DB fails (e.g., table doesn't exist yet)
       return {
         ...profile,
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (newSession?.user) {
           if (event === 'SIGNED_IN') {
+            logger.info('User signed in', { user_id: newSession.user.id })
             // New sign-in: upsert profile
             const profile = await upsertProfile(newSession.user)
             setUserProfile(profile)
@@ -124,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token: credential,
     })
     if (error) {
-      console.error('Error signing in with Google:', error)
+      logger.error('Google sign-in failed', { error: error.message })
     }
   }
 
@@ -140,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', user.id)
 
     if (error) {
-      console.error('Error updating bank details:', error)
+      logger.error('Failed to update bank details', { error: error.message })
       return false
     }
 
@@ -157,9 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
+    logger.info('User signed out', { user_id: user?.id })
     const { error } = await supabase.auth.signOut()
     if (error) {
-      console.error('Error signing out:', error)
+      logger.error('Sign-out failed', { error: error.message })
     }
   }
 

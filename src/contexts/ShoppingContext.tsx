@@ -9,6 +9,7 @@ import type {
   ShoppingItemWithMeals,
 } from '@/types/shopping'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 interface ShoppingContextValue {
   shoppingItems: ShoppingItem[]
@@ -50,13 +51,13 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         .order('name', { ascending: true })
 
       if (error) {
-        console.error('Error fetching shopping items:', error)
+        logger.error('Failed to fetch shopping items', { trip_id: currentTrip?.id, error: error.message })
         setShoppingItems([])
       } else {
         setShoppingItems((data as ShoppingItem[]) || [])
       }
     } catch (error) {
-      console.error('Error fetching shopping items:', error)
+      logger.error('Failed to fetch shopping items', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       setShoppingItems([])
     } finally {
       setLoading(false)
@@ -172,7 +173,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error creating shopping item:', error)
+        logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
@@ -188,7 +189,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           .insert(links as any)
 
         if (linkError) {
-          console.error('Error linking shopping item to meals:', linkError)
+          logger.error('Failed to link shopping item to meals', { trip_id: currentTrip?.id, error: linkError.message })
         }
       }
 
@@ -199,7 +200,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       // Note: Real-time subscription will also fire, but optimistic update provides instant feedback
       return newItem
     } catch (error) {
-      console.error('Error creating shopping item:', error)
+      logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
@@ -217,7 +218,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         .single())
 
       if (error) {
-        console.error('Error updating shopping item:', error)
+        logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
@@ -228,7 +229,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      console.error('Error updating shopping item:', error)
+      logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
@@ -245,7 +246,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         .eq('shopping_item_id', id)
 
       if (linkError) {
-        console.error('Error deleting shopping item links:', linkError)
+        logger.error('Failed to delete shopping item links', { item_id: id, error: linkError.message })
         return false
       }
 
@@ -256,7 +257,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('shopping_items').delete().eq('id', id)
 
       if (error) {
-        console.error('Error deleting shopping item:', error)
+        logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
         // Rollback optimistic update on error
         setShoppingItems(previousItems)
         return false
@@ -264,7 +265,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
       return true
     } catch (error) {
-      console.error('Error deleting shopping item:', error)
+      logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       // Rollback optimistic update on error
       setShoppingItems(previousItems)
       return false
