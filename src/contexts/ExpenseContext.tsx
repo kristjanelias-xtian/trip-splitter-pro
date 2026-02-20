@@ -114,10 +114,11 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       logger.info('Updating expense', { expense_id: id, trip_id: currentTrip?.id })
 
-      const { error: updateError } = await (supabase as any)
-        .from('expenses')
-        .update(input)
-        .eq('id', id)
+      const { error: updateError } = await withTimeout<any>(
+        (supabase as any).from('expenses').update(input).eq('id', id),
+        15000,
+        'Updating expense timed out. Please check your connection and try again.'
+      )
 
       if (updateError) throw updateError
 
@@ -140,10 +141,11 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       logger.info('Deleting expense', { expense_id: id, trip_id: currentTrip?.id })
 
-      const { error: deleteError } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id)
+      const { error: deleteError } = await withTimeout<any>(
+        supabase.from('expenses').delete().eq('id', id),
+        15000,
+        'Deleting expense timed out. Please check your connection and try again.'
+      )
 
       if (deleteError) throw deleteError
 

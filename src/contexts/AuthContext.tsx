@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { UserProfile } from '@/types/auth'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface AuthContextType {
   user: User | null
@@ -133,29 +134,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateBankDetails = async (holder: string, iban: string): Promise<boolean> => {
     if (!user) return false
 
-    const { error } = await (supabase as any)
-      .from('user_profiles')
-      .update({
-        bank_account_holder: holder || null,
-        bank_iban: iban || null,
-      })
-      .eq('id', user.id)
+    try {
+      const { error } = await withTimeout<any>(
+        (supabase as any)
+          .from('user_profiles')
+          .update({
+            bank_account_holder: holder || null,
+            bank_iban: iban || null,
+          })
+          .eq('id', user.id),
+        15000,
+        'Saving bank details timed out. Please check your connection and try again.'
+      )
 
-    if (error) {
-      logger.error('Failed to update bank details', { error: error.message })
+      if (error) throw error
+
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          bank_account_holder: holder || null,
+          bank_iban: iban || null,
+        })
+      }
+
+      return true
+    } catch (error) {
+      logger.error('Failed to update bank details', { error: error instanceof Error ? error.message : String(error) })
       return false
     }
-
-    // Update local state
-    if (userProfile) {
-      setUserProfile({
-        ...userProfile,
-        bank_account_holder: holder || null,
-        bank_iban: iban || null,
-      })
-    }
-
-    return true
   }
 
   const signOut = async () => {

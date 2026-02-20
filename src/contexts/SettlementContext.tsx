@@ -105,10 +105,11 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: updateError } = await (supabase as any)
-        .from('settlements')
-        .update(input)
-        .eq('id', id)
+      const { error: updateError } = await withTimeout<any>(
+        (supabase as any).from('settlements').update(input).eq('id', id),
+        15000,
+        'Updating settlement timed out. Please check your connection and try again.'
+      )
 
       if (updateError) throw updateError
 
@@ -129,10 +130,11 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: deleteError } = await supabase
-        .from('settlements')
-        .delete()
-        .eq('id', id)
+      const { error: deleteError } = await withTimeout<any>(
+        supabase.from('settlements').delete().eq('id', id),
+        15000,
+        'Deleting settlement timed out. Please check your connection and try again.'
+      )
 
       if (deleteError) throw deleteError
 
