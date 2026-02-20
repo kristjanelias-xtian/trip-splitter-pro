@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { Zap, Settings2 } from 'lucide-react'
 
@@ -8,11 +8,17 @@ interface ModeToggleProps {
 
 export function ModeToggle({ onGradient = false }: ModeToggleProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { tripCode } = useParams<{ tripCode: string }>()
   const { mode, setMode } = useUserPreferences()
 
+  // If the user is on a quick route (e.g. mobile redirect overrode a stored
+  // 'full' preference), the toggle should reflect where they actually are.
+  const isOnQuickRoute = location.pathname === '/quick' || location.pathname.includes('/quick')
+  const effectiveMode = isOnQuickRoute ? 'quick' : mode
+
   const handleModeChange = async (newMode: 'quick' | 'full') => {
-    if (newMode === mode) return
+    if (newMode === effectiveMode) return
     await setMode(newMode)
 
     // Navigate to the appropriate view
@@ -49,7 +55,7 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
       <button
         onClick={() => handleModeChange('quick')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          mode === 'quick' ? activeClass : inactiveClass
+          effectiveMode === 'quick' ? activeClass : inactiveClass
         }`}
       >
         <Zap size={14} />
@@ -58,7 +64,7 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
       <button
         onClick={() => handleModeChange('full')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          mode === 'full' ? activeClass : inactiveClass
+          effectiveMode === 'full' ? activeClass : inactiveClass
         }`}
       >
         <Settings2 size={14} />
