@@ -21,11 +21,14 @@ export function ConditionalHomePage() {
   const { mode, loading: prefsLoading } = useUserPreferences()
   const { trips, loading: tripsLoading } = useTripContext()
 
-  const isLoading = prefsLoading || (mode === 'quick' && tripsLoading)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const shouldGoQuick = mode === 'quick' || isMobile
+
+  const isLoading = prefsLoading || (shouldGoQuick && tripsLoading)
 
   useEffect(() => {
     if (isLoading) return
-    if (mode !== 'quick') return
+    if (!shouldGoQuick) return
 
     // For quick mode, auto-detect active trip from user's linked trips
     const myTripCodes = new Set(getMyTrips().map(t => t.tripCode))
@@ -42,7 +45,7 @@ export function ConditionalHomePage() {
 
     // No active trip found, show the quick home screen
     navigate('/quick', { replace: true })
-  }, [isLoading, user, mode, trips, navigate])
+  }, [isLoading, user, mode, shouldGoQuick, trips, navigate])
 
   // Show spinner while any context is still loading
   if (isLoading) {
@@ -54,7 +57,7 @@ export function ConditionalHomePage() {
   }
 
   // Don't render HomePage when we're about to redirect to quick mode
-  if (mode === 'quick') return null
+  if (shouldGoQuick) return null
 
   // Show Full Mode home page by default
   return <HomePage />
