@@ -226,6 +226,9 @@ export function calculateExpenseShares(
           if (familyId) {
             const currentShare = shares.get(familyId) || 0
             shares.set(familyId, currentShare + shareAmount)
+          } else {
+            // Standalone participant in families mode — assign directly by participant ID
+            shares.set(participantId, shareAmount)
           }
         } else {
           shares.set(participantId, shareAmount)
@@ -241,6 +244,8 @@ export function calculateExpenseShares(
           if (familyId) {
             const currentShare = shares.get(familyId) || 0
             shares.set(familyId, currentShare + shareAmount)
+          } else {
+            shares.set(split.participantId, shareAmount)
           }
         } else {
           shares.set(split.participantId, shareAmount)
@@ -255,6 +260,8 @@ export function calculateExpenseShares(
           if (familyId) {
             const currentShare = shares.get(familyId) || 0
             shares.set(familyId, currentShare + split.value)
+          } else {
+            shares.set(split.participantId, split.value)
           }
         } else {
           shares.set(split.participantId, split.value)
