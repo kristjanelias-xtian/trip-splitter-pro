@@ -11,7 +11,7 @@ interface ReceiptContextType {
   receiptByExpenseId: Record<string, ReceiptTask>
   loading: boolean
   error: string | null
-  createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask | null>
+  createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask>
   updateReceiptTask: (id: string, updates: Partial<ReceiptTask>) => Promise<boolean>
   completeReceiptTask: (id: string, expenseId: string) => Promise<boolean>
   dismissReceiptTask: (id: string) => Promise<boolean>
@@ -76,10 +76,10 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     fetchPendingReceipts()
   }, [currentTrip?.id])
 
-  const createReceiptTask = async (tripId: string, imagePath?: string): Promise<ReceiptTask | null> => {
+  const createReceiptTask = async (tripId: string, imagePath?: string): Promise<ReceiptTask> => {
     if (!user) {
       logger.error('Cannot create receipt task: user not authenticated')
-      return null
+      throw new Error('You must be signed in to scan a receipt.')
     }
     try {
       const { data, error: insertError } = await withTimeout(
@@ -97,16 +97,21 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         'Creating receipt task timed out.'
       )
 
-      if (insertError || !data) {
-        logger.error('Failed to create receipt task', { error: insertError?.message })
-        return null
+      if (insertError) {
+        logger.error('Failed to create receipt task', { error: insertError.message })
+        throw new Error(insertError.message)
+      }
+
+      if (!data) {
+        logger.error('Failed to create receipt task: no data returned')
+        throw new Error('No data returned from receipt task insert')
       }
 
       logger.info('Receipt task created', { task_id: (data as ReceiptTask).id })
       return data as ReceiptTask
     } catch (err) {
       logger.error('Unhandled error creating receipt task', { error: String(err) })
-      return null
+      throw err
     }
   }
 

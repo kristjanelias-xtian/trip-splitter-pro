@@ -106,13 +106,8 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
       const compressed = await compressImage(selectedFile)
       const base64 = await blobToBase64(compressed)
 
-      // 2. Create receipt_tasks row (pending)
+      // 2. Create receipt_tasks row (pending) — throws with real error message on failure
       const task = await createReceiptTask(currentTrip.id)
-      if (!task) {
-        setError('Failed to create receipt task. Please try again.')
-        setScanning(false)
-        return
-      }
 
       // 3. Run bucket upload and edge function in parallel
       const uploadPath = `${task.id}.jpg`
