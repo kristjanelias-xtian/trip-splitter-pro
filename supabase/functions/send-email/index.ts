@@ -12,7 +12,7 @@ const logger = createLogger('send-email')
 const metrics = createMetrics('send-email')
 
 const APP_URL = 'https://split.xtian.me'
-const FROM_ADDRESS = 'Spl1t <noreply@spl1t.me>'
+const FROM_ADDRESS = 'Spl1t <noreply@xtian.me>'
 
 type SendEmailBody =
   | {
