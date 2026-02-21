@@ -127,6 +127,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
               name: displayName,
               is_adult: true,
               user_id: user.id,
+              email: user.email || null,
             }])
             if (participantErr) {
               logger.warn('Failed to auto-link creator as participant', {
