@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Event, CreateEventInput, UpdateEventInput } from '@/types/trip'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface TripContextType {
   trips: Event[]
@@ -30,10 +31,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
-        .from('trips')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data, error: fetchError } = await withTimeout(
+        supabase
+          .from('trips')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        15000,
+        'Loading trips timed out. Please check your connection and try again.'
+      )
 
       if (fetchError) throw fetchError
 
@@ -71,11 +76,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
         ...(user ? { created_by: user.id } : {}),
       }
 
-      const { data, error: createError } = await (supabase as any)
-        .from('trips')
-        .insert([tripData])
-        .select()
-        .single()
+      const { data, error: createError } = await withTimeout<any>(
+        (supabase as any)
+          .from('trips')
+          .insert([tripData])
+          .select()
+          .single(),
+        35000,
+        'Creating trip timed out. Please check your connection and try again.'
+      )
 
       if (createError) throw createError
 
@@ -83,26 +92,35 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setTrips(prev => [newTrip, ...prev])
       logger.info('Trip created', { trip_id: newTrip.id, name: newTrip.name })
 
-      // Auto-link the creator as a participant
+      // Auto-link the creator as a participant — fire-and-forget so createTrip
+      // returns immediately without waiting for the second DB round trip.
       if (user) {
-        try {
-          const displayName =
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.email?.split('@')[0] ||
-            'Me'
-          await supabase.from('participants').insert([{
-            trip_id: newTrip.id,
-            name: displayName,
-            is_adult: true,
-            user_id: user.id,
-          }])
-        } catch (participantErr) {
-          logger.warn('Failed to auto-link creator as participant', {
-            trip_id: newTrip.id,
-            error: participantErr instanceof Error ? participantErr.message : String(participantErr),
-          })
-        }
+        const displayName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          'Me'
+        ;(async () => {
+          try {
+            const { error: participantErr } = await supabase.from('participants').insert([{
+              trip_id: newTrip.id,
+              name: displayName,
+              is_adult: true,
+              user_id: user.id,
+            }])
+            if (participantErr) {
+              logger.warn('Failed to auto-link creator as participant', {
+                trip_id: newTrip.id,
+                error: participantErr.message,
+              })
+            }
+          } catch (participantErr) {
+            logger.warn('Failed to auto-link creator as participant', {
+              trip_id: newTrip.id,
+              error: participantErr instanceof Error ? participantErr.message : String(participantErr),
+            })
+          }
+        })()
       }
 
       return newTrip
@@ -118,10 +136,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: updateError } = await (supabase as any)
-        .from('trips')
-        .update(input)
-        .eq('id', id)
+      const { error: updateError } = await withTimeout<any>(
+        (supabase as any)
+          .from('trips')
+          .update(input)
+          .eq('id', id),
+        35000,
+        'Updating trip timed out. Please check your connection and try again.'
+      )
 
       if (updateError) throw updateError
 
@@ -144,10 +166,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: deleteError } = await supabase
-        .from('trips')
-        .delete()
-        .eq('id', id)
+      const { error: deleteError } = await withTimeout(
+        supabase
+          .from('trips')
+          .delete()
+          .eq('id', id),
+        35000,
+        'Deleting trip timed out. Please check your connection and try again.'
+      )
 
       if (deleteError) throw deleteError
 

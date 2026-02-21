@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from './TripContext'
 import type { Meal, CreateMealInput, UpdateMealInput, MealWithIngredients } from '@/types/meal'
 import { logger } from '@/lib/logger'
 
@@ -25,7 +24,6 @@ export function MealProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
 
   const fetchMeals = async () => {
     if (!currentTrip) {
@@ -67,7 +65,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchMeals()
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const createMeal = async (input: CreateMealInput): Promise<Meal | null> => {
     try {
