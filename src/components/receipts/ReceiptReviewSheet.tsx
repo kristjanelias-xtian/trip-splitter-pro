@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useScrollIntoView } from '@/hooks/useScrollIntoView'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -359,15 +359,22 @@ export function ReceiptReviewSheet({
       <SheetContent
         side="bottom"
         className="flex flex-col p-0"
+        hideClose
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92vh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        <div className="px-4 pt-4 pb-2 border-b border-border">
-          <SheetHeader>
-            <SheetTitle>Review Receipt</SheetTitle>
-          </SheetHeader>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            className="text-muted-foreground -mr-2"
+          >
+            Cancel
+          </Button>
         </div>
 
         <div ref={contentRef} className="flex-1 overflow-y-auto">
