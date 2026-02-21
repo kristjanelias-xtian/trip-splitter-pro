@@ -490,11 +490,7 @@ Rename `.tsx` files only if they are primarily trip/event-specific forms:
 - PR #199: /join/:token route + JoinPage (welcome card, account linking via Google sign-in)
 - PR #200: Payment reminder button in SettlementPlan (Remind button → inline confirm → Resend API)
 
-**Deployment steps before using in production:**
-1. Create Resend account, verify domain (spl1t.me or xtian.me)
-2. `supabase secrets set RESEND_API_KEY=re_...`
-3. `supabase functions deploy send-email`
-4. `supabase db push` (applies migration 022)
+**Deployed ✅** — `RESEND_API_KEY` secret set, `send-email` edge function deployed, migration 022 pushed to production (2026-02-21).
 
 ### Phase 5 — Receipt reminder emails (combines C + D)
 Extends Phase 4 email with receipt image attachment from Phase 3 storage.
@@ -513,3 +509,4 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 | 2026-02-21 | Phase 3 image storage | Receipt images now stored in `receipts` bucket — ReceiptCaptureSheet runs upload + edge fn in parallel (Promise.allSettled); collapsible thumbnail in ReceiptReviewSheet + ReceiptDetailsSheet via signed URL |
 | 2026-02-21 | Error surfacing | Surface real Supabase errors across all submit flows (PR #170) — contexts throw instead of returning null/false; forms display err.message + stack trace; BankDetailsDialog shows real error in toast |
 | 2026-02-21 | Phase 4 | Email & Invitations — send-email edge function (Resend), participant email fields, invitation flow, /join/:token page, payment reminder button (PRs #198–#200) |
+| 2026-02-21 | Phase 4 deploy | RESEND_API_KEY set, send-email deployed, migration 022 pushed to production |
