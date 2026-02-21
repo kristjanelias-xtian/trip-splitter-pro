@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     const anthropic = new Anthropic({ apiKey: anthropicKey })
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [{
@@ -183,8 +183,9 @@ Deno.serve(async (req) => {
     )
   } catch (err) {
     const totalMs = Math.round(performance.now() - requestStart)
+    const errStr = String(err)
     console.error("Edge function error:", err)
-    logger.error('Unhandled exception', { error: String(err) })
+    logger.error(`Unhandled exception: ${errStr}`, { error: errStr })
     metrics.push([
       { name: 'receipt_extraction_total', value: 1, labels: { status: 'error' }, type: 'counter' },
       { name: 'function_latency_ms', value: totalMs, labels: { service_name: 'process-receipt', status: 'error' }, type: 'gauge' },
