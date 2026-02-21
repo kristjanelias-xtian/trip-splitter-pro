@@ -30,9 +30,12 @@ export function ConditionalHomePage() {
     if (isLoading) return
     if (!shouldGoQuick) return
 
-    // For quick mode, auto-detect active trip from user's linked trips
-    const myTripCodes = new Set(getMyTrips().map(t => t.tripCode))
-    const myTrips = trips.filter(t => myTripCodes.has(t.trip_code))
+    // For quick mode, auto-detect active trip from user's linked trips.
+    // When signed in, TripContext already returns only user's trips; use directly.
+    // When not signed in, fall back to localStorage for anonymous use.
+    const myTrips = user
+      ? trips
+      : trips.filter(t => new Set(getMyTrips().map(e => e.tripCode)).has(t.trip_code))
     const activeTripId = getActiveTripId(myTrips)
 
     if (activeTripId) {

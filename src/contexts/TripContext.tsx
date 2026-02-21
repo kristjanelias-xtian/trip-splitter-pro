@@ -27,21 +27,41 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchTrips = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
+      if (!user) {
+        // Anonymous: fetch all trips so URL-based access (/t/:tripCode) keeps working
+        const { data, error: fetchError } = await withTimeout(
+          supabase.from('trips').select('*').order('created_at', { ascending: false }),
+          15000,
+          'Loading trips timed out. Please check your connection and try again.'
+        )
+        if (fetchError) throw fetchError
+        setTrips((data as unknown as Event[]) || [])
+        return
+      }
+
+      // Authenticated: scope to trips where user is creator OR participant
+      const { data: participantRows, error: participantError } = await withTimeout(
+        supabase.from('participants').select('trip_id').eq('user_id', user.id),
+        10000,
+        'Loading trip membership timed out.'
+      )
+      if (participantError) throw participantError
+
+      const participantTripIds = (participantRows ?? []).map((r: any) => r.trip_id as string)
+
+      const filter = participantTripIds.length > 0
+        ? `created_by.eq.${user.id},id.in.(${participantTripIds.join(',')})`
+        : `created_by.eq.${user.id}`
 
       const { data, error: fetchError } = await withTimeout(
-        supabase
-          .from('trips')
-          .select('*')
-          .order('created_at', { ascending: false }),
+        supabase.from('trips').select('*').or(filter).order('created_at', { ascending: false }),
         15000,
         'Loading trips timed out. Please check your connection and try again.'
       )
-
       if (fetchError) throw fetchError
-
       setTrips((data as unknown as Event[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
