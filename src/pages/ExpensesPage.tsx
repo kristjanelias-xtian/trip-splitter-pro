@@ -42,6 +42,7 @@ interface ReceiptReviewData {
   items: ExtractedItem[]
   total: number | null
   currency: string
+  imagePath: string | null
 }
 
 export function ExpensesPage() {
@@ -200,6 +201,7 @@ export function ExpensesPage() {
                         items: task.extracted_items ?? [],
                         total: task.extracted_total,
                         currency: task.extracted_currency ?? currentTrip?.default_currency ?? 'USD',
+                        imagePath: task.receipt_image_path ?? null,
                       })
                     }
                   >
@@ -355,6 +357,7 @@ export function ExpensesPage() {
           items={receiptReviewData.items}
           extractedTotal={receiptReviewData.total}
           currency={receiptReviewData.currency}
+          imagePath={receiptReviewData.imagePath}
           onDone={() => setReceiptReviewData(null)}
         />
       )}

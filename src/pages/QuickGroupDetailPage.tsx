@@ -30,6 +30,7 @@ interface ReceiptReviewData {
   items: ExtractedItem[]
   total: number | null
   currency: string
+  imagePath: string | null
 }
 
 export function QuickGroupDetailPage() {
@@ -188,6 +189,7 @@ export function QuickGroupDetailPage() {
                       items: task.extracted_items ?? [],
                       total: task.extracted_total,
                       currency: task.extracted_currency ?? currentTrip.default_currency,
+                      imagePath: task.receipt_image_path ?? null,
                     })
                   }
                 >
@@ -287,6 +289,7 @@ export function QuickGroupDetailPage() {
           items={receiptReviewData.items}
           extractedTotal={receiptReviewData.total}
           currency={receiptReviewData.currency}
+          imagePath={receiptReviewData.imagePath}
           onDone={() => setReceiptReviewData(null)}
         />
       )}

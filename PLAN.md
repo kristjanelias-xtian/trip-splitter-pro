@@ -392,7 +392,7 @@ Be precise with numbers. If you cannot read a value, use null.
 | Q7 | For payment reminders: manual trigger only, or auto-schedule? | ❓ Open | — |
 | Q8 | For AI Receipt Reader: Claude Sonnet or Haiku? | ✅ Resolved | claude-haiku-4-5-20251001 (upgrade to Sonnet if accuracy needs improving) |
 | Q9 | For item-to-participant mapping: Checklist or Swipe UI? | ✅ Resolved | Chip-tap (item-centric) |
-| Q10 | Should receipt images be stored permanently or auto-deleted? | ✅ Resolved | MVP: images not stored (base64 passed directly to edge function); extracted data persists in DB |
+| Q10 | Should receipt images be stored permanently or auto-deleted? | ✅ Resolved | Images stored in `receipts` bucket as `{task_id}.jpg` (parallel with edge fn, graceful degradation); extracted data persists in DB |
 
 ---
 
@@ -471,14 +471,18 @@ Rename `.tsx` files only if they are primarily trip/event-specific forms:
 - Keep `TripsPage.tsx` filename, change internal labels
 - Keep `ManageTripPage.tsx` filename, change internal labels
 
-### Phase 3 — AI Receipt Reader ✅ Done (PR #149)
-**D (partial)** — Core flow implemented.
+### Phase 3 — AI Receipt Reader ✅ Done (PRs #149–#154, image storage added later)
+**D** — Fully implemented and deployed.
 - Migration 020: `receipt_tasks` table + RLS + private `receipts` bucket
-- Edge Function `process-receipt`: Claude Haiku vision → structured JSON extraction
-- `ReceiptContext`, `ReceiptCaptureSheet`, `ReceiptReviewSheet`
+- Migration 021: `created_by DEFAULT auth.uid()` — fixes RLS violation on insert
+- Edge Function `process-receipt`: `claude-sonnet-4-6` vision → structured JSON extraction (haiku ID unreliable)
+- `ReceiptContext`, `ReceiptCaptureSheet`, `ReceiptReviewSheet`, `ReceiptDetailsSheet`
 - Chip-tap participant assignment, confirmed total + tip, IndividualsDistribution
-- Pending receipts banner on ExpensesPage
-- Model: `claude-haiku-4-5-20251001` (Q8 resolved); images not stored in MVP (Q10 resolved)
+- Currency mismatch handling: unknown receipt currency → inline rate input → saved to trip exchange_rates
+- Pending receipts banner on ExpensesPage **and** QuickGroupDetailPage
+- `ReceiptCaptureSheet` extracts error body from `fnError.context.json()` for Supabase 4xx/5xx
+- Model: `claude-sonnet-4-6`
+- **Image storage**: receipt images ARE stored in `receipts` bucket as `{task_id}.jpg`. Upload runs in parallel with edge function (`Promise.allSettled`) — upload failure is logged as a warning but never blocks the AI flow (graceful degradation). On success, `receipt_image_path` written to the task row. Signed URL (1-hour expiry) generated client-side when review/detail sheets open. Collapsible thumbnail ("Receipt photo") shown in `ReceiptReviewSheet` and `ReceiptDetailsSheet`.
 
 ### Phase 4 — Email & Invitations
 **C.** — Requires setting up Resend, creating edge function, email templates.
@@ -497,3 +501,5 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 | 2026-02-21 | Phase 1 | Rebrand to Spl1t — wordmarks + localStorage key migration (PR #140) |
 | 2026-02-21 | Phase 2 | Events model — DB migration, Trip→Event TypeScript rename (backward-compat aliases), EventForm (type selector + single date), EventCard (type badge), dynamic "Manage Trip/Event" nav label, label updates throughout (PR #141) |
 | 2026-02-21 | Phase 3 | AI Receipt Reader — migration 020, process-receipt edge function (Claude Haiku vision), ReceiptContext, ReceiptCaptureSheet, ReceiptReviewSheet (chip-tap), pending banner on ExpensesPage (PR #149) |
+| 2026-02-21 | Phase 3 fixes | PLAN.md + MEMORY.md updated to reflect Phase 3 completion (PR #150); currency mismatch fix — ReceiptReviewSheet detects unknown receipt currency, prompts for exchange rate, saves to trip on submit (PR #151); scanning broken + quick mode missing scan — switched model to claude-sonnet-4-6, fixed fnError.context.json() extraction, added receipt scanning to QuickGroupDetailPage (PR #153); RLS violation fix — migration 021 adds DEFAULT auth.uid() to created_by, ReceiptContext explicitly sets created_by: user.id (PR #154) |
+| 2026-02-21 | Phase 3 image storage | Receipt images now stored in `receipts` bucket — ReceiptCaptureSheet runs upload + edge fn in parallel (Promise.allSettled); collapsible thumbnail in ReceiptReviewSheet + ReceiptDetailsSheet via signed URL |

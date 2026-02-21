@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal } from 'lucide-react'
+import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
 import { logger } from '@/lib/logger'
+import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ interface ReceiptReviewSheetProps {
   items: ExtractedItem[]
   extractedTotal: number | null
   currency: string
+  imagePath?: string | null
   onDone: () => void
 }
 
@@ -130,6 +132,7 @@ export function ReceiptReviewSheet({
   items: initialItems,
   extractedTotal,
   currency,
+  imagePath,
   onDone,
 }: ReceiptReviewSheetProps) {
   const keyboard = useKeyboardHeight()
@@ -159,6 +162,8 @@ export function ReceiptReviewSheet({
   const [exchangeRate, setExchangeRate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showAllItems, setShowAllItems] = useState(true)
+  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
+  const [showThumbnail, setShowThumbnail] = useState(false)
 
   // Currency options: trip's known currencies + extracted currency if not already present
   const currencyOptions = useMemo(() => {
@@ -196,6 +201,25 @@ export function ReceiptReviewSheet({
     setExchangeRate('')
     setShowAllItems(true)
   }, [open, taskId])
+
+  // Generate signed URL for receipt image when sheet opens
+  useEffect(() => {
+    if (!open || !imagePath) {
+      setReceiptImageUrl(null)
+      setShowThumbnail(false)
+      return
+    }
+    supabase.storage
+      .from('receipts')
+      .createSignedUrl(imagePath, 3600)
+      .then(({ data, error }) => {
+        if (error) {
+          logger.warn('Failed to generate receipt image signed URL', { error: error.message })
+        } else {
+          setReceiptImageUrl(data.signedUrl)
+        }
+      })
+  }, [open, imagePath])
 
   // Toggle a participant for an item
   const toggleParticipant = (itemIndex: number, participantId: string) => {
@@ -345,6 +369,29 @@ export function ReceiptReviewSheet({
 
         <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-3 space-y-4">
+          {/* Receipt image thumbnail (collapsible) */}
+          {receiptImageUrl && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <button
+                className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-foreground"
+                onClick={() => setShowThumbnail(v => !v)}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Image size={14} />
+                  Receipt photo
+                </span>
+                {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showThumbnail && (
+                <img
+                  src={receiptImageUrl}
+                  alt="Receipt"
+                  className="w-full max-h-64 object-contain bg-muted"
+                />
+              )}
+            </div>
+          )}
+
           {/* Merchant + Category */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
