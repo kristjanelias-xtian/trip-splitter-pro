@@ -74,6 +74,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
 
   const handleFileSelected = (file: File) => {
     setError(null)
@@ -92,6 +93,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(null)
     setError(null)
+    setErrorDetail(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (cameraInputRef.current) cameraInputRef.current.value = ''
   }
@@ -176,8 +178,10 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
       onOpenChange(false)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An error occurred'
+      const detail = err instanceof Error ? (err.stack ?? null) : String(err)
       logger.error('Receipt capture failed', { error: message })
       setError(message)
+      setErrorDetail(detail)
     } finally {
       setScanning(false)
     }
@@ -274,8 +278,11 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
               </div>
 
               {error && (
-                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-                  {error}
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 space-y-1">
+                  <p className="font-medium">{error}</p>
+                  {errorDetail && (
+                    <pre className="text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
+                  )}
                 </div>
               )}
 
