@@ -76,6 +76,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
   const [email, setEmail] = useState('')
   const [isAdult, setIsAdult] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Per-participant inline email editing
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
@@ -88,6 +89,17 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
     e.preventDefault()
 
     if (!currentTrip || !name.trim()) return
+
+    setError(null)
+
+    const emailLower = email.trim().toLowerCase()
+    if (emailLower) {
+      const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
+      if (duplicate) {
+        setError('This email is already used by another participant in this trip.')
+        return
+      }
+    }
 
     setAdding(true)
     try {
@@ -132,8 +144,18 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
   }
 
   const handleSaveEmail = async (participant: Participant) => {
-    setSavingEmailId(participant.id)
     const newEmail = editEmailValue.trim() || null
+    if (newEmail) {
+      const duplicate = participants.some(
+        p => p.id !== participant.id && p.email?.toLowerCase() === newEmail.toLowerCase()
+      )
+      if (duplicate) {
+        setError('This email is already used by another participant in this trip.')
+        return
+      }
+    }
+    setError(null)
+    setSavingEmailId(participant.id)
     const hadEmail = !!participant.email
     await updateParticipant(participant.id, { email: newEmail })
 
@@ -168,6 +190,9 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
           <CardTitle>Add Participants</CardTitle>
         </CardHeader>
         <CardContent>
+          {error && (
+            <p className="mb-3 text-sm text-destructive">{error}</p>
+          )}
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Participant Name</Label>
