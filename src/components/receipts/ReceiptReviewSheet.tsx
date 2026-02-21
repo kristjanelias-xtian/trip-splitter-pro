@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -136,6 +137,8 @@ export function ReceiptReviewSheet({
   onDone,
 }: ReceiptReviewSheetProps) {
   const keyboard = useKeyboardHeight()
+  const contentRef = useRef<HTMLDivElement>(null)
+  useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
   const { createExpense } = useExpenseContext()
@@ -367,7 +370,7 @@ export function ReceiptReviewSheet({
           </SheetHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div ref={contentRef} className="flex-1 overflow-y-auto">
         <div className="px-4 py-3 space-y-4">
           {/* Receipt image thumbnail (collapsible) */}
           {receiptImageUrl && (
@@ -554,7 +557,7 @@ export function ReceiptReviewSheet({
         </div>
 
         {/* Submit */}
-        <div className="px-4 py-3 border-t border-border">
+        <div className="px-4 py-3 border-t border-border" style={{ flexShrink: 0 }}>
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
