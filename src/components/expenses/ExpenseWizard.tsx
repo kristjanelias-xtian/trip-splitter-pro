@@ -9,6 +9,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
@@ -77,6 +78,7 @@ function MobileWizard({
   const { participants, families, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
+  const { user } = useAuth()
 
   // Keyboard detection for mobile
   const contentRef = useRef<HTMLDivElement>(null)
@@ -146,6 +148,15 @@ function MobileWizard({
       }
     }
   }, [open, participants, families])
+
+  // Pre-fill paidBy with the authenticated user's linked adult participant
+  useEffect(() => {
+    if (!open) return
+    if (paidBy !== '') return // already set (editing, or user already chose someone)
+    if (!user || participants.length === 0) return
+    const myParticipant = participants.find(p => p.user_id === user.id && p.is_adult)
+    if (myParticipant) setPaidBy(myParticipant.id)
+  }, [open, participants, user])
 
   // Reset form when closed
   useEffect(() => {
