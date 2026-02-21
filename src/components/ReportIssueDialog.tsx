@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
 import {
@@ -59,6 +60,7 @@ const MAX_SCREENSHOTS = 5
 
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
   const { toast } = useToast()
+  const keyboard = useKeyboardHeight()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
   const [screenshots, setScreenshots] = useState<File[]>([])
@@ -166,7 +168,10 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        style={keyboard.isVisible ? { marginBottom: keyboard.keyboardHeight } : undefined}
+      >
         <DialogHeader>
           <DialogTitle>Report an Issue</DialogTitle>
           <DialogDescription>
@@ -183,7 +188,6 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
-              autoFocus
             />
           </div>
 
