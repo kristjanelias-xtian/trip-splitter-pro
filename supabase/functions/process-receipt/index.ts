@@ -15,13 +15,14 @@ const metrics = createMetrics('process-receipt')
 const SYSTEM_PROMPT = `You are a receipt parser. Extract all line items from the receipt image.
 Return ONLY valid JSON with this exact structure:
 {
-  "merchant": "store name or null if unclear",
+  "merchant": "store name or null if not found",
   "items": [{"name": "item name", "price": 12.50, "qty": 1}],
   "subtotal": 25.00,
   "total": 27.50,
   "currency": "USD"
 }
 Rules:
+- merchant: Look for the business name, restaurant name, store name, or brand — it usually appears at the top of the receipt, sometimes as a header, logo text, or subtitle. It may appear in a non-Latin script (Thai, Arabic, Chinese, etc.) alongside or instead of a Latin transliteration — if a Latin/English name is present use that; if only non-Latin script is present, return null rather than guessing a transliteration. Return null only if no business name is visible at all.
 - price is the total price for that line (qty * unit price), as a number
 - qty defaults to 1 if not shown
 - currency is the 3-letter ISO code (default "USD" if unclear)
