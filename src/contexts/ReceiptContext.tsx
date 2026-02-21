@@ -172,6 +172,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   }
 
   const dismissReceiptTask = async (id: string): Promise<boolean> => {
+    const imagePath = pendingReceipts.find(r => r.id === id)?.receipt_image_path ?? null
     try {
       const { error: deleteError } = await withTimeout(
         supabase
@@ -188,6 +189,15 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       }
 
       setPendingReceipts(prev => prev.filter(r => r.id !== id))
+
+      // Best-effort: delete the image from the receipts bucket
+      if (imagePath) {
+        const { error: storageError } = await supabase.storage.from('receipts').remove([imagePath])
+        if (storageError) {
+          logger.warn('Failed to delete receipt image from storage', { imagePath, error: storageError.message })
+        }
+      }
+
       return true
     } catch (err) {
       logger.error('Unhandled error dismissing receipt task', { error: String(err) })
