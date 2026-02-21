@@ -4,232 +4,268 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Family Trip Cost Splitter - A mobile-first web application for splitting costs among groups on trips with real-time collaboration, meal planning, and shopping list features.
+Family Trip Cost Splitter — A mobile-first web application for splitting costs among groups on trips, with real-time collaboration, meal/activity planning, stay tracking, and shopping list features.
 
 **Tech Stack:**
-- Frontend: React 18+ with TypeScript, Vite
-- Styling: Tailwind CSS with shadcn/ui components
-- State Management: React Context API or Zustand
-- Database: Supabase (PostgreSQL)
-- Authentication: Supabase Auth
+- Frontend: React 18 + TypeScript, Vite
+- Styling: Tailwind CSS + shadcn/ui components
+- State: React Context API (one provider per domain)
+- Database: Supabase (PostgreSQL + Edge Functions)
+- Auth: Supabase Auth (Google OAuth supported)
+- Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
+- Tests: Vitest + Testing Library (139 tests)
+
+---
 
 ## Development Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Run tests (when implemented)
-npm test
-
-# Run linter
-npm run lint
-
-# Run type checking
-npm run type-check
+npm install          # install dependencies
+npm run dev          # development server
+npm run build        # production build
+npm run preview      # preview production build
+npm run lint         # ESLint
+npm run type-check   # tsc --noEmit (run before every commit)
+npm test             # Vitest
 ```
+
+---
+
+## Git Workflow
+
+**Always:** branch → commit → PR → squash-merge → delete branch (remote + local)
+
+```bash
+git checkout -b fix/description
+# make changes
+npm run type-check   # must pass clean
+git add <specific files>
+git commit -m "..."
+git push -u origin fix/description
+gh pr create ...
+gh pr merge <N> --squash --delete-branch
+git checkout main && git pull
+git branch -d fix/description
+```
+
+- `gh issue close` takes **one issue at a time** (not multiple args in one call)
+- Commit messages end with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- Repo remote name: `kristjanelias-xtian/trip-splitter-pro`
+
+---
 
 ## Database Schema
 
-The Supabase schema includes these core tables:
-- `trips` - Trip metadata with tracking mode (individuals/families)
-- `families` - Family groups with adults and children counts
-- `participants` - Individual participants linked to families or standalone
-- `expenses` - Expense records with distribution logic
-- `settlements` - Payment transfers between participants/families
-- `meals` - Meal planning with calendar grid (breakfast/lunch/dinner)
-- `shopping_items` - Shopping list items with category and completion status
-- `meal_shopping_items` - Junction table linking meals to shopping items
+### Core tables (migrations 001–006)
+- `trips` — trip metadata, tracking_mode (`individuals` | `families`), trip_code (URL slug), created_by
+- `families` — family groups with adults/children counts
+- `participants` — individuals linked to a family or standalone; `user_id` links to auth user ("This is me")
+- `expenses` — expense records with JSONB `distribution` field
+- `settlements` — payment transfers between participants/families
+- `meals` — meal planning (breakfast/lunch/dinner per day)
+- `shopping_items` — shopping list with category, quantity, completion
+- `meal_shopping_items` — junction: meals ↔ shopping items
 
-**Real-time features:** Shopping list uses Supabase real-time subscriptions for instant updates across devices.
+### Columns added to `trips` (migrations 011–018)
+- `default_currency TEXT` — base currency for the trip
+- `exchange_rates JSONB` — rates for other currencies used
+- `enable_meals BOOLEAN` — feature toggle
+- `enable_shopping BOOLEAN` — feature toggle
+- `enable_activities BOOLEAN` — feature toggle (migration 018)
+- `default_split_all BOOLEAN DEFAULT true` — auto-select all participants when adding expense
 
-## Architecture & Key Concepts
+### Newer tables
+- `user_profiles` — `bank_account_holder`, `bank_iban` (migration 008/012)
+- `user_preferences` — per-user `preferred_mode` (`quick`|`full`) + `default_trip_id` (migration 010)
+- `activities` — activity planner: date, time_slot (morning/afternoon/evening), title, link, responsible_participant_id (migration 016)
+- `stays` — accommodation: name, link, comment, check_in_date, check_out_date, latitude, longitude (migrations 017–018)
 
-### Tracking Modes
-The app supports two modes set during trip setup:
-1. **Individuals only** - Track expenses per person
-2. **Individuals + Families** - Track at family level with individual breakdowns
+**Real-time:** Shopping list uses Supabase real-time subscriptions. Other contexts use optimistic updates only.
 
-This affects expense splitting logic throughout the app.
+---
 
-### Context Organization
-- **Trip Context** - Current trip selection, switching between trips
-- **Expense Context** - CRUD operations, balance calculations
-- **Meal Context** - Calendar management, meal-shopping linkage
-- **Shopping List Context** - Real-time updates with optimistic UI
+## Architecture
 
-### Critical Algorithms
+### App Modes (Quick vs Full)
 
-**Balance Calculation:**
-- Track running totals: total share vs. amount paid per participant/family
-- Calculate current balance (positive = owed, negative = owes)
-- Must handle mixed family/individual expense distribution
+The app has two distinct UI modes:
 
-**Smart Payer Suggestion:**
-- Calculate who's furthest behind relative to their running share
-- Suggest this person as next payer when adding expenses
-- Display prominently in expense entry form
+- **Full mode** — original multi-page layout: Trips list → select trip → Expenses / Settlements / Planner / Shopping / Dashboard
+- **Quick mode** — streamlined single-trip view focused on balance summary and fast expense entry
 
-**Optimal Settlement:**
-- Minimize transaction count using greedy algorithm
-- Convert complex web of debts into minimal payment transfers
-- Display as actionable "Person A pays Person B: €X" items
+Mode is stored per-user in `user_preferences.preferred_mode` and synced from Supabase on sign-in. Local storage (`trip-splitter:user-preferences`) is the source of truth when not signed in.
 
-**Meal-Shopping Integration:**
-- Bidirectional linking: meals → shopping items and vice versa
-- Ingredient aggregation: combine duplicate items across multiple meals
-- Filter shopping list by meal, day, or show general items only
+**Key behaviour:**
+- `ConditionalHomePage` (`src/pages/ConditionalHomePage.tsx`) renders at `/` and redirects based on mode
+- On **mobile viewports (< 768 px)**, always redirects to the active trip's quick page regardless of stored mode preference — prevents desktop "full" preference from stranding mobile users on the all-trips list
+- `ModeToggle` derives `effectiveMode` from the **current pathname** (contains `/quick`?), not solely from the stored pref — fixes the toggle showing wrong state after a mobile redirect
 
-### Mobile-First Principles
+### Context Organisation
 
-**Touch targets:** Minimum 44x44px for all interactive elements
+| Context | Responsibility |
+|---------|---------------|
+| `AuthContext` | Supabase auth session, user profile, bank details |
+| `TripContext` | Trip list, active trip, CRUD |
+| `UserPreferencesContext` | mode (`quick`/`full`), defaultTripId, Supabase sync |
+| `ParticipantContext` | Participants + families, user↔participant link |
+| `ExpenseContext` | Expense CRUD, list |
+| `SettlementContext` | Settlement CRUD |
+| `MealContext` | Meal calendar, meal↔shopping links |
+| `ActivityContext` | Activity planner CRUD |
+| `StayContext` | Stay/accommodation CRUD |
+| `ShoppingContext` | Real-time shopping list with optimistic UI |
 
-**Navigation:**
-- Bottom nav on mobile (< 768px): Trips, Expenses, Meals, Shopping, Dashboard, Settings
-- Side nav on desktop (> 1024px)
-- Trip selector always accessible in header
+All contexts wrap Supabase calls in `withTimeout` (15 s, from `src/lib/fetchWithTimeout.ts`) so a slow network never leaves the UI stuck.
 
-**Responsive breakpoints:**
-- Mobile: < 768px (single column, bottom nav)
-- Tablet: 768px - 1024px (two column layouts)
-- Desktop: > 1024px (full features)
+### Tracking Modes (expense splitting)
+1. **individuals** — expenses split per person
+2. **families** — expenses split per family unit (with optional proportional-by-size weighting)
+3. **mixed** — families + standalone individuals in same expense
 
-**Key mobile optimizations:**
-- Large numeric input for expense amounts
-- Pull-to-refresh on lists
-- Swipe actions for delete/edit
-- Collapsible "More details" sections
-- Quick add buttons for common actions
+Distribution type is stored as JSONB on the expense. `balanceCalculator.ts` handles all three modes.
 
-## Form Validation
+### Routes
 
-Use Zod schemas for all forms with client-side validation:
-- Prevent negative amounts in expenses
-- Enforce at least one adult per family in setup
-- Required field enforcement with helpful error messages
-- Validate distribution totals match expense amount
+```
+/                          → ConditionalHomePage (redirects)
+/quick                     → QuickHomeScreen (Quick mode home)
+/t/:tripCode               → TripModeRedirect (→ quick or dashboard)
+/t/:tripCode/quick         → QuickGroupDetailPage
+/t/:tripCode/quick/history → QuickHistoryPage
+/t/:tripCode/expenses      → ExpensesPage
+/t/:tripCode/settlements   → SettlementsPage
+/t/:tripCode/planner       → PlannerPage (meals + activities + stays)
+/t/:tripCode/shopping      → ShoppingPage
+/t/:tripCode/dashboard     → DashboardPage
+/t/:tripCode/manage        → ManageTripPage
+/create-trip               → TripsPage
+/admin/all-trips           → AdminAllTripsPage
+```
 
-## Performance Considerations
+All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render inside `Layout`; quick routes inside `QuickLayout`.
 
-- Lazy load dashboard charts (use code splitting)
-- Virtual scrolling for long expense lists (react-window or similar)
-- Debounce search inputs (300ms recommended)
-- Optimistic UI updates for shopping list (update local state immediately, sync with Supabase)
-- Service worker for offline viewing (progressive enhancement)
+---
 
-## State Management & Sync Patterns
+## Key Components & Patterns
 
-**Optimistic Updates:**
-All contexts implement optimistic updates for instant UX feedback:
-- **ExpenseContext**: Immediate state updates for create/update/delete operations
-- **SettlementContext**: Immediate state updates for create/update/delete operations
-- **ParticipantContext**: Immediate state updates for all CRUD operations on participants and families
-- **MealContext**: Immediate state updates for create/update/delete operations
-- **TripContext**: Immediate state updates for all CRUD operations
-- **ShoppingContext**: Optimistic updates combined with real-time subscriptions for best experience
+### Expense Wizard (`src/components/expenses/ExpenseWizard.tsx`)
 
-**Real-time Subscriptions:**
-- ShoppingContext uses Supabase real-time subscriptions (INSERT/UPDATE/DELETE events)
-- Prevents duplicate items from real-time events with existence checks
-- Other contexts use optimistic updates without real-time (sufficient for their single-user-focused use cases)
-- Real-time is ideal for collaborative features like shared shopping lists
+On mobile (< 768 px), renders `MobileWizard` (bottom Sheet, 3–4 step wizard). On desktop or in edit mode, renders `ExpenseForm` in a Dialog.
 
-**Refresh Patterns:**
-- MealCard calls `refreshMeals()` after adding ingredients to ensure parent page updates ingredient counts
-- ShoppingContext has rollback logic for toggle operations if database updates fail
-- No manual page refreshes needed for normal CRUD operations - React state handles re-renders
-- Cross-context dependencies (e.g., meal-shopping links) trigger appropriate refresh calls
+**MobileWizard steps:**
+1. Description + Amount + Currency
+2. Who paid? (payer selection)
+3. Split between whom?
+4. Advanced (custom split / date / category / comment) — optional
 
-## Component Patterns
+**Important behaviours:**
+- `paidBy` is pre-filled with the auth user's linked adult participant (`participant.user_id === user.id && is_adult`) via a `useEffect` that fires when the form opens and the field is still empty
+- `suggestedPayer` banner still shows the balance-based suggestion; tapping it overrides `paidBy`
+- `useMediaQuery('(max-width: 768px)')` initialises as `false` on first render, then updates — this is expected behaviour
+- Sheet height: `keyboard.isVisible ? availableHeight : 90vh`
+- Sheet bottom: `keyboard.isVisible ? keyboardHeight : undefined` — **critical for iOS** (see iOS section)
 
-**shadcn/ui usage:** Use shadcn/ui components for consistency (buttons, dialogs, forms, toasts)
+### iOS Keyboard / Viewport
 
-**Color system:**
-- Green: Positive balances (owed money)
-- Red: Negative balances (owes money)
-- Blue: Neutral/actions
+On iOS Safari the **layout viewport does not shrink** when the soft keyboard opens. A `position: fixed; bottom: 0` Sheet stays at the physical screen bottom — behind the keyboard.
 
-**Required UI states:**
-- Loading states with skeletons
-- Empty states with helpful messaging
-- Toast notifications for user actions
-- Error boundaries for graceful failure
+Fix pattern (in `MobileWizard`):
+```tsx
+style={{
+  height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '90vh',
+  bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+}}
+```
 
-## Meal Planner Specifics
+`useKeyboardHeight` (`src/hooks/useKeyboardHeight.ts`) uses `window.visualViewport` to detect keyboard visibility. Keyboard is considered open when `window.innerHeight - visualViewport.height > 150px`.
 
-**Calendar Grid Structure:**
-- Display trip duration as calendar with three rows per day (breakfast/lunch/dinner)
-- Mobile: Scrollable vertical list (one day at a time)
-- Desktop: Week view or full trip grid
-- Icons for meal types: 🍳 breakfast, 🍽️ lunch, 🍕 dinner
+**Do not** use `autoFocus` or `ref.focus()` on inputs inside sheets/modals — it triggers the keyboard immediately on open, before the user has tapped anything.
 
-**Meal-Shopping Workflow:**
-1. Add meal to calendar slot
-2. Assign responsible person
-3. Add ingredients → Creates shopping items tagged to meal
-4. Shopping list shows items grouped by meal
-5. Check off items when shopping
-6. Meal card shows ingredient completion status (e.g., "3/5 ingredients ready")
+### Decimal Input (iOS)
 
-**Shopping List View Modes:**
-- All items
-- By meal (grouped by meal tags)
-- By category (produce, dairy, etc.)
-- General items only (not linked to meals)
+iOS with a European locale types commas as the decimal separator. All amount inputs must:
+```tsx
+inputMode="decimal"
+onChange={(e) => setValue(e.target.value.replace(',', '.'))}
+```
+
+### Logger (`src/lib/logger.ts`)
+
+Routes logs through the `log-proxy` Supabase Edge Function → Grafana Loki. **When Supabase itself is down** the log call also fails. Fix: failed entries are buffered in `localStorage` (`trip-splitter:failed-logs`, max 50 entries) and replayed the next time any log send succeeds. Replayed logs are tagged `[queued]` with the original `queued_at` timestamp.
+
+Always use `logger.error/warn/info` (not just `console.error`) in catch blocks so errors appear in Grafana.
+
+### Planner Page
+
+Week-based Mon→Sun calendar grid. Each day has:
+- Up to 3 meals (breakfast / lunch / dinner) — shown if `trip.enable_meals`
+- Up to 3 activity slots (morning / afternoon / evening) — shown if `trip.enable_activities`
+- Stay indicator (diagonal split on accommodation change days)
+
+Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
+
+### User–Participant Link
+
+`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used in Quick mode home).
+
+---
+
+## Observability
+
+- **Grafana Cloud** receives logs (Loki) and metrics (OTLP)
+- Browser → `supabase.functions.invoke('log-proxy')` → Grafana Loki
+- Edge Functions → `_shared/logger.ts` + `_shared/metrics.ts`
+- `logger.setContext({ trip_id, user_id })` persists across subsequent log calls in a session
+- Error Rate dashboard panel shows "No data" when Supabase is also down (logs buffer locally)
+
+---
+
+## State Management Patterns
+
+**Optimistic updates:** All contexts update local React state immediately on mutation, then sync to Supabase. On error, the context shows an error message (state is NOT rolled back for most operations — refresh to resync if needed). Shopping context does roll back toggle operations on failure.
+
+**`withTimeout`:** Every Supabase call is wrapped:
+```ts
+await withTimeout(supabase.from(...).select(...), 15000, 'Descriptive timeout message')
+```
+
+**Reset pattern in MobileWizard:** Form state resets 300 ms after `open` becomes `false` (to let the close animation complete). Uses `isMounted` ref guard.
+
+---
 
 ## Deployment
 
-**Cloudflare Pages build settings:**
+**Cloudflare Pages:**
 - Build command: `npm run build`
 - Output directory: `dist`
 
-**Required environment variables:**
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+**Environment variables:**
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_GOOGLE_CLIENT_ID` (Google OAuth)
+- `VITE_GRAFANA_*` (observability — set in Cloudflare dashboard)
 
-**Supabase setup:**
-- Run migrations to create schema
-- Configure Row Level Security (RLS) policies
-- Enable real-time for shopping_items table
+**Supabase Edge Functions:** `log-proxy`, `create-github-issue`
 
-## Development Phase Priority
+**Running migrations:** Apply SQL files in `supabase/migrations/` in order against the Supabase project.
 
-**Phase 1 (Core Setup):**
-1. Project initialization with Vite + React + TypeScript
-2. Supabase schema and migrations
-3. Basic trip management
-4. Trip setup flow with tracking mode selection
+---
 
-**Phase 2 (Expenses):**
-5. Mobile-optimized expense entry
-6. Expense list with filters
-7. Balance tracking and smart payer suggestion
-8. Settlement payments
+## Testing
 
-**Phase 3 (Meal Planning):**
-9. Calendar view with meal slots
-10. Meal CRUD operations
-11. Meal-shopping bidirectional linking
+Vitest + Testing Library. Run with `npm test`. 139 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
-**Phase 4 (Shopping & Analytics):**
-12. Real-time shopping list with meal tags
-13. Dashboard with charts (Recharts)
-14. Settlement summary with optimal algorithm
+---
 
-**Phase 5 (Polish):**
-15. Export (PDF with jsPDF, Excel with SheetJS)
-16. Performance optimization
-17. Offline support
-18. Accessibility improvements
+## Common Pitfalls
 
-Focus on completing phases sequentially rather than building all features simultaneously.
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Sheet hidden behind iOS keyboard | `fixed; bottom:0` behind keyboard | Set `bottom: keyboardHeight` when `keyboard.isVisible` |
+| Keyboard pops on sheet open | `autoFocus` / `ref.focus()` in useEffect | Remove auto-focus |
+| ModeToggle shows wrong state | Reads stored pref, not current route | Use `pathname.includes('/quick')` → `effectiveMode` |
+| Mobile lands on all-trips page | Stored pref is `full` from desktop | `ConditionalHomePage` checks `window.innerWidth < 768` |
+| Errors missing from Grafana | Logger goes through Supabase which was down | Logs buffered in localStorage; replayed on recovery |
+| Amount input rejects comma on iOS | European locale decimal | `inputMode="decimal"` + `replace(',', '.')` |
+| Duplicate items in shopping list | Real-time subscription fires on own inserts | Existence check before adding to state |
