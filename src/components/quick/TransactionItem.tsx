@@ -72,7 +72,7 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex-shrink-0">{display.icon}</div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
+          <p className="text-sm font-medium text-foreground break-words">
             {tx.type === 'expense' ? tx.description : display.label}
           </p>
           <p className="text-xs text-muted-foreground">

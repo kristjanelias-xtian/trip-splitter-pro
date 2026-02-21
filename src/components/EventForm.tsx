@@ -201,6 +201,7 @@ export function EventForm({
           placeholder="EUR"
           maxLength={3}
           className="w-32 uppercase"
+          style={{ fontSize: '1rem' }}
           disabled={isSubmitting}
         />
         <p className="text-xs text-muted-foreground">

@@ -109,9 +109,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
 
       let screenshotMarkdown = ''
       if (screenshots.length > 0) {
-        const urls: string[] = []
-        for (const file of screenshots) {
-          const compressed = await compressImage(file)
+        const blobs = await Promise.all(screenshots.map(f => compressImage(f)))
+        const urls = await Promise.all(blobs.map(async (compressed) => {
           const fileName = `${Date.now()}-${crypto.randomUUID()}.jpg`
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('feedback-screenshots')
@@ -120,8 +119,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
           const { data: { publicUrl } } = supabase.storage
             .from('feedback-screenshots')
             .getPublicUrl(uploadData.path)
-          urls.push(publicUrl)
-        }
+          return publicUrl
+        }))
         screenshotMarkdown = '\n\n**Screenshots:**\n' + urls.map((url, i) => `![Screenshot ${i + 1}](${url})`).join('\n')
       }
 
@@ -130,7 +129,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         : `${screenshotMarkdown ? screenshotMarkdown.trimStart() + '\n\n---\n' : ''}${metadata}`
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
       try {
         const { error } = await supabase.functions.invoke('create-github-issue', {
