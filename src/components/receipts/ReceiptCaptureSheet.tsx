@@ -114,15 +114,41 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
         return
       }
 
-      // 3. Invoke edge function synchronously
-      logger.info('Invoking process-receipt', { task_id: task.id })
-      const { data, error: fnError } = await supabase.functions.invoke('process-receipt', {
-        body: {
-          receipt_task_id: task.id,
-          image_base64: base64,
-          mime_type: 'image/jpeg',
-        },
-      })
+      // 3. Run bucket upload and edge function in parallel
+      const uploadPath = `${task.id}.jpg`
+      logger.info('Invoking process-receipt + uploading image', { task_id: task.id })
+      const [uploadResult, fnResult] = await Promise.allSettled([
+        supabase.storage.from('receipts').upload(uploadPath, compressed, { contentType: 'image/jpeg' }),
+        supabase.functions.invoke('process-receipt', {
+          body: {
+            receipt_task_id: task.id,
+            image_base64: base64,
+            mime_type: 'image/jpeg',
+          },
+        }),
+      ])
+
+      // Write image path to task row if upload succeeded (non-blocking for AI flow)
+      if (uploadResult.status === 'fulfilled' && !uploadResult.value.error) {
+        await supabase.from('receipt_tasks').update({ receipt_image_path: uploadPath }).eq('id', task.id)
+      } else {
+        const errMsg =
+          uploadResult.status === 'rejected'
+            ? String(uploadResult.reason)
+            : (uploadResult.value.error?.message ?? 'Unknown error')
+        logger.warn('Receipt image upload failed (non-blocking)', { task_id: task.id, error: errMsg })
+      }
+
+      // Check edge function result
+      if (fnResult.status === 'rejected') {
+        const message = 'Failed to process receipt'
+        logger.error('process-receipt invocation failed', { error: String(fnResult.reason), task_id: task.id })
+        setError(message)
+        setScanning(false)
+        return
+      }
+
+      const { data, error: fnError } = fnResult.value
 
       if (fnError) {
         // Supabase wraps 4xx/5xx responses in fnError — try to extract the actual JSON body

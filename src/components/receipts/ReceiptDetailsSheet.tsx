@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { ScanLine } from 'lucide-react'
+import { ScanLine, ChevronDown, ChevronUp, Image } from 'lucide-react'
 import { ReceiptTask } from '@/types/receipt'
+import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface ReceiptDetailsSheetProps {
   open: boolean
@@ -11,6 +14,27 @@ interface ReceiptDetailsSheetProps {
 export function ReceiptDetailsSheet({ open, onOpenChange, task }: ReceiptDetailsSheetProps) {
   const items = task.extracted_items ?? []
   const currency = task.extracted_currency ?? '—'
+
+  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
+  const [showThumbnail, setShowThumbnail] = useState(false)
+
+  useEffect(() => {
+    if (!open || !task.receipt_image_path) {
+      setReceiptImageUrl(null)
+      setShowThumbnail(false)
+      return
+    }
+    supabase.storage
+      .from('receipts')
+      .createSignedUrl(task.receipt_image_path, 3600)
+      .then(({ data, error }) => {
+        if (error) {
+          logger.warn('Failed to generate receipt image signed URL', { error: error.message })
+        } else {
+          setReceiptImageUrl(data.signedUrl)
+        }
+      })
+  }, [open, task.receipt_image_path])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -26,6 +50,29 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task }: ReceiptDetails
 
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 py-3 space-y-3">
+            {/* Receipt image thumbnail (collapsible) */}
+            {receiptImageUrl && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <button
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-foreground"
+                  onClick={() => setShowThumbnail(v => !v)}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Image size={14} />
+                    Receipt photo
+                  </span>
+                  {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                {showThumbnail && (
+                  <img
+                    src={receiptImageUrl}
+                    alt="Receipt"
+                    className="w-full max-h-64 object-contain bg-muted"
+                  />
+                )}
+              </div>
+            )}
+
             {items.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No items extracted.</p>
             ) : (
