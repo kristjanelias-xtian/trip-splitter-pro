@@ -104,7 +104,7 @@ export function JoinPage() {
         // Link auth user to participant
         const { error: linkError } = await (supabase as any)
           .from('participants')
-          .update({ user_id: user!.id })
+          .update({ user_id: user!.id, email: user!.email || null })
           .eq('id', invitation!.participant_id)
 
         if (linkError) throw linkError
