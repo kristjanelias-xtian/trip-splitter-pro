@@ -5,7 +5,7 @@
  * Uses sessionStorage to persist authentication state during browser session.
  */
 
-const ADMIN_SESSION_KEY = 'trip-splitter:admin-auth'
+const ADMIN_SESSION_KEY = 'spl1t:admin-auth'
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
 
 /**
