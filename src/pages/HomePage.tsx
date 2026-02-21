@@ -60,13 +60,13 @@ export function HomePage() {
         <div className="flex gap-3 mb-8">
           <Button onClick={handleCreateTrip} className="gap-2">
             <Plus size={18} />
-            Create New Trip
+            Create New
           </Button>
         </div>
 
         {/* My Trips List */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">My Trips</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">My Events & Trips</h2>
 
           {myTrips.length === 0 ? (
             <Card>
@@ -74,14 +74,14 @@ export function HomePage() {
                 <div className="text-center py-12">
                   <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No trips yet
+                    Nothing yet
                   </h3>
                   <p className="text-muted-foreground mb-6">
-                    Create a new trip or access one via a shared link
+                    Create a new trip or event, or access one via a shared link
                   </p>
                   <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
                     <Plus size={18} />
-                    Create Your First Trip
+                    Create Your First
                   </Button>
                 </div>
               </CardContent>

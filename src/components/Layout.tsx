@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
+import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
@@ -30,10 +31,12 @@ import {
 } from "@/components/ui/sheet"
 
 // Icon mapping
-const iconMap = {
+const iconMap: Record<string, React.ElementType> = {
   'Overview': Home,
   'Trips': Home,
+  'Events & Trips': Home,
   'Manage Trip': Settings2,
+  'Manage Event': Settings2,
   'Expenses': DollarSign,
   'Settlements': CreditCard,
   'Day Planner': CalendarDays,
@@ -48,15 +51,17 @@ export function Layout() {
   const { user } = useAuth()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
+  const manageLabel = currentTrip?.event_type === 'event' ? 'Manage Event' : 'Manage Trip'
+
   // Desktop navigation - all items visible
   const getDesktopNavItems = () => {
     const items = [
-      { path: '/', label: 'Trips', requiresTrip: false },
+      { path: '/', label: 'Events & Trips', requiresTrip: false },
     ]
 
     if (tripCode) {
       items.push(
-        { path: `/t/${tripCode}/manage`, label: 'Manage Trip', requiresTrip: true },
+        { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
         { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
         { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
       )
@@ -102,8 +107,8 @@ export function Layout() {
     }
 
     return [
-      { path: '/', label: 'Trips', requiresTrip: false },
-      { path: `/t/${tripCode}/manage`, label: 'Manage Trip', requiresTrip: true },
+      { path: '/', label: 'Events & Trips', requiresTrip: false },
+      { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
       { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
     ]
   }

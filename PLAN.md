@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-21
+> Last updated: 2026-02-21 (Phase 1 ✅ done — Phase 2 in progress)
 
 ---
 
@@ -118,8 +118,8 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 
 | # | Feature | Status | Blocked By |
 |---|---------|--------|-----------|
-| A | Rebrand to "Spl1t" | Not Started | — |
-| B | Events (not just Trips) | Not Started | — |
+| A | Rebrand to "Spl1t" | ✅ Done (PR #140) | — |
+| B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | Not Started | — |
 | D | AI Receipt Reader | Not Started | — |
 
@@ -339,8 +339,10 @@ Step 6: Item-to-participant mapping (hardest UX problem)
     - Checkboxes for each item
     - Better for many items, lower friction
 
-  RECOMMENDATION: Start with Checklist (simpler, no custom gesture library needed).
-  Swipe UI can be a Phase 2 upgrade.
+  DECIDED: Chip-tap pattern (item-centric).
+  Each item row shows participant chips inline; tap to toggle.
+  "Everyone" shortcut per item for shared items.
+  Swipe UI deferred.
 
 Step 7: Validation
   "Assign All" button for items that are split equally
@@ -379,18 +381,18 @@ Be precise with numbers. If you cannot read a value, use null.
 
 ## 4. Open Questions / Decisions Needed
 
-| # | Question | Impacts |
-|---|----------|---------|
-| Q1 | Should "Spl1t" replace ALL "Split" text (including functional labels like "Split With" column, "Split between everyone")? | Rebrand scope |
-| Q2 | Should localStorage keys be migrated from `trip-splitter:*` to `spl1t:*`? (Breaking: users lose preferences on upgrade) | Rebrand scope |
-| Q3 | For Events: do you want `event_type = 'event'` to skip the planner entirely, or still support a single-day simplified planner? | Events data model |
-| Q4 | For Events: rename the TypeScript `Trip` type to `Event`? This is a large refactor touching all files. | Events + codebase |
-| Q5 | For invitations: require sign-up to accept, or allow anonymous access (existing behaviour)? | Invitations flow |
-| Q6 | For invitations: send invites at event creation time, or separately from a Manage Event page? | Invitations UX |
-| Q7 | For payment reminders: manual trigger only, or auto-send on a schedule (e.g. 24h after settlement calculated)? | Email complexity |
-| Q8 | For AI Receipt Reader: use Claude 3.5 Sonnet (more accurate, higher cost) or Claude 3.5 Haiku (faster, cheaper)? | AI cost/quality |
-| Q9 | For item-to-participant mapping: Checklist (simpler) or Swipe UI (more mobile-native)? | AI Receipt UX |
-| Q10 | Should receipt images be stored permanently, or auto-deleted after expense is created? | Storage costs |
+| # | Question | Status | Decision |
+|---|----------|--------|----------|
+| Q1 | Should "Spl1t" replace ALL "Split" text, or only wordmarks? | ✅ Resolved | Wordmarks only (4 locations) |
+| Q2 | Migrate localStorage keys to `spl1t:*`? | ✅ Resolved | Yes — one-time migration on load |
+| Q3 | For Events: skip planner entirely, or single-day simplified planner? | ✅ Resolved | Simplified planner, **off by default**, user can toggle on |
+| Q4 | For Events: rename TypeScript `Trip` type to `Event`? | ✅ Resolved | Yes — rename throughout codebase for cleanliness |
+| Q5 | For invitations: require sign-up to accept, or allow anonymous access? | ❓ Open | — |
+| Q6 | For invitations: send at creation time, or separately from Manage page? | ❓ Open | — |
+| Q7 | For payment reminders: manual trigger only, or auto-schedule? | ❓ Open | — |
+| Q8 | For AI Receipt Reader: Claude Sonnet or Haiku? | ❓ Open | — |
+| Q9 | For item-to-participant mapping: Checklist or Swipe UI? | ✅ Resolved | Chip-tap (item-centric) |
+| Q10 | Should receipt images be stored permanently or auto-deleted? | ❓ Open | — |
 
 ---
 
@@ -415,12 +417,59 @@ Be precise with numbers. If you cannot read a value, use null.
 
 ## 6. Phased Implementation Roadmap
 
-### Phase 1 — Quick wins (low risk, high visibility)
-**A. Rebrand to "Spl1t"** — 2–3 files, pure UI change, zero data model impact
+### Phase 1 — Quick wins ✅ Done (PR #140)
+**A. Rebrand to "Spl1t"** — wordmarks in Layout.tsx, QuickLayout.tsx, index.html; localStorage key migration
 
-### Phase 2 — Events
-**B. Events model** — single migration + UI changes in TripForm + Layout labels
-No breaking changes to expense/settlement logic.
+### Phase 2 — Events ✅ Done (PR #141)
+**B. Events model** — decisions finalised, ready to implement.
+
+#### Decisions
+- `event_type: 'trip' | 'event'` column added to `trips` table (DEFAULT `'trip'`)
+- `end_date` stays non-nullable for now; for events, form sets `end_date = start_date` automatically
+- TypeScript `Trip` type → **renamed to `Event`** everywhere (~40+ files)
+- `CreateTripInput` → `CreateEventInput`, `UpdateTripInput` → `UpdateEventInput`, `TrackingMode` stays
+- Planner features (meals/activities/shopping) for `event_type = 'event'`: **off by default**, same toggles available as trips
+- User-facing language changes: "Trip" / "Event" driven by `event_type` field in card labels
+
+#### Migration (019_event_type.sql)
+```sql
+ALTER TABLE trips ADD COLUMN event_type TEXT NOT NULL DEFAULT 'trip'
+  CHECK (event_type IN ('trip', 'event'));
+```
+
+#### TypeScript rename scope
+All files that import `Trip`, `CreateTripInput`, `UpdateTripInput` from `@/types/trip`:
+- `src/types/trip.ts` — rename types, add `event_type` field
+- `src/contexts/TripContext.tsx` — rename types, rename functions (`createTrip`→`createEvent` etc.) — **or keep function names** to minimise blast radius
+- `src/components/TripForm.tsx` → `EventForm.tsx` — add event_type toggle, simplify date UI for events
+- `src/components/TripCard.tsx` → `EventCard.tsx` — show type badge ("Trip" / "Event")
+- `src/pages/TripsPage.tsx` — update to `EventsPage.tsx` or keep filename, update labels
+- `src/pages/ManageTripPage.tsx` — update labels, header
+- `src/pages/QuickHomeScreen.tsx` — update labels
+- `src/pages/QuickGroupDetailPage.tsx` — update labels
+- `src/contexts/` (all) — update imports
+- `src/hooks/` — update imports
+- `src/services/` — update imports
+- `src/test/factories.ts` — update test data builders
+
+#### UI changes
+1. **Create form**: two-step choice first: "Trip (multi-day)" vs "Event (one occasion)"
+   - Trip: shows date range, all feature toggles
+   - Event: shows single date only, planner features hidden by default (toggle available)
+2. **Cards**: show badge — `Trip` (blue) or `Event` (purple/amber)
+3. **Labels**: "Create New Trip" → "Create New" with type selector; "My Trips" → "My Events & Trips"
+4. **Planner page**: for events, still navigable if enabled; header shows single date not range
+5. **Layout nav**: "Manage Trip" label dynamically → "Manage Trip" / "Manage Event"
+
+#### Function renaming strategy
+To reduce blast radius, **rename types** (`Trip`→`Event`) but **keep context function names** (`createTrip`, `updateTrip`, `deleteTrip`) unchanged for this PR. Rename functions in a follow-up if desired.
+
+#### File rename strategy
+Rename `.tsx` files only if they are primarily trip/event-specific forms:
+- `TripForm.tsx` → `EventForm.tsx` (new primary form)
+- `TripCard.tsx` → `EventCard.tsx`
+- Keep `TripsPage.tsx` filename, change internal labels
+- Keep `ManageTripPage.tsx` filename, change internal labels
 
 ### Phase 3 — AI Receipt Reader (core flow, no email)
 **D (partial)** — This delivers the highest user value and uses the existing `@anthropic-ai/sdk`.
@@ -441,4 +490,6 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 
 | Date | Session | Work Done |
 |------|---------|-----------|
-| 2026-02-21 | Planning | Full codebase analysis; created this document |
+| 2026-02-21 | Planning | Full codebase analysis; created PLAN.md |
+| 2026-02-21 | Phase 1 | Rebrand to Spl1t — wordmarks + localStorage key migration (PR #140) |
+| 2026-02-21 | Phase 2 | Events model — DB migration, Trip→Event TypeScript rename (backward-compat aliases), EventForm (type selector + single date), EventCard (type badge), dynamic "Manage Trip/Event" nav label, label updates throughout (PR #141) |
