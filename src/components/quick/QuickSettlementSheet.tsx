@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ArrowRight, ArrowLeft, PartyPopper } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -12,6 +12,10 @@ import { CreateSettlementInput } from '@/types/settlement'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
+
+interface BankDetails { holder: string; iban: string }
 
 interface QuickSettlementSheetProps {
   open: boolean
@@ -31,9 +35,12 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const { settlements, createSettlement } = useSettlementContext()
   const { myParticipant } = useMyParticipant()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const [view, setView] = useState<'suggestions' | 'form'>('suggestions')
   const [prefill, setPrefill] = useState<Prefill | null>(null)
+  const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
+  const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
 
   if (!currentTrip) return null
 
@@ -75,6 +82,61 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       currency: plan.currency,
     }
   }, [expenses, participants, families, settlements, trackingMode, defaultCurrency, exchangeRates, myParticipant])
+
+  const myEntityId = myParticipant
+    ? (trackingMode === 'families' && myParticipant.family_id
+        ? myParticipant.family_id
+        : myParticipant.id)
+    : null
+
+  const recipientKey = useMemo(() => {
+    if (!myEntityId) return ''
+    return myTransactions
+      .filter(t => t.fromId === myEntityId)
+      .map(t => t.toId)
+      .join(',')
+  }, [myTransactions, myEntityId])
+
+  useEffect(() => {
+    if (!user || !recipientKey) return
+    const recipientIds = recipientKey.split(',').filter(Boolean)
+    if (recipientIds.length === 0) return
+
+    const fetchBankDetails = async () => {
+      const recipientParticipants = participants.filter(p =>
+        p.user_id &&
+        (recipientIds.includes(p.id) || (p.family_id != null && recipientIds.includes(p.family_id)))
+      )
+      const linkedEntityIds = new Set<string>(
+        recipientParticipants.map(p =>
+          p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
+        )
+      )
+      setLinkedParticipantIds(linkedEntityIds)
+      if (recipientParticipants.length === 0) return
+
+      const userIds = recipientParticipants.map(p => p.user_id!).filter(Boolean)
+      const { data, error } = await (supabase as any)
+        .from('user_profiles')
+        .select('id, bank_account_holder, bank_iban')
+        .in('id', userIds)
+      if (error || !data) return
+
+      const map: Record<string, BankDetails> = {}
+      for (const profile of data) {
+        if (profile.bank_account_holder || profile.bank_iban) {
+          const matching = recipientParticipants.filter(p => p.user_id === profile.id)
+          for (const p of matching) {
+            const entityId = p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
+            map[entityId] = { holder: profile.bank_account_holder || '', iban: profile.bank_iban || '' }
+          }
+        }
+      }
+      setBankDetailsMap(map)
+    }
+
+    fetchBankDetails()
+  }, [user, recipientKey, participants])
 
   // Map optimizer entity ID to an adult participant ID for the settlement form
   const resolveParticipantId = (entityId: string, isFamily: boolean): string => {
@@ -128,13 +190,6 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       currencyDisplay: 'narrowSymbol',
     }).format(amount)
   }
-
-  // Determine if a transaction is "you owe" or "owed to you"
-  const myEntityId = myParticipant
-    ? (trackingMode === 'families' && myParticipant.family_id
-        ? myParticipant.family_id
-        : myParticipant.id)
-    : null
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -209,6 +264,26 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {iOwe ? 'You owe' : 'Owed to you'}
                         </p>
+                        {iOwe && (() => {
+                          const bankDetails = bankDetailsMap[tx.toId]
+                          const isLinked = linkedParticipantIds.has(tx.toId)
+                          if (bankDetails && (bankDetails.iban || bankDetails.holder)) {
+                            return (
+                              <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                                {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
+                                {bankDetails.iban && <p className="font-mono">{bankDetails.iban}</p>}
+                              </div>
+                            )
+                          }
+                          if (isLinked) {
+                            return (
+                              <p className="mt-2 text-xs text-muted-foreground italic">
+                                Ask {tx.toName} to add their bank details
+                              </p>
+                            )
+                          }
+                          return null
+                        })()}
                       </div>
                       <Button
                         size="sm"

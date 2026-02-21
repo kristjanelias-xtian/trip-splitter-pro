@@ -76,9 +76,17 @@ export function SettlementsPage() {
       const recipientIds = optimalSettlement.transactions.map(t => t.toId)
       if (recipientIds.length === 0) return
 
-      // Look up user_ids for these participants
-      const recipientParticipants = participants.filter(p => recipientIds.includes(p.id) && p.user_id)
-      setLinkedParticipantIds(new Set(recipientParticipants.map(p => p.id)))
+      // Look up user_ids for these participants (match by participant ID or family ID)
+      const recipientParticipants = participants.filter(p =>
+        p.user_id &&
+        (recipientIds.includes(p.id) || (p.family_id != null && recipientIds.includes(p.family_id)))
+      )
+      const linkedEntityIds = new Set<string>(
+        recipientParticipants.map(p =>
+          p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
+        )
+      )
+      setLinkedParticipantIds(linkedEntityIds)
       if (recipientParticipants.length === 0) return
 
       const userIds = recipientParticipants.map(p => p.user_id!).filter(Boolean)
@@ -93,10 +101,10 @@ export function SettlementsPage() {
       const map: Record<string, BankDetails> = {}
       for (const profile of data) {
         if (profile.bank_account_holder || profile.bank_iban) {
-          // Find participant(s) with this user_id
           const matchingParticipants = recipientParticipants.filter(p => p.user_id === profile.id)
           for (const p of matchingParticipants) {
-            map[p.id] = {
+            const entityId = p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
+            map[entityId] = {
               holder: profile.bank_account_holder || '',
               iban: profile.bank_iban || '',
             }
