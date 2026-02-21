@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Search, Receipt, FileDown, ScanLine } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -49,6 +50,7 @@ export function ExpensesPage() {
   const { participants, families } = useParticipantContext()
   const { settlements } = useSettlementContext()
   const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
+  const { toast } = useToast()
 
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
@@ -336,9 +338,9 @@ export function ExpensesPage() {
           open={showReceiptCapture}
           onOpenChange={setShowReceiptCapture}
           tripId={currentTrip.id}
-          onProcessed={(taskId, data) => {
+          onScanned={(_taskId) => {
             setShowReceiptCapture(false)
-            setReceiptReviewData({ taskId, ...data })
+            toast({ title: 'Receipt scanned', description: 'Review it using the banner above.' })
           }}
         />
       )}

@@ -6,18 +6,12 @@ import { supabase } from '@/lib/supabase'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { logger } from '@/lib/logger'
-import { ExtractedItem } from '@/types/receipt'
 
 interface ReceiptCaptureSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   tripId?: string
-  onProcessed: (taskId: string, data: {
-    merchant: string | null
-    items: ExtractedItem[]
-    total: number | null
-    currency: string
-  }) => void
+  onScanned: (taskId: string) => void
 }
 
 function compressImage(file: File): Promise<Blob> {
@@ -70,9 +64,9 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-export function ReceiptCaptureSheet({ open, onOpenChange, onProcessed }: ReceiptCaptureSheetProps) {
+export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCaptureSheetProps) {
   const { currentTrip } = useCurrentTrip()
-  const { createReceiptTask } = useReceiptContext()
+  const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
@@ -154,15 +148,9 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onProcessed }: Receipt
         return
       }
 
-      // 4. Success — pass data to parent
-      onProcessed(task.id, {
-        merchant: data.merchant ?? null,
-        items: data.items ?? [],
-        total: data.total ?? null,
-        currency: data.currency ?? currentTrip.default_currency,
-      })
-
-      // Reset for next use
+      // 4. Success — refresh pending list, notify parent, close
+      await refreshPendingReceipts()
+      onScanned(task.id)
       handleReset()
       onOpenChange(false)
     } catch (err) {

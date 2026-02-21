@@ -14,13 +14,15 @@ import { QuickExpenseSheet } from '@/components/quick/QuickExpenseSheet'
 import { QuickSettlementSheet } from '@/components/quick/QuickSettlementSheet'
 import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
+import { ExtractedItem } from '@/types/receipt'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { ExtractedItem } from '@/types/receipt'
+import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
   ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle
 } from 'lucide-react'
+
 
 interface ReceiptReviewData {
   taskId: string
@@ -39,6 +41,7 @@ export function QuickGroupDetailPage() {
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
 
   const { pendingReceipts, dismissReceiptTask } = useReceiptContext()
+  const { toast } = useToast()
 
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
@@ -268,9 +271,9 @@ export function QuickGroupDetailPage() {
       <ReceiptCaptureSheet
         open={receiptCaptureOpen}
         onOpenChange={setReceiptCaptureOpen}
-        onProcessed={(taskId, data) => {
+        onScanned={(_taskId) => {
           setReceiptCaptureOpen(false)
-          setReceiptReviewData({ taskId, ...data })
+          toast({ title: 'Receipt scanned', description: 'Review it using the banner above.' })
         }}
       />
 
