@@ -124,6 +124,16 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
       return
     }
 
+    // Duplicate-email check: only the first adult can have an email
+    const firstEmail = validAdults[0]?.email?.trim().toLowerCase()
+    if (firstEmail) {
+      const duplicate = participants.some(p => p.email?.toLowerCase() === firstEmail)
+      if (duplicate) {
+        setError('This email is already used by another participant in this trip.')
+        return
+      }
+    }
+
     setAdding(true)
     try {
       // Create family
@@ -135,21 +145,22 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
       })
 
       if (family) {
-        // Create adult participants
-        for (const adult of validAdults) {
+        // Create adult participants — only first adult gets an email
+        for (const [adultIndex, adult] of validAdults.entries()) {
+          const adultEmail = adultIndex === 0 ? (adult.email.trim() || null) : null
           const newParticipant = await createParticipant({
             trip_id: currentTrip.id,
             family_id: family.id,
             name: adult.name.trim(),
             is_adult: true,
-            email: adult.email.trim() || null,
+            email: adultEmail,
           })
 
-          // Send invitation if email provided
-          if (newParticipant && adult.email.trim() && user) {
+          // Send invitation if email provided (first adult only)
+          if (newParticipant && adultEmail && user) {
             sendInvitation({
               participantId: newParticipant.id,
-              participantEmail: adult.email.trim(),
+              participantEmail: adultEmail,
               participantName: newParticipant.name,
               tripId: currentTrip.id,
               tripCode: currentTrip.trip_code,
@@ -225,6 +236,20 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
         return
       }
 
+      // Duplicate-email check for the first adult's email (only they can have one)
+      const firstAdultEmail = validAdults[0]?.email?.trim().toLowerCase()
+      if (firstAdultEmail) {
+        const familyMemberIds = getParticipantsByFamily(editingFamily.id).map(p => p.id)
+        const duplicate = participants.some(
+          p => !familyMemberIds.includes(p.id) && p.email?.toLowerCase() === firstAdultEmail
+        )
+        if (duplicate) {
+          setError('This email is already used by another participant in this trip.')
+          setUpdating(false)
+          return
+        }
+      }
+
       // Update family name if changed
       if (editFamilyName.trim() !== editingFamily.family_name) {
         await updateFamily(editingFamily.id, { family_name: editFamilyName.trim() })
@@ -233,17 +258,17 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
       // Get original adults to detect email changes
       const originalAdults = getParticipantsByFamily(editingFamily.id).filter(p => p.is_adult)
 
-      // Update all adult names and emails
-      for (const adult of validAdults) {
+      // Update all adult names and emails — only first adult gets an email
+      for (const [adultIndex, adult] of validAdults.entries()) {
         const original = originalAdults.find(a => a.id === adult.id)
-        const newEmail = adult.email.trim() || null
+        const newEmail = adultIndex === 0 ? (adult.email.trim() || null) : null
 
         await updateParticipant(adult.id, {
           name: adult.name.trim(),
           email: newEmail,
         })
 
-        // Send invitation if email is newly set
+        // Send invitation if email is newly set (first adult only)
         if (newEmail && !original?.email && user) {
           sendInvitation({
             participantId: adult.id,
@@ -410,22 +435,24 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                     placeholder={`Adult ${index + 1} name`}
                     disabled={adding}
                   />
-                  <div className="flex items-center gap-1.5">
-                    <Mail size={13} className="text-muted-foreground flex-shrink-0" />
-                    <Input
-                      type="email"
-                      inputMode="email"
-                      value={adult.email}
-                      onChange={(e) => {
-                        const updated = [...adultEntries]
-                        updated[index] = { ...updated[index], email: e.target.value }
-                        setAdultEntries(updated)
-                      }}
-                      placeholder="Email (optional — sends invite)"
-                      disabled={adding}
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                  {index === 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Mail size={13} className="text-muted-foreground flex-shrink-0" />
+                      <Input
+                        type="email"
+                        inputMode="email"
+                        value={adult.email}
+                        onChange={(e) => {
+                          const updated = [...adultEntries]
+                          updated[index] = { ...updated[index], email: e.target.value }
+                          setAdultEntries(updated)
+                        }}
+                        placeholder="Email (optional — sends invite)"
+                        disabled={adding}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
               <Button
@@ -712,22 +739,24 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                     placeholder={`Adult ${index + 1} name`}
                     disabled={updating}
                   />
-                  <div className="flex items-center gap-1.5">
-                    <Mail size={13} className="text-muted-foreground flex-shrink-0" />
-                    <Input
-                      type="email"
-                      inputMode="email"
-                      value={adult.email}
-                      onChange={(e) => {
-                        const newAdults = [...editAdults]
-                        newAdults[index] = { ...newAdults[index], email: e.target.value }
-                        setEditAdults(newAdults)
-                      }}
-                      placeholder="Email (optional)"
-                      disabled={updating}
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                  {index === 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Mail size={13} className="text-muted-foreground flex-shrink-0" />
+                      <Input
+                        type="email"
+                        inputMode="email"
+                        value={adult.email}
+                        onChange={(e) => {
+                          const newAdults = [...editAdults]
+                          newAdults[index] = { ...newAdults[index], email: e.target.value }
+                          setEditAdults(newAdults)
+                        }}
+                        placeholder="Email (optional)"
+                        disabled={updating}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
