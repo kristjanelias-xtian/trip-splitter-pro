@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/lib/supabase'
 import { ReceiptTask, ExtractedItem, MappedItem } from '@/types/receipt'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useAuth } from '@/contexts/AuthContext'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
 
@@ -24,6 +25,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip } = useCurrentTrip()
+  const { user } = useAuth()
 
   const fetchPendingReceipts = async () => {
     if (!currentTrip) {
@@ -66,12 +68,17 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   }, [currentTrip?.id])
 
   const createReceiptTask = async (tripId: string, imagePath?: string): Promise<ReceiptTask | null> => {
+    if (!user) {
+      logger.error('Cannot create receipt task: user not authenticated')
+      return null
+    }
     try {
       const { data, error: insertError } = await withTimeout(
         supabase
           .from('receipt_tasks')
           .insert({
             trip_id: tripId,
+            created_by: user.id,
             status: 'pending',
             receipt_image_path: imagePath ?? null,
           })
