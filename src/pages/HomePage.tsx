@@ -6,20 +6,26 @@ import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTripContext } from '@/contexts/TripContext'
+import { Event } from '@/types/trip'
 
 export function HomePage() {
   const navigate = useNavigate()
-  const [myTrips, setMyTrips] = useState<MyTripEntry[]>([])
+  const { user } = useAuth()
+  const { trips: serverTrips } = useTripContext()
+  const [localTrips, setLocalTrips] = useState<MyTripEntry[]>([])
 
   useEffect(() => {
-    // Load My Trips from localStorage
-    setMyTrips(getMyTrips())
+    setLocalTrips(getMyTrips())
   }, [])
 
-  const handleRemoveTrip = (tripCode: string, tripName: string) => {
+  const isAuthenticated = !!user
+
+  const handleRemoveLocalTrip = (tripCode: string, tripName: string) => {
     if (confirm(`Remove "${tripName}" from My Trips?\n\nThis won't delete the trip, you can access it again via the share link.`)) {
       removeFromMyTrips(tripCode)
-      setMyTrips(getMyTrips())
+      setLocalTrips(getMyTrips())
     }
   }
 
@@ -36,9 +42,196 @@ export function HomePage() {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     })
+  }
+
+  // Authenticated view: server trips
+  const renderServerTrips = (trips: Event[]) => {
+    if (trips.length === 0) {
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Nothing yet
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Create a new trip or event, or access one via a shared link
+              </p>
+              <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
+                <Plus size={18} />
+                Create Your First
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {trips.map(trip => (
+          <Card
+            key={trip.id}
+            className="hover:shadow-md transition-shadow cursor-pointer group"
+            onClick={() => handleOpenTrip(trip.trip_code)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg group-hover:text-accent transition-colors">
+                    {trip.name}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Code: {trip.trip_code}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {(trip.start_date || trip.end_date) && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                  <Calendar size={14} />
+                  <span>
+                    {trip.start_date ? formatDate(trip.start_date) : ''}
+                    {trip.end_date && trip.end_date !== trip.start_date ? ` – ${formatDate(trip.end_date)}` : ''}
+                  </span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenTrip(trip.trip_code)
+                  }}
+                >
+                  <ExternalLink size={14} />
+                  Open
+                </Button>
+                <ShareTripDialog
+                  tripCode={trip.trip_code}
+                  tripName={trip.name}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Share2 size={14} />
+                    </Button>
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  // Anonymous view: localStorage trips
+  const renderLocalTrips = () => {
+    if (localTrips.length === 0) {
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Nothing yet
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Create a new trip or event, or access one via a shared link
+              </p>
+              <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
+                <Plus size={18} />
+                Create Your First
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {localTrips.map(trip => (
+          <Card
+            key={trip.tripCode}
+            className="hover:shadow-md transition-shadow cursor-pointer group"
+            onClick={() => handleOpenTrip(trip.tripCode)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg group-hover:text-accent transition-colors">
+                    {trip.tripName}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Code: {trip.tripCode}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoveLocalTrip(trip.tripCode, trip.tripName)
+                  }}
+                >
+                  <Trash2 size={16} className="text-destructive" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Calendar size={14} />
+                  <span className="text-xs">
+                    Last: {new Date(trip.lastAccessed).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenTrip(trip.tripCode)
+                  }}
+                >
+                  <ExternalLink size={14} />
+                  Open
+                </Button>
+                <ShareTripDialog
+                  tripCode={trip.tripCode}
+                  tripName={trip.tripName}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Share2 size={14} />
+                    </Button>
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -64,104 +257,14 @@ export function HomePage() {
           </Button>
         </div>
 
-        {/* My Trips List */}
+        {/* Trips List */}
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">My Events & Trips</h2>
-
-          {myTrips.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Nothing yet
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Create a new trip or event, or access one via a shared link
-                  </p>
-                  <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
-                    <Plus size={18} />
-                    Create Your First
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myTrips.map(trip => (
-                <Card
-                  key={trip.tripCode}
-                  className="hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => handleOpenTrip(trip.tripCode)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg group-hover:text-accent transition-colors">
-                          {trip.tripName}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Code: {trip.tripCode}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleRemoveTrip(trip.tripCode, trip.tripName)
-                        }}
-                      >
-                        <Trash2 size={16} className="text-destructive" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        <span className="text-xs">
-                          Last: {formatDate(trip.lastAccessed)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleOpenTrip(trip.tripCode)
-                        }}
-                      >
-                        <ExternalLink size={14} />
-                        Open
-                      </Button>
-                      <ShareTripDialog
-                        tripCode={trip.tripCode}
-                        tripName={trip.tripName}
-                        trigger={
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share2 size={14} />
-                          </Button>
-                        }
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          {isAuthenticated ? renderServerTrips(serverTrips) : renderLocalTrips()}
         </div>
 
-        {/* Info Section */}
-        {myTrips.length > 0 && (
+        {/* Info Section — only for anonymous users with trips */}
+        {!isAuthenticated && localTrips.length > 0 && (
           <div className="mt-8 p-4 bg-muted/50 rounded-lg">
             <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
               <Users size={16} />

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
-import { getMyTrips } from '@/lib/myTripsStorage'
 import { calculateBalances, ParticipantBalance } from '@/services/balanceCalculator'
 import { Trip } from '@/types/trip'
 import { Participant, Family } from '@/types/participant'
@@ -36,15 +35,9 @@ export function useMyTripBalances() {
     const fetchBalances = async () => {
       setLoading(true)
 
-      // Get user's "My Trips" from localStorage
-      const myTrips = getMyTrips()
-      const myTripCodes = new Set(myTrips.map(t => t.tripCode))
-
-      // Filter to trips that exist in both DB and My Trips
-      const relevantTrips = trips.filter(t => myTripCodes.has(t.trip_code))
-
+      // TripContext already returns only user's trips when authenticated; use directly.
       const balances: TripBalance[] = await Promise.all(
-        relevantTrips.map(async (trip) => {
+        trips.map(async (trip) => {
           try {
             // Parallel fetch all data for this trip
             const [participantsRes, familiesRes, expensesRes, settlementsRes] = await Promise.all([
