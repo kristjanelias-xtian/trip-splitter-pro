@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt, FileDown } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown, ScanLine } from 'lucide-react'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { calculateBalances, convertToBaseCurrency } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
+import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
+import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { CreateExpenseInput, ExpenseCategory, Expense } from '@/types/expense'
+import { ExtractedItem } from '@/types/receipt'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -29,17 +33,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
+interface ReceiptReviewData {
+  taskId: string
+  merchant: string | null
+  items: ExtractedItem[]
+  total: number | null
+  currency: string
+}
+
 export function ExpensesPage() {
   const { currentTrip } = useCurrentTrip()
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenseContext()
   const { participants, families } = useParticipantContext()
   const { settlements } = useSettlementContext()
+  const { pendingReceipts, dismissReceiptTask } = useReceiptContext()
 
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all')
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
+  const [showReceiptCapture, setShowReceiptCapture] = useState(false)
+  const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
 
   const handleCreateExpense = async (input: CreateExpenseInput) => {
     const result = await createExpense(input)
@@ -129,6 +144,16 @@ export function ExpensesPage() {
                 Export Excel
               </Button>
             )}
+            <Button
+              onClick={() => setShowReceiptCapture(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              title="Scan a receipt"
+            >
+              <ScanLine size={16} />
+              <span className="hidden sm:inline">Scan Receipt</span>
+            </Button>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
               {showForm ? 'Cancel' : 'Add Expense'}
@@ -140,6 +165,52 @@ export function ExpensesPage() {
         {error && (
           <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {/* Pending receipts banner */}
+        {pendingReceipts.length > 0 && (
+          <div className="space-y-2">
+            {pendingReceipts.map(task => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3"
+              >
+                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
+                  <ScanLine size={16} />
+                  <span>
+                    Unreviewed receipt
+                    {task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() =>
+                      setReceiptReviewData({
+                        taskId: task.id,
+                        merchant: task.extracted_merchant,
+                        items: task.extracted_items ?? [],
+                        total: task.extracted_total,
+                        currency: task.extracted_currency ?? currentTrip?.default_currency ?? 'USD',
+                      })
+                    }
+                  >
+                    Review
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-muted-foreground"
+                    onClick={() => dismissReceiptTask(task.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -251,6 +322,33 @@ export function ExpensesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Receipt Capture */}
+      {currentTrip && (
+        <ReceiptCaptureSheet
+          open={showReceiptCapture}
+          onOpenChange={setShowReceiptCapture}
+          tripId={currentTrip.id}
+          onProcessed={(taskId, data) => {
+            setShowReceiptCapture(false)
+            setReceiptReviewData({ taskId, ...data })
+          }}
+        />
+      )}
+
+      {/* Receipt Review */}
+      {receiptReviewData && (
+        <ReceiptReviewSheet
+          open={!!receiptReviewData}
+          onOpenChange={open => { if (!open) setReceiptReviewData(null) }}
+          taskId={receiptReviewData.taskId}
+          merchant={receiptReviewData.merchant}
+          items={receiptReviewData.items}
+          extractedTotal={receiptReviewData.total}
+          currency={receiptReviewData.currency}
+          onDone={() => setReceiptReviewData(null)}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deletingExpenseId} onOpenChange={(open) => !open && setDeletingExpenseId(null)}>

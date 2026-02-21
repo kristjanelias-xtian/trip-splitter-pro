@@ -273,6 +273,71 @@ export type Database = {
           },
         ]
       }
+      receipt_tasks: {
+        Row: {
+          id: string
+          trip_id: string
+          created_by: string | null
+          status: string
+          receipt_image_path: string | null
+          extracted_merchant: string | null
+          extracted_items: Json | null
+          extracted_total: number | null
+          extracted_currency: string | null
+          confirmed_total: number | null
+          tip_amount: number
+          mapped_items: Json | null
+          expense_id: string | null
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          created_by?: string | null
+          status?: string
+          receipt_image_path?: string | null
+          extracted_merchant?: string | null
+          extracted_items?: Json | null
+          extracted_total?: number | null
+          extracted_currency?: string | null
+          confirmed_total?: number | null
+          tip_amount?: number
+          mapped_items?: Json | null
+          expense_id?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          created_by?: string | null
+          status?: string
+          receipt_image_path?: string | null
+          extracted_merchant?: string | null
+          extracted_items?: Json | null
+          extracted_total?: number | null
+          extracted_currency?: string | null
+          confirmed_total?: number | null
+          tip_amount?: number
+          mapped_items?: Json | null
+          expense_id?: string | null
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_tasks_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settlements: {
         Row: {
           amount: number
