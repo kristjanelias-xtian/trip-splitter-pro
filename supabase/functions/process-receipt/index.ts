@@ -22,7 +22,7 @@ Return ONLY valid JSON with this exact structure:
   "currency": "USD"
 }
 Rules:
-- merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. Only return null if no business name is visible anywhere on the receipt.
+- merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. If truly no business name is readable anywhere, invent a short creative name (2–4 words) that evokes the vibe of the items ordered — e.g. "The Wandering Wok" for Thai food, "Mystery Grill" for a barbecue spot, "Island Bites" for tropical drinks. Never return null.
 - price is the total price for that line (qty * unit price), as a number
 - qty defaults to 1 if not shown
 - currency is the 3-letter ISO code (default "USD" if unclear)
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
 
     const extractedTotal = typeof extracted.total === 'number' ? extracted.total : null
     const extractedCurrency = extracted.currency ?? 'USD'
-    const extractedMerchant = extracted.merchant ?? null
+    const extractedMerchant = extracted.merchant ?? 'Mystery Kitchen'
 
     // Save results and mark as ready for review
     await supabase
