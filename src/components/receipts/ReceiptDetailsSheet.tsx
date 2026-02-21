@@ -41,9 +41,11 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task }: ReceiptDetails
       <SheetContent side="bottom" className="h-[75vh] flex flex-col p-0">
         <div className="px-4 pt-4 pb-2 border-b border-border">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <ScanLine size={18} />
-              Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+            <SheetTitle className="flex items-center gap-2 min-w-0">
+              <ScanLine size={18} className="shrink-0" />
+              <span className="truncate">
+                Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+              </span>
             </SheetTitle>
           </SheetHeader>
         </div>
@@ -84,9 +86,9 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task }: ReceiptDetails
                 </div>
                 {items.map((item, i) => (
                   <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-sm py-1.5 border-b border-border/50 last:border-0">
-                    <span className="break-words">{item.name}</span>
+                    <span className="break-words min-w-0">{item.name}</span>
                     <span className="text-center text-muted-foreground">{item.qty}</span>
-                    <span className="text-right tabular-nums">{currency} {item.price.toFixed(2)}</span>
+                    <span className="text-right tabular-nums whitespace-nowrap">{currency} {item.price.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

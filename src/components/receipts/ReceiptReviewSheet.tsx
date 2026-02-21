@@ -359,22 +359,13 @@ export function ReceiptReviewSheet({
       <SheetContent
         side="bottom"
         className="flex flex-col p-0"
-        hideClose
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="px-4 py-3 border-b border-border shrink-0">
           <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground -mr-2"
-          >
-            Cancel
-          </Button>
         </div>
 
         <div ref={contentRef} className="flex-1 overflow-y-auto">
