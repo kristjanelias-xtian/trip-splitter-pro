@@ -15,14 +15,14 @@ const metrics = createMetrics('process-receipt')
 const SYSTEM_PROMPT = `You are a receipt parser. Extract all line items from the receipt image.
 Return ONLY valid JSON with this exact structure:
 {
-  "merchant": "store name or null if not found",
+  "merchant": "store name or null if truly not found",
   "items": [{"name": "item name", "price": 12.50, "qty": 1}],
   "subtotal": 25.00,
   "total": 27.50,
   "currency": "USD"
 }
 Rules:
-- merchant: Look for the business name, restaurant name, store name, or brand — it usually appears at the top of the receipt, sometimes as a header, logo text, or subtitle. It may appear in a non-Latin script (Thai, Arabic, Chinese, etc.) alongside or instead of a Latin transliteration — if a Latin/English name is present use that; if only non-Latin script is present, return null rather than guessing a transliteration. Return null only if no business name is visible at all.
+- merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. Only return null if no business name is visible anywhere on the receipt.
 - price is the total price for that line (qty * unit price), as a number
 - qty defaults to 1 if not shown
 - currency is the 3-letter ISO code (default "USD" if unclear)
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
           },
           {
             type: 'text',
-            text: 'Please extract all line items from this receipt.',
+            text: 'Please extract all line items from this receipt. Pay special attention to the business or restaurant name at the top of the receipt — include it even if it is in a non-Latin script.',
           },
         ],
       }],
