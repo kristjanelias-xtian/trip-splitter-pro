@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-21 (Phase 1 ✅ done — Phase 2 in progress)
+> Last updated: 2026-02-21 (Phases 1–3 ✅ done — Phase 4 next)
 
 ---
 
@@ -121,7 +121,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | A | Rebrand to "Spl1t" | ✅ Done (PR #140) | — |
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | Not Started | — |
-| D | AI Receipt Reader | Not Started | — |
+| D | AI Receipt Reader | ✅ Done (PR #149) | — |
 
 ---
 
@@ -390,9 +390,9 @@ Be precise with numbers. If you cannot read a value, use null.
 | Q5 | For invitations: require sign-up to accept, or allow anonymous access? | ❓ Open | — |
 | Q6 | For invitations: send at creation time, or separately from Manage page? | ❓ Open | — |
 | Q7 | For payment reminders: manual trigger only, or auto-schedule? | ❓ Open | — |
-| Q8 | For AI Receipt Reader: Claude Sonnet or Haiku? | ❓ Open | — |
+| Q8 | For AI Receipt Reader: Claude Sonnet or Haiku? | ✅ Resolved | claude-haiku-4-5-20251001 (upgrade to Sonnet if accuracy needs improving) |
 | Q9 | For item-to-participant mapping: Checklist or Swipe UI? | ✅ Resolved | Chip-tap (item-centric) |
-| Q10 | Should receipt images be stored permanently or auto-deleted? | ❓ Open | — |
+| Q10 | Should receipt images be stored permanently or auto-deleted? | ✅ Resolved | MVP: images not stored (base64 passed directly to edge function); extracted data persists in DB |
 
 ---
 
@@ -471,11 +471,14 @@ Rename `.tsx` files only if they are primarily trip/event-specific forms:
 - Keep `TripsPage.tsx` filename, change internal labels
 - Keep `ManageTripPage.tsx` filename, change internal labels
 
-### Phase 3 — AI Receipt Reader (core flow, no email)
-**D (partial)** — This delivers the highest user value and uses the existing `@anthropic-ai/sdk`.
-- New Supabase bucket + migration for `receipt_tasks`
-- New Edge Function `process-receipt`
-- New UI: receipt capture → AI processing → review/correct → item mapping → submit
+### Phase 3 — AI Receipt Reader ✅ Done (PR #149)
+**D (partial)** — Core flow implemented.
+- Migration 020: `receipt_tasks` table + RLS + private `receipts` bucket
+- Edge Function `process-receipt`: Claude Haiku vision → structured JSON extraction
+- `ReceiptContext`, `ReceiptCaptureSheet`, `ReceiptReviewSheet`
+- Chip-tap participant assignment, confirmed total + tip, IndividualsDistribution
+- Pending receipts banner on ExpensesPage
+- Model: `claude-haiku-4-5-20251001` (Q8 resolved); images not stored in MVP (Q10 resolved)
 
 ### Phase 4 — Email & Invitations
 **C.** — Requires setting up Resend, creating edge function, email templates.
@@ -493,3 +496,4 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 | 2026-02-21 | Planning | Full codebase analysis; created PLAN.md |
 | 2026-02-21 | Phase 1 | Rebrand to Spl1t — wordmarks + localStorage key migration (PR #140) |
 | 2026-02-21 | Phase 2 | Events model — DB migration, Trip→Event TypeScript rename (backward-compat aliases), EventForm (type selector + single date), EventCard (type badge), dynamic "Manage Trip/Event" nav label, label updates throughout (PR #141) |
+| 2026-02-21 | Phase 3 | AI Receipt Reader — migration 020, process-receipt edge function (Claude Haiku vision), ReceiptContext, ReceiptCaptureSheet, ReceiptReviewSheet (chip-tap), pending banner on ExpensesPage (PR #149) |
