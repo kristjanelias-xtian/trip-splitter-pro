@@ -50,9 +50,6 @@ function getChipColor(index: number) {
   return CHIP_COLORS[index % CHIP_COLORS.length]
 }
 
-function participantInitial(name: string) {
-  return name.charAt(0).toUpperCase()
-}
 
 interface EditableItem {
   name: string
@@ -597,7 +594,6 @@ function ItemRow({
               ].join(' ')}
               title={p.name}
             >
-              {participantInitial(p.name)}
               {p.name.split(' ')[0]}
             </button>
           )
