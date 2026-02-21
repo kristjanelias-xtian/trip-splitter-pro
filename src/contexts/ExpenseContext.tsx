@@ -89,7 +89,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
           .insert([expenseData])
           .select()
           .single(),
-        15000,
+        30000,
         'Saving expense timed out. Please check your connection and try again.'
       )
 
@@ -116,7 +116,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       const { error: updateError } = await withTimeout<any>(
         (supabase as any).from('expenses').update(input).eq('id', id),
-        15000,
+        30000,
         'Updating expense timed out. Please check your connection and try again.'
       )
 

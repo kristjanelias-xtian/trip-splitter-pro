@@ -15,7 +15,8 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
   // If the user is on a quick route (e.g. mobile redirect overrode a stored
   // 'full' preference), the toggle should reflect where they actually are.
   const isOnQuickRoute = location.pathname === '/quick' || location.pathname.includes('/quick')
-  const effectiveMode = isOnQuickRoute ? 'quick' : mode
+  const isOnFullTripRoute = !isOnQuickRoute && /\/t\/[^/]+\//.test(location.pathname)
+  const effectiveMode = isOnQuickRoute ? 'quick' : isOnFullTripRoute ? 'full' : mode
 
   const handleModeChange = async (newMode: 'quick' | 'full') => {
     if (newMode === effectiveMode) return

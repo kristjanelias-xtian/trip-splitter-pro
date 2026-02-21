@@ -129,6 +129,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Beach Resort, Airbnb Downtown"
+          style={{ fontSize: '1rem' }}
           required
           disabled={submitting}
         />
@@ -142,6 +143,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           value={formData.link}
           onChange={(e) => setFormData({ ...formData, link: e.target.value })}
           placeholder="https://..."
+          style={{ fontSize: '1rem' }}
           disabled={submitting}
         />
       </div>
@@ -154,6 +156,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
           placeholder="Check-in instructions, address, notes..."
           rows={2}
+          style={{ fontSize: '1rem' }}
           disabled={submitting}
           required={false}
         />
@@ -170,6 +173,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             onChange={(e) => setFormData({ ...formData, latitude: e.target.value.replace(',', '.') })}
             placeholder="Latitude"
             pattern="-?[0-9]*[.,]?[0-9]*"
+            style={{ fontSize: '1rem' }}
             disabled={submitting}
           />
           <Input
@@ -180,13 +184,14 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             onChange={(e) => setFormData({ ...formData, longitude: e.target.value.replace(',', '.') })}
             placeholder="Longitude"
             pattern="-?[0-9]*[.,]?[0-9]*"
+            style={{ fontSize: '1rem' }}
             disabled={submitting}
           />
         </div>
         <p className="text-xs text-muted-foreground">Add coordinates to show on the planner map</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="stay-checkin">Check-in Date</Label>
           <Input
@@ -196,6 +201,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             onChange={(e) => setFormData({ ...formData, check_in_date: e.target.value })}
             min={currentTrip.start_date}
             max={currentTrip.end_date}
+            style={{ fontSize: '1rem' }}
             required
             disabled={submitting}
           />
@@ -209,6 +215,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             onChange={(e) => setFormData({ ...formData, check_out_date: e.target.value })}
             min={currentTrip.start_date}
             max={currentTrip.end_date}
+            style={{ fontSize: '1rem' }}
             required
             disabled={submitting}
           />

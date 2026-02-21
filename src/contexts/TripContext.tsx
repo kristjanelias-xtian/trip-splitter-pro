@@ -84,6 +84,28 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setTrips(prev => [newTrip, ...prev])
       logger.info('Trip created', { trip_id: newTrip.id, name: newTrip.name })
 
+      // Auto-link the creator as a participant
+      if (currentUser) {
+        try {
+          const displayName =
+            currentUser.user_metadata?.full_name ||
+            currentUser.user_metadata?.name ||
+            currentUser.email?.split('@')[0] ||
+            'Me'
+          await supabase.from('participants').insert([{
+            trip_id: newTrip.id,
+            name: displayName,
+            is_adult: true,
+            user_id: currentUser.id,
+          }])
+        } catch (participantErr) {
+          logger.warn('Failed to auto-link creator as participant', {
+            trip_id: newTrip.id,
+            error: participantErr instanceof Error ? participantErr.message : String(participantErr),
+          })
+        }
+      }
+
       return newTrip
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create trip')
