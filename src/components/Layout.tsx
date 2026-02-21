@@ -187,7 +187,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 lg:ml-64 mt-20">
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} mt-20`}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
@@ -324,7 +324,7 @@ export function Layout() {
       </nav>
 
       {/* Side navigation (desktop) */}
-      <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
+      {tripCode && <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
         <nav className="px-3 py-6 space-y-1">
           {desktopNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
@@ -360,7 +360,7 @@ export function Layout() {
             )
           })}
         </nav>
-      </aside>
+      </aside>}
 
       {/* Toast notifications */}
       <Toaster />

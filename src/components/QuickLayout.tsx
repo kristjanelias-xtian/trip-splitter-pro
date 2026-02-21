@@ -65,9 +65,16 @@ export function QuickLayout() {
                   <Link to={backTo} className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}>
                     <ArrowLeft size={20} />
                   </Link>
-                  <h1 className={`text-lg font-semibold truncate ${onGradient ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
-                    {currentTrip?.name || 'Loading...'}
-                  </h1>
+                  <div className="min-w-0">
+                    <h1 className={`text-lg font-semibold truncate leading-tight ${onGradient ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
+                      {currentTrip?.name}
+                    </h1>
+                    {currentTrip && (
+                      <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
+                        {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
+                      </p>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="flex items-center gap-2">

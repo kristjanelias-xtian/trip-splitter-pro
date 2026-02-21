@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTripContext } from '@/contexts/TripContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
@@ -13,8 +14,10 @@ import { motion } from 'framer-motion'
 
 export function QuickHomeScreen() {
   const navigate = useNavigate()
-  const { userProfile } = useAuth()
-  const { tripBalances, loading } = useMyTripBalances()
+  const { user, userProfile } = useAuth()
+  const { loading: tripsLoading } = useTripContext()
+  const { tripBalances, loading: balancesLoading } = useMyTripBalances()
+  const loading = balancesLoading || (!!user && tripsLoading)
   const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
   const [showHidden, setShowHidden] = useState(false)
 

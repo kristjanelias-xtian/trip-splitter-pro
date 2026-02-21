@@ -233,6 +233,30 @@ export function ManageTripPage() {
         <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
       </div>
 
+      {/* Participants Section — top position for easy onboarding */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">
+          Participants & Families
+        </h3>
+        {participants.length === 0 && (
+          <Card className="border-dashed border-primary/40 bg-primary/5">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-sm text-primary font-medium">
+                Add participants to get started
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Participants are required before you can add expenses.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        {currentTrip.tracking_mode === 'individuals' ? (
+          <IndividualsSetup />
+        ) : (
+          <FamiliesSetup />
+        )}
+      </div>
+
       {/* Details Card */}
       <Card>
         <CardHeader>
@@ -422,18 +446,6 @@ export function ManageTripPage() {
           </Button>
         </CardContent>
       </Card>
-
-      {/* Participants Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          Participants & Families
-        </h3>
-        {currentTrip.tracking_mode === 'individuals' ? (
-          <IndividualsSetup />
-        ) : (
-          <FamiliesSetup />
-        )}
-      </div>
 
       {/* Accommodations Section */}
       <StaySection />

@@ -240,8 +240,7 @@ export function ExpenseForm({
     setFamilySplitValues({})
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const executeSubmit = async () => {
     if (loading) return
     setError(null)
 
@@ -432,6 +431,11 @@ export function ExpenseForm({
     }
   }
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    await executeSubmit()
+  }
+
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -446,7 +450,19 @@ export function ExpenseForm({
           animate={{ opacity: 1, y: 0 }}
           className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
         >
-          {error}
+          <div className="flex items-start justify-between gap-2">
+            <span>{error}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={executeSubmit}
+              disabled={loading}
+              className="shrink-0 text-xs h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              Try again
+            </Button>
+          </div>
           {errorDetail && (
             <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
           )}
@@ -488,7 +504,7 @@ export function ExpenseForm({
             onValueChange={setCurrency}
             disabled={loading}
           >
-            <SelectTrigger className="w-24">
+            <SelectTrigger className="w-28">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
