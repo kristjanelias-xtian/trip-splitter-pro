@@ -9,8 +9,22 @@ let persistentContext: Record<string, unknown> = {}
 // issue that caused the error we're trying to log), we buffer the entry in
 // localStorage and retry it the next time a log send succeeds.
 
-const QUEUE_KEY = 'trip-splitter:failed-logs'
+const QUEUE_KEY = 'spl1t:failed-logs'
+const OLD_QUEUE_KEY = 'trip-splitter:failed-logs'
 const MAX_QUEUED = 50
+
+let logQueueMigrated = false
+function migrateLogQueue(): void {
+  if (logQueueMigrated) return
+  logQueueMigrated = true
+  try {
+    const old = localStorage.getItem(OLD_QUEUE_KEY)
+    if (old) {
+      localStorage.setItem(QUEUE_KEY, old)
+      localStorage.removeItem(OLD_QUEUE_KEY)
+    }
+  } catch {}
+}
 
 interface QueuedEntry {
   level: LogLevel
@@ -20,6 +34,7 @@ interface QueuedEntry {
 }
 
 function enqueue(entry: QueuedEntry): void {
+  migrateLogQueue()
   try {
     const raw = localStorage.getItem(QUEUE_KEY)
     const q: QueuedEntry[] = raw ? JSON.parse(raw) : []
@@ -29,6 +44,7 @@ function enqueue(entry: QueuedEntry): void {
 }
 
 function flushQueue(): void {
+  migrateLogQueue()
   try {
     const raw = localStorage.getItem(QUEUE_KEY)
     if (!raw) return

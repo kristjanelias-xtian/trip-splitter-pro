@@ -1,0 +1,444 @@
+# PLAN.md — Spl1t Feature Planning Document
+
+> **Living document.** Update at the start and end of every session.
+> Last updated: 2026-02-21
+
+---
+
+## 1. Current State Summary
+
+### Tech Stack
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript, Vite 6 |
+| Styling | Tailwind CSS + shadcn/ui (Radix primitives) |
+| State | React Context API (one provider per domain) |
+| Database | Supabase (PostgreSQL + RLS) |
+| Storage | Supabase Storage (`feedback-screenshots` bucket, public) |
+| Edge Functions | Supabase Edge Functions (Deno) — `log-proxy`, `create-github-issue` |
+| Auth | Supabase Auth (Google OAuth, implicit flow) |
+| Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
+| Deployment | Cloudflare Pages |
+| Tests | Vitest + Testing Library (139 tests) |
+| AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
+| PDF Export | jsPDF + jspdf-autotable |
+| Maps | Leaflet + react-leaflet |
+| Charts | recharts |
+| Animation | framer-motion |
+
+### Architecture Overview
+- **Two UI modes**: Full (multi-page: Trips → select → Expenses/Settlements/Planner/Shopping/Dashboard) and Quick (single-trip streamlined view)
+- **Layout**: `Layout.tsx` (full), `QuickLayout.tsx` (quick) — each wraps all trip-scoped context providers
+- **Context tree** (outer → inner): `AuthProvider` → `TripProvider` → `UserPreferencesProvider` → (route) → `ParticipantProvider` → `ExpenseProvider` → `SettlementProvider` → `MealProvider` → `ActivityProvider` → `StayProvider` → `ShoppingProvider`
+- **Routing**: React Router v6, trip-scoped routes under `/t/:tripCode/...`
+- **Mobile wizard**: `ExpenseWizard.tsx` routes to `MobileWizard` (bottom Sheet, 4 steps) on mobile, `ExpenseForm` (Dialog) on desktop/edit
+
+### Key Files
+```
+src/
+  App.tsx                         # Root: providers + router
+  routes.tsx                      # All routes
+  types/
+    trip.ts                       # Trip, CreateTripInput, UpdateTripInput
+    expense.ts                    # Expense, SplitMode, distribution types
+    participant.ts                # Participant, Family
+    auth.ts                       # UserProfile
+    stay.ts, activity.ts, meal.ts, shopping.ts
+  contexts/
+    AuthContext.tsx                # Session, userProfile, bankDetails
+    TripContext.tsx                # Trip CRUD, active trip
+    ExpenseContext.tsx             # Expense CRUD
+    ParticipantContext.tsx         # Participants + families
+    SettlementContext.tsx          # Settlement CRUD
+    UserPreferencesContext.tsx     # mode (quick/full), defaultTripId
+  components/
+    Layout.tsx                    # Full-mode layout (header, nav, sidebar)
+    QuickLayout.tsx               # Quick-mode layout
+    expenses/
+      ExpenseWizard.tsx           # Routes to MobileWizard or ExpenseForm
+      ExpenseForm.tsx             # Desktop/edit form
+      wizard/
+        WizardStep1.tsx           # Description + Amount + Currency
+        WizardStep2.tsx           # Who paid?
+        WizardStep3.tsx           # Split between whom?
+        WizardStep4.tsx           # Advanced (date, category, comment)
+    quick/
+      QuickExpenseSheet.tsx       # Quick mode add expense entry point
+      QuickSettlementSheet.tsx    # Quick mode settlement view
+  services/
+    balanceCalculator.ts          # Balance calculation (individuals/families/mixed)
+    excelExport.ts                # Excel export
+    tripGradientService.ts        # Decorative trip header gradients
+  lib/
+    supabase.ts                   # Supabase client (with timeout wrapper)
+    logger.ts                     # Grafana-backed logger with localStorage buffer
+    fetchWithTimeout.ts           # withTimeout() helper
+supabase/
+  migrations/                     # 001–018 SQL migrations
+  functions/
+    log-proxy/                    # Logs → Grafana Loki
+    create-github-issue/          # Feedback → GitHub issues
+    _shared/                      # Shared logger + metrics (Deno)
+index.html                        # <title>Split</title>
+```
+
+### Current Data Model (key tables)
+```
+trips         — id, trip_code, name, start_date, end_date, tracking_mode,
+                default_currency, exchange_rates, enable_meals, enable_activities,
+                enable_shopping, default_split_all, created_by, created_at
+participants  — id, trip_id, family_id, name, is_adult, user_id
+families      — id, trip_id, family_name, adults, children
+expenses      — id, trip_id, description, amount, currency, paid_by,
+                distribution JSONB, category, expense_date, comment, meal_id
+settlements   — id, trip_id, from_participant, to_participant, amount, date
+user_profiles — id (auth.uid), display_name, email, avatar_url, bank_account_holder, bank_iban
+user_preferences — id (auth.uid), preferred_mode, default_trip_id
+stays         — id, trip_id, name, link, comment, check_in_date, check_out_date, lat, lng
+activities    — id, trip_id, date, time_slot, title, link, responsible_participant_id
+meals         — id, trip_id, date, meal_type, name, responsible_participant_id, status
+shopping_items — id, trip_id, description, is_completed, category, quantity
+```
+
+### Existing Storage / File Upload Pattern
+- **Bucket**: `feedback-screenshots` (public) — used by `ReportIssueDialog.tsx`
+- **Pattern**: canvas-compress → `supabase.storage.from(bucket).upload(name, blob, { contentType })` → `getPublicUrl(path)`
+- Image compression already implemented (canvas, max 1200px wide, 80% JPEG quality)
+- **No receipts bucket yet** — needs to be created for AI Receipt Reader
+
+### Existing Email Infrastructure
+- **None.** No email service is integrated.
+- User emails are stored in `user_profiles.email` and `auth.users`
+- The `ShareTripDialog` uses `mailto:` links (opens native mail app)
+- There is an `ACCESS_CONTROL.md` planning doc that references invitations, but nothing implemented
+
+---
+
+## 2. Feature Backlog
+
+| # | Feature | Status | Blocked By |
+|---|---------|--------|-----------|
+| A | Rebrand to "Spl1t" | Not Started | — |
+| B | Events (not just Trips) | Not Started | — |
+| C | Email & Invitations | Not Started | — |
+| D | AI Receipt Reader | Not Started | — |
+
+---
+
+## 3. Feature Analysis
+
+---
+
+### A. Rebrand to "Spl1t"
+
+**Every place the name "Split" appears in user-facing strings:**
+
+| File | Line | Current Text | Type |
+|------|------|-------------|------|
+| `index.html` | 7 | `<title>Split</title>` | Page title (browser tab) |
+| `src/components/Layout.tsx` | 168 | `alt="Split"` on logo img | Logo alt text |
+| `src/components/Layout.tsx` | 170 | `Split` (h1 text) | Full-mode header wordmark |
+| `src/components/QuickLayout.tsx` | 73 | `alt="Split"` on logo img | Logo alt text |
+| `src/components/QuickLayout.tsx` | 75 | `Split` (h1 text) | Quick-mode header wordmark |
+| `src/pages/HomePage.tsx` | 50 | `Family Trip Cost Splitter` | Old full-mode home page title |
+| `src/pages/HomePage.tsx` | 53 | `Split costs fairly among groups...` | Sub-tagline |
+| `src/pages/QuickGroupDetailPage.tsx` | ~151 | `"Split a bill with the group"` | Button description |
+| `src/pages/ManageTripPage.tsx` | ~116, 314 | `"Split between everyone"` | Feature label |
+| `src/services/excelExport.ts` | 51 | `'Split With'` | Excel column header |
+| `public/logo.png` | — | Logo image file | Visual asset (may need redesign) |
+| `public/favicon.png` | — | Favicon | Visual asset |
+| `package.json` | 2 | `"name": "trip-splitter-pro"` | Internal only, not user-facing |
+| `src/lib/userPreferencesStorage.ts` | 6 | `'trip-splitter:user-preferences'` | localStorage key — **breaking if changed** |
+| `src/lib/adminAuth.ts` | 8 | `'trip-splitter:admin-auth'` | localStorage key — **breaking if changed** |
+| `src/lib/logger.ts` | — | `'trip-splitter:failed-logs'` | localStorage key — **breaking if changed** |
+
+**Notes on localStorage keys**: These are internal keys not visible to users. Changing them would break existing sessions (preferences lost). Can be migrated with a one-time read-old-write-new pattern or left as-is.
+
+**Decision needed from you**: Should "Spl1t" replace ALL instances of "Split" (including functional labels like "Split With", "Split between everyone") or only the brand name / wordmark?
+
+---
+
+### B. Events (not just Trips)
+
+**Problem with current model**: `trips.start_date` and `trips.end_date` are both required. The planner, calendar view, and stay tracking are all tied to a date range. A "team dinner" or one-off event doesn't fit this model well.
+
+**Option 1: Unified model with `event_type` field (Recommended)**
+
+Add a column `event_type TEXT NOT NULL DEFAULT 'trip' CHECK (event_type IN ('trip', 'event'))` to the `trips` table. For `event_type = 'event'`, make `end_date` nullable (or default it to `start_date`). Hide planner/meals/shopping features for single events.
+
+Pros:
+- All existing expense, settlement, participant, balance logic works unchanged
+- One context (TripContext), one route structure, one type system
+- Events immediately support everything trips support (currencies, tracking modes, bank details)
+- Minimal migration
+
+Cons:
+- Slightly awkward naming (we'd want to rename the `trips` table to `events` eventually, but that's a bigger migration)
+- The `Trip` type name in TypeScript would become stale — either rename it (`Event`) or keep as internal name
+
+**Option 2: Separate `events` table**
+
+Pros: Cleaner semantic model, no nullable dates on trips
+Cons: Duplicates all FK relationships (expenses, settlements, participants, etc.), doubles migration complexity, requires two separate contexts or a big refactor
+
+**Recommendation**: Option 1. Add `event_type` field, make `end_date` nullable, add `duration_type` to the UI labels. The "Event" concept becomes a display/UX concern, not a data model concern. In TypeScript we can introduce a `Event = Trip` alias or rename the type.
+
+**UI changes needed**:
+- "Create New Trip" → "Create New Event" (or modal lets user choose type)
+- Form: for `event_type = 'event'`, show only a single date (not date range)
+- Trip cards should show type badge ("Trip" / "Event")
+- Planner, Shopping, Meals tabs hidden for events
+
+**Migration**: `ALTER TABLE trips ADD COLUMN event_type TEXT NOT NULL DEFAULT 'trip'`
+
+---
+
+### C. Email & Invitations
+
+**Existing infrastructure**: None. The `ShareTripDialog` uses `mailto:` links only.
+
+**Recommended service**: **Resend** (resend.com)
+- Modern REST API, excellent TypeScript SDK
+- React Email for HTML templates (matches our React stack)
+- Works perfectly as a Supabase Edge Function dependency (Deno-compatible via npm specifier)
+- Free tier: 3,000 emails/month, 100/day — sufficient for early stage
+- No SMTP setup needed, just an API key
+- Alternatives considered: SendGrid (more complex, enterprise-focused), Postmark (good but fewer free emails), Mailgun (older API)
+
+**Data model changes needed**:
+
+```sql
+-- New table: invitations
+CREATE TABLE invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  inviter_id UUID REFERENCES auth.users(id),
+  email TEXT NOT NULL,
+  name TEXT,                           -- Optional display name for the invitee
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'accepted', 'declined')),
+  token TEXT NOT NULL UNIQUE,          -- UUID token for accept link (no auth required)
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- New table: email_log (audit trail)
+CREATE TABLE email_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID REFERENCES trips(id) ON DELETE SET NULL,
+  invitation_id UUID REFERENCES invitations(id) ON DELETE SET NULL,
+  email_type TEXT NOT NULL,            -- 'invitation', 'payment_reminder', 'receipt_reminder'
+  recipient_email TEXT NOT NULL,
+  subject TEXT,
+  status TEXT NOT NULL DEFAULT 'sent', -- 'sent', 'failed', 'bounced'
+  resend_message_id TEXT,              -- ID from Resend API for tracking
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB                       -- e.g. { receipt_url, amount_owed }
+);
+```
+
+**New Edge Function needed**: `send-email` (calls Resend API)
+
+**Three email types to support**:
+1. **Event invitation** — sent when organiser adds participants by email at event creation
+2. **Payment reminder** — sent manually or auto-triggered; shows what the recipient owes and to whom
+3. **Receipt reminder** — payment reminder with a receipt image attached (from AI Receipt Reader)
+
+**Flow for invitations**:
+1. At trip creation (or manage trip page), organiser enters participant emails
+2. System creates `invitations` row + calls `send-email` edge function
+3. Email contains a magic link: `https://app.spl1t.com/join/:token`
+4. Recipient opens link → account auto-linked to participant record if they sign in
+5. Invitation status updated to `accepted`
+
+**Open question**: Should invitations require the invitee to sign up for an account, or just view the trip (current behaviour — anyone with the link can view)?
+
+---
+
+### D. AI Receipt Reader
+
+**Approach**: Claude vision API via a Supabase Edge Function (`process-receipt`). Never call the Anthropic API directly from the browser — the API key must stay server-side.
+
+**New storage bucket needed**: `receipts` (private, authenticated users only)
+
+**New database table**:
+
+```sql
+CREATE TABLE receipt_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  created_by UUID REFERENCES auth.users(id),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'processing', 'review', 'complete', 'failed')),
+  receipt_image_path TEXT,             -- Storage path in 'receipts' bucket
+  receipt_image_url TEXT,              -- Signed URL (refreshed on read)
+
+  -- AI extraction results
+  extracted_items JSONB,               -- [{ name, price, quantity }]
+  extracted_total NUMERIC(10,2),       -- Total the AI read from the receipt
+
+  -- User-reviewed values
+  confirmed_total NUMERIC(10,2),       -- User-confirmed actual total
+  tip_amount NUMERIC(10,2) DEFAULT 0,
+
+  -- Item-to-participant mapping (user assigns)
+  mapped_items JSONB,                  -- [{ item_index, participant_ids[] }]
+
+  -- Resulting expense (set when complete)
+  expense_id UUID REFERENCES expenses(id) ON DELETE SET NULL,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**End-to-end flow**:
+
+```
+Step 1: Entry point
+  User taps "Add Expense" → sees two options:
+    [Manual Entry]  [Scan Receipt] (camera icon)
+
+Step 2: Capture / upload
+  Camera sheet opens (mobile) or file picker (desktop)
+  User photographs or uploads receipt image
+  Image compressed client-side (same pattern as ReportIssueDialog)
+  Uploaded to 'receipts' bucket → receipt_task row created (status: 'pending')
+
+Step 3: AI processing (async, non-blocking)
+  Edge function `process-receipt` invoked
+  Calls Claude vision (claude-3-5-sonnet or claude-3-5-haiku) with:
+    - System prompt describing expected JSON output format
+    - Receipt image (base64 or URL)
+  Returns: { items: [{name, price, qty}], total, currency }
+  Saves to receipt_tasks.extracted_items + extracted_total
+  Updates status: 'processing' → 'review'
+
+Step 4: Deferred review (the "pending" flow)
+  If user exits before reviewing, task stays in 'review' state
+  Pending tasks shown as a banner/card on the Expenses page
+    "You have 1 unreviewed receipt" → tap to resume
+  QuickHomeScreen also shows pending task count badge
+
+Step 5: Review & correct
+  User sees extracted line-item table
+  Each item: name, price, quantity (all editable inline)
+  User confirms or corrects total
+  User enters tip amount (optional)
+
+Step 6: Item-to-participant mapping (hardest UX problem)
+  RECOMMENDED PATTERN: "Person Pile" swipe UI
+    - Bottom of screen: row of participant avatar chips
+    - Items listed as cards (one at a time, swipeable)
+    - User taps participant chip(s) to assign item
+    - Progress bar shows: "3 of 7 items assigned"
+
+  Alternative (simpler): Checklist per participant
+    - Each participant has a collapsible section
+    - Checkboxes for each item
+    - Better for many items, lower friction
+
+  RECOMMENDATION: Start with Checklist (simpler, no custom gesture library needed).
+  Swipe UI can be a Phase 2 upgrade.
+
+Step 7: Validation
+  "Assign All" button for items that are split equally
+  Sum of all item assignments + tip must equal confirmed_total
+  Red validation error if mismatch, "Submit" button stays disabled
+
+Step 8: Submit
+  System creates an expense with:
+    - description: "Receipt: [merchant name if extracted]"
+    - amount: confirmed_total + tip
+    - distribution: per-participant breakdown from item mapping
+    - category: 'Food' (default, user can change)
+  receipt_tasks.status → 'complete', expense_id set
+```
+
+**Claude API prompt strategy**:
+```
+System: You are a receipt parser. Extract all line items from this receipt image.
+Return JSON: { "merchant": string, "items": [{"name": string, "price": number, "qty": number}], "subtotal": number, "total": number, "currency": string }
+Be precise with numbers. If you cannot read a value, use null.
+```
+
+**Edge Function**: `process-receipt`
+- Accepts: `{ receipt_task_id }`
+- Fetches task, downloads image from storage (signed URL)
+- Calls Anthropic API with image + structured prompt
+- Updates `receipt_tasks` with extracted data + status = 'review'
+- Returns immediately (or can be called in background)
+
+**Security**:
+- `ANTHROPIC_API_KEY` stored as Supabase secret (not in env vars accessible to browser)
+- RLS on `receipt_tasks`: only `created_by` can read/write their tasks
+- Receipts bucket: only authenticated users can read their own files
+
+---
+
+## 4. Open Questions / Decisions Needed
+
+| # | Question | Impacts |
+|---|----------|---------|
+| Q1 | Should "Spl1t" replace ALL "Split" text (including functional labels like "Split With" column, "Split between everyone")? | Rebrand scope |
+| Q2 | Should localStorage keys be migrated from `trip-splitter:*` to `spl1t:*`? (Breaking: users lose preferences on upgrade) | Rebrand scope |
+| Q3 | For Events: do you want `event_type = 'event'` to skip the planner entirely, or still support a single-day simplified planner? | Events data model |
+| Q4 | For Events: rename the TypeScript `Trip` type to `Event`? This is a large refactor touching all files. | Events + codebase |
+| Q5 | For invitations: require sign-up to accept, or allow anonymous access (existing behaviour)? | Invitations flow |
+| Q6 | For invitations: send invites at event creation time, or separately from a Manage Event page? | Invitations UX |
+| Q7 | For payment reminders: manual trigger only, or auto-send on a schedule (e.g. 24h after settlement calculated)? | Email complexity |
+| Q8 | For AI Receipt Reader: use Claude 3.5 Sonnet (more accurate, higher cost) or Claude 3.5 Haiku (faster, cheaper)? | AI cost/quality |
+| Q9 | For item-to-participant mapping: Checklist (simpler) or Swipe UI (more mobile-native)? | AI Receipt UX |
+| Q10 | Should receipt images be stored permanently, or auto-deleted after expense is created? | Storage costs |
+
+---
+
+## 5. Risks & Dependencies
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| Receipt AI accuracy varies (blurry photos, unusual formats) | High | Allow full manual correction in review step; make correction UX excellent |
+| Anthropic API key security — never expose to browser | Critical | Route all Claude calls through Supabase Edge Function |
+| Email deliverability (invites land in spam) | Medium | Use Resend with custom domain, SPF/DKIM setup |
+| Changing localStorage keys breaks existing user preferences | Low | Keep old keys or run one-time migration on load |
+| `@anthropic-ai/sdk` currently in `dependencies` (browser bundle) | Medium | Move to edge function only; remove from browser bundle or keep for future |
+| `trip_type` field breaks if we rename table to `events` later | Low | Use `event_type` column name, keep table name `trips` for now |
+
+**Feature dependencies**:
+- Receipt reminder emails (C) **depend on** AI Receipt Reader (D) — needs `receipt_tasks.id`
+- Payment reminder emails (C) are **independent** of D
+- All features are **independent** of B (Events)
+- Rebrand (A) is fully independent, can be done anytime
+
+---
+
+## 6. Phased Implementation Roadmap
+
+### Phase 1 — Quick wins (low risk, high visibility)
+**A. Rebrand to "Spl1t"** — 2–3 files, pure UI change, zero data model impact
+
+### Phase 2 — Events
+**B. Events model** — single migration + UI changes in TripForm + Layout labels
+No breaking changes to expense/settlement logic.
+
+### Phase 3 — AI Receipt Reader (core flow, no email)
+**D (partial)** — This delivers the highest user value and uses the existing `@anthropic-ai/sdk`.
+- New Supabase bucket + migration for `receipt_tasks`
+- New Edge Function `process-receipt`
+- New UI: receipt capture → AI processing → review/correct → item mapping → submit
+
+### Phase 4 — Email & Invitations
+**C.** — Requires setting up Resend, creating edge function, email templates.
+Payment reminders alone (without receipt attachment) can ship first.
+
+### Phase 5 — Receipt reminder emails (combines C + D)
+Extends Phase 4 email with receipt image attachment from Phase 3 storage.
+
+---
+
+## 7. Session Log
+
+| Date | Session | Work Done |
+|------|---------|-----------|
+| 2026-02-21 | Planning | Full codebase analysis; created this document |

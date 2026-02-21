@@ -165,9 +165,9 @@ export function Layout() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <img src="/logo.png" alt="Split" className="h-9 w-9 rounded-full" />
+                <img src="/logo.png" alt="Spl1t" className="h-9 w-9 rounded-full" />
                 <h1 className="text-2xl font-bold text-foreground">
-                  Split
+                  Spl1t
                 </h1>
               </motion.div>
             )}

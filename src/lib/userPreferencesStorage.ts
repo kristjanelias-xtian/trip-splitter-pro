@@ -3,7 +3,18 @@
  * Used for instant reads and as fallback when user is not authenticated
  */
 
-const PREFERENCES_KEY = 'trip-splitter:user-preferences'
+const PREFERENCES_KEY = 'spl1t:user-preferences'
+const OLD_PREFERENCES_KEY = 'trip-splitter:user-preferences'
+
+function migratePreferencesKey(): void {
+  try {
+    const old = localStorage.getItem(OLD_PREFERENCES_KEY)
+    if (old) {
+      localStorage.setItem(PREFERENCES_KEY, old)
+      localStorage.removeItem(OLD_PREFERENCES_KEY)
+    }
+  } catch {}
+}
 
 export type AppMode = 'quick' | 'full'
 
@@ -17,6 +28,7 @@ function getDefaultMode(): AppMode {
 }
 
 export function getLocalPreferences(): UserPreferencesLocal {
+  migratePreferencesKey()
   const defaults: UserPreferencesLocal = {
     preferredMode: getDefaultMode(),
     defaultTripId: null,
