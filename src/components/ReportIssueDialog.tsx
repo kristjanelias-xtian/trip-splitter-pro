@@ -55,28 +55,40 @@ function compressImage(file: File): Promise<Blob> {
   ])
 }
 
+const MAX_SCREENSHOTS = 5
+
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
   const { toast } = useToast()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
-  const [screenshot, setScreenshot] = useState<File | null>(null)
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
+  const [screenshots, setScreenshots] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setScreenshot(file)
-    const url = URL.createObjectURL(file)
-    setScreenshotPreview(url)
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const remaining = MAX_SCREENSHOTS - screenshots.length
+    const toAdd = files.slice(0, remaining)
+    const newPreviews = toAdd.map(f => URL.createObjectURL(f))
+    setScreenshots(prev => [...prev, ...toAdd])
+    setPreviews(prev => [...prev, ...newPreviews])
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const removeScreenshot = () => {
-    setScreenshot(null)
-    if (screenshotPreview) URL.revokeObjectURL(screenshotPreview)
-    setScreenshotPreview(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
+  const removeScreenshot = (index: number) => {
+    URL.revokeObjectURL(previews[index])
+    setScreenshots(prev => prev.filter((_, i) => i !== index))
+    setPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const resetForm = () => {
+    previews.forEach(url => URL.revokeObjectURL(url))
+    setSubject('')
+    setDescription('')
+    setScreenshots([])
+    setPreviews([])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,17 +106,21 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
       ].join('\n')
 
       let screenshotMarkdown = ''
-      if (screenshot) {
-        const compressed = await compressImage(screenshot)
-        const fileName = `${Date.now()}-${crypto.randomUUID()}.jpg`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('feedback-screenshots')
-          .upload(fileName, compressed, { contentType: 'image/jpeg' })
-        if (uploadError) throw uploadError
-        const { data: { publicUrl } } = supabase.storage
-          .from('feedback-screenshots')
-          .getPublicUrl(uploadData.path)
-        screenshotMarkdown = `\n\n**Screenshot:**\n![Screenshot](${publicUrl})`
+      if (screenshots.length > 0) {
+        const urls: string[] = []
+        for (const file of screenshots) {
+          const compressed = await compressImage(file)
+          const fileName = `${Date.now()}-${crypto.randomUUID()}.jpg`
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('feedback-screenshots')
+            .upload(fileName, compressed, { contentType: 'image/jpeg' })
+          if (uploadError) throw uploadError
+          const { data: { publicUrl } } = supabase.storage
+            .from('feedback-screenshots')
+            .getPublicUrl(uploadData.path)
+          urls.push(publicUrl)
+        }
+        screenshotMarkdown = '\n\n**Screenshots:**\n' + urls.map((url, i) => `![Screenshot ${i + 1}](${url})`).join('\n')
       }
 
       const body = description.trim()
@@ -134,9 +150,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         description: 'Thank you! Your report has been submitted.',
       })
 
-      setSubject('')
-      setDescription('')
-      removeScreenshot()
+      resetForm()
       onOpenChange(false)
     } catch (err) {
       console.error('Error submitting issue:', err)
@@ -185,30 +199,36 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
           </div>
 
           <div className="space-y-2">
-            <Label>Screenshot (optional)</Label>
+            <Label>Screenshots (optional)</Label>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileChange}
               className="hidden"
             />
-            {screenshotPreview ? (
-              <div className="relative inline-block">
-                <img
-                  src={screenshotPreview}
-                  alt="Screenshot preview"
-                  className="h-24 rounded-md border border-border object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={removeScreenshot}
-                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow-sm"
-                >
-                  <X size={14} />
-                </button>
+            {previews.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {previews.map((url, i) => (
+                  <div key={i} className="relative inline-block">
+                    <img
+                      src={url}
+                      alt={`Screenshot ${i + 1}`}
+                      className="h-20 w-20 rounded-md border border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeScreenshot(i)}
+                      className="absolute -top-2 -right-2 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow-sm"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+            {screenshots.length < MAX_SCREENSHOTS && (
               <Button
                 type="button"
                 variant="outline"
@@ -217,7 +237,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
                 onClick={() => fileInputRef.current?.click()}
               >
                 <ImagePlus size={16} />
-                Attach Screenshot
+                {screenshots.length === 0 ? 'Attach Screenshots' : 'Add More'}
               </Button>
             )}
           </div>
