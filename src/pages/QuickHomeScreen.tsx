@@ -80,11 +80,11 @@ export function QuickHomeScreen() {
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  No groups yet. Create a trip or join one via a shared link.
+                  No groups yet. Create a trip or event, or join one via a shared link.
                 </p>
                 <Button onClick={() => navigate('/create-trip')} className="gap-2">
                   <Plus size={18} />
-                  Create Trip
+                  Create New
                 </Button>
               </div>
             </CardContent>
@@ -154,7 +154,7 @@ export function QuickHomeScreen() {
           <div className="mt-6 text-center">
             <Button variant="outline" onClick={() => navigate('/create-trip')} className="gap-2">
               <Plus size={16} />
-              Create New Trip
+              Create New
             </Button>
           </div>
         )}
@@ -183,7 +183,7 @@ export function QuickHomeScreen() {
                 size={16}
                 className={`transition-transform ${showHidden ? 'rotate-180' : ''}`}
               />
-              {hiddenTrips.length} hidden {hiddenTrips.length === 1 ? 'trip' : 'trips'}
+              {hiddenTrips.length} hidden {hiddenTrips.length === 1 ? 'group' : 'groups'}
             </button>
 
             {showHidden && (

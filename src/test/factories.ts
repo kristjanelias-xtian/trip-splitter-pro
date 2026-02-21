@@ -1,7 +1,7 @@
 import type { Participant, Family } from '@/types/participant'
 import type { Expense, ExpenseDistribution } from '@/types/expense'
 import type { Settlement } from '@/types/settlement'
-import type { Trip } from '@/types/trip'
+import type { Event } from '@/types/trip'
 
 let _id = 0
 function nextId(): string {
@@ -72,7 +72,7 @@ export function buildSettlement(overrides: Partial<Settlement> = {}): Settlement
   }
 }
 
-export function buildTrip(overrides: Partial<Trip> = {}): Trip {
+export function buildEvent(overrides: Partial<Event> = {}): Event {
   const id = overrides.id ?? nextId()
   return {
     id,
@@ -80,6 +80,7 @@ export function buildTrip(overrides: Partial<Trip> = {}): Trip {
     name: `Trip ${id}`,
     start_date: '2025-07-01',
     end_date: '2025-07-10',
+    event_type: 'trip',
     tracking_mode: 'individuals',
     default_currency: 'EUR',
     exchange_rates: {},
@@ -91,3 +92,6 @@ export function buildTrip(overrides: Partial<Trip> = {}): Trip {
     ...overrides,
   }
 }
+
+// Backward-compatible alias
+export const buildTrip = buildEvent

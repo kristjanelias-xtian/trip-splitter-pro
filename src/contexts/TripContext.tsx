@@ -1,18 +1,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { Trip, CreateTripInput, UpdateTripInput } from '@/types/trip'
+import { Event, CreateEventInput, UpdateEventInput } from '@/types/trip'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
 import { logger } from '@/lib/logger'
 
 interface TripContextType {
-  trips: Trip[]
+  trips: Event[]
   loading: boolean
   error: string | null
-  getTripById: (id: string) => Trip | undefined
-  getTripByCode: (tripCode: string) => Trip | undefined
-  createTrip: (input: CreateTripInput) => Promise<Trip | null>
-  updateTrip: (id: string, input: UpdateTripInput) => Promise<boolean>
+  getTripById: (id: string) => Event | undefined
+  getTripByCode: (tripCode: string) => Event | undefined
+  createTrip: (input: CreateEventInput) => Promise<Event | null>
+  updateTrip: (id: string, input: UpdateEventInput) => Promise<boolean>
   deleteTrip: (id: string) => Promise<boolean>
   refreshTrips: () => Promise<void>
 }
@@ -21,7 +21,7 @@ const TripContext = createContext<TripContextType | undefined>(undefined)
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth()
-  const [trips, setTrips] = useState<Trip[]>([])
+  const [trips, setTrips] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +37,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) throw fetchError
 
-      setTrips((data as unknown as Trip[]) || [])
+      setTrips((data as unknown as Event[]) || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
       logger.error('Failed to fetch trips', { error: err instanceof Error ? err.message : String(err) })
@@ -57,7 +57,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }
 
   // Create new trip
-  const createTrip = async (input: CreateTripInput): Promise<Trip | null> => {
+  const createTrip = async (input: CreateEventInput): Promise<Event | null> => {
     try {
       setError(null)
 
@@ -80,7 +80,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       if (createError) throw createError
 
-      const newTrip = data as Trip
+      const newTrip = data as Event
       setTrips(prev => [newTrip, ...prev])
       logger.info('Trip created', { trip_id: newTrip.id, name: newTrip.name })
 
@@ -93,7 +93,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }
 
   // Update trip
-  const updateTrip = async (id: string, input: UpdateTripInput): Promise<boolean> => {
+  const updateTrip = async (id: string, input: UpdateEventInput): Promise<boolean> => {
     try {
       setError(null)
 

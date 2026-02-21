@@ -8,7 +8,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useMealContext } from '@/contexts/MealContext'
 import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
 import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
-import { TripForm } from '@/components/TripForm'
+import { EventForm } from '@/components/EventForm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
-import { CreateTripInput } from '@/types/trip'
+import { CreateEventInput } from '@/types/trip'
 import { StaySection } from '@/components/StaySection'
 
 export function ManageTripPage() {
@@ -62,11 +62,11 @@ export function ManageTripPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Manage Trip</h2>
+        <h2 className="text-2xl font-bold text-foreground">Manage</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip selected. Please select a trip to view settings.
+              No trip or event selected.
             </p>
           </CardContent>
         </Card>
@@ -74,13 +74,17 @@ export function ManageTripPage() {
     )
   }
 
-  const handleEditTrip = async (values: CreateTripInput) => {
+  const entityLabel = currentTrip.event_type === 'event' ? 'Event' : 'Trip'
+  const isEvent = currentTrip.event_type === 'event'
+
+  const handleEditTrip = async (values: CreateEventInput) => {
     setIsUpdating(true)
     try {
       const success = await updateTrip(currentTrip.id, {
         name: values.name,
         start_date: values.start_date,
         end_date: values.end_date,
+        event_type: values.event_type,
         tracking_mode: values.tracking_mode,
         default_currency: values.default_currency,
       })
@@ -88,21 +92,21 @@ export function ManageTripPage() {
       if (success) {
         setShowEditDialog(false)
         toast({
-          title: 'Trip updated',
-          description: 'Your trip details have been saved.',
+          title: `${entityLabel} updated`,
+          description: 'Your details have been saved.',
         })
       } else {
         toast({
           variant: 'destructive',
           title: 'Update failed',
-          description: 'Failed to update trip. Please try again.',
+          description: `Failed to update ${entityLabel.toLowerCase()}. Please try again.`,
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'An error occurred while updating the trip.',
+        description: `An error occurred while updating the ${entityLabel.toLowerCase()}.`,
       })
     } finally {
       setIsUpdating(false)
@@ -197,8 +201,8 @@ export function ManageTripPage() {
         localStorage.setItem('myTrips', JSON.stringify(filtered))
 
         toast({
-          title: 'Trip deleted',
-          description: 'The trip has been permanently deleted.',
+          title: `${entityLabel} deleted`,
+          description: `The ${entityLabel.toLowerCase()} has been permanently deleted.`,
         })
 
         // Navigate to home page
@@ -207,14 +211,14 @@ export function ManageTripPage() {
         toast({
           variant: 'destructive',
           title: 'Delete failed',
-          description: 'Failed to delete trip. Please try again.',
+          description: `Failed to delete ${entityLabel.toLowerCase()}. Please try again.`,
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'An error occurred while deleting the trip.',
+        description: `An error occurred while deleting the ${entityLabel.toLowerCase()}.`,
       })
     } finally {
       setIsDeleting(false)
@@ -225,38 +229,49 @@ export function ManageTripPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Manage Trip</h2>
+        <h2 className="text-2xl font-bold text-foreground">Manage {entityLabel}</h2>
         <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
       </div>
 
-      {/* Trip Details Card */}
+      {/* Details Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Trip Details</CardTitle>
-          <CardDescription>View and edit your trip information</CardDescription>
+          <CardTitle>{entityLabel} Details</CardTitle>
+          <CardDescription>View and edit your {entityLabel.toLowerCase()} information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground">Trip Name</Label>
+              <Label className="text-muted-foreground">Name</Label>
               <p className="text-sm font-medium">{currentTrip.name}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">Trip Code</Label>
+              <Label className="text-muted-foreground">Code</Label>
               <p className="text-sm font-mono font-medium">{tripCode}</p>
             </div>
-            <div>
-              <Label className="text-muted-foreground">Start Date</Label>
-              <p className="text-sm font-medium">
-                {format(new Date(currentTrip.start_date), 'PPP')}
-              </p>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">End Date</Label>
-              <p className="text-sm font-medium">
-                {format(new Date(currentTrip.end_date), 'PPP')}
-              </p>
-            </div>
+            {isEvent ? (
+              <div>
+                <Label className="text-muted-foreground">Date</Label>
+                <p className="text-sm font-medium">
+                  {format(new Date(currentTrip.start_date), 'PPP')}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-muted-foreground">Start Date</Label>
+                  <p className="text-sm font-medium">
+                    {format(new Date(currentTrip.start_date), 'PPP')}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">End Date</Label>
+                  <p className="text-sm font-medium">
+                    {format(new Date(currentTrip.end_date), 'PPP')}
+                  </p>
+                </div>
+              </>
+            )}
             <div>
               <Label className="text-muted-foreground">Tracking Mode</Label>
               <p className="text-sm font-medium capitalize">{currentTrip.tracking_mode}</p>
@@ -264,7 +279,7 @@ export function ManageTripPage() {
           </div>
           <Button onClick={() => setShowEditDialog(true)} className="mt-4">
             <Edit size={16} className="mr-2" />
-            Edit Trip Details
+            Edit Details
           </Button>
         </CardContent>
       </Card>
@@ -273,13 +288,13 @@ export function ManageTripPage() {
       <Card>
         <CardHeader>
           <CardTitle>Features</CardTitle>
-          <CardDescription>Enable or disable optional features for this trip</CardDescription>
+          <CardDescription>Enable or disable optional features for this {entityLabel.toLowerCase()}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Meal Planning</Label>
-              <p className="text-xs text-muted-foreground">Plan meals for each day of your trip</p>
+              <p className="text-xs text-muted-foreground">Plan meals for each day</p>
             </div>
             <Switch
               checked={currentTrip.enable_meals}
@@ -290,7 +305,7 @@ export function ManageTripPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Activity Planning</Label>
-              <p className="text-xs text-muted-foreground">Plan activities for each day of your trip</p>
+              <p className="text-xs text-muted-foreground">Plan activities for each day</p>
             </div>
             <Switch
               checked={currentTrip.enable_activities}
@@ -327,7 +342,7 @@ export function ManageTripPage() {
       <Card>
         <CardHeader>
           <CardTitle>Currency Settings</CardTitle>
-          <CardDescription>Set your trip's default currency and exchange rates</CardDescription>
+          <CardDescription>Set the default currency and exchange rates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -434,7 +449,7 @@ export function ManageTripPage() {
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
                 <Trash2 size={16} className="mr-2" />
-                Delete Trip
+                Delete {entityLabel}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -442,7 +457,7 @@ export function ManageTripPage() {
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will permanently delete <strong>"{currentTrip.name}"</strong> and all
-                  associated data including expenses, settlements, meals, and shopping items.
+                  associated data including expenses, settlements, and shopping items.
                   <br />
                   <br />
                   <strong>This action cannot be undone.</strong>
@@ -455,7 +470,7 @@ export function ManageTripPage() {
                   disabled={isDeleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete Trip'}
+                  {isDeleting ? 'Deleting...' : `Delete ${entityLabel}`}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -467,9 +482,9 @@ export function ManageTripPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Trip Details</DialogTitle>
+            <DialogTitle>Edit {entityLabel} Details</DialogTitle>
             <DialogDescription>
-              Update your trip name, dates, or tracking mode
+              Update the name, dates, or tracking mode
             </DialogDescription>
           </DialogHeader>
 
@@ -478,17 +493,18 @@ export function ManageTripPage() {
             <Alert>
               <Info size={16} className="mt-0.5" />
               <AlertDescription>
-                <strong>Note:</strong> Changing trip dates may hide meals that fall outside the
+                <strong>Note:</strong> Changing dates may hide meals that fall outside the
                 new date range. Those meals will remain in the database.
               </AlertDescription>
             </Alert>
           )}
 
-          <TripForm
+          <EventForm
             initialValues={{
               name: currentTrip.name,
               start_date: currentTrip.start_date,
               end_date: currentTrip.end_date,
+              event_type: currentTrip.event_type,
               tracking_mode: currentTrip.tracking_mode,
               default_currency: currentTrip.default_currency,
             }}
