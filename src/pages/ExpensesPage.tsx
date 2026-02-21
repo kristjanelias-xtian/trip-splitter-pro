@@ -176,14 +176,13 @@ export function ExpensesPage() {
                 key={task.id}
                 className="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3"
               >
-                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
-                  <ScanLine size={16} />
-                  <span>
-                    Unreviewed receipt
-                    {task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
+                  <ScanLine size={16} className="shrink-0" />
+                  <span className="truncate">
+                    Unreviewed receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     size="sm"
                     variant="outline"
