@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react'
+import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal } from 'lucide-react'
+import { logger } from '@/lib/logger'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -228,6 +229,22 @@ export function ReceiptReviewSheet({
     )
   }
 
+  // Split a qty>1 item into individual rows so each unit can be assigned separately
+  const expandItem = (index: number) => {
+    setEditableItems(prev => {
+      const item = prev[index]
+      if (item.qty <= 1) return prev
+      const unitPrice = (parseFloat(item.price) / item.qty).toFixed(2)
+      const expanded = Array.from({ length: item.qty }, () => ({
+        name: item.name,
+        price: unitPrice,
+        qty: 1,
+        assignedIds: new Set<string>(),
+      }))
+      return [...prev.slice(0, index), ...expanded, ...prev.slice(index + 1)]
+    })
+  }
+
   const updateItemName = (index: number, name: string) => {
     setEditableItems(prev => prev.map((item, i) => (i === index ? { ...item, name } : item)))
   }
@@ -304,7 +321,8 @@ export function ReceiptReviewSheet({
       onOpenChange(false)
       onDone()
     } catch (err) {
-      toast({ title: 'Error', description: String(err), variant: 'destructive' })
+      logger.error('Receipt review submit failed', { error: String(err), task_id: taskId })
+      toast({ title: 'Error adding expense', description: String(err), variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
@@ -319,7 +337,8 @@ export function ReceiptReviewSheet({
           </SheetHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-3 space-y-4">
           {/* Merchant + Category */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -387,6 +406,7 @@ export function ReceiptReviewSheet({
                     onPriceChange={price => updateItemPrice(i, price)}
                     onToggleParticipant={pid => toggleParticipant(i, pid)}
                     onToggleAll={() => toggleAll(i)}
+                    onExpand={item.qty > 1 ? () => expandItem(i) : undefined}
                   />
                 ))}
               </div>
@@ -478,6 +498,7 @@ export function ReceiptReviewSheet({
             </div>
           </div>
         </div>
+        </div>
 
         {/* Submit */}
         <div className="px-4 py-3 border-t border-border">
@@ -515,6 +536,7 @@ interface ItemRowProps {
   onPriceChange: (price: string) => void
   onToggleParticipant: (pid: string) => void
   onToggleAll: () => void
+  onExpand?: () => void
 }
 
 function ItemRow({
@@ -525,6 +547,7 @@ function ItemRow({
   onPriceChange,
   onToggleParticipant,
   onToggleAll,
+  onExpand,
 }: ItemRowProps) {
   const allAssigned = participants.length > 0 && participants.every(p => item.assignedIds.has(p.id))
 
@@ -538,15 +561,24 @@ function ItemRow({
           placeholder="Item name"
           className="flex-1 h-8 text-sm"
         />
-        <div className="relative">
-          <Input
-            inputMode="decimal"
-            value={item.price}
-            onChange={e => onPriceChange(e.target.value)}
-            placeholder="0.00"
-            className="w-20 h-8 text-sm text-right"
-          />
-        </div>
+        {item.qty > 1 && onExpand && (
+          <button
+            type="button"
+            onClick={onExpand}
+            className="shrink-0 flex items-center gap-0.5 text-xs text-muted-foreground border border-border rounded px-1.5 py-1 hover:bg-accent"
+            title={`Split into ${item.qty} individual items`}
+          >
+            <SplitSquareHorizontal size={12} />
+            ×{item.qty}
+          </button>
+        )}
+        <Input
+          inputMode="decimal"
+          value={item.price}
+          onChange={e => onPriceChange(e.target.value)}
+          placeholder="0.00"
+          className="w-20 h-8 text-sm text-right"
+        />
       </div>
 
       {/* Participant chips */}

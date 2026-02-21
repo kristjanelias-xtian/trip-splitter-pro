@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger'
 
 interface ReceiptContextType {
   pendingReceipts: ReceiptTask[]
+  receiptByExpenseId: Record<string, ReceiptTask>
   loading: boolean
   error: string | null
   createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask | null>
@@ -21,8 +22,14 @@ const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined)
 
 export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [pendingReceipts, setPendingReceipts] = useState<ReceiptTask[]>([])
+  const [completedReceipts, setCompletedReceipts] = useState<ReceiptTask[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const receiptByExpenseId = completedReceipts.reduce<Record<string, ReceiptTask>>((acc, task) => {
+    if (task.expense_id) acc[task.expense_id] = task
+    return acc
+  }, {})
 
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
@@ -42,7 +49,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           .from('receipt_tasks')
           .select('*')
           .eq('trip_id', currentTrip.id)
-          .in('status', ['review'])
+          .in('status', ['review', 'complete'])
           .order('created_at', { ascending: false }),
         15000,
         'Loading receipts timed out.'
@@ -54,7 +61,9 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      setPendingReceipts((data as ReceiptTask[]) ?? [])
+      const all = (data as ReceiptTask[]) ?? []
+      setPendingReceipts(all.filter(t => t.status === 'review'))
+      setCompletedReceipts(all.filter(t => t.status === 'complete'))
     } catch (err) {
       setError('Failed to load pending receipts')
       logger.error('Unhandled error fetching receipts', { error: String(err) })
@@ -148,6 +157,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       }
 
       setPendingReceipts(prev => prev.filter(r => r.id !== id))
+      // Refresh to pick up the now-complete task in completedReceipts
+      await fetchPendingReceipts()
       return true
     } catch (err) {
       logger.error('Unhandled error completing receipt task', { error: String(err) })
@@ -187,6 +198,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     <ReceiptContext.Provider
       value={{
         pendingReceipts,
+        receiptByExpenseId,
         loading,
         error,
         createReceiptTask,
