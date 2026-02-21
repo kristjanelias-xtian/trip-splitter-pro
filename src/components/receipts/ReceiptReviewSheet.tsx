@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal } from 'lucide-react'
 import { logger } from '@/lib/logger'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,6 +132,7 @@ export function ReceiptReviewSheet({
   currency,
   onDone,
 }: ReceiptReviewSheetProps) {
+  const keyboard = useKeyboardHeight()
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
   const { createExpense } = useExpenseContext()
@@ -327,7 +329,14 @@ export function ReceiptReviewSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] flex flex-col p-0">
+      <SheetContent
+        side="bottom"
+        className="flex flex-col p-0"
+        style={{
+          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92vh',
+          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+        }}
+      >
         <div className="px-4 pt-4 pb-2 border-b border-border">
           <SheetHeader>
             <SheetTitle>Review Receipt</SheetTitle>
