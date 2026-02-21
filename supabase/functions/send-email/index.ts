@@ -51,49 +51,39 @@ function invitationEmailHtml(params: {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>You've been added to ${tripName} on Spl1t</title>
+<title>${organiserName} added you to ${tripName}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:40px 20px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
-          <!-- Header -->
+          <!-- Minimal wordmark -->
           <tr>
-            <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Spl1t</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Fair cost splitting for groups</p>
+            <td style="padding:28px 32px 0;text-align:center;">
+              <span style="font-size:18px;font-weight:700;color:#6366f1;letter-spacing:-0.5px;">Spl1t</span>
             </td>
           </tr>
           <!-- Body -->
           <tr>
-            <td style="padding:32px;">
-              <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:600;">Hi ${participantName}!</h2>
-              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-                <strong>${organiserName}</strong> has added you to <strong>${tripName}</strong> on Spl1t.
-                Click below to view your balance and see what's been split so far.
+            <td style="padding:20px 32px 32px;">
+              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;font-weight:700;">Hey ${participantName}!</h2>
+              <p style="margin:0 0 28px;color:#475569;font-size:16px;line-height:1.7;">
+                <strong>${organiserName}</strong> added you to <strong>${tripName}</strong>.
+                Tap below to see your share of the costs — no account needed.
               </p>
               <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="center" style="padding:8px 0 24px;">
-                    <a href="${joinUrl}" style="display:inline-block;background:#6366f1;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
-                      View your balance &rarr;
+                  <td align="center" style="padding:0 0 28px;">
+                    <a href="${joinUrl}" style="display:inline-block;background:#6366f1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:15px 36px;border-radius:8px;">
+                      View my balance &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
-              <!-- Divider -->
-              <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px;">
-              <!-- Info Box -->
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;">
-                <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">What is Spl1t?</p>
-                <p style="margin:0;color:#475569;font-size:14px;line-height:1.6;">
-                  Spl1t tracks shared expenses in trips and events, then calculates the fairest way to settle up. No account needed — just click the link above.
-                </p>
-              </div>
-              <p style="margin:20px 0 0;color:#94a3b8;font-size:13px;">
-                Want to see all your splits in one place? <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Sign in with Google</a> to link your account.
+              <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">
+                Want to track all your expenses in one place? <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Sign in with Google</a> to link your account.
               </p>
             </td>
           </tr>
@@ -101,8 +91,7 @@ function invitationEmailHtml(params: {
           <tr>
             <td style="padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0;color:#94a3b8;font-size:12px;">
-                You received this email because ${organiserName} added you to a trip on Spl1t.<br>
-                <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
+                Sent by <strong>${organiserName}</strong> via Spl1t &middot; <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
               </p>
             </td>
           </tr>
@@ -229,7 +218,7 @@ Deno.serve(async (req) => {
     if (body.type === 'invitation') {
       const joinUrl = `${APP_URL}/join/${body.token}`
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
-      subject = `You've been added to "${body.trip_name}" on Spl1t`
+      subject = `${body.organiser_name} added you to "${body.trip_name}"`
       html = invitationEmailHtml({
         participantName: body.participant_name,
         organiserName: body.organiser_name,

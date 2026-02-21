@@ -79,9 +79,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(initialSession?.user ?? null)
 
       if (initialSession?.user) {
-        const profile = await fetchProfile(initialSession.user.id)
-          || await upsertProfile(initialSession.user)
-        setUserProfile(profile)
+        try {
+          const profile = await withTimeout(
+            (async () => {
+              const p = await fetchProfile(initialSession.user!.id)
+              return p || upsertProfile(initialSession.user!)
+            })(),
+            8000,
+            'Profile load timed out'
+          )
+          setUserProfile(profile)
+        } catch (profileErr) {
+          // Profile failed or timed out — app still loads, profile retries on next auth event
+          logger.warn('Auth profile init failed, proceeding without profile', {
+            error: profileErr instanceof Error ? profileErr.message : String(profileErr),
+          })
+        }
       }
 
       setLoading(false)

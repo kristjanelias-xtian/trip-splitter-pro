@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 import {
   Dialog,
   DialogContent,
@@ -112,9 +113,13 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         const blobs = await Promise.all(screenshots.map(f => compressImage(f)))
         const urls = await Promise.all(blobs.map(async (compressed) => {
           const fileName = `${Date.now()}-${crypto.randomUUID()}.jpg`
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('feedback-screenshots')
-            .upload(fileName, compressed, { contentType: 'image/jpeg' })
+          const { data: uploadData, error: uploadError } = await withTimeout(
+            supabase.storage
+              .from('feedback-screenshots')
+              .upload(fileName, compressed, { contentType: 'image/jpeg' }),
+            20000,
+            'Screenshot upload timed out. Please check your connection.'
+          )
           if (uploadError) throw uploadError
           const { data: { publicUrl } } = supabase.storage
             .from('feedback-screenshots')
@@ -128,23 +133,14 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         ? `${description}${screenshotMarkdown}\n\n---\n${metadata}`
         : `${screenshotMarkdown ? screenshotMarkdown.trimStart() + '\n\n---\n' : ''}${metadata}`
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-      try {
-        const { error } = await supabase.functions.invoke('create-github-issue', {
+      const { error } = await withTimeout(
+        supabase.functions.invoke('create-github-issue', {
           body: { title: subject.trim(), body },
-        })
-        clearTimeout(timeoutId)
-
-        if (error) throw error
-      } catch (err) {
-        clearTimeout(timeoutId)
-        if (controller.signal.aborted) {
-          throw new Error('Request timed out')
-        }
-        throw err
-      }
+        }),
+        20000,
+        'Request timed out. Please check your connection and try again.'
+      )
+      if (error) throw error
 
       toast({
         title: 'Feedback sent',
@@ -169,7 +165,11 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="sm:max-w-md"
-        style={keyboard.isVisible ? { marginBottom: keyboard.keyboardHeight } : undefined}
+        style={keyboard.isVisible ? {
+          transform: `translate(-50%, calc(-50% - ${keyboard.keyboardHeight / 2}px))`,
+          maxHeight: `calc(100dvh - ${keyboard.keyboardHeight}px - 32px)`,
+          overflowY: 'auto',
+        } : undefined}
       >
         <DialogHeader>
           <DialogTitle>Report an Issue</DialogTitle>
