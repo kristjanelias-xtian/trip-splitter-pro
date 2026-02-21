@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-const FETCH_TIMEOUT_MS = 15_000
+const FETCH_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 60_000
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

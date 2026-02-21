@@ -64,12 +64,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
       // Generate trip_code if not provided
       const tripCode = input.trip_code || generateTripCode(input.name)
 
-      // Set created_by to the current authenticated user
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      // Set created_by to the current authenticated user (use cached user from context)
       const tripData = {
         ...input,
         trip_code: tripCode,
-        ...(currentUser ? { created_by: currentUser.id } : {}),
+        ...(user ? { created_by: user.id } : {}),
       }
 
       const { data, error: createError } = await (supabase as any)
@@ -85,18 +84,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
       logger.info('Trip created', { trip_id: newTrip.id, name: newTrip.name })
 
       // Auto-link the creator as a participant
-      if (currentUser) {
+      if (user) {
         try {
           const displayName =
-            currentUser.user_metadata?.full_name ||
-            currentUser.user_metadata?.name ||
-            currentUser.email?.split('@')[0] ||
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split('@')[0] ||
             'Me'
           await supabase.from('participants').insert([{
             trip_id: newTrip.id,
             name: displayName,
             is_adult: true,
-            user_id: currentUser.id,
+            user_id: user.id,
           }])
         } catch (participantErr) {
           logger.warn('Failed to auto-link creator as participant', {

@@ -93,7 +93,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           })
           .select()
           .single(),
-        15000,
+        35000,
         'Creating receipt task timed out.'
       )
 
@@ -123,7 +123,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .update({ ...updates, updated_at: new Date().toISOString() } as any)
           .eq('id', id),
-        15000,
+        35000,
         'Updating receipt task timed out.'
       )
 
@@ -152,7 +152,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', id),
-        15000,
+        35000,
         'Completing receipt task timed out.'
       )
 
@@ -179,7 +179,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           .from('receipt_tasks')
           .delete()
           .eq('id', id),
-        15000,
+        35000,
         'Dismissing receipt task timed out.'
       )
 
