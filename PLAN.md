@@ -120,7 +120,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 |---|---------|--------|-----------|
 | A | Rebrand to "Spl1t" | ✅ Done (PR #140) | — |
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
-| C | Email & Invitations | Not Started | — |
+| C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
 
 ---
@@ -484,9 +484,17 @@ Rename `.tsx` files only if they are primarily trip/event-specific forms:
 - Model: `claude-sonnet-4-6`
 - **Image storage**: receipt images ARE stored in `receipts` bucket as `{task_id}.jpg`. Upload runs in parallel with edge function (`Promise.allSettled`) — upload failure is logged as a warning but never blocks the AI flow (graceful degradation). On success, `receipt_image_path` written to the task row. Signed URL (1-hour expiry) generated client-side when review/detail sheets open. Collapsible thumbnail ("Receipt photo") shown in `ReceiptReviewSheet` and `ReceiptDetailsSheet`.
 
-### Phase 4 — Email & Invitations
-**C.** — Requires setting up Resend, creating edge function, email templates.
-Payment reminders alone (without receipt attachment) can ship first.
+### Phase 4 — Email & Invitations ✅ Done (PRs #198–#200)
+**C.** — Resend integration via `send-email` edge function. Invitation + payment reminder templates.
+- PR #198: Migration 022 (participants.email + invitations + email_log), send-email edge function, IndividualsSetup + FamiliesSetup email fields, invitation trigger
+- PR #199: /join/:token route + JoinPage (welcome card, account linking via Google sign-in)
+- PR #200: Payment reminder button in SettlementPlan (Remind button → inline confirm → Resend API)
+
+**Deployment steps before using in production:**
+1. Create Resend account, verify domain (spl1t.me or xtian.me)
+2. `supabase secrets set RESEND_API_KEY=re_...`
+3. `supabase functions deploy send-email`
+4. `supabase db push` (applies migration 022)
 
 ### Phase 5 — Receipt reminder emails (combines C + D)
 Extends Phase 4 email with receipt image attachment from Phase 3 storage.
@@ -504,3 +512,4 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 | 2026-02-21 | Phase 3 fixes | PLAN.md + MEMORY.md updated to reflect Phase 3 completion (PR #150); currency mismatch fix — ReceiptReviewSheet detects unknown receipt currency, prompts for exchange rate, saves to trip on submit (PR #151); scanning broken + quick mode missing scan — switched model to claude-sonnet-4-6, fixed fnError.context.json() extraction, added receipt scanning to QuickGroupDetailPage (PR #153); RLS violation fix — migration 021 adds DEFAULT auth.uid() to created_by, ReceiptContext explicitly sets created_by: user.id (PR #154) |
 | 2026-02-21 | Phase 3 image storage | Receipt images now stored in `receipts` bucket — ReceiptCaptureSheet runs upload + edge fn in parallel (Promise.allSettled); collapsible thumbnail in ReceiptReviewSheet + ReceiptDetailsSheet via signed URL |
 | 2026-02-21 | Error surfacing | Surface real Supabase errors across all submit flows (PR #170) — contexts throw instead of returning null/false; forms display err.message + stack trace; BankDetailsDialog shows real error in toast |
+| 2026-02-21 | Phase 4 | Email & Invitations — send-email edge function (Resend), participant email fields, invitation flow, /join/:token page, payment reminder button (PRs #198–#200) |
