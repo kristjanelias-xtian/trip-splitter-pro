@@ -361,7 +361,7 @@ export function ReceiptReviewSheet({
         className="flex flex-col p-0"
         hideClose
         style={{
-          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92vh',
+          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
@@ -412,6 +412,7 @@ export function ReceiptReviewSheet({
                 onChange={e => setMerchantName(e.target.value)}
                 placeholder="Restaurant, store..."
                 className="h-9 text-sm"
+                style={{ fontSize: '1rem' }}
               />
             </div>
             <div className="space-y-1">
@@ -518,6 +519,7 @@ export function ReceiptReviewSheet({
                     onChange={e => setExchangeRate(e.target.value.replace(',', '.'))}
                     placeholder="0.00"
                     className="h-9 text-sm"
+                    style={{ fontSize: '1rem' }}
                   />
                   <span className="text-sm font-medium">{activeCurrency}</span>
                 </div>
@@ -540,6 +542,7 @@ export function ReceiptReviewSheet({
                   onChange={e => setConfirmedTotal(e.target.value.replace(',', '.'))}
                   placeholder="0.00"
                   className="h-9 text-sm"
+                  style={{ fontSize: '1rem' }}
                 />
               </div>
               <div className="space-y-1">
@@ -551,6 +554,7 @@ export function ReceiptReviewSheet({
                   onChange={e => setTipAmount(e.target.value.replace(',', '.'))}
                   placeholder="0.00"
                   className="h-9 text-sm"
+                  style={{ fontSize: '1rem' }}
                 />
               </div>
             </div>
@@ -623,6 +627,7 @@ function ItemRow({
           onChange={e => onNameChange(e.target.value)}
           placeholder="Item name"
           className="flex-1 h-8 text-sm"
+          style={{ fontSize: '1rem' }}
         />
         {item.qty > 1 && onExpand && (
           <button
@@ -641,6 +646,7 @@ function ItemRow({
           onChange={e => onPriceChange(e.target.value)}
           placeholder="0.00"
           className="w-20 h-8 text-sm text-right"
+          style={{ fontSize: '1rem' }}
         />
       </div>
 
