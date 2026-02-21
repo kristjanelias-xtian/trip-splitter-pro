@@ -168,21 +168,17 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
   const dismissReceiptTask = async (id: string): Promise<boolean> => {
     try {
-      const { error: updateError } = await withTimeout(
+      const { error: deleteError } = await withTimeout(
         supabase
           .from('receipt_tasks')
-          .update({
-            status: 'failed',
-            error_message: 'Dismissed by user',
-            updated_at: new Date().toISOString(),
-          })
+          .delete()
           .eq('id', id),
         15000,
         'Dismissing receipt task timed out.'
       )
 
-      if (updateError) {
-        logger.error('Failed to dismiss receipt task', { error: updateError.message })
+      if (deleteError) {
+        logger.error('Failed to dismiss receipt task', { error: deleteError.message })
         return false
       }
 
