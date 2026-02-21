@@ -5,18 +5,30 @@ import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { LinkParticipantDialog } from '@/components/LinkParticipantDialog'
 import { QuickBalanceHero } from '@/components/quick/QuickBalanceHero'
 import { QuickActionButton } from '@/components/quick/QuickActionButton'
 import { QuickExpenseSheet } from '@/components/quick/QuickExpenseSheet'
 import { QuickSettlementSheet } from '@/components/quick/QuickSettlementSheet'
+import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
+import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ExtractedItem } from '@/types/receipt'
 import {
-  DollarSign, CreditCard, FileText,
+  DollarSign, CreditCard, FileText, ScanLine,
   ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle
 } from 'lucide-react'
+
+interface ReceiptReviewData {
+  taskId: string
+  merchant: string | null
+  items: ExtractedItem[]
+  total: number | null
+  currency: string
+}
 
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
@@ -26,8 +38,12 @@ export function QuickGroupDetailPage() {
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
 
+  const { pendingReceipts, dismissReceiptTask } = useReceiptContext()
+
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
+  const [receiptCaptureOpen, setReceiptCaptureOpen] = useState(false)
+  const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [slowLoading, setSlowLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
 
@@ -143,6 +159,51 @@ export function QuickGroupDetailPage() {
         <QuickBalanceHero balance={myBalance} />
       )}
 
+      {/* Pending receipts banner */}
+      {pendingReceipts.length > 0 && (
+        <div className="space-y-2 mb-2">
+          {pendingReceipts.map(task => (
+            <div
+              key={task.id}
+              className="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3"
+            >
+              <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
+                <ScanLine size={16} className="shrink-0" />
+                <span className="truncate">
+                  Unreviewed receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() =>
+                    setReceiptReviewData({
+                      taskId: task.id,
+                      merchant: task.extracted_merchant,
+                      items: task.extracted_items ?? [],
+                      total: task.extracted_total,
+                      currency: task.extracted_currency ?? currentTrip.default_currency,
+                    })
+                  }
+                >
+                  Review
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => dismissReceiptTask(task.id)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="space-y-3 mb-6">
         <QuickActionButton
@@ -150,6 +211,12 @@ export function QuickGroupDetailPage() {
           label="Add an expense"
           description="Split a bill with the group"
           onClick={() => setExpenseOpen(true)}
+        />
+        <QuickActionButton
+          icon={ScanLine}
+          label="Scan a receipt"
+          description="Let AI read and split itemised bills"
+          onClick={() => setReceiptCaptureOpen(true)}
         />
         <QuickActionButton
           icon={CreditCard}
@@ -196,6 +263,30 @@ export function QuickGroupDetailPage() {
         open={settlementOpen}
         onOpenChange={setSettlementOpen}
       />
+
+      {/* Receipt capture */}
+      <ReceiptCaptureSheet
+        open={receiptCaptureOpen}
+        onOpenChange={setReceiptCaptureOpen}
+        onProcessed={(taskId, data) => {
+          setReceiptCaptureOpen(false)
+          setReceiptReviewData({ taskId, ...data })
+        }}
+      />
+
+      {/* Receipt review */}
+      {receiptReviewData && (
+        <ReceiptReviewSheet
+          open={!!receiptReviewData}
+          onOpenChange={open => { if (!open) setReceiptReviewData(null) }}
+          taskId={receiptReviewData.taskId}
+          merchant={receiptReviewData.merchant}
+          items={receiptReviewData.items}
+          extractedTotal={receiptReviewData.total}
+          currency={receiptReviewData.currency}
+          onDone={() => setReceiptReviewData(null)}
+        />
+      )}
     </div>
   )
 }

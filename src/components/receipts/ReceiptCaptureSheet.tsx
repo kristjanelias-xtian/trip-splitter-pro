@@ -130,9 +130,25 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onProcessed }: Receipt
         },
       })
 
-      if (fnError || !data?.ok) {
-        const message = data?.error ?? fnError?.message ?? 'Failed to process receipt'
+      if (fnError) {
+        // Supabase wraps 4xx/5xx responses in fnError — try to extract the actual JSON body
+        let message = 'Failed to process receipt'
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const body = await (fnError as any).context?.json?.()
+          message = body?.error ?? fnError.message ?? message
+        } catch {
+          message = fnError.message ?? message
+        }
         logger.error('process-receipt failed', { error: message, task_id: task.id })
+        setError(message)
+        setScanning(false)
+        return
+      }
+
+      if (!data?.ok) {
+        const message = data?.error ?? 'Failed to process receipt'
+        logger.error('process-receipt returned not-ok', { error: message, task_id: task.id })
         setError(message)
         setScanning(false)
         return
