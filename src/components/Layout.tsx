@@ -15,6 +15,7 @@ import { MealProvider } from '@/contexts/MealContext'
 import { ActivityProvider } from '@/contexts/ActivityContext'
 import { StayProvider } from '@/contexts/StayContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
+import { ReceiptProvider } from '@/contexts/ReceiptContext'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { SignInButton } from '@/components/auth/SignInButton'
@@ -194,7 +195,9 @@ export function Layout() {
                 <ActivityProvider>
                   <StayProvider>
                     <ShoppingProvider>
-                      <Outlet />
+                      <ReceiptProvider>
+                        <Outlet />
+                      </ReceiptProvider>
                     </ShoppingProvider>
                   </StayProvider>
                 </ActivityProvider>

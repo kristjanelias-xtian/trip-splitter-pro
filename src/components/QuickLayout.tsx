@@ -7,6 +7,7 @@ import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
 import { MealProvider } from '@/contexts/MealContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
+import { ReceiptProvider } from '@/contexts/ReceiptContext'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { ModeToggle } from '@/components/quick/ModeToggle'
@@ -93,7 +94,9 @@ export function QuickLayout() {
             <SettlementProvider>
               <MealProvider>
                 <ShoppingProvider>
-                  <Outlet />
+                  <ReceiptProvider>
+                    <Outlet />
+                  </ReceiptProvider>
                 </ShoppingProvider>
               </MealProvider>
             </SettlementProvider>
