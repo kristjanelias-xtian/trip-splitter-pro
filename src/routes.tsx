@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { QuickLayout } from './components/QuickLayout'
 import { TripRouteGuard } from './components/TripRouteGuard'
 import { ConditionalHomePage } from './pages/ConditionalHomePage'
+import { JoinPage } from './pages/JoinPage'
 import { TripsPage } from './pages/TripsPage'
 import { ManageTripPage } from './pages/ManageTripPage'
 import { ExpensesPage } from './pages/ExpensesPage'
@@ -28,6 +29,7 @@ export function AppRoutes() {
       {/* Special routes - outside Layout */}
       <Route path="admin/all-trips" element={<AdminAllTripsPage />} />
       <Route path="trip-not-found/:tripCode" element={<TripNotFoundPage />} />
+      <Route path="join/:token" element={<JoinPage />} />
 
       {/* Mode-aware redirect for shared trip links */}
       <Route path="t/:tripCode" element={<TripModeRedirect />} />
