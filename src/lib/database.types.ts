@@ -234,8 +234,45 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          id: string
+          trip_id: string
+          participant_id: string
+          inviter_id: string | null
+          token: string
+          status: string
+          sent_at: string | null
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          participant_id: string
+          inviter_id?: string | null
+          token?: string
+          status?: string
+          sent_at?: string | null
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          participant_id?: string
+          inviter_id?: string | null
+          token?: string
+          status?: string
+          sent_at?: string | null
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       participants: {
         Row: {
+          email: string | null
           family_id: string | null
           id: string
           is_adult: boolean
@@ -243,6 +280,7 @@ export type Database = {
           trip_id: string
         }
         Insert: {
+          email?: string | null
           family_id?: string | null
           id?: string
           is_adult?: boolean
@@ -250,6 +288,7 @@ export type Database = {
           trip_id: string
         }
         Update: {
+          email?: string | null
           family_id?: string | null
           id?: string
           is_adult?: boolean

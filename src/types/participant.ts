@@ -13,6 +13,7 @@ export interface Participant {
   name: string
   is_adult: boolean
   user_id?: string | null
+  email?: string | null
 }
 
 export interface CreateFamilyInput {
@@ -27,6 +28,7 @@ export interface CreateParticipantInput {
   family_id?: string | null
   name: string
   is_adult: boolean
+  email?: string | null
 }
 
 export interface UpdateFamilyInput {
@@ -39,4 +41,5 @@ export interface UpdateParticipantInput {
   name?: string
   is_adult?: boolean
   family_id?: string | null
+  email?: string | null
 }

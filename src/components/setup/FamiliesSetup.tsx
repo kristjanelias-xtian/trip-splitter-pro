@@ -1,8 +1,10 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, Plus, Users, User, Edit } from 'lucide-react'
+import { X, Plus, Users, User, Edit, Mail } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,10 +19,56 @@ import {
 } from '@/components/ui/dialog'
 import { fadeInUp } from '@/lib/animations'
 import type { Family, Participant } from '@/types/participant'
+import { logger } from '@/lib/logger'
 
 interface FamiliesSetupProps {
   onComplete?: () => void
   hasSetup?: boolean
+}
+
+async function sendInvitation(params: {
+  participantId: string
+  participantEmail: string
+  participantName: string
+  tripId: string
+  tripCode: string
+  tripName: string
+  organiserName: string
+  inviterId: string
+}) {
+  try {
+    const { data: inv, error: invError } = await supabase
+      .from('invitations')
+      .insert([{
+        trip_id: params.tripId,
+        participant_id: params.participantId,
+        inviter_id: params.inviterId,
+      }])
+      .select('id, token')
+      .single()
+
+    if (invError || !inv) {
+      logger.warn('Failed to create invitation row', { error: String(invError) })
+      return
+    }
+
+    supabase.functions.invoke('send-email', {
+      body: {
+        type: 'invitation',
+        invitation_id: inv.id,
+        trip_name: params.tripName,
+        trip_code: params.tripCode,
+        participant_name: params.participantName,
+        participant_email: params.participantEmail,
+        organiser_name: params.organiserName,
+        token: inv.token,
+      },
+    }).then(({ error }) => {
+      if (error) logger.warn('send-email edge fn returned error', { error: String(error) })
+    })
+  } catch (err) {
+    logger.warn('sendInvitation: unhandled error', { error: String(err) })
+  }
 }
 
 export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: FamiliesSetupProps = {}) {
@@ -36,9 +84,12 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
     updateParticipant,
     getParticipantsByFamily,
   } = useParticipantContext()
+  const { user, userProfile } = useAuth()
+
+  const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
 
   const [familyName, setFamilyName] = useState('')
-  const [adultNames, setAdultNames] = useState(['', ''])
+  const [adultEntries, setAdultEntries] = useState([{ name: '', email: '' }, { name: '', email: '' }])
   const [childrenNames, setChildrenNames] = useState<string[]>([])
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +97,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
   // Edit family state
   const [editingFamily, setEditingFamily] = useState<Family | null>(null)
   const [editFamilyName, setEditFamilyName] = useState('')
-  const [editAdults, setEditAdults] = useState<Array<{ id: string; name: string }>>([])
+  const [editAdults, setEditAdults] = useState<Array<{ id: string; name: string; email: string }>>([])
   const [editChildren, setEditChildren] = useState<Array<{ id: string; name: string }>>([])
   const [updating, setUpdating] = useState(false)
 
@@ -67,7 +118,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
     if (!currentTrip || !familyName.trim()) return
 
-    const validAdults = adultNames.filter(n => n.trim())
+    const validAdults = adultEntries.filter(a => a.name.trim())
     if (validAdults.length === 0) {
       setError('Please add at least one adult')
       return
@@ -85,13 +136,28 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
       if (family) {
         // Create adult participants
-        for (const name of validAdults) {
-          await createParticipant({
+        for (const adult of validAdults) {
+          const newParticipant = await createParticipant({
             trip_id: currentTrip.id,
             family_id: family.id,
-            name: name.trim(),
+            name: adult.name.trim(),
             is_adult: true,
+            email: adult.email.trim() || null,
           })
+
+          // Send invitation if email provided
+          if (newParticipant && adult.email.trim() && user) {
+            sendInvitation({
+              participantId: newParticipant.id,
+              participantEmail: adult.email.trim(),
+              participantName: newParticipant.name,
+              tripId: currentTrip.id,
+              tripCode: currentTrip.trip_code,
+              tripName: currentTrip.name,
+              organiserName,
+              inviterId: user.id,
+            })
+          }
         }
 
         // Create child participants
@@ -106,10 +172,10 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
         // Reset form
         setFamilyName('')
-        setAdultNames(['', ''])
+        setAdultEntries([{ name: '', email: '' }, { name: '', email: '' }])
         setChildrenNames([])
       }
-    } catch (err) {
+    } catch {
       setError('Failed to add family. Please try again.')
     } finally {
       setAdding(false)
@@ -118,15 +184,10 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
   const handleDeleteFamily = async (familyId: string) => {
     if (window.confirm('Remove this family and all its members?')) {
-      // Get all participants in this family
       const familyParticipants = getParticipantsByFamily(familyId)
-
-      // Delete all participants first
       for (const participant of familyParticipants) {
         await deleteParticipant(participant.id)
       }
-
-      // Then delete the family
       await deleteFamily(familyId)
     }
   }
@@ -138,7 +199,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
     setEditingFamily(family)
     setEditFamilyName(family.family_name)
-    setEditAdults(adults.map(a => ({ id: a.id, name: a.name })))
+    setEditAdults(adults.map(a => ({ id: a.id, name: a.name, email: a.email || '' })))
     setEditChildren(children.map(c => ({ id: c.id, name: c.name })))
   }
 
@@ -157,7 +218,6 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
     setUpdating(true)
 
     try {
-      // Validate at least one adult
       const validAdults = editAdults.filter(a => a.name.trim())
       if (validAdults.length === 0) {
         setError('Please keep at least one adult')
@@ -167,34 +227,50 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
       // Update family name if changed
       if (editFamilyName.trim() !== editingFamily.family_name) {
-        await updateFamily(editingFamily.id, {
-          family_name: editFamilyName.trim(),
-        })
+        await updateFamily(editingFamily.id, { family_name: editFamilyName.trim() })
       }
 
-      // Update all participant names
+      // Get original adults to detect email changes
+      const originalAdults = getParticipantsByFamily(editingFamily.id).filter(p => p.is_adult)
+
+      // Update all adult names and emails
       for (const adult of validAdults) {
+        const original = originalAdults.find(a => a.id === adult.id)
+        const newEmail = adult.email.trim() || null
+
         await updateParticipant(adult.id, {
           name: adult.name.trim(),
+          email: newEmail,
         })
+
+        // Send invitation if email is newly set
+        if (newEmail && !original?.email && user) {
+          sendInvitation({
+            participantId: adult.id,
+            participantEmail: newEmail,
+            participantName: adult.name.trim(),
+            tripId: currentTrip.id,
+            tripCode: currentTrip.trip_code,
+            tripName: currentTrip.name,
+            organiserName,
+            inviterId: user.id,
+          })
+        }
       }
 
       // Get original children to detect deletions
       const originalChildren = getParticipantsByFamily(editingFamily.id).filter(p => !p.is_adult)
       const currentChildIds = editChildren.map(c => c.id)
 
-      // Delete removed children
       for (const originalChild of originalChildren) {
         if (!currentChildIds.includes(originalChild.id)) {
           await deleteParticipant(originalChild.id)
         }
       }
 
-      // Handle children: update existing, create new
       const validChildren = editChildren.filter(c => c.name.trim())
       for (const child of validChildren) {
         if (child.id.startsWith('new-')) {
-          // Create new child
           await createParticipant({
             trip_id: currentTrip.id,
             family_id: editingFamily.id,
@@ -202,35 +278,26 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
             is_adult: false,
           })
         } else {
-          // Update existing child
-          await updateParticipant(child.id, {
-            name: child.name.trim(),
-          })
+          await updateParticipant(child.id, { name: child.name.trim() })
         }
       }
 
-      // Update family counts
       const childCount = validChildren.filter(c => !c.id.startsWith('new-')).length +
                         validChildren.filter(c => c.id.startsWith('new-')).length
-      await updateFamily(editingFamily.id, {
-        children: childCount,
-      })
+      await updateFamily(editingFamily.id, { children: childCount })
 
-      // Close dialog
       handleCancelEdit()
-    } catch (err) {
+    } catch {
       setError('Failed to update family. Please try again.')
     } finally {
       setUpdating(false)
     }
   }
 
-  // Helper to get standalone individuals
   const getStandaloneIndividuals = () => {
     return participants.filter(p => p.family_id === null)
   }
 
-  // Handler functions for standalone individuals
   const handleAddIndividual = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -241,15 +308,13 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
     try {
       await createParticipant({
         trip_id: currentTrip.id,
-        family_id: null,  // Key: null for standalone
+        family_id: null,
         name: individualName.trim(),
         is_adult: isAdult,
       })
-
-      // Reset form
       setIndividualName('')
       setIsAdult(true)
-    } catch (err) {
+    } catch {
       setError('Failed to add individual. Please try again.')
     } finally {
       setAddingIndividual(false)
@@ -286,9 +351,8 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
         name: editIndividualName.trim(),
         is_adult: editIsAdult,
       })
-
       handleCancelEditIndividual()
-    } catch (err) {
+    } catch {
       setError('Failed to update individual. Please try again.')
     } finally {
       setUpdatingIndividual(false)
@@ -332,24 +396,41 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
             </div>
 
             <div className="space-y-2">
-              <Label>Adults (at least 1 required)</Label>
-              {adultNames.map((name, index) => (
-                <Input
-                  key={index}
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    const newAdults = [...adultNames]
-                    newAdults[index] = e.target.value
-                    setAdultNames(newAdults)
-                  }}
-                  placeholder={`Adult ${index + 1} name`}
-                  disabled={adding}
-                />
+              <Label>Adults <span className="text-muted-foreground font-normal">(at least 1 required)</span></Label>
+              {adultEntries.map((adult, index) => (
+                <div key={index} className="space-y-1.5">
+                  <Input
+                    type="text"
+                    value={adult.name}
+                    onChange={(e) => {
+                      const updated = [...adultEntries]
+                      updated[index] = { ...updated[index], name: e.target.value }
+                      setAdultEntries(updated)
+                    }}
+                    placeholder={`Adult ${index + 1} name`}
+                    disabled={adding}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={13} className="text-muted-foreground flex-shrink-0" />
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      value={adult.email}
+                      onChange={(e) => {
+                        const updated = [...adultEntries]
+                        updated[index] = { ...updated[index], email: e.target.value }
+                        setAdultEntries(updated)
+                      }}
+                      placeholder="Email (optional — sends invite)"
+                      disabled={adding}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
               ))}
               <Button
                 type="button"
-                onClick={() => setAdultNames([...adultNames, ''])}
+                onClick={() => setAdultEntries([...adultEntries, { name: '', email: '' }])}
                 variant="ghost"
                 size="sm"
                 disabled={adding}
@@ -403,7 +484,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
             <Button
               type="submit"
-              disabled={adding || !familyName.trim() || adultNames.every(n => !n.trim())}
+              disabled={adding || !familyName.trim() || adultEntries.every(a => !a.name.trim())}
               className="w-full"
             >
               <Users size={16} className="mr-2" />
@@ -505,7 +586,17 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
 
                     <div className="space-y-1 text-sm">
                       <div className="text-muted-foreground">
-                        <strong className="text-foreground">Adults:</strong> {adults.map(a => a.name).join(', ')}
+                        <strong className="text-foreground">Adults:</strong>{' '}
+                        {adults.map(a => (
+                          <span key={a.id}>
+                            {a.name}
+                            {a.email && (
+                              <span className="text-xs ml-1 opacity-60" title={a.email}>
+                                <Mail size={10} className="inline" />
+                              </span>
+                            )}
+                          </span>
+                        )).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, ', ', el], [])}
                       </div>
                       {children.length > 0 && (
                         <div className="text-muted-foreground">
@@ -579,7 +670,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
           <DialogHeader>
             <DialogTitle>Edit Family</DialogTitle>
             <DialogDescription>
-              Update family name and participant names
+              Update family name and participant details
             </DialogDescription>
           </DialogHeader>
 
@@ -609,18 +700,35 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
             <div className="space-y-2">
               <Label>Adults</Label>
               {editAdults.map((adult, index) => (
-                <Input
-                  key={adult.id}
-                  type="text"
-                  value={adult.name}
-                  onChange={(e) => {
-                    const newAdults = [...editAdults]
-                    newAdults[index].name = e.target.value
-                    setEditAdults(newAdults)
-                  }}
-                  placeholder={`Adult ${index + 1} name`}
-                  disabled={updating}
-                />
+                <div key={adult.id} className="space-y-1.5">
+                  <Input
+                    type="text"
+                    value={adult.name}
+                    onChange={(e) => {
+                      const newAdults = [...editAdults]
+                      newAdults[index] = { ...newAdults[index], name: e.target.value }
+                      setEditAdults(newAdults)
+                    }}
+                    placeholder={`Adult ${index + 1} name`}
+                    disabled={updating}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={13} className="text-muted-foreground flex-shrink-0" />
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      value={adult.email}
+                      onChange={(e) => {
+                        const newAdults = [...editAdults]
+                        newAdults[index] = { ...newAdults[index], email: e.target.value }
+                        setEditAdults(newAdults)
+                      }}
+                      placeholder="Email (optional)"
+                      disabled={updating}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
 
@@ -633,7 +741,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                     value={child.name}
                     onChange={(e) => {
                       const newChildren = [...editChildren]
-                      newChildren[index].name = e.target.value
+                      newChildren[index] = { ...newChildren[index], name: e.target.value }
                       setEditChildren(newChildren)
                     }}
                     placeholder={`Child ${index + 1} name`}
