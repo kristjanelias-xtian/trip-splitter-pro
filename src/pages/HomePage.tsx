@@ -47,7 +47,7 @@ export function HomePage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Family Trip Cost Splitter
+            Split costs with anyone
           </h1>
           <p className="text-muted-foreground">
             Split costs fairly among groups with real-time collaboration

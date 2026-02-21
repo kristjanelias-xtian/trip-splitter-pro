@@ -73,6 +73,8 @@ export function QuickGroupDetailPage() {
     }
   }
 
+  const entityLabel = currentTrip?.event_type === 'event' ? 'Event' : 'Trip'
+
   if (tripLoading) {
     return (
       <div className="max-w-lg mx-auto px-4 py-6">
@@ -88,9 +90,9 @@ export function QuickGroupDetailPage() {
       <div className="max-w-lg mx-auto px-4 py-6">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground mb-4">Trip not found</p>
+            <p className="text-muted-foreground mb-4">{entityLabel} not found</p>
             <Button onClick={() => navigate('/quick')} variant="outline" size="sm">
-              Go to My Trips
+              My Groups
             </Button>
           </CardContent>
         </Card>
@@ -252,7 +254,7 @@ export function QuickGroupDetailPage() {
           onClick={() => navigate('/quick')}
         >
           <ArrowLeftRight size={16} />
-          My Trips
+          My Groups
         </Button>
         <Button
           variant="outline"

@@ -502,7 +502,17 @@ function MobileWizard({
 
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-            {error}
+            <div className="flex items-start justify-between gap-2">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="shrink-0 text-xs underline underline-offset-2 opacity-80 hover:opacity-100 disabled:opacity-40"
+              >
+                Try again
+              </button>
+            </div>
             {errorDetail && (
               <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
             )}

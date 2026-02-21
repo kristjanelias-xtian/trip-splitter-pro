@@ -22,7 +22,7 @@ export function ConditionalHomePage() {
   const { trips, loading: tripsLoading } = useTripContext()
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const shouldGoQuick = mode === 'quick' || isMobile
+  const shouldGoQuick = mode === 'quick' || (isMobile && mode !== 'full')
 
   const isLoading = prefsLoading || (shouldGoQuick && tripsLoading)
 

@@ -52,6 +52,12 @@ export function DashboardPage() {
     currentTrip.exchange_rates
   )
 
+  // Round display balances to 2dp to avoid floating-point accumulation artefacts
+  const displayBalances = balanceCalculation.balances.map(b => ({
+    ...b,
+    balance: Math.round(b.balance * 100) / 100,
+  }))
+
   const handleExportPDF = () => {
     exportTripSummaryToPDF(currentTrip, expenses, participants, balanceCalculation.balances)
   }
@@ -130,7 +136,7 @@ export function DashboardPage() {
                 style: 'currency',
                 currency: currentTrip.default_currency,
               }).format(
-                Math.abs(balanceCalculation.balances
+                Math.abs(displayBalances
                   .filter(b => b.balance < 0)
                   .reduce((sum, b) => sum + b.balance, 0))
               )}
@@ -165,7 +171,7 @@ export function DashboardPage() {
           Current Balances
         </h3>
 
-        {balanceCalculation.balances.length === 0 ? (
+        {displayBalances.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-8">
@@ -178,7 +184,7 @@ export function DashboardPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {balanceCalculation.balances.map(balance => (
+            {displayBalances.map(balance => (
               <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} />
             ))}
           </div>
