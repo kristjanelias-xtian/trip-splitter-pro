@@ -63,19 +63,13 @@ export function ExpensesPage() {
   const [viewingReceiptTask, setViewingReceiptTask] = useState<ReceiptTask | null>(null)
 
   const handleCreateExpense = async (input: CreateExpenseInput) => {
-    const result = await createExpense(input)
-    if (!result) {
-      throw new Error('Failed to create expense')
-    }
+    await createExpense(input)
     setShowForm(false)
   }
 
   const handleUpdateExpense = async (input: CreateExpenseInput) => {
     if (!editingExpense) return
-    const result = await updateExpense(editingExpense.id, input)
-    if (!result) {
-      throw new Error('Failed to update expense')
-    }
+    await updateExpense(editingExpense.id, input)
     setEditingExpense(null)
   }
 

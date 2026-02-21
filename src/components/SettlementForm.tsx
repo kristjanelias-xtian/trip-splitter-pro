@@ -42,6 +42,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
   const [note, setNote] = useState(initialNote || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -165,7 +166,8 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
       setNote('')
       setSettlementDate(new Date().toISOString().split('T')[0])
     } catch (err) {
-      setError('Failed to record settlement. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to record settlement.')
+      setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       if (isMounted.current) setLoading(false)
     }
@@ -187,6 +189,9 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
         >
           {error}
+          {errorDetail && (
+            <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
+          )}
         </motion.div>
       )}
 

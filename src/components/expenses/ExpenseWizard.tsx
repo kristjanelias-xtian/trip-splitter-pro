@@ -93,6 +93,7 @@ function MobileWizard({
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -172,6 +173,7 @@ function MobileWizard({
         setPaidBy(initialValues?.paid_by || '')
         setComment('')
         setError(null)
+        setErrorDetail(null)
         setSplitMode('equal')
         setParticipantSplitValues({})
         setFamilySplitValues({})
@@ -243,6 +245,7 @@ function MobileWizard({
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
     setError(null)
+    setErrorDetail(null)
   }
 
   const handleNext = () => {
@@ -422,8 +425,8 @@ function MobileWizard({
       await onSubmit(expenseInput)
       onOpenChange(false)
     } catch (err) {
-      console.error('Error submitting expense:', err)
-      setError('Failed to create expense. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to create expense.')
+      setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       if (isMounted.current) setIsSubmitting(false)
     }
@@ -500,6 +503,9 @@ function MobileWizard({
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {error}
+            {errorDetail && (
+              <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
+            )}
           </div>
         )}
 

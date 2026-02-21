@@ -161,10 +161,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   }
 
   const handleSubmit = async (input: CreateSettlementInput) => {
-    const result = await createSettlement(input)
-    if (!result) {
-      throw new Error('Failed to record settlement')
-    }
+    await createSettlement(input)
     toast({
       title: 'Payment recorded',
       description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,

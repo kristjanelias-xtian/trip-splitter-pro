@@ -96,6 +96,7 @@ export function ExpenseForm({
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -424,7 +425,8 @@ export function ExpenseForm({
       setSelectedFamilies(families.map(f => f.id))
       setShowMoreDetails(false)
     } catch (err) {
-      setError('Failed to save expense. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to save expense.')
+      setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       if (isMounted.current) setLoading(false)
     }
@@ -445,6 +447,9 @@ export function ExpenseForm({
           className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
         >
           {error}
+          {errorDetail && (
+            <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
+          )}
         </motion.div>
       )}
 

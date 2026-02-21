@@ -12,7 +12,7 @@ interface AuthContextType {
   loading: boolean
   signInWithGoogle: (credential: string) => Promise<void>
   signOut: () => Promise<void>
-  updateBankDetails: (holder: string, iban: string) => Promise<boolean>
+  updateBankDetails: (holder: string, iban: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -131,36 +131,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updateBankDetails = async (holder: string, iban: string): Promise<boolean> => {
-    if (!user) return false
+  const updateBankDetails = async (holder: string, iban: string): Promise<void> => {
+    if (!user) throw new Error('Not signed in')
 
-    try {
-      const { error } = await withTimeout<any>(
-        (supabase as any)
-          .from('user_profiles')
-          .update({
-            bank_account_holder: holder || null,
-            bank_iban: iban || null,
-          })
-          .eq('id', user.id),
-        15000,
-        'Saving bank details timed out. Please check your connection and try again.'
-      )
-
-      if (error) throw error
-
-      if (userProfile) {
-        setUserProfile({
-          ...userProfile,
+    const { error } = await withTimeout<any>(
+      (supabase as any)
+        .from('user_profiles')
+        .update({
           bank_account_holder: holder || null,
           bank_iban: iban || null,
         })
-      }
+        .eq('id', user.id),
+      15000,
+      'Saving bank details timed out. Please check your connection and try again.'
+    )
 
-      return true
-    } catch (error) {
-      logger.error('Failed to update bank details', { error: error instanceof Error ? error.message : String(error) })
-      return false
+    if (error) {
+      logger.error('Failed to update bank details', { error: error.message })
+      throw new Error(error.message)
+    }
+
+    if (userProfile) {
+      setUserProfile({
+        ...userProfile,
+        bank_account_holder: holder || null,
+        bank_iban: iban || null,
+      })
     }
   }
 

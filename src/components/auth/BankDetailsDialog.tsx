@@ -28,25 +28,17 @@ export function BankDetailsDialog({ open, onOpenChange }: BankDetailsDialogProps
   const handleSave = async () => {
     setSaving(true)
     try {
-      const success = await updateBankDetails(holder.trim(), iban.trim())
-      if (success) {
-        toast({
-          title: 'Bank details saved',
-          description: 'Your bank details have been updated.',
-        })
-        onOpenChange(false)
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Save failed',
-          description: 'Failed to save bank details. Please try again.',
-        })
-      }
-    } catch {
+      await updateBankDetails(holder.trim(), iban.trim())
+      toast({
+        title: 'Bank details saved',
+        description: 'Your bank details have been updated.',
+      })
+      onOpenChange(false)
+    } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'An error occurred while saving bank details.',
+        title: 'Save failed',
+        description: err instanceof Error ? err.message : 'Failed to save bank details.',
       })
     } finally {
       setSaving(false)
