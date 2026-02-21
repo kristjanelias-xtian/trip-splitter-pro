@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from './TripContext'
 import type {
   ShoppingItem,
   CreateShoppingItemInput,
@@ -10,6 +9,7 @@ import type {
 } from '@/types/shopping'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface ShoppingContextValue {
   shoppingItems: ShoppingItem[]
@@ -31,7 +31,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
   const fetchShoppingItems = async () => {
@@ -43,12 +42,16 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('shopping_items')
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('category', { ascending: true })
-        .order('name', { ascending: true })
+      const { data, error } = await withTimeout(
+        supabase
+          .from('shopping_items')
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('category', { ascending: true })
+          .order('name', { ascending: true }),
+        15000,
+        'Loading shopping items timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to fetch shopping items', { trip_id: currentTrip?.id, error: error.message })
@@ -152,7 +155,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(shoppingChannel)
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const createShoppingItem = async (
     input: CreateShoppingItemInput
@@ -166,11 +169,15 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         category: itemData.category || 'other',
       }
 
-      const { data, error } = await supabase
-        .from('shopping_items')
-        .insert([itemToInsert] as any)
-        .select()
-        .single()
+      const { data, error } = await withTimeout(
+        supabase
+          .from('shopping_items')
+          .insert([itemToInsert] as any)
+          .select()
+          .single(),
+        35000,
+        'Creating shopping item timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: error.message })
@@ -184,9 +191,13 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           shopping_item_id: (data as any).id,
         }))
 
-        const { error: linkError } = await supabase
-          .from('meal_shopping_items')
-          .insert(links as any)
+        const { error: linkError } = await withTimeout(
+          supabase
+            .from('meal_shopping_items')
+            .insert(links as any),
+          10000,
+          'Linking shopping item to meals timed out.'
+        )
 
         if (linkError) {
           logger.error('Failed to link shopping item to meals', { trip_id: currentTrip?.id, error: linkError.message })
@@ -210,12 +221,16 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     input: UpdateShoppingItemInput
   ): Promise<ShoppingItem | null> => {
     try {
-      const { data, error } = await ((supabase
-        .from('shopping_items') as any)
-        .update({ ...input, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single())
+      const { data, error } = await withTimeout<any>(
+        (supabase
+          .from('shopping_items') as any)
+          .update({ ...input, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single(),
+        35000,
+        'Updating shopping item timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
@@ -240,10 +255,14 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
     try {
       // First, delete all meal-shopping links
-      const { error: linkError } = await supabase
-        .from('meal_shopping_items')
-        .delete()
-        .eq('shopping_item_id', id)
+      const { error: linkError } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .delete()
+          .eq('shopping_item_id', id),
+        10000,
+        'Unlinking shopping item from meals timed out.'
+      )
 
       if (linkError) {
         logger.error('Failed to delete shopping item links', { item_id: id, error: linkError.message })
@@ -254,7 +273,11 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       setShoppingItems((prev) => prev.filter((item) => item.id !== id))
 
       // Then delete the shopping item
-      const { error } = await supabase.from('shopping_items').delete().eq('id', id)
+      const { error } = await withTimeout(
+        supabase.from('shopping_items').delete().eq('id', id),
+        35000,
+        'Deleting shopping item timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })

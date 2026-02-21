@@ -85,6 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setLoading(false)
+    }).catch((err) => {
+      logger.error('Auth init failed', { error: err instanceof Error ? err.message : String(err) })
+      setLoading(false)
     })
 
     // Listen for auth changes — skip the INITIAL_SESSION event that fires
@@ -142,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           bank_iban: iban || null,
         })
         .eq('id', user.id),
-      15000,
+      35000,
       'Saving bank details timed out. Please check your connection and try again.'
     )
 

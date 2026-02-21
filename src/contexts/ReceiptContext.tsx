@@ -132,8 +132,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         return false
       }
 
-      // Refresh pending receipts in case status changed
-      await fetchPendingReceipts()
+      // Refresh pending receipts in case status changed — fire-and-forget
+      fetchPendingReceipts()
       return true
     } catch (err) {
       logger.error('Unhandled error updating receipt task', { error: String(err) })
@@ -162,8 +162,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       }
 
       setPendingReceipts(prev => prev.filter(r => r.id !== id))
-      // Refresh to pick up the now-complete task in completedReceipts
-      await fetchPendingReceipts()
+      // Refresh to pick up the now-complete task in completedReceipts — fire-and-forget
+      fetchPendingReceipts()
       return true
     } catch (err) {
       logger.error('Unhandled error completing receipt task', { error: String(err) })

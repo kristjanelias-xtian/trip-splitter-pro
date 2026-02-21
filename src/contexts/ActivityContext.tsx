@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useTripContext } from './TripContext'
 import type { Activity, CreateActivityInput, UpdateActivityInput } from '@/types/activity'
 
 interface ActivityContextValue {
@@ -30,7 +29,6 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { trips } = useTripContext()
 
   const fetchActivities = async () => {
     if (!currentTrip) {
@@ -71,7 +69,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchActivities()
     }
-  }, [tripCode, currentTrip?.id, trips.length])
+  }, [tripCode, currentTrip?.id])
 
   const createActivity = async (input: CreateActivityInput): Promise<Activity | null> => {
     try {
