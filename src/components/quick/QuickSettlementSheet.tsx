@@ -279,7 +279,11 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                               </p>
                             )
                           }
-                          return null
+                          return (
+                            <p className="mt-2 text-xs text-muted-foreground italic">
+                              Ask {tx.toName} to join Spl1t to share payment details
+                            </p>
+                          )
                         })()}
                       </div>
                       <Button

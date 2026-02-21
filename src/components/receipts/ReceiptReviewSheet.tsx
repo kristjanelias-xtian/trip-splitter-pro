@@ -40,18 +40,18 @@ interface ReceiptReviewSheetProps {
 
 // Participant chip color palette (consistent across rerenders)
 const CHIP_COLORS = [
-  'bg-blue-500',
-  'bg-emerald-500',
-  'bg-violet-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-cyan-500',
-  'bg-fuchsia-500',
-  'bg-teal-500',
+  { on: 'bg-blue-500 text-white',    off: 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700' },
+  { on: 'bg-emerald-500 text-white', off: 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700' },
+  { on: 'bg-violet-500 text-white',  off: 'bg-violet-100 text-violet-700 border border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700' },
+  { on: 'bg-amber-500 text-white',   off: 'bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700' },
+  { on: 'bg-rose-500 text-white',    off: 'bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700' },
+  { on: 'bg-cyan-500 text-white',    off: 'bg-cyan-100 text-cyan-700 border border-cyan-300 dark:bg-cyan-900/40 dark:text-cyan-300 dark:border-cyan-700' },
+  { on: 'bg-fuchsia-500 text-white', off: 'bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-300 dark:bg-fuchsia-900/40 dark:text-fuchsia-300 dark:border-fuchsia-700' },
+  { on: 'bg-teal-500 text-white',    off: 'bg-teal-100 text-teal-700 border border-teal-300 dark:bg-teal-900/40 dark:text-teal-300 dark:border-teal-700' },
 ]
 
-function getChipColor(index: number) {
-  return CHIP_COLORS[index % CHIP_COLORS.length]
+function getChipColor(index: number, assigned: boolean) {
+  return CHIP_COLORS[index % CHIP_COLORS.length][assigned ? 'on' : 'off']
 }
 
 
@@ -651,9 +651,7 @@ function ItemRow({
               onClick={() => onToggleParticipant(p.id)}
               className={[
                 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
-                assigned
-                  ? `${getChipColor(pi)} text-white`
-                  : 'bg-muted text-muted-foreground border border-border',
+                getChipColor(pi, assigned),
               ].join(' ')}
               title={p.name}
             >
