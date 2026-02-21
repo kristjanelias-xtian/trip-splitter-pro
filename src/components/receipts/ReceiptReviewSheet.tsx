@@ -14,6 +14,7 @@ import {
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
+import { useTripContext } from '@/contexts/TripContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -136,10 +137,16 @@ export function ReceiptReviewSheet({
   const { participants, getAdultParticipants } = useParticipantContext()
   const { createExpense } = useExpenseContext()
   const { completeReceiptTask } = useReceiptContext()
+  const { updateTrip } = useTripContext()
   const { user } = useAuth()
   const { toast } = useToast()
 
   const adultParticipants = getAdultParticipants()
+  const baseCurrency = currentTrip?.default_currency ?? 'EUR'
+  const knownCurrencies = useMemo(
+    () => [baseCurrency, ...Object.keys(currentTrip?.exchange_rates ?? {})],
+    [baseCurrency, currentTrip?.exchange_rates]
+  )
 
   // Editable items state
   const [editableItems, setEditableItems] = useState<EditableItem[]>([])
@@ -148,8 +155,23 @@ export function ReceiptReviewSheet({
   const [paidBy, setPaidBy] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('Food')
   const [merchantName, setMerchantName] = useState('')
+  const [activeCurrency, setActiveCurrency] = useState(currency)
+  const [exchangeRate, setExchangeRate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showAllItems, setShowAllItems] = useState(true)
+
+  // Currency options: trip's known currencies + extracted currency if not already present
+  const currencyOptions = useMemo(() => {
+    const opts = [...knownCurrencies]
+    if (activeCurrency && !opts.includes(activeCurrency)) opts.push(activeCurrency)
+    return opts
+  }, [knownCurrencies, activeCurrency])
+
+  // True when user has selected a currency not yet in the trip's exchange rates
+  const currencyIsUnknown =
+    activeCurrency !== baseCurrency && !knownCurrencies.includes(activeCurrency)
+
+  const exchangeRateFloat = parseFloat(exchangeRate)
 
   // Reset state when sheet opens with new data
   useEffect(() => {
@@ -170,6 +192,8 @@ export function ReceiptReviewSheet({
     setPaidBy(defaultPayerId)
     setMerchantName(merchant ?? '')
     setCategory('Food')
+    setActiveCurrency(currency)
+    setExchangeRate('')
     setShowAllItems(true)
   }, [open, taskId])
 
@@ -230,13 +254,23 @@ export function ReceiptReviewSheet({
     paidBy &&
     totalFloat > 0 &&
     unassignedItems.length === 0 &&
-    editableItems.some(item => item.assignedIds.size > 0)
+    editableItems.some(item => item.assignedIds.size > 0) &&
+    (!currencyIsUnknown || (exchangeRateFloat > 0))
 
   const handleSubmit = async () => {
     if (!currentTrip || !canSubmit) return
     setSubmitting(true)
 
     try {
+      // If the currency is new to this trip, save its exchange rate first
+      if (currencyIsUnknown && exchangeRateFloat > 0) {
+        const updatedRates = {
+          ...(currentTrip.exchange_rates ?? {}),
+          [activeCurrency]: exchangeRateFloat,
+        }
+        await updateTrip(currentTrip.id, { exchange_rates: updatedRates })
+      }
+
       const { distribution, totalAmount } = buildDistribution(editableItems, totalFloat, tipFloat)
 
       const description = merchantName.trim()
@@ -247,7 +281,7 @@ export function ReceiptReviewSheet({
         trip_id: currentTrip.id,
         description,
         amount: totalAmount,
-        currency,
+        currency: activeCurrency,
         paid_by: paidBy,
         distribution,
         category,
@@ -264,7 +298,7 @@ export function ReceiptReviewSheet({
 
       toast({
         title: 'Receipt added',
-        description: `${description} — ${currency} ${totalAmount.toFixed(2)}`,
+        description: `${description} — ${activeCurrency} ${totalAmount.toFixed(2)}`,
       })
 
       onOpenChange(false)
@@ -371,14 +405,51 @@ export function ReceiptReviewSheet({
 
           {/* Totals */}
           <div className="border border-border rounded-lg p-3 space-y-3">
+            {/* Currency selector */}
+            <div className="space-y-1">
+              <Label htmlFor="receipt-currency" className="text-xs">Currency</Label>
+              <Select value={activeCurrency} onValueChange={setActiveCurrency}>
+                <SelectTrigger id="receipt-currency" className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencyOptions.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Exchange rate prompt for unknown currencies */}
+            {currencyIsUnknown && (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <span>{activeCurrency} is not in your trip's currencies. Enter the exchange rate to convert balances correctly.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">1 {baseCurrency} =</span>
+                  <Input
+                    inputMode="decimal"
+                    value={exchangeRate}
+                    onChange={e => setExchangeRate(e.target.value.replace(',', '.'))}
+                    placeholder="0.00"
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-sm font-medium">{activeCurrency}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">This rate will be saved to your trip.</p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Items total</span>
-              <span>{currency} {itemsTotal.toFixed(2)}</span>
+              <span>{activeCurrency} {itemsTotal.toFixed(2)}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="confirmed-total" className="text-xs">Total charged ({currency})</Label>
+                <Label htmlFor="confirmed-total" className="text-xs">Total charged ({activeCurrency})</Label>
                 <Input
                   id="confirmed-total"
                   inputMode="decimal"
@@ -389,7 +460,7 @@ export function ReceiptReviewSheet({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="tip" className="text-xs">Tip ({currency})</Label>
+                <Label htmlFor="tip" className="text-xs">Tip ({activeCurrency})</Label>
                 <Input
                   id="tip"
                   inputMode="decimal"
@@ -403,7 +474,7 @@ export function ReceiptReviewSheet({
 
             <div className="flex items-center justify-between font-semibold text-sm border-t border-border pt-2">
               <span>Total expense</span>
-              <span>{currency} {totalExpense.toFixed(2)}</span>
+              <span>{activeCurrency} {totalExpense.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -422,7 +493,7 @@ export function ReceiptReviewSheet({
                 Adding expense...
               </>
             ) : (
-              `Add Expense — ${currency} ${totalExpense.toFixed(2)}`
+              `Add Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
             )}
           </Button>
           {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
