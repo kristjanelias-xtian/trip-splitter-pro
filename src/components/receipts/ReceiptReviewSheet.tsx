@@ -636,7 +636,7 @@ function ItemRow({
           value={item.price}
           onChange={e => onPriceChange(e.target.value)}
           placeholder="0.00"
-          className="w-20 h-8 text-sm text-right"
+          className="w-24 h-8 text-sm text-right"
           style={{ fontSize: '1rem' }}
         />
       </div>

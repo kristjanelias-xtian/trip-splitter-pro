@@ -169,40 +169,47 @@ export function QuickGroupDetailPage() {
           {pendingReceipts.map(task => (
             <div
               key={task.id}
-              className="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3"
+              className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3"
             >
-              <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
-                <ScanLine size={16} className="shrink-0" />
-                <span className="truncate">
-                  Unreviewed receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() =>
-                    setReceiptReviewData({
-                      taskId: task.id,
-                      merchant: task.extracted_merchant,
-                      items: task.extracted_items ?? [],
-                      total: task.extracted_total,
-                      currency: task.extracted_currency ?? currentTrip.default_currency,
-                      imagePath: task.receipt_image_path ?? null,
-                    })
-                  }
-                >
-                  Review
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-muted-foreground"
-                  onClick={() => dismissReceiptTask(task.id)}
-                >
-                  Dismiss
-                </Button>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
+                  <ScanLine size={16} className="shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-medium">Unreviewed receipt</span>
+                    {task.extracted_merchant && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 truncate mt-0.5">
+                        {task.extracted_merchant}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() =>
+                      setReceiptReviewData({
+                        taskId: task.id,
+                        merchant: task.extracted_merchant,
+                        items: task.extracted_items ?? [],
+                        total: task.extracted_total,
+                        currency: task.extracted_currency ?? currentTrip.default_currency,
+                        imagePath: task.receipt_image_path ?? null,
+                      })
+                    }
+                  >
+                    Review
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-muted-foreground"
+                    onClick={() => dismissReceiptTask(task.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
