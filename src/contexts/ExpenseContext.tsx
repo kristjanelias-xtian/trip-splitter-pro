@@ -14,8 +14,8 @@ interface ExpenseContextType {
   expenses: Expense[]
   loading: boolean
   error: string | null
-  createExpense: (input: CreateExpenseInput) => Promise<Expense | null>
-  updateExpense: (id: string, input: UpdateExpenseInput) => Promise<boolean>
+  createExpense: (input: CreateExpenseInput) => Promise<Expense>
+  updateExpense: (id: string, input: UpdateExpenseInput) => Promise<void>
   deleteExpense: (id: string) => Promise<boolean>
   refreshExpenses: () => Promise<void>
   getExpensesByCategory: (category: ExpenseCategory) => Expense[]
@@ -71,7 +71,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   }
 
   // Create expense
-  const createExpense = async (input: CreateExpenseInput): Promise<Expense | null> => {
+  const createExpense = async (input: CreateExpenseInput): Promise<Expense> => {
     try {
       setError(null)
 
@@ -93,7 +93,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         'Saving expense timed out. Please check your connection and try again.'
       )
 
-      if (createError) throw createError
+      if (createError) throw new Error(createError.message)
 
       const newExpense = data as Expense
       setExpenses(prev => [newExpense, ...prev])
@@ -103,12 +103,12 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create expense')
       logger.error('Failed to create expense', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
-      return null
+      throw err
     }
   }
 
   // Update expense
-  const updateExpense = async (id: string, input: UpdateExpenseInput): Promise<boolean> => {
+  const updateExpense = async (id: string, input: UpdateExpenseInput): Promise<void> => {
     try {
       setError(null)
 
@@ -120,17 +120,15 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         'Updating expense timed out. Please check your connection and try again.'
       )
 
-      if (updateError) throw updateError
+      if (updateError) throw new Error(updateError.message)
 
       setExpenses(prev =>
         prev.map(e => (e.id === id ? { ...e, ...input } : e))
       )
-
-      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update expense')
       logger.error('Failed to update expense', { expense_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
-      return false
+      throw err
     }
   }
 

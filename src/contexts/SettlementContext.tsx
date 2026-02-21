@@ -13,8 +13,8 @@ interface SettlementContextType {
   settlements: Settlement[]
   loading: boolean
   error: string | null
-  createSettlement: (input: CreateSettlementInput) => Promise<Settlement | null>
-  updateSettlement: (id: string, input: UpdateSettlementInput) => Promise<boolean>
+  createSettlement: (input: CreateSettlementInput) => Promise<Settlement>
+  updateSettlement: (id: string, input: UpdateSettlementInput) => Promise<void>
   deleteSettlement: (id: string) => Promise<boolean>
   refreshSettlements: () => Promise<void>
   getSettlementsByParticipant: (participantId: string) => Settlement[]
@@ -66,7 +66,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   }
 
   // Create settlement
-  const createSettlement = async (input: CreateSettlementInput): Promise<Settlement | null> => {
+  const createSettlement = async (input: CreateSettlementInput): Promise<Settlement> => {
     try {
       setError(null)
 
@@ -86,7 +86,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
         'Saving settlement timed out. Please check your connection and try again.'
       )
 
-      if (createError) throw createError
+      if (createError) throw new Error(createError.message)
 
       const newSettlement = data as Settlement
       setSettlements(prev => [newSettlement, ...prev])
@@ -96,12 +96,12 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create settlement')
       logger.error('Failed to create settlement', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
-      return null
+      throw err
     }
   }
 
   // Update settlement
-  const updateSettlement = async (id: string, input: UpdateSettlementInput): Promise<boolean> => {
+  const updateSettlement = async (id: string, input: UpdateSettlementInput): Promise<void> => {
     try {
       setError(null)
 
@@ -111,17 +111,15 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
         'Updating settlement timed out. Please check your connection and try again.'
       )
 
-      if (updateError) throw updateError
+      if (updateError) throw new Error(updateError.message)
 
       setSettlements(prev =>
         prev.map(s => (s.id === id ? { ...s, ...input } : s))
       )
-
-      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update settlement')
       logger.error('Failed to update settlement', { settlement_id: id, trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
-      return false
+      throw err
     }
   }
 
