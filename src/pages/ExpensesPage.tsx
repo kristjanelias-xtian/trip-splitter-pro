@@ -11,6 +11,8 @@ import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
+import { ReceiptDetailsSheet } from '@/components/receipts/ReceiptDetailsSheet'
+import { ReceiptTask } from '@/types/receipt'
 import { CreateExpenseInput, ExpenseCategory, Expense } from '@/types/expense'
 import { ExtractedItem } from '@/types/receipt'
 import { Button } from '@/components/ui/button'
@@ -46,7 +48,7 @@ export function ExpensesPage() {
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenseContext()
   const { participants, families } = useParticipantContext()
   const { settlements } = useSettlementContext()
-  const { pendingReceipts, dismissReceiptTask } = useReceiptContext()
+  const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
 
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
@@ -55,6 +57,7 @@ export function ExpensesPage() {
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
   const [showReceiptCapture, setShowReceiptCapture] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
+  const [viewingReceiptTask, setViewingReceiptTask] = useState<ReceiptTask | null>(null)
 
   const handleCreateExpense = async (input: CreateExpenseInput) => {
     const result = await createExpense(input)
@@ -152,7 +155,7 @@ export function ExpensesPage() {
               title="Scan a receipt"
             >
               <ScanLine size={16} />
-              <span className="hidden sm:inline">Scan Receipt</span>
+              Scan Receipt
             </Button>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
@@ -315,6 +318,10 @@ export function ExpensesPage() {
                       setEditingExpense(expense)
                     }}
                     onDelete={() => setDeletingExpenseId(expense.id)}
+                    onViewReceipt={receiptByExpenseId[expense.id]
+                      ? () => setViewingReceiptTask(receiptByExpenseId[expense.id])
+                      : undefined
+                    }
                   />
                 ))}
               </div>
@@ -347,6 +354,15 @@ export function ExpensesPage() {
           extractedTotal={receiptReviewData.total}
           currency={receiptReviewData.currency}
           onDone={() => setReceiptReviewData(null)}
+        />
+      )}
+
+      {/* Receipt Details (read-only) */}
+      {viewingReceiptTask && (
+        <ReceiptDetailsSheet
+          open={!!viewingReceiptTask}
+          onOpenChange={open => { if (!open) setViewingReceiptTask(null) }}
+          task={viewingReceiptTask}
         />
       )}
 

@@ -10,6 +10,7 @@ import {
   Trash2,
   Calendar,
   Tag,
+  ScanLine,
 } from 'lucide-react'
 import { Expense } from '@/types/expense'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -23,9 +24,10 @@ interface ExpenseCardProps {
   expense: Expense
   onEdit: () => void
   onDelete: () => void
+  onViewReceipt?: () => void
 }
 
-export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
+export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: ExpenseCardProps) {
   const { participants, families } = useParticipantContext()
   const { currentTrip } = useCurrentTrip()
 
@@ -162,6 +164,17 @@ export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
               )}
             </div>
             <div className="flex gap-1">
+              {onViewReceipt && (
+                <Button
+                  onClick={onViewReceipt}
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 text-muted-foreground"
+                  title="View receipt"
+                >
+                  <ScanLine size={16} />
+                </Button>
+              )}
               <Button
                 onClick={onEdit}
                 variant="ghost"
