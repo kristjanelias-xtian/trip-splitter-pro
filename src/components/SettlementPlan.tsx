@@ -1,4 +1,5 @@
-import { PartyPopper, Lightbulb, Check } from 'lucide-react'
+import { useState } from 'react'
+import { PartyPopper, Lightbulb, Check, Bell, X } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,9 +15,11 @@ interface SettlementPlanProps {
   onRecordSettlement?: (transaction: SettlementTransaction) => void
   bankDetailsMap?: Record<string, BankDetails>
   linkedParticipantIds?: Set<string>
+  fromEmailMap?: Record<string, string>
+  onRemind?: (transaction: SettlementTransaction, fromEmail: string) => Promise<void>
 }
 
-export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds }: SettlementPlanProps) {
+export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind }: SettlementPlanProps) {
   if (plan.transactions.length === 0) {
     return (
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
@@ -62,6 +65,8 @@ export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linke
             onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
             bankDetails={bankDetailsMap?.[transaction.toId]}
             linkedParticipantIds={linkedParticipantIds}
+            fromEmail={fromEmailMap?.[transaction.fromId]}
+            onRemind={onRemind ? (email) => onRemind(transaction, email) : undefined}
           />
         ))}
       </div>
@@ -76,6 +81,8 @@ interface SettlementTransactionCardProps {
   onRecord?: () => void
   bankDetails?: BankDetails
   linkedParticipantIds?: Set<string>
+  fromEmail?: string
+  onRemind?: (fromEmail: string) => Promise<void>
 }
 
 function SettlementTransactionCard({
@@ -85,11 +92,32 @@ function SettlementTransactionCard({
   onRecord,
   bankDetails,
   linkedParticipantIds,
+  fromEmail,
+  onRemind,
 }: SettlementTransactionCardProps) {
+  const [confirmingRemind, setConfirmingRemind] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [remindResult, setRemindResult] = useState<'sent' | 'error' | null>(null)
+
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
   }).format(transaction.amount)
+
+  const handleSendReminder = async () => {
+    if (!onRemind || !fromEmail) return
+    setSending(true)
+    setRemindResult(null)
+    try {
+      await onRemind(fromEmail)
+      setRemindResult('sent')
+      setConfirmingRemind(false)
+    } catch {
+      setRemindResult('error')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <Card>
@@ -143,19 +171,83 @@ function SettlementTransactionCard({
               Ask {transaction.toName} to add their bank details
             </p>
           )}
+
+          {/* Remind confirmation inline */}
+          {confirmingRemind && fromEmail && (
+            <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
+              <p className="text-sm text-foreground">
+                Send payment reminder to <strong>{transaction.fromName}</strong>?
+              </p>
+              <p className="text-xs text-muted-foreground">{fromEmail}</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleSendReminder}
+                  disabled={sending}
+                >
+                  {sending ? 'Sending…' : 'Send'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => { setConfirmingRemind(false); setRemindResult(null) }}
+                  disabled={sending}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Remind result feedback */}
+          {remindResult === 'sent' && (
+            <p className="mt-2 text-xs text-positive flex items-center gap-1">
+              <Check size={12} />
+              Reminder sent to {transaction.fromName}
+            </p>
+          )}
+          {remindResult === 'error' && (
+            <p className="mt-2 text-xs text-destructive">
+              Failed to send reminder. Please try again.
+            </p>
+          )}
         </div>
 
-        {/* Record Button */}
-        {onRecord && (
-          <Button
-            onClick={onRecord}
-            size="sm"
-            className="flex-shrink-0"
-          >
-            <Check size={14} className="mr-1" />
-            Record
-          </Button>
-        )}
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          {onRecord && (
+            <Button
+              onClick={onRecord}
+              size="sm"
+            >
+              <Check size={14} className="mr-1" />
+              Record
+            </Button>
+          )}
+          {fromEmail && onRemind && !confirmingRemind && (
+            <Button
+              onClick={() => { setConfirmingRemind(true); setRemindResult(null) }}
+              size="sm"
+              variant="outline"
+              title={`Send payment reminder to ${transaction.fromName}`}
+            >
+              <Bell size={14} className="mr-1" />
+              Remind
+            </Button>
+          )}
+          {confirmingRemind && (
+            <Button
+              onClick={() => setConfirmingRemind(false)}
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground"
+            >
+              <X size={14} />
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   )

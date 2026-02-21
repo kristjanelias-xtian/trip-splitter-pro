@@ -15,10 +15,11 @@ import { SettlementForm } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { createSettlement, settlements } = useSettlementContext()
@@ -28,6 +29,20 @@ export function SettlementsPage() {
   const customSettlementRef = useRef<HTMLDivElement>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
+
+  // Build a map of entity ID (participant ID or family_id) → email for the "from" side of transactions
+  const fromEmailMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const p of participants) {
+      if (!p.email) continue
+      // In families mode, transactions use family_id as the entity ID
+      if (p.family_id) {
+        map[p.family_id] = p.email
+      }
+      map[p.id] = p.email
+    }
+    return map
+  }, [participants])
 
   if (!currentTrip) {
     return (
@@ -145,6 +160,29 @@ export function SettlementsPage() {
     setPrefilledNote(undefined)
   }
 
+  const handleRemind = async (transaction: SettlementTransaction, fromEmail: string): Promise<void> => {
+    if (!currentTrip || !user) return
+    const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: {
+        type: 'payment_reminder',
+        trip_id: currentTrip.id,
+        trip_name: currentTrip.name,
+        trip_code: currentTrip.trip_code,
+        recipient_name: transaction.fromName,
+        recipient_email: fromEmail,
+        amount: transaction.amount,
+        currency: currentTrip.default_currency,
+        pay_to_name: transaction.toName,
+        organiser_name: organiserName,
+      },
+    })
+    if (error) {
+      logger.error('Failed to send payment reminder', { error: String(error) })
+      throw new Error('Failed to send reminder')
+    }
+  }
+
   const handleExportPDF = () => {
     exportSettlementPlanToPDF(currentTrip, optimalSettlement, balanceCalculation.balances)
   }
@@ -218,7 +256,14 @@ export function SettlementsPage() {
         {expenses.length > 0 && (
           <Card>
             <CardContent className="pt-6">
-              <SettlementPlan plan={optimalSettlement} onRecordSettlement={handleRecordSettlement} bankDetailsMap={bankDetailsMap} linkedParticipantIds={linkedParticipantIds} />
+              <SettlementPlan
+                plan={optimalSettlement}
+                onRecordSettlement={handleRecordSettlement}
+                bankDetailsMap={bankDetailsMap}
+                linkedParticipantIds={linkedParticipantIds}
+                fromEmailMap={fromEmailMap}
+                onRemind={user ? handleRemind : undefined}
+              />
             </CardContent>
           </Card>
         )}
