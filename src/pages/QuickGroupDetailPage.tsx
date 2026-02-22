@@ -22,7 +22,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle, Users
+  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle, Users, Settings
 } from 'lucide-react'
 
 
@@ -281,6 +281,12 @@ export function QuickGroupDetailPage() {
           label="View expenses & payments"
           description="See transaction history"
           onClick={() => navigate(`/t/${currentTrip.trip_code}/quick/history`)}
+        />
+        <QuickActionButton
+          icon={Settings}
+          label="Manage group"
+          description="Edit settings & participants"
+          onClick={() => navigate(`/t/${currentTrip.trip_code}/manage`)}
         />
       </div>
 
