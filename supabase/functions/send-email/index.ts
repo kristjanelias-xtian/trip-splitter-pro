@@ -20,6 +20,8 @@ type ReceiptEmailData = {
   confirmed_total: number | null
   tip_amount: number
   currency: string | null
+  mapped_items?: Array<{ item_index: number; participant_ids: string[] }> | null
+  debtor_participant_ids?: string[]
 }
 
 type SendEmailBody =
@@ -131,12 +133,24 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
 
   const rowStyle = 'border-bottom:1px solid #f1f5f9;'
   const cellStyle = 'padding:6px 8px;color:#475569;font-size:13px;'
-  const itemRows = items.map(item => `
-    <tr style="${rowStyle}">
+
+  const isDebtorItem = (index: number): boolean => {
+    if (!receipt.mapped_items || !receipt.debtor_participant_ids?.length) return false
+    const mapping = receipt.mapped_items.find(m => m.item_index === index)
+    if (!mapping) return false
+    return mapping.participant_ids.some(id => receipt.debtor_participant_ids!.includes(id))
+  }
+
+  const itemRows = items.map((item, index) => {
+    const highlight = isDebtorItem(index)
+    const rowBg = highlight ? 'background:#faf5ff;border-left:3px solid #8b5cf6;' : ''
+    return `
+    <tr style="${rowStyle}${rowBg}">
       <td style="${cellStyle}">${item.name}</td>
       <td style="${cellStyle}text-align:center;">${item.qty}</td>
       <td style="${cellStyle}text-align:right;">${formatPrice(item.price * item.qty, currency)}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 
   const tipRow = tip > 0 ? `
     <tr style="${rowStyle}">
