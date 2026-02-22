@@ -15,13 +15,14 @@ import { QuickSettlementSheet } from '@/components/quick/QuickSettlementSheet'
 import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { QuickParticipantSetupSheet } from '@/components/quick/QuickParticipantSetupSheet'
+import { QuickGroupMembersSheet } from '@/components/quick/QuickGroupMembersSheet'
 import { ExtractedItem } from '@/types/receipt'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle
+  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle, Users
 } from 'lucide-react'
 
 
@@ -49,6 +50,7 @@ export function QuickGroupDetailPage() {
   const [settlementOpen, setSettlementOpen] = useState(false)
   const [receiptCaptureOpen, setReceiptCaptureOpen] = useState(false)
   const [participantSetupOpen, setParticipantSetupOpen] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [slowLoading, setSlowLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
@@ -164,7 +166,18 @@ export function QuickGroupDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <QuickBalanceHero balance={myBalance} />
+        <div className="relative">
+          <QuickBalanceHero balance={myBalance} />
+          {participants.length > 0 && (
+            <button
+              onClick={() => setMembersOpen(true)}
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users size={13} />
+              <span>{participants.length}</span>
+            </button>
+          )}
+        </div>
       )}
 
       {/* Pending receipts banner */}
@@ -322,6 +335,16 @@ export function QuickGroupDetailPage() {
       <QuickParticipantSetupSheet
         open={participantSetupOpen}
         onOpenChange={setParticipantSetupOpen}
+      />
+
+      {/* Group members sheet */}
+      <QuickGroupMembersSheet
+        open={membersOpen}
+        onOpenChange={setMembersOpen}
+        balances={balanceCalc.balances}
+        myParticipantId={myBalance?.id ?? null}
+        currency={currentTrip.default_currency}
+        participants={participants}
       />
     </div>
   )
