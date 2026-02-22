@@ -144,6 +144,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
         end_date: today,
         event_type: 'event',
         tracking_mode: 'individuals',
+        enable_activities: false,
       })
 
       if (!newTrip) {
