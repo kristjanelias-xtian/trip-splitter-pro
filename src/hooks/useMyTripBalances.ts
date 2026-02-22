@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { calculateBalances, ParticipantBalance } from '@/services/balanceCalculator'
@@ -35,16 +36,37 @@ export function useMyTripBalances() {
     const fetchBalances = async () => {
       setLoading(true)
 
+      // Deduplicate trips by ID (safety guard against duplicates)
+      const uniqueTrips = trips.filter((trip, index, self) =>
+        index === self.findIndex(t => t.id === trip.id)
+      )
+
       // TripContext already returns only user's trips when authenticated; use directly.
       const balances: TripBalance[] = await Promise.all(
-        trips.map(async (trip) => {
+        uniqueTrips.map(async (trip) => {
           try {
             // Parallel fetch all data for this trip
             const [participantsRes, familiesRes, expensesRes, settlementsRes] = await Promise.all([
-              supabase.from('participants').select('*').eq('trip_id', trip.id),
-              supabase.from('families').select('*').eq('trip_id', trip.id),
-              supabase.from('expenses').select('*').eq('trip_id', trip.id),
-              supabase.from('settlements').select('*').eq('trip_id', trip.id),
+              withTimeout(
+                supabase.from('participants').select('*').eq('trip_id', trip.id),
+                15000,
+                `Loading participants for trip timed out`
+              ),
+              withTimeout(
+                supabase.from('families').select('*').eq('trip_id', trip.id),
+                15000,
+                `Loading families for trip timed out`
+              ),
+              withTimeout(
+                supabase.from('expenses').select('*').eq('trip_id', trip.id),
+                15000,
+                `Loading expenses for trip timed out`
+              ),
+              withTimeout(
+                supabase.from('settlements').select('*').eq('trip_id', trip.id),
+                15000,
+                `Loading settlements for trip timed out`
+              ),
             ])
 
             const participants = (participantsRes.data as Participant[]) || []
