@@ -25,6 +25,7 @@ import { ModeToggle } from '@/components/quick/ModeToggle'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
+import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import {
   Sheet,
   SheetContent,
@@ -54,12 +55,13 @@ export function Layout() {
   const { currentTrip, tripCode } = useCurrentTrip()
   const { user } = useAuth()
   const { trips } = useTripContext()
+  const visibleTrips = trips.filter(t => !getHiddenTripCodes().includes(t.trip_code))
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
   const handleScanTap = () => {
-    if (trips.length === 0) {
+    if (visibleTrips.length === 0) {
       setScanCreateOpen(true)
     } else {
       setScanContextOpen(true)
@@ -387,7 +389,7 @@ export function Layout() {
       <QuickScanContextSheet
         open={scanContextOpen}
         onOpenChange={setScanContextOpen}
-        trips={trips}
+        trips={visibleTrips}
         onNewGroup={() => { setScanContextOpen(false); setScanCreateOpen(true) }}
       />
 

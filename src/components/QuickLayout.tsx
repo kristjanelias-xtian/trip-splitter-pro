@@ -16,6 +16,7 @@ import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { useTripContext } from '@/contexts/TripContext'
+import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 
@@ -25,11 +26,12 @@ export function QuickLayout() {
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
   const { trips } = useTripContext()
+  const visibleTrips = trips.filter(t => !getHiddenTripCodes().includes(t.trip_code))
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
   const handleScanTap = () => {
-    if (trips.length === 0) {
+    if (visibleTrips.length === 0) {
       setScanCreateOpen(true)
     } else {
       setScanContextOpen(true)
@@ -139,7 +141,7 @@ export function QuickLayout() {
       <QuickScanContextSheet
         open={scanContextOpen}
         onOpenChange={setScanContextOpen}
-        trips={trips}
+        trips={visibleTrips}
         onNewGroup={() => { setScanContextOpen(false); setScanCreateOpen(true) }}
       />
 
