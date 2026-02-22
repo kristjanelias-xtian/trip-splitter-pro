@@ -178,13 +178,13 @@ export function QuickGroupDetailPage() {
       ) : (
         <div className="relative">
           <QuickBalanceHero balance={myBalance} />
-          {participants.length > 0 && (
+          {balanceCalc.balances.length > 0 && (
             <button
               onClick={() => setMembersOpen(true)}
               className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users size={13} />
-              <span>{participants.length}</span>
+              <span>{balanceCalc.balances.length}</span>
             </button>
           )}
         </div>

@@ -128,7 +128,7 @@ export function QuickHomeScreen() {
                 </p>
                 <Button onClick={() => setCreateOpen(true)} className="gap-2">
                   <Plus size={18} />
-                  Create New
+                  New Trip or Event
                 </Button>
               </div>
             </CardContent>
@@ -198,7 +198,7 @@ export function QuickHomeScreen() {
           <div className="mt-6 text-center">
             <Button variant="outline" onClick={() => setCreateOpen(true)} className="gap-2">
               <Plus size={16} />
-              Create New
+              New Trip or Event
             </Button>
           </div>
         )}
