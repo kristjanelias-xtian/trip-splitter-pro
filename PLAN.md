@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-21 (Phases 1–3 ✅ done — Phase 4 next)
+> Last updated: 2026-02-22 (Phases 1–6 ✅ done)
 
 ---
 
@@ -492,8 +492,19 @@ Rename `.tsx` files only if they are primarily trip/event-specific forms:
 
 **Deployed ✅** — `RESEND_API_KEY` secret set, `send-email` edge function deployed, migration 022 pushed to production (2026-02-21).
 
-### Phase 5 — Receipt reminder emails (combines C + D)
-Extends Phase 4 email with receipt image attachment from Phase 3 storage.
+### Phase 6 — Quick-mode event creation + participant setup ✅ Done (PR #218)
+Keeps users in Quick mode throughout the entire onboarding flow.
+
+- **`QuickCreateSheet`** (`src/components/quick/QuickCreateSheet.tsx`): bottom sheet (h-92vh) wrapping `EventForm`. "Create New" buttons in `QuickHomeScreen` (empty state card + bottom button) now open this sheet instead of navigating to `/create-trip`. On success: `createTrip()` → navigate to `/t/{code}/quick`.
+- **`QuickParticipantSetupSheet`** (`src/components/quick/QuickParticipantSetupSheet.tsx`): bottom sheet wrapping `IndividualsSetup` or `FamiliesSetup` (chosen by `currentTrip.tracking_mode`), with a "Done" button.
+- **Nudge card** in `QuickGroupDetailPage`: amber card shown when `participants.length <= 1` (just the auto-linked creator or empty). Tapping "Add" opens `QuickParticipantSetupSheet`. Card disappears once group is populated.
+- Full-mode flow via `TripsPage` is **unchanged** — still redirects to `/t/{code}/manage`.
+
+### Phase 5 — Receipt reminder emails ✅ Done (PR #213)
+Extends payment reminder emails with receipt image attachments from Phase 3 storage.
+- `SettlementsPage.handleRemind()` collects `receipt_image_paths` for expenses paid by the creditor (up to 3); handles both individuals mode (by participant ID) and families mode (by family_id → participant lookup)
+- `send-email` edge function: downloads each image from private `receipts` bucket using service-role client, converts to base64, adds as Resend API attachments
+- Email shows "📎 Receipt(s) attached" notice when attachments present; graceful degradation on download failure
 
 ---
 
@@ -510,3 +521,5 @@ Extends Phase 4 email with receipt image attachment from Phase 3 storage.
 | 2026-02-21 | Error surfacing | Surface real Supabase errors across all submit flows (PR #170) — contexts throw instead of returning null/false; forms display err.message + stack trace; BankDetailsDialog shows real error in toast |
 | 2026-02-21 | Phase 4 | Email & Invitations — send-email edge function (Resend), participant email fields, invitation flow, /join/:token page, payment reminder button (PRs #198–#200) |
 | 2026-02-21 | Phase 4 deploy | RESEND_API_KEY set, send-email deployed, migration 022 pushed to production |
+| 2026-02-22 | Phase 5 | Receipt reminder emails — attach receipt images to payment reminders (PR #213); send-email deployed |
+| 2026-02-22 | Phase 6 | Quick-mode event creation + participant setup via bottom sheets (PR #218) — QuickCreateSheet wraps EventForm, QuickParticipantSetupSheet wraps IndividualsSetup/FamiliesSetup; nudge card on detail page when ≤1 participant |
