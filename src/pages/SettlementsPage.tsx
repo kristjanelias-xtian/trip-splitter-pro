@@ -173,12 +173,18 @@ export function SettlementsPage() {
         ? participants.filter(p => p.family_id === transaction.toId).map(p => p.id)
         : [transaction.toId]
     )
+    const debtorParticipantIds =
+      currentTrip.tracking_mode === 'families'
+        ? participants.filter(p => p.family_id === transaction.fromId).map(p => p.id)
+        : [transaction.fromId]
     const receipts: Array<{
       merchant: string | null
       items: Array<{ name: string; price: number; qty: number }> | null
       confirmed_total: number | null
       tip_amount: number
       currency: string | null
+      mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
+      debtor_participant_ids: string[]
     }> = []
     for (const expense of expenses) {
       if (receipts.length >= 3) break
@@ -191,6 +197,8 @@ export function SettlementsPage() {
           confirmed_total: receipt.confirmed_total,
           tip_amount: receipt.tip_amount,
           currency: receipt.extracted_currency ?? currentTrip.default_currency,
+          mapped_items: receipt.mapped_items,
+          debtor_participant_ids: debtorParticipantIds,
         })
       }
     }
