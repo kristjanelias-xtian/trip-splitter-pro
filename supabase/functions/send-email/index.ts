@@ -131,8 +131,8 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
   const tip = receipt.tip_amount ?? 0
   const total = receipt.confirmed_total ?? (subtotal + tip)
 
-  const rowStyle = 'border-bottom:1px solid #f1f5f9;'
-  const cellStyle = 'padding:6px 8px;color:#475569;font-size:13px;'
+  const rowStyle = 'border-bottom:1px solid #E2E7EE;'
+  const cellStyle = 'padding:6px 8px;color:#657085;font-size:13px;'
 
   const isDebtorItem = (index: number): boolean => {
     if (!receipt.mapped_items || !receipt.debtor_participant_ids?.length) return false
@@ -141,9 +141,10 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
     return mapping.participant_ids.some(id => receipt.debtor_participant_ids!.includes(id))
   }
 
+  // 4b: Use coral highlight (#E76F51 tint) instead of purple for brand consistency
   const itemRows = items.map((item, index) => {
     const highlight = isDebtorItem(index)
-    const rowBg = highlight ? 'background:#faf5ff;border-left:3px solid #8b5cf6;' : ''
+    const rowBg = highlight ? 'background:#FEF3EF;border-left:3px solid #E76F51;' : ''
     return `
     <tr style="${rowStyle}${rowBg}">
       <td style="${cellStyle}">${item.name}</td>
@@ -154,35 +155,36 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
 
   const tipRow = tip > 0 ? `
     <tr style="${rowStyle}">
-      <td colspan="2" style="${cellStyle}color:#64748b;font-style:italic;">Tip</td>
+      <td colspan="2" style="${cellStyle}font-style:italic;">Tip</td>
       <td style="${cellStyle}text-align:right;">${formatPrice(tip, currency)}</td>
     </tr>` : ''
 
   return `
-  <div style="margin-bottom:16px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-    <div style="background:#f8fafc;padding:8px 12px;border-bottom:1px solid #e2e8f0;">
-      <strong style="color:#334155;font-size:13px;">${merchant}</strong>
+  <div style="margin-bottom:16px;border:1px solid #E2E7EE;border-radius:8px;overflow:hidden;">
+    <div style="background:#FAF8F5;padding:8px 12px;border-bottom:1px solid #E2E7EE;">
+      <strong style="color:#2D3142;font-size:13px;">${merchant}</strong>
     </div>
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <thead>
-        <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-          <th style="padding:6px 8px;color:#64748b;font-size:12px;font-weight:600;text-align:left;">Item</th>
-          <th style="padding:6px 8px;color:#64748b;font-size:12px;font-weight:600;text-align:center;">Qty</th>
-          <th style="padding:6px 8px;color:#64748b;font-size:12px;font-weight:600;text-align:right;">Price</th>
+        <tr style="background:#FAF8F5;border-bottom:1px solid #E2E7EE;">
+          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:left;">Item</th>
+          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:center;">Qty</th>
+          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:right;">Price</th>
         </tr>
       </thead>
       <tbody>
         ${itemRows}
         ${tipRow}
         <tr>
-          <td colspan="2" style="padding:8px;color:#1e293b;font-size:13px;font-weight:700;">Total</td>
-          <td style="padding:8px;color:#1e293b;font-size:13px;font-weight:700;text-align:right;">${formatPrice(total, currency)}</td>
+          <td colspan="2" style="padding:8px;color:#2D3142;font-size:13px;font-weight:700;">Total</td>
+          <td style="padding:8px;color:#2D3142;font-size:13px;font-weight:700;text-align:right;">${formatPrice(total, currency)}</td>
         </tr>
       </tbody>
     </table>
   </div>`
 }
 
+// 4a/4c: Restyled payment reminder email using app design tokens (coral brand) + dual CTA
 function paymentReminderEmailHtml(params: {
   recipientName: string
   organiserName: string
@@ -190,16 +192,17 @@ function paymentReminderEmailHtml(params: {
   formattedAmount: string
   payToName: string
   tripUrl: string
+  settlementsUrl: string
   receipts?: ReceiptEmailData[]
 }): string {
-  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, receipts } = params
+  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, settlementsUrl, receipts } = params
   const hasReceipts = receipts && receipts.length > 0
   const receiptSection = hasReceipts ? `
               <!-- Receipt tables -->
               <div style="margin-bottom:24px;">
-                <p style="margin:0 0 12px;color:#475569;font-size:14px;font-weight:600;">What you're splitting:</p>
+                <p style="margin:0 0 12px;color:#657085;font-size:14px;font-weight:600;">What you're splitting:</p>
                 ${receipts.map(r => receiptTableHtml(r)).join('')}
-                <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;text-align:center;font-style:italic;">
+                <p style="margin:8px 0 0;color:#657085;font-size:12px;text-align:center;font-style:italic;">
                   Full receipt photo available in the Spl1t app.
                 </p>
               </div>` : ''
@@ -211,52 +214,59 @@ function paymentReminderEmailHtml(params: {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payment reminder for ${tripName}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#FAF8F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF8F5;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
-          <!-- Header -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #E2E7EE;overflow:hidden;">
+          <!-- Header — coral brand -->
           <tr>
-            <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
+            <td style="background:#E76F51;padding:32px;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Spl1t</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Payment Reminder</p>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Payment Reminder</p>
             </td>
           </tr>
           <!-- Body -->
           <tr>
             <td style="padding:32px;">
-              <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;font-weight:600;">Hi ${recipientName}!</h2>
-              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-                This is a friendly reminder from <strong>${organiserName}</strong> about an outstanding balance from <strong>${tripName}</strong>.
+              <h2 style="margin:0 0 8px;color:#2D3142;font-size:20px;font-weight:600;">Hi ${recipientName}!</h2>
+              <p style="margin:0 0 24px;color:#657085;font-size:15px;line-height:1.6;">
+                This is a friendly reminder from <strong style="color:#2D3142;">${organiserName}</strong> about an outstanding balance from <strong style="color:#2D3142;">${tripName}</strong>.
               </p>
-              <!-- Amount Box -->
-              <div style="background:#faf5ff;border:2px solid #e9d5ff;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
-                <p style="margin:0 0 4px;color:#7c3aed;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
-                <p style="margin:0 0 4px;color:#4c1d95;font-size:36px;font-weight:700;">${formattedAmount}</p>
-                <p style="margin:0;color:#7c3aed;font-size:14px;">to <strong>${payToName}</strong></p>
+              <!-- Amount Box — coral tint -->
+              <div style="background:#FEF3EF;border:2px solid #E76F51;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+                <p style="margin:0 0 4px;color:#E76F51;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
+                <p style="margin:0 0 4px;color:#2D3142;font-size:36px;font-weight:700;">${formattedAmount}</p>
+                <p style="margin:0;color:#657085;font-size:14px;">to <strong style="color:#2D3142;">${payToName}</strong></p>
               </div>
               ${receiptSection}
-              <!-- CTA Button -->
+              <!-- CTA Buttons — primary: settlements page, secondary: app home -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
+                  <td align="center" style="padding:0 0 12px;">
+                    <a href="${settlementsUrl}" style="display:inline-block;background:#E76F51;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                      View settlement details &rarr;
+                    </a>
+                  </td>
+                </tr>
+                <tr>
                   <td align="center" style="padding:0 0 24px;">
-                    <a href="${tripUrl}" style="display:inline-block;background:#6366f1;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
-                      View details &rarr;
+                    <a href="${tripUrl}" style="display:inline-block;background:transparent;color:#657085;font-size:13px;font-weight:500;text-decoration:underline;padding:4px 8px;">
+                      Open in app
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">
+              <p style="margin:0;color:#657085;font-size:13px;text-align:center;">
                 Questions? Reply to this email or contact ${organiserName} directly.
               </p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">
-                Sent by ${organiserName} via Spl1t &middot; <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
+            <td style="padding:16px 32px;border-top:1px solid #E2E7EE;text-align:center;">
+              <p style="margin:0;color:#657085;font-size:12px;">
+                Sent by ${organiserName} via Spl1t &middot; <a href="${tripUrl}" style="color:#E76F51;text-decoration:none;">Open app</a>
               </p>
             </td>
           </tr>
@@ -337,6 +347,7 @@ Deno.serve(async (req) => {
         currency: body.currency,
       }).format(body.amount)
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
+      const settlementsUrl = `${APP_URL}/t/${body.trip_code}/settlements`
 
       subject = `Payment reminder for "${body.trip_name}"`
       html = paymentReminderEmailHtml({
@@ -346,6 +357,7 @@ Deno.serve(async (req) => {
         formattedAmount,
         payToName: body.pay_to_name,
         tripUrl,
+        settlementsUrl,
         receipts: body.receipts,
       })
       toEmail = body.recipient_email
