@@ -137,8 +137,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         supabase.functions.invoke('create-github-issue', {
           body: { title: subject.trim(), body },
         }),
-        20000,
-        'Request timed out. Please check your connection and try again.'
+        45000,
+        'This took longer than expected — your feedback may still have been saved. If not, please try again.'
       )
       if (error) throw error
 
