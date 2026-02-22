@@ -8,8 +8,10 @@ import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { GroupActions } from '@/components/quick/GroupActions'
 import { QuickCreateSheet } from '@/components/quick/QuickCreateSheet'
+import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
+import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink } from 'lucide-react'
+import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
@@ -22,6 +24,8 @@ export function QuickHomeScreen() {
   const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
   const [showHidden, setShowHidden] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [scanContextOpen, setScanContextOpen] = useState(false)
+  const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
   const firstName = userProfile?.display_name?.split(' ')[0] || 'there'
 
@@ -50,11 +54,26 @@ export function QuickHomeScreen() {
     setHiddenCodes(prev => new Set([...prev, tripCode]))
   }, [])
 
+  const handleScanTap = () => {
+    if (loading) return
+    if (visibleTrips.length === 0) {
+      // No groups — go straight to scan+create flow
+      setScanCreateOpen(true)
+    } else if (visibleTrips.length === 1) {
+      // One group — navigate to it and open receipt capture there
+      const code = visibleTrips[0].trip.trip_code
+      navigate(`/t/${code}/quick`, { state: { openScan: true } })
+    } else {
+      // Multiple groups — show picker
+      setScanContextOpen(true)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-lg mx-auto px-4 py-8">
         {/* User greeting */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           {userProfile?.avatar_url ? (
             <img
               src={userProfile.avatar_url}
@@ -74,6 +93,26 @@ export function QuickHomeScreen() {
             <p className="text-sm text-muted-foreground">Your groups</p>
           </div>
         </div>
+
+        {/* Scan CTA */}
+        <button
+          onClick={handleScanTap}
+          disabled={loading}
+          className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all mb-6 disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <ScanLine size={20} />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-sm leading-tight">Scan a Receipt</p>
+              <p className="text-xs text-primary-foreground/70 mt-0.5">
+                {visibleTrips.length === 0 ? 'Creates a new group automatically' : 'Add expenses from a photo'}
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="opacity-70" />
+        </button>
 
         {/* Groups list */}
         {loading ? (
@@ -172,7 +211,7 @@ export function QuickHomeScreen() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            What's New · v0.9.3
+            What's New · v0.9.4
             <ExternalLink size={12} />
           </a>
         </div>
@@ -219,6 +258,13 @@ export function QuickHomeScreen() {
       </div>
 
       <QuickCreateSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <QuickScanContextSheet
+        open={scanContextOpen}
+        onOpenChange={setScanContextOpen}
+        trips={visibleTrips.map(tb => tb.trip)}
+        onNewGroup={() => setScanCreateOpen(true)}
+      />
+      <QuickScanCreateFlow open={scanCreateOpen} onOpenChange={setScanCreateOpen} />
     </div>
   )
 }

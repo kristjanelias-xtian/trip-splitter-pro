@@ -16,6 +16,7 @@ const SYSTEM_PROMPT = `You are a receipt parser. Extract all line items from the
 Return ONLY valid JSON with this exact structure:
 {
   "merchant": "store name or null if truly not found",
+  "date": "2026-02-22",
   "items": [{"name": "item name", "price": 12.50, "qty": 1}],
   "subtotal": 25.00,
   "total": 27.50,
@@ -23,6 +24,7 @@ Return ONLY valid JSON with this exact structure:
 }
 Rules:
 - merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. If truly no business name is readable anywhere, invent a short creative name (2–4 words) that evokes the vibe of the items ordered — e.g. "The Wandering Wok" for Thai food, "Mystery Grill" for a barbecue spot, "Island Bites" for tropical drinks. Never return null.
+- date: The date printed on the receipt as an ISO date string (YYYY-MM-DD). If no date is visible, use null.
 - price is the total price for that line (qty * unit price), as a number
 - qty defaults to 1 if not shown
 - currency is the 3-letter ISO code (default "USD" if unclear)
@@ -114,6 +116,7 @@ Deno.serve(async (req) => {
     // Parse the JSON response
     let extracted: {
       merchant?: string | null
+      date?: string | null
       items?: Array<{ name: string; price: number; qty: number }>
       subtotal?: number | null
       total?: number | null
@@ -151,6 +154,10 @@ Deno.serve(async (req) => {
     const extractedTotal = typeof extracted.total === 'number' ? extracted.total : null
     const extractedCurrency = extracted.currency ?? 'USD'
     const extractedMerchant = extracted.merchant ?? 'Mystery Kitchen'
+    // Validate ISO date format (YYYY-MM-DD) — ignore malformed values
+    const extractedDate = typeof extracted.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(extracted.date)
+      ? extracted.date
+      : null
 
     // Save results and mark as ready for review
     await supabase
@@ -161,6 +168,7 @@ Deno.serve(async (req) => {
         extracted_items: items,
         extracted_total: extractedTotal,
         extracted_currency: extractedCurrency,
+        extracted_date: extractedDate,
         updated_at: new Date().toISOString(),
       })
       .eq('id', receipt_task_id)
@@ -179,6 +187,7 @@ Deno.serve(async (req) => {
         items,
         total: extractedTotal,
         currency: extractedCurrency,
+        date: extractedDate,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     )

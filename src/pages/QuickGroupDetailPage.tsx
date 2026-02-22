@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -37,6 +37,7 @@ interface ReceiptReviewData {
 
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { currentTrip, loading: tripLoading } = useCurrentTrip()
   const { myParticipant, isLinked } = useMyParticipant()
   const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
@@ -54,6 +55,15 @@ export function QuickGroupDetailPage() {
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [slowLoading, setSlowLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
+
+  // Open receipt capture sheet when navigated here with openScan state
+  useEffect(() => {
+    if ((location.state as any)?.openScan) {
+      setReceiptCaptureOpen(true)
+      // Clear the state so back-navigation doesn't re-open it
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
 
   const loading = participantsLoading || expensesLoading || settlementsLoading
   const contextError = participantError || expenseError || settlementError
