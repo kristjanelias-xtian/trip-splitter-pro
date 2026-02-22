@@ -14,6 +14,7 @@ import { QuickExpenseSheet } from '@/components/quick/QuickExpenseSheet'
 import { QuickSettlementSheet } from '@/components/quick/QuickSettlementSheet'
 import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
+import { QuickParticipantSetupSheet } from '@/components/quick/QuickParticipantSetupSheet'
 import { ExtractedItem } from '@/types/receipt'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -47,6 +48,7 @@ export function QuickGroupDetailPage() {
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
   const [receiptCaptureOpen, setReceiptCaptureOpen] = useState(false)
+  const [participantSetupOpen, setParticipantSetupOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [slowLoading, setSlowLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
@@ -218,6 +220,19 @@ export function QuickGroupDetailPage() {
         </div>
       )}
 
+      {/* Participant setup nudge */}
+      {!loading && !contextError && participants.length <= 1 && (
+        <Card className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="pt-4 pb-4 flex items-center justify-between">
+            <div>
+              <p className="font-medium text-sm">Set up your group</p>
+              <p className="text-xs text-muted-foreground">Add the people sharing costs</p>
+            </div>
+            <Button size="sm" onClick={() => setParticipantSetupOpen(true)}>Add</Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Action buttons */}
       <div className="space-y-3 mb-6">
         <QuickActionButton
@@ -302,6 +317,12 @@ export function QuickGroupDetailPage() {
           onDone={() => setReceiptReviewData(null)}
         />
       )}
+
+      {/* Participant setup sheet */}
+      <QuickParticipantSetupSheet
+        open={participantSetupOpen}
+        onOpenChange={setParticipantSetupOpen}
+      />
     </div>
   )
 }

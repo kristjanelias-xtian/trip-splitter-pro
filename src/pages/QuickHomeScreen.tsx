@@ -7,6 +7,7 @@ import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculato
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { GroupActions } from '@/components/quick/GroupActions'
+import { QuickCreateSheet } from '@/components/quick/QuickCreateSheet'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ export function QuickHomeScreen() {
   const loading = balancesLoading || (!!user && tripsLoading)
   const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
   const [showHidden, setShowHidden] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const firstName = userProfile?.display_name?.split(' ')[0] || 'there'
 
@@ -85,7 +87,7 @@ export function QuickHomeScreen() {
                 <p className="text-muted-foreground mb-4">
                   No groups yet. Create a trip or event, or join one via a shared link.
                 </p>
-                <Button onClick={() => navigate('/create-trip')} className="gap-2">
+                <Button onClick={() => setCreateOpen(true)} className="gap-2">
                   <Plus size={18} />
                   Create New
                 </Button>
@@ -155,7 +157,7 @@ export function QuickHomeScreen() {
         {/* Create trip button */}
         {visibleTrips.length > 0 && (
           <div className="mt-6 text-center">
-            <Button variant="outline" onClick={() => navigate('/create-trip')} className="gap-2">
+            <Button variant="outline" onClick={() => setCreateOpen(true)} className="gap-2">
               <Plus size={16} />
               Create New
             </Button>
@@ -215,6 +217,8 @@ export function QuickHomeScreen() {
           </div>
         )}
       </div>
+
+      <QuickCreateSheet open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   )
 }
