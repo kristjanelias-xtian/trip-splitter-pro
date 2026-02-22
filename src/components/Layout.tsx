@@ -3,11 +3,12 @@ import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
-  ShoppingCart, BarChart3, Settings2, MoreHorizontal
+  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTripContext } from '@/contexts/TripContext'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
 import { ExpenseProvider } from '@/contexts/ExpenseContext'
 import { SettlementProvider } from '@/contexts/SettlementContext'
@@ -22,6 +23,8 @@ import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { ModeToggle } from '@/components/quick/ModeToggle'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
+import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import {
   Sheet,
   SheetContent,
@@ -50,7 +53,18 @@ export function Layout() {
   const location = useLocation()
   const { currentTrip, tripCode } = useCurrentTrip()
   const { user } = useAuth()
+  const { trips } = useTripContext()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [scanContextOpen, setScanContextOpen] = useState(false)
+  const [scanCreateOpen, setScanCreateOpen] = useState(false)
+
+  const handleScanTap = () => {
+    if (trips.length === 0) {
+      setScanCreateOpen(true)
+    } else {
+      setScanContextOpen(true)
+    }
+  }
 
   const manageLabel = currentTrip?.event_type === 'event' ? 'Manage Event' : 'Manage Trip'
 
@@ -179,6 +193,13 @@ export function Layout() {
             )}
             <div className="flex items-center gap-2 flex-shrink-0">
               <ReportIssueButton onGradient={onGradient} />
+              <button
+                onClick={handleScanTap}
+                aria-label="Scan receipt"
+                className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+              >
+                <ScanLine size={20} />
+              </button>
               <ModeToggle onGradient={onGradient} />
               {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>
@@ -197,6 +218,7 @@ export function Layout() {
                     <ShoppingProvider>
                       <ReceiptProvider>
                         <Outlet />
+                        <QuickScanCreateFlow open={scanCreateOpen} onOpenChange={setScanCreateOpen} />
                       </ReceiptProvider>
                     </ShoppingProvider>
                   </StayProvider>
@@ -361,6 +383,13 @@ export function Layout() {
           })}
         </nav>
       </aside>}
+
+      <QuickScanContextSheet
+        open={scanContextOpen}
+        onOpenChange={setScanContextOpen}
+        trips={trips}
+        onNewGroup={() => { setScanContextOpen(false); setScanCreateOpen(true) }}
+      />
 
       {/* Toast notifications */}
       <Toaster />

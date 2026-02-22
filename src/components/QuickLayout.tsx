@@ -1,5 +1,6 @@
 import { Outlet, Link, useParams, useLocation } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ScanLine } from 'lucide-react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
@@ -12,6 +13,9 @@ import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { ModeToggle } from '@/components/quick/ModeToggle'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
+import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
+import { useTripContext } from '@/contexts/TripContext'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 
@@ -20,6 +24,17 @@ export function QuickLayout() {
   const location = useLocation()
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
+  const { trips } = useTripContext()
+  const [scanContextOpen, setScanContextOpen] = useState(false)
+  const [scanCreateOpen, setScanCreateOpen] = useState(false)
+
+  const handleScanTap = () => {
+    if (trips.length === 0) {
+      setScanCreateOpen(true)
+    } else {
+      setScanContextOpen(true)
+    }
+  }
 
   const isInTrip = !!tripCode
   // On sub-pages (e.g. history), back goes to trip detail; on trip detail, back goes to /quick
@@ -87,6 +102,15 @@ export function QuickLayout() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <ReportIssueButton onGradient={onGradient} />
+              {isInTrip && (
+                <button
+                  onClick={handleScanTap}
+                  aria-label="Scan receipt"
+                  className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                >
+                  <ScanLine size={20} />
+                </button>
+              )}
               <ModeToggle onGradient={onGradient} />
               {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>
@@ -103,6 +127,7 @@ export function QuickLayout() {
                 <ShoppingProvider>
                   <ReceiptProvider>
                     <Outlet />
+                    <QuickScanCreateFlow open={scanCreateOpen} onOpenChange={setScanCreateOpen} />
                   </ReceiptProvider>
                 </ShoppingProvider>
               </MealProvider>
@@ -110,6 +135,13 @@ export function QuickLayout() {
           </ExpenseProvider>
         </ParticipantProvider>
       </main>
+
+      <QuickScanContextSheet
+        open={scanContextOpen}
+        onOpenChange={setScanContextOpen}
+        trips={trips}
+        onNewGroup={() => { setScanContextOpen(false); setScanCreateOpen(true) }}
+      />
 
       <Toaster />
     </div>

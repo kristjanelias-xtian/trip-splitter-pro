@@ -59,12 +59,8 @@ export function QuickHomeScreen() {
     if (visibleTrips.length === 0) {
       // No groups — go straight to scan+create flow
       setScanCreateOpen(true)
-    } else if (visibleTrips.length === 1) {
-      // One group — navigate to it and open receipt capture there
-      const code = visibleTrips[0].trip.trip_code
-      navigate(`/t/${code}/quick`, { state: { openScan: true } })
     } else {
-      // Multiple groups — show picker
+      // 1+ groups — always show picker so user can choose or create new
       setScanContextOpen(true)
     }
   }
