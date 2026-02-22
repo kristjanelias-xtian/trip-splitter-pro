@@ -9,6 +9,7 @@ import {
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface ExpenseContextType {
   expenses: Expense[]
@@ -34,9 +35,11 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { newSignal, cancel } = useAbortController()
 
   // Fetch expenses for current trip
   const fetchExpenses = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setExpenses([])
       setInitialLoadDone(true)
@@ -53,20 +56,26 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('trip_id', currentTrip.id)
           .order('expense_date', { ascending: false })
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .abortSignal(signal),
         15000,
         'Loading expenses timed out. Please check your connection and try again.'
       )
+
+      if (signal.aborted) return
 
       if (fetchError) throw fetchError
 
       setExpenses((data as unknown as Expense[]) || [])
     } catch (err) {
+      if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch expenses')
       logger.error('Failed to fetch expenses', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -199,6 +208,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchExpenses()
     }
+    return cancel
   }, [tripCode, currentTrip?.id])
 
   const value: ExpenseContextType = {

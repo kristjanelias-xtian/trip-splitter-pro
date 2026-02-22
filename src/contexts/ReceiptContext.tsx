@@ -5,6 +5,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface ReceiptContextType {
   pendingReceipts: ReceiptTask[]
@@ -33,8 +34,10 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
+  const { newSignal, cancel } = useAbortController()
 
   const fetchPendingReceipts = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setPendingReceipts([])
       return
@@ -50,10 +53,13 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('trip_id', currentTrip.id)
           .in('status', ['review', 'complete'])
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .abortSignal(signal),
         15000,
         'Loading receipts timed out.'
       )
+
+      if (signal.aborted) return
 
       if (fetchError) {
         setError('Failed to load pending receipts')
@@ -65,15 +71,19 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       setPendingReceipts(all.filter(t => t.status === 'review'))
       setCompletedReceipts(all.filter(t => t.status === 'complete'))
     } catch (err) {
+      if (signal.aborted) return
       setError('Failed to load pending receipts')
       logger.error('Unhandled error fetching receipts', { error: String(err) })
     } finally {
-      setLoading(false)
+      if (!signal.aborted) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
     fetchPendingReceipts()
+    return cancel
   }, [currentTrip?.id])
 
   const createReceiptTask = async (tripId: string, imagePath?: string): Promise<ReceiptTask> => {

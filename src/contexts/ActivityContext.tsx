@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import type { Activity, CreateActivityInput, UpdateActivityInput } from '@/types/activity'
+import { withTimeout } from '@/lib/fetchWithTimeout'
+import { logger } from '@/lib/logger'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface ActivityContextValue {
   activities: Activity[]
@@ -29,8 +32,10 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { newSignal, cancel } = useAbortController()
 
   const fetchActivities = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setActivities([])
       setInitialLoadDone(true)
@@ -39,24 +44,34 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const { data, error } = await (supabase
-        .from('activities' as any) as any)
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('activity_date', { ascending: true })
+      const { data, error } = await withTimeout<any>(
+        (supabase
+          .from('activities' as any) as any)
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('activity_date', { ascending: true })
+          .abortSignal(signal),
+        15000,
+        'Loading activities timed out. Please check your connection and try again.'
+      )
+
+      if (signal.aborted) return
 
       if (error) {
-        console.error('Error fetching activities:', error)
+        logger.error('Failed to fetch activities', { trip_id: currentTrip?.id, error: error.message })
         setActivities([])
       } else {
         setActivities(((data as Activity[]) || []).sort(sortActivities))
       }
     } catch (error) {
-      console.error('Error fetching activities:', error)
+      if ((error as any)?.name === 'AbortError' || signal.aborted) return
+      logger.error('Failed to fetch activities', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       setActivities([])
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -69,25 +84,30 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchActivities()
     }
+    return cancel
   }, [tripCode, currentTrip?.id])
 
   const createActivity = async (input: CreateActivityInput): Promise<Activity | null> => {
     try {
-      const { data, error } = await (supabase
-        .from('activities' as any) as any)
-        .insert([input])
-        .select()
-        .single()
+      const { data, error } = await withTimeout<any>(
+        (supabase
+          .from('activities' as any) as any)
+          .insert([input])
+          .select()
+          .single(),
+        35000,
+        'Creating activity timed out. Please check your connection and try again.'
+      )
 
       if (error) {
-        console.error('Error creating activity:', error)
+        logger.error('Failed to create activity', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
       setActivities((prev) => [...prev, data as Activity].sort(sortActivities))
       return data as Activity
     } catch (error) {
-      console.error('Error creating activity:', error)
+      logger.error('Failed to create activity', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
@@ -97,15 +117,19 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     input: UpdateActivityInput
   ): Promise<Activity | null> => {
     try {
-      const { data, error } = await (supabase
-        .from('activities' as any) as any)
-        .update({ ...input, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single()
+      const { data, error } = await withTimeout<any>(
+        (supabase
+          .from('activities' as any) as any)
+          .update({ ...input, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single(),
+        35000,
+        'Updating activity timed out. Please check your connection and try again.'
+      )
 
       if (error) {
-        console.error('Error updating activity:', error)
+        logger.error('Failed to update activity', { activity_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
 
@@ -117,24 +141,28 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      console.error('Error updating activity:', error)
+      logger.error('Failed to update activity', { activity_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   }
 
   const deleteActivity = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await (supabase.from('activities' as any) as any).delete().eq('id', id)
+      const { error } = await withTimeout<any>(
+        (supabase.from('activities' as any) as any).delete().eq('id', id),
+        35000,
+        'Deleting activity timed out. Please check your connection and try again.'
+      )
 
       if (error) {
-        console.error('Error deleting activity:', error)
+        logger.error('Failed to delete activity', { activity_id: id, trip_id: currentTrip?.id, error: error.message })
         return false
       }
 
       setActivities((prev) => prev.filter((activity) => activity.id !== id))
       return true
     } catch (error) {
-      console.error('Error deleting activity:', error)
+      logger.error('Failed to delete activity', { activity_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       return false
     }
   }

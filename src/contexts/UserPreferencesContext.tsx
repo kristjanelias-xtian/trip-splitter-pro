@@ -6,6 +6,7 @@ import {
   getLocalPreferences,
   setLocalPreferences,
 } from '@/lib/userPreferencesStorage'
+import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface UserPreferencesContextType {
   mode: AppMode
@@ -48,11 +49,15 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     if (hasInitialized.current) return
 
     const fetchPreferences = async () => {
-      const { data, error } = await (supabase as any)
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle()
+      const { data, error } = await withTimeout<any>(
+        (supabase as any)
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        15000,
+        'Loading preferences timed out.'
+      )
 
       if (!error && data) {
         const serverMode = data.preferred_mode as AppMode
@@ -70,12 +75,16 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
 
   const upsertPreferences = useCallback(async (updates: Record<string, unknown>) => {
     if (!user) return
-    await (supabase as any)
-      .from('user_preferences')
-      .upsert(
-        { user_id: user.id, ...updates, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id' }
-      )
+    await withTimeout<any>(
+      (supabase as any)
+        .from('user_preferences')
+        .upsert(
+          { user_id: user.id, ...updates, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        ),
+      35000,
+      'Saving preferences timed out.'
+    )
   }, [user])
 
   const setMode = useCallback(async (newMode: AppMode) => {
