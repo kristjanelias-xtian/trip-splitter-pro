@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-22 (Phases 1–6 ✅ done; bug fixes PRs #221–#224)
+> Last updated: 2026-02-22 (Phases 1–6 ✅ done; bug fixes PRs #221–#227)
 
 ---
 
@@ -526,4 +526,5 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-22 | Phase 5 | Receipt reminder emails — attach receipt images to payment reminders (PR #213); send-email deployed |
 | 2026-02-22 | Phase 5 refine | Replace receipt JPEG attachments with inline HTML line-item tables (PR #214) — structured data from client, receiptTableHtml() in edge function, no more storage downloads at send time; deployed |
 | 2026-02-22 | Phase 6 | Quick-mode event creation + participant setup via bottom sheets (PR #218) — QuickCreateSheet wraps EventForm, QuickParticipantSetupSheet wraps IndividualsSetup/FamiliesSetup; nudge card on detail page when ≤1 participant |
-| 2026-02-22 | Bug fixes | #215 (PR #221): JoinPage calls refreshTrips() before navigate() so stale-list redirect after invite accept is fixed; #216 (PR #222): UserCheck icon in IndividualsSetup + FamiliesSetup for participants with user_id set; #217 (PR #223): receipt email highlights debtor's items — mapped_items + debtor_participant_ids passed from SettlementsPage, receiptTableHtml() applies faf5ff/8b5cf6 row highlight; send-email redeployed; #220 (PR #224): QuickCreateSheet + QuickParticipantSetupSheet — applied useKeyboardHeight fix (same pattern as MobileWizard) so iOS keyboard no longer clips sheet header |
+| 2026-02-22 | Bug fixes | #215 (PR #221): JoinPage calls refreshTrips() before navigate() so stale-list redirect after invite accept is fixed; #216 (PR #222): UserCheck icon in IndividualsSetup + FamiliesSetup for participants with user_id set; #217 (PR #223): receipt email highlights debtor's items — mapped_items + debtor_participant_ids passed from SettlementsPage, receiptTableHtml() applies faf5ff/8b5cf6 row highlight; send-email redeployed; #220 (PR #224): QuickCreateSheet + QuickParticipantSetupSheet — applied useKeyboardHeight fix |
+| 2026-02-22 | iOS sheet fixes | PR #227: QuickCreateSheet + QuickParticipantSetupSheet — two root causes fixed: (1) `vh`→`dvh` so sheet top no longer hides behind iOS browser chrome on initial open; (2) restructured to `flex flex-col` with `shrink-0` sticky header + `flex-1 overflow-y-auto` content, so title and X close button stay pinned regardless of scroll or input focus (same pattern as ReceiptReviewSheet) |
