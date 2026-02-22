@@ -91,11 +91,11 @@ export function DashboardPage() {
       </div>
 
       {/* Trip Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground mb-1">Total Expenses</div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">
+            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currentTrip.default_currency,
@@ -110,7 +110,7 @@ export function DashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground mb-1">Participants</div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">
+            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
               {currentTrip.tracking_mode === 'families'
                 ? families.length + participants.filter(p => p.family_id === null).length
                 : participants.length}
@@ -131,7 +131,7 @@ export function DashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground mb-1">Unsettled Balance</div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">
+            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currentTrip.default_currency,
@@ -150,7 +150,7 @@ export function DashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground mb-1">Settlements</div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">
+            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
               {settlements.length}
             </div>
             <div className="text-xs text-muted-foreground mt-1">

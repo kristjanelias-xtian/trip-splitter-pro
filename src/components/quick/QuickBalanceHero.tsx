@@ -35,7 +35,7 @@ export function QuickBalanceHero({ balance }: QuickBalanceHeroProps) {
       <p className={`text-4xl font-bold tabular-nums ${getBalanceColorClass(balance.balance)}`}>
         {isSettled
           ? formatBalance(0)
-          : formatBalance(Math.abs(balance.balance))
+          : formatBalance(balance.balance).replace(/^[+-]/, '')
         }
       </p>
       {balance.isFamily && (

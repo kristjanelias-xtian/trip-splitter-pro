@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import type { Expense } from '@/types/expense'
 import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -88,7 +88,7 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
         <CardTitle>Expenses by Category</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie
               data={dataWithPercentages}
@@ -108,20 +108,27 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              formatter={(value, entry: any) => (
-                <span className="text-sm text-foreground">
-                  {value} ({new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: currency,
-                  }).format(entry.payload.value)})
-                </span>
-              )}
-            />
           </PieChart>
         </ResponsiveContainer>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 justify-center">
+          {dataWithPercentages.map((entry) => (
+            <div key={entry.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span
+                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: CATEGORY_COLORS[entry.name as keyof typeof CATEGORY_COLORS] }}
+              />
+              <span>{entry.name}</span>
+              <span className="font-medium text-foreground tabular-nums">
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency,
+                  notation: 'compact',
+                  maximumFractionDigits: 1,
+                }).format(entry.value)}
+              </span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
