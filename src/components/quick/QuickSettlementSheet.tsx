@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface BankDetails { holder: string; iban: string }
 
@@ -161,14 +162,25 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   }
 
   const handleSubmit = async (input: CreateSettlementInput) => {
-    await createSettlement(input)
-    toast({
-      title: 'Payment recorded',
-      description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,
-    })
-    setView('suggestions')
-    setPrefill(null)
-    onOpenChange(false)
+    try {
+      await createSettlement(input)
+      toast({
+        title: 'Payment recorded',
+        description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,
+      })
+      setView('suggestions')
+      setPrefill(null)
+      onOpenChange(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      logger.error('QuickSettlementSheet: failed to record payment', { error: message })
+      toast({
+        variant: 'destructive',
+        title: 'Failed to record payment',
+        description: message,
+      })
+      throw err
+    }
   }
 
   const handleOpenChange = (isOpen: boolean) => {
