@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, Plus, Users, User, Edit, Mail } from 'lucide-react'
+import { X, Plus, Users, User, Edit, Mail, UserCheck } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -615,11 +615,16 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                       <div className="text-muted-foreground">
                         <strong className="text-foreground">Adults:</strong>{' '}
                         {adults.map(a => (
-                          <span key={a.id}>
+                          <span key={a.id} className="inline-flex items-center gap-1">
                             {a.name}
                             {a.email && (
-                              <span className="text-xs ml-1 opacity-60" title={a.email}>
+                              <span className="text-xs opacity-60" title={a.email}>
                                 <Mail size={10} className="inline" />
+                              </span>
+                            )}
+                            {a.user_id && (
+                              <span title="Account linked" className="shrink-0">
+                                <UserCheck size={10} className="text-positive" />
                               </span>
                             )}
                           </span>
@@ -655,7 +660,7 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                   className="p-4 bg-accent/5 rounded-lg border border-accent/10"
                 >
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-foreground">
                         {individual.name}
                         {!individual.is_adult && (
@@ -664,6 +669,11 @@ export function FamiliesSetup({ onComplete: _onComplete, hasSetup: _hasSetup = f
                           </span>
                         )}
                       </h4>
+                      {individual.user_id && (
+                        <span title="Account linked" className="shrink-0">
+                          <UserCheck size={12} className="text-positive" />
+                        </span>
+                      )}
                     </div>
                     <div className="flex gap-1">
                       <Button

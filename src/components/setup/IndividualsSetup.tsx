@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -269,6 +269,11 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                       <Badge variant={participant.is_adult ? 'soft' : 'outline'}>
                         {participant.is_adult ? 'Adult' : 'Child'}
                       </Badge>
+                      {participant.user_id && (
+                        <span title="Account linked" className="shrink-0">
+                          <UserCheck size={12} className="text-positive" />
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Button
