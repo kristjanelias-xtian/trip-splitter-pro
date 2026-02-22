@@ -83,7 +83,7 @@ export function QuickLayout() {
                     <ArrowLeft size={20} />
                   </Link>
                   <div className="min-w-0">
-                    <h1 className={`text-lg font-semibold truncate leading-tight ${onGradient ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
+                    <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
                       {currentTrip?.name}
                     </h1>
                     {currentTrip && (

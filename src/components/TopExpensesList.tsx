@@ -60,7 +60,7 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
           {topExpenses.map((expense, index) => (
             <div
               key={expense.id}
-              className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              className={`flex items-start justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-muted/30' : 'bg-transparent'}`}
             >
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
