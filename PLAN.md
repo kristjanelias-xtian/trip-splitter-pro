@@ -387,9 +387,9 @@ Be precise with numbers. If you cannot read a value, use null.
 | Q2 | Migrate localStorage keys to `spl1t:*`? | ✅ Resolved | Yes — one-time migration on load |
 | Q3 | For Events: skip planner entirely, or single-day simplified planner? | ✅ Resolved | Simplified planner, **off by default**, user can toggle on |
 | Q4 | For Events: rename TypeScript `Trip` type to `Event`? | ✅ Resolved | Yes — rename throughout codebase for cleanliness |
-| Q5 | For invitations: require sign-up to accept, or allow anonymous access? | ❓ Open | — |
-| Q6 | For invitations: send at creation time, or separately from Manage page? | ❓ Open | — |
-| Q7 | For payment reminders: manual trigger only, or auto-schedule? | ❓ Open | — |
+| Q5 | For invitations: require sign-up to accept, or allow anonymous access? | ✅ Resolved | Anonymous view allowed; Google sign-in optional (links account to participant) — JoinPage (`/join/:token`) |
+| Q6 | For invitations: send at creation time, or separately from Manage page? | ✅ Resolved | Both — fires when email is first set in IndividualsSetup / FamiliesSetup (works at creation and from Manage page) |
+| Q7 | For payment reminders: manual trigger only, or auto-schedule? | ✅ Resolved | Manual only — "Remind" button per settlement transaction in SettlementPlan |
 | Q8 | For AI Receipt Reader: Claude Sonnet or Haiku? | ✅ Resolved | claude-haiku-4-5-20251001 (upgrade to Sonnet if accuracy needs improving) |
 | Q9 | For item-to-participant mapping: Checklist or Swipe UI? | ✅ Resolved | Chip-tap (item-centric) |
 | Q10 | Should receipt images be stored permanently or auto-deleted? | ✅ Resolved | Images stored in `receipts` bucket as `{task_id}.jpg` (parallel with edge fn, graceful degradation); extracted data persists in DB |
