@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/table'
 import { isAdminAuthenticated, authenticateAdmin, logoutAdmin, getAdminPasswordHint } from '@/lib/adminAuth'
 import { generateShareableUrl } from '@/lib/tripCodeGenerator'
+import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 export function AdminAllTripsPage() {
   const navigate = useNavigate()
@@ -34,6 +36,7 @@ export function AdminAllTripsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent')
   const [ownerMap, setOwnerMap] = useState<Record<string, { name: string; email: string | null }>>({})
+  const { newSignal, cancel } = useAbortController()
 
   useEffect(() => {
     setAuthenticated(isAdminAuthenticated())
@@ -46,12 +49,20 @@ export function AdminAllTripsPage() {
     const ownerIds = [...new Set(trips.map(t => t.created_by).filter(Boolean))] as string[]
     if (ownerIds.length === 0) return
 
-    const fetchOwners = async () => {
-      const { data, error: fetchError } = await (supabase as any)
-        .from('user_profiles')
-        .select('id, display_name, email')
-        .in('id', ownerIds)
+    const signal = newSignal()
 
+    const fetchOwners = async () => {
+      const { data, error: fetchError } = await withTimeout<any>(
+        (supabase as any)
+          .from('user_profiles')
+          .select('id, display_name, email')
+          .in('id', ownerIds)
+          .abortSignal(signal),
+        15000,
+        'Loading trip owners timed out.'
+      )
+
+      if (signal.aborted) return
       if (fetchError || !data) return
 
       const map: Record<string, { name: string; email: string | null }> = {}
@@ -62,6 +73,7 @@ export function AdminAllTripsPage() {
     }
 
     fetchOwners()
+    return cancel
   }, [authenticated, trips])
 
   const handleLogin = (e: React.FormEvent) => {

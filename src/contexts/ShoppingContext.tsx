@@ -10,6 +10,7 @@ import type {
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface ShoppingContextValue {
   shoppingItems: ShoppingItem[]
@@ -32,8 +33,10 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
+  const { newSignal, cancel } = useAbortController()
 
   const fetchShoppingItems = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setShoppingItems([])
       setInitialLoadDone(true)
@@ -48,10 +51,13 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('trip_id', currentTrip.id)
           .order('category', { ascending: true })
-          .order('name', { ascending: true }),
+          .order('name', { ascending: true })
+          .abortSignal(signal),
         15000,
         'Loading shopping items timed out. Please check your connection and try again.'
       )
+
+      if (signal.aborted) return
 
       if (error) {
         logger.error('Failed to fetch shopping items', { trip_id: currentTrip?.id, error: error.message })
@@ -60,11 +66,14 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         setShoppingItems((data as ShoppingItem[]) || [])
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError' || signal.aborted) return
       logger.error('Failed to fetch shopping items', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       setShoppingItems([])
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -81,7 +90,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         setChannel(null)
       }
       setShoppingItems([])
-      return
+      return cancel
     }
 
     // Initial fetch
@@ -153,6 +162,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
     // Cleanup on unmount or trip change
     return () => {
+      cancel()
       supabase.removeChannel(shoppingChannel)
     }
   }, [tripCode, currentTrip?.id])

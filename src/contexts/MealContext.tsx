@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import type { Meal, CreateMealInput, UpdateMealInput, MealWithIngredients } from '@/types/meal'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface MealContextValue {
   meals: Meal[]
@@ -24,8 +26,10 @@ export function MealProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { newSignal, cancel } = useAbortController()
 
   const fetchMeals = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setMeals([])
       setInitialLoadDone(true)
@@ -34,12 +38,19 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('trip_id', currentTrip.id)
-        .order('meal_date', { ascending: true })
-        .order('meal_type', { ascending: true })
+      const { data, error } = await withTimeout(
+        supabase
+          .from('meals')
+          .select('*')
+          .eq('trip_id', currentTrip.id)
+          .order('meal_date', { ascending: true })
+          .order('meal_type', { ascending: true })
+          .abortSignal(signal),
+        15000,
+        'Loading meals timed out. Please check your connection and try again.'
+      )
+
+      if (signal.aborted) return
 
       if (error) {
         logger.error('Failed to fetch meals', { trip_id: currentTrip?.id, error: error.message })
@@ -48,11 +59,14 @@ export function MealProvider({ children }: { children: ReactNode }) {
         setMeals((data as Meal[]) || [])
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError' || (signal.aborted)) return
       logger.error('Failed to fetch meals', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
       setMeals([])
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -65,15 +79,20 @@ export function MealProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchMeals()
     }
+    return cancel
   }, [tripCode, currentTrip?.id])
 
   const createMeal = async (input: CreateMealInput): Promise<Meal | null> => {
     try {
-      const { data, error } = await supabase
-        .from('meals')
-        .insert([input] as any)
-        .select()
-        .single()
+      const { data, error } = await withTimeout<any>(
+        (supabase
+          .from('meals') as any)
+          .insert([input])
+          .select()
+          .single(),
+        35000,
+        'Creating meal timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: error.message })
@@ -98,12 +117,16 @@ export function MealProvider({ children }: { children: ReactNode }) {
     input: UpdateMealInput
   ): Promise<Meal | null> => {
     try {
-      const { data, error } = await ((supabase
-        .from('meals') as any)
-        .update({ ...input, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single())
+      const { data, error } = await withTimeout<any>(
+        ((supabase
+          .from('meals') as any)
+          .update({ ...input, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single()),
+        35000,
+        'Updating meal timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
@@ -130,10 +153,14 @@ export function MealProvider({ children }: { children: ReactNode }) {
   const deleteMeal = async (id: string): Promise<boolean> => {
     try {
       // First, delete all meal-shopping links
-      const { error: linkError } = await supabase
-        .from('meal_shopping_items')
-        .delete()
-        .eq('meal_id', id)
+      const { error: linkError } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .delete()
+          .eq('meal_id', id),
+        35000,
+        'Deleting meal links timed out. Please check your connection and try again.'
+      )
 
       if (linkError) {
         logger.error('Failed to delete meal shopping links', { meal_id: id, error: linkError.message })
@@ -141,7 +168,11 @@ export function MealProvider({ children }: { children: ReactNode }) {
       }
 
       // Then delete the meal
-      const { error } = await supabase.from('meals').delete().eq('id', id)
+      const { error } = await withTimeout(
+        supabase.from('meals').delete().eq('id', id),
+        35000,
+        'Deleting meal timed out. Please check your connection and try again.'
+      )
 
       if (error) {
         logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
@@ -227,9 +258,13 @@ export function MealProvider({ children }: { children: ReactNode }) {
     shoppingItemId: string
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('meal_shopping_items')
-        .insert([{ meal_id: mealId, shopping_item_id: shoppingItemId }] as any)
+      const { error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .insert([{ meal_id: mealId, shopping_item_id: shoppingItemId }] as any),
+        35000,
+        'Linking meal to shopping item timed out.'
+      )
 
       if (error) {
         console.error('Error linking meal to shopping item:', error)
@@ -248,11 +283,15 @@ export function MealProvider({ children }: { children: ReactNode }) {
     shoppingItemId: string
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('meal_shopping_items')
-        .delete()
-        .eq('meal_id', mealId)
-        .eq('shopping_item_id', shoppingItemId)
+      const { error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .delete()
+          .eq('meal_id', mealId)
+          .eq('shopping_item_id', shoppingItemId),
+        35000,
+        'Unlinking meal from shopping item timed out.'
+      )
 
       if (error) {
         console.error('Error unlinking meal from shopping item:', error)

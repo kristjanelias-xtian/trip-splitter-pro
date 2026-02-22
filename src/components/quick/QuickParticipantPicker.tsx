@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface RecentPerson {
   name: string
@@ -22,6 +24,7 @@ interface QuickParticipantPickerProps {
 export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickParticipantPickerProps) {
   const { user, userProfile } = useAuth()
   const { participants, createParticipant } = useParticipantContext()
+  const { newSignal, cancel } = useAbortController()
 
   const [recentPeople, setRecentPeople] = useState<RecentPerson[]>([])
   const [addedNames, setAddedNames] = useState<string[]>([])
@@ -42,17 +45,26 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   useEffect(() => {
     if (!user) return
 
+    const signal = newSignal()
+
     const fetchRecent = async () => {
       try {
         // Fetch participants from trips created_by this user, excluding self
-        const { data, error: fetchError } = await supabase
-          .from('participants')
-          .select('name, email, trips!inner(created_by)')
-          .eq('trips.created_by', user.id)
-          .is('user_id', null)  // exclude self (linked participants)
-          .neq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50)
+        const { data, error: fetchError } = await withTimeout(
+          supabase
+            .from('participants')
+            .select('name, email, trips!inner(created_by)')
+            .eq('trips.created_by', user.id)
+            .is('user_id', null)  // exclude self (linked participants)
+            .neq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(50)
+            .abortSignal(signal),
+          15000,
+          'Loading recent people timed out.'
+        )
+
+        if (signal.aborted) return
 
         if (fetchError) {
           logger.warn('Failed to fetch recent people', { error: fetchError.message })
@@ -73,22 +85,28 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
         setRecentPeople(deduped)
       } catch (err) {
+        if (signal.aborted) return
         logger.warn('Unhandled error fetching recent people', { error: String(err) })
       }
     }
 
     fetchRecent()
+    return cancel
   }, [user?.id])
 
   const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
 
   const sendInvitation = async (participantId: string, participantEmail: string, participantName: string) => {
     try {
-      const { data: inv, error: invError } = await supabase
-        .from('invitations')
-        .insert([{ trip_id: tripId, participant_id: participantId, inviter_id: user!.id }])
-        .select('id, token')
-        .single()
+      const { data: inv, error: invError } = await withTimeout<any>(
+        (supabase as any)
+          .from('invitations')
+          .insert([{ trip_id: tripId, participant_id: participantId, inviter_id: user!.id }])
+          .select('id, token')
+          .single(),
+        35000,
+        'Creating invitation timed out.'
+      )
 
       if (invError || !inv) {
         logger.warn('Failed to create invitation row', { error: String(invError) })

@@ -10,6 +10,7 @@ import {
 } from '@/types/participant'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface ParticipantContextType {
   participants: Participant[]
@@ -39,9 +40,11 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { newSignal, cancel } = useAbortController()
 
   // Fetch participants and families for current trip
   const fetchData = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setParticipants([])
       setFamilies([])
@@ -59,24 +62,32 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('participants')
           .select('*')
           .eq('trip_id', currentTrip.id)
-          .order('name'),
+          .order('name')
+          .abortSignal(signal),
         15000,
         'Loading participants timed out. Please check your connection and try again.'
       )
+
+      if (signal.aborted) return
 
       if (participantsError) throw participantsError
 
       // Fetch families if in families mode
       if (currentTrip.tracking_mode === 'families') {
+        if (signal.aborted) return
+
         const { data: familiesData, error: familiesError } = await withTimeout(
           supabase
             .from('families')
             .select('*')
             .eq('trip_id', currentTrip.id)
-            .order('family_name'),
+            .order('family_name')
+            .abortSignal(signal),
           15000,
           'Loading families timed out. Please check your connection and try again.'
         )
+
+        if (signal.aborted) return
 
         if (familiesError) throw familiesError
         setFamilies((familiesData as Family[]) || [])
@@ -86,11 +97,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       setParticipants((participantsData as Participant[]) || [])
     } catch (err) {
+      if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
       console.error('Error fetching participants/families:', err)
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -99,11 +113,15 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { data, error: createError } = await (supabase as any)
-        .from('participants')
-        .insert([input])
-        .select()
-        .single()
+      const { data, error: createError } = await withTimeout<any>(
+        (supabase as any)
+          .from('participants')
+          .insert([input])
+          .select()
+          .single(),
+        35000,
+        'Creating participant timed out. Please check your connection and try again.'
+      )
 
       if (createError) throw createError
 
@@ -123,10 +141,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: updateError } = await (supabase as any)
-        .from('participants')
-        .update(input)
-        .eq('id', id)
+      const { error: updateError } = await withTimeout<any>(
+        (supabase as any)
+          .from('participants')
+          .update(input)
+          .eq('id', id),
+        35000,
+        'Updating participant timed out. Please check your connection and try again.'
+      )
 
       if (updateError) throw updateError
 
@@ -147,10 +169,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: deleteError } = await supabase
-        .from('participants')
-        .delete()
-        .eq('id', id)
+      const { error: deleteError } = await withTimeout(
+        supabase
+          .from('participants')
+          .delete()
+          .eq('id', id),
+        35000,
+        'Deleting participant timed out. Please check your connection and try again.'
+      )
 
       if (deleteError) throw deleteError
 
@@ -169,11 +195,15 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { data, error: createError } = await (supabase as any)
-        .from('families')
-        .insert([input])
-        .select()
-        .single()
+      const { data, error: createError } = await withTimeout<any>(
+        (supabase as any)
+          .from('families')
+          .insert([input])
+          .select()
+          .single(),
+        35000,
+        'Creating family timed out. Please check your connection and try again.'
+      )
 
       if (createError) throw createError
 
@@ -193,10 +223,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: updateError } = await (supabase as any)
-        .from('families')
-        .update(input)
-        .eq('id', id)
+      const { error: updateError } = await withTimeout<any>(
+        (supabase as any)
+          .from('families')
+          .update(input)
+          .eq('id', id),
+        35000,
+        'Updating family timed out. Please check your connection and try again.'
+      )
 
       if (updateError) throw updateError
 
@@ -217,10 +251,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: deleteError } = await supabase
-        .from('families')
-        .delete()
-        .eq('id', id)
+      const { error: deleteError } = await withTimeout(
+        supabase
+          .from('families')
+          .delete()
+          .eq('id', id),
+        35000,
+        'Deleting family timed out. Please check your connection and try again.'
+      )
 
       if (deleteError) throw deleteError
 
@@ -240,10 +278,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: linkError } = await (supabase as any)
-        .from('participants')
-        .update({ user_id: userId })
-        .eq('id', participantId)
+      const { error: linkError } = await withTimeout<any>(
+        (supabase as any)
+          .from('participants')
+          .update({ user_id: userId })
+          .eq('id', participantId),
+        35000,
+        'Linking user timed out. Please check your connection and try again.'
+      )
 
       if (linkError) throw linkError
 
@@ -264,10 +306,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      const { error: unlinkError } = await (supabase as any)
-        .from('participants')
-        .update({ user_id: null })
-        .eq('id', participantId)
+      const { error: unlinkError } = await withTimeout<any>(
+        (supabase as any)
+          .from('participants')
+          .update({ user_id: null })
+          .eq('id', participantId),
+        35000,
+        'Unlinking user timed out. Please check your connection and try again.'
+      )
 
       if (unlinkError) throw unlinkError
 
@@ -304,6 +350,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       setInitialLoadDone(false)
       fetchData()
     }
+    return cancel
   }, [tripCode, currentTrip?.id])
 
   const value: ParticipantContextType = {

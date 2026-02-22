@@ -6,6 +6,8 @@ import { useTripContext } from '@/contexts/TripContext'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
+import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface InvitationData {
   id: string
@@ -25,6 +27,7 @@ export function JoinPage() {
   const { user } = useAuth()
   const { refreshTrips } = useTripContext()
   const navigate = useNavigate()
+  const { newSignal, cancel } = useAbortController()
 
   const [pageState, setPageState] = useState<PageState>('loading')
   const [invitation, setInvitation] = useState<InvitationData | null>(null)
@@ -37,17 +40,26 @@ export function JoinPage() {
       return
     }
 
+    const signal = newSignal()
+
     async function loadInvitation() {
-      const { data, error } = await supabase
-        .from('invitations')
-        .select(`
-          id,
-          token,
-          status,
-          participant_id
-        `)
-        .eq('token', token!)
-        .maybeSingle()
+      const { data, error } = await withTimeout<any>(
+        supabase
+          .from('invitations')
+          .select(`
+            id,
+            token,
+            status,
+            participant_id
+          `)
+          .eq('token', token!)
+          .abortSignal(signal)
+          .maybeSingle(),
+        15000,
+        'Loading invitation timed out.'
+      )
+
+      if (signal.aborted) return
 
       if (error || !data) {
         setPageState('not_found')
@@ -55,22 +67,36 @@ export function JoinPage() {
       }
 
       // Fetch participant and trip details separately
-      const { data: participant } = await (supabase as any)
-        .from('participants')
-        .select('id, name, trip_id')
-        .eq('id', data.participant_id)
-        .single()
+      const { data: participant } = await withTimeout<any>(
+        (supabase as any)
+          .from('participants')
+          .select('id, name, trip_id')
+          .eq('id', data.participant_id)
+          .single()
+          .abortSignal(signal),
+        15000,
+        'Loading participant timed out.'
+      )
+
+      if (signal.aborted) return
 
       if (!participant) {
         setPageState('not_found')
         return
       }
 
-      const { data: trip } = await (supabase as any)
-        .from('trips')
-        .select('id, name, trip_code')
-        .eq('id', participant.trip_id)
-        .single()
+      const { data: trip } = await withTimeout<any>(
+        (supabase as any)
+          .from('trips')
+          .select('id, name, trip_code')
+          .eq('id', participant.trip_id)
+          .single()
+          .abortSignal(signal),
+        15000,
+        'Loading trip timed out.'
+      )
+
+      if (signal.aborted) return
 
       if (!trip) {
         setPageState('not_found')
@@ -92,6 +118,7 @@ export function JoinPage() {
     }
 
     loadInvitation()
+    return cancel
   }, [token])
 
   // Auto-link when user signs in on this page
@@ -104,18 +131,26 @@ export function JoinPage() {
 
       try {
         // Link auth user to participant
-        const { error: linkError } = await (supabase as any)
-          .from('participants')
-          .update({ user_id: user!.id, email: user!.email || null })
-          .eq('id', invitation!.participant_id)
+        const { error: linkError } = await withTimeout<any>(
+          (supabase as any)
+            .from('participants')
+            .update({ user_id: user!.id, email: user!.email || null })
+            .eq('id', invitation!.participant_id),
+          35000,
+          'Linking account timed out. Please check your connection and try again.'
+        )
 
         if (linkError) throw linkError
 
         // Mark invitation as accepted
-        await supabase
-          .from('invitations')
-          .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-          .eq('id', invitation!.id)
+        await withTimeout(
+          supabase
+            .from('invitations')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invitation!.id),
+          35000,
+          'Accepting invitation timed out.'
+        )
 
         logger.info('Invitation accepted', {
           invitation_id: invitation!.id,

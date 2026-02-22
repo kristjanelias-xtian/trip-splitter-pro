@@ -8,6 +8,7 @@ import {
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface SettlementContextType {
   settlements: Settlement[]
@@ -29,9 +30,11 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { newSignal, cancel } = useAbortController()
 
   // Fetch settlements for current trip
   const fetchSettlements = async () => {
+    const signal = newSignal()
     if (!currentTrip) {
       setSettlements([])
       setInitialLoadDone(true)
@@ -48,20 +51,26 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('trip_id', currentTrip.id)
           .order('settlement_date', { ascending: false })
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .abortSignal(signal),
         15000,
         'Loading settlements timed out. Please check your connection and try again.'
       )
+
+      if (signal.aborted) return
 
       if (fetchError) throw fetchError
 
       setSettlements((data as Settlement[]) || [])
     } catch (err) {
+      if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch settlements')
       logger.error('Failed to fetch settlements', { trip_id: currentTrip?.id, error: err instanceof Error ? err.message : String(err) })
     } finally {
-      setLoading(false)
-      setInitialLoadDone(true)
+      if (!signal.aborted) {
+        setLoading(false)
+        setInitialLoadDone(true)
+      }
     }
   }
 
@@ -168,6 +177,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
       setSettlements([])
       setInitialLoadDone(true)
     }
+    return cancel
   }, [tripCode, currentTrip?.id])
 
   const value: SettlementContextType = {

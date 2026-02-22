@@ -5,6 +5,7 @@ import { Event, CreateEventInput, UpdateEventInput } from '@/types/trip'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { useAbortController } from '@/hooks/useAbortController'
 
 interface TripContextType {
   trips: Event[]
@@ -25,18 +26,21 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { newSignal, cancel } = useAbortController()
 
   const fetchTrips = async () => {
+    const signal = newSignal()
     setLoading(true)
     setError(null)
     try {
       if (!user) {
         // Anonymous: fetch all trips so URL-based access (/t/:tripCode) keeps working
         const { data, error: fetchError } = await withTimeout(
-          supabase.from('trips').select('*').order('created_at', { ascending: false }),
+          supabase.from('trips').select('*').order('created_at', { ascending: false }).abortSignal(signal),
           15000,
           'Loading trips timed out. Please check your connection and try again.'
         )
+        if (signal.aborted) return
         if (fetchError) throw fetchError
         setTrips((data as unknown as Event[]) || [])
         return
@@ -44,10 +48,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       // Authenticated: scope to trips where user is creator OR participant
       const { data: participantRows, error: participantError } = await withTimeout(
-        supabase.from('participants').select('trip_id').eq('user_id', user.id),
+        supabase.from('participants').select('trip_id').eq('user_id', user.id).abortSignal(signal),
         10000,
         'Loading trip membership timed out.'
       )
+      if (signal.aborted) return
       if (participantError) throw participantError
 
       const participantTripIds = (participantRows ?? []).map((r: any) => r.trip_id as string)
@@ -56,18 +61,24 @@ export function TripProvider({ children }: { children: ReactNode }) {
         ? `created_by.eq.${user.id},id.in.(${participantTripIds.join(',')})`
         : `created_by.eq.${user.id}`
 
+      if (signal.aborted) return
+
       const { data, error: fetchError } = await withTimeout(
-        supabase.from('trips').select('*').or(filter).order('created_at', { ascending: false }),
+        supabase.from('trips').select('*').or(filter).order('created_at', { ascending: false }).abortSignal(signal),
         15000,
         'Loading trips timed out. Please check your connection and try again.'
       )
+      if (signal.aborted) return
       if (fetchError) throw fetchError
       setTrips((data as unknown as Event[]) || [])
     } catch (err) {
+      if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
       logger.error('Failed to fetch trips', { error: err instanceof Error ? err.message : String(err) })
     } finally {
-      setLoading(false)
+      if (!signal.aborted) {
+        setLoading(false)
+      }
     }
   }
 
@@ -218,6 +229,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authLoading) return
     fetchTrips()
+    return cancel
   }, [authLoading, user?.id])
 
   const value: TripContextType = {
