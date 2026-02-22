@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-22 (Phases 1–6 ✅ done; bug fixes #241/#242/#244 + global scan shortcut PR #247)
+> Last updated: 2026-02-22 (Phases 1–6 ✅ done; session health detection PR #249)
 
 ---
 
@@ -29,7 +29,7 @@
 ### Architecture Overview
 - **Two UI modes**: Full (multi-page: Trips → select → Expenses/Settlements/Planner/Shopping/Dashboard) and Quick (single-trip streamlined view)
 - **Layout**: `Layout.tsx` (full), `QuickLayout.tsx` (quick) — each wraps all trip-scoped context providers
-- **Context tree** (outer → inner): `AuthProvider` → `TripProvider` → `UserPreferencesProvider` → (route) → `ParticipantProvider` → `ExpenseProvider` → `SettlementProvider` → `MealProvider` → `ActivityProvider` → `StayProvider` → `ShoppingProvider`
+- **Context tree** (outer → inner): `AuthProvider` → `SessionHealthGate` → `TripProvider` → `UserPreferencesProvider` → (route) → `ParticipantProvider` → `ExpenseProvider` → `SettlementProvider` → `MealProvider` → `ActivityProvider` → `StayProvider` → `ShoppingProvider`
 - **Routing**: React Router v6, trip-scoped routes under `/t/:tripCode/...`
 - **Mobile wizard**: `ExpenseWizard.tsx` routes to `MobileWizard` (bottom Sheet, 4 steps) on mobile, `ExpenseForm` (Dialog) on desktop/edit
 
@@ -534,3 +534,4 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-22 | E2E smoke tests | Playwright setup — 26 tests (13 routes × 2 viewports: mobile 375×812 + desktop 1280×720). Supabase fully mocked via `page.route()` interceptor + localStorage seeding. `npm run test:e2e` / `test:e2e:ui`. (PR #238) |
 | 2026-02-22 | Unit test fixes | Fix 9 pre-existing test failures from PR #234's `.abortSignal()` additions: updated mock chains in 5 context test files; fixed real bug in `ShoppingContext.tsx` (missing `setLoading(false)` in no-trip branch); added `functions.invoke` mock to `AuthContext.test.tsx`. 139/139 tests pass. (PR #243) |
 | 2026-02-22 | Bug fixes + global scan | #241: ReceiptReviewSheet unselected pills unified to neutral grey, alternating item row bg; #242: QuickHomeScreen always shows group picker for 1+ groups (removed single-group auto-navigate shortcut); #244: QuickScanCreateFlow handleClose no longer navigates — cancel stays on current page, only Done navigates; global ScanLine icon button added to Layout (always) and QuickLayout (trip pages only) — opens QuickScanContextSheet or QuickScanCreateFlow; QuickScanCreateFlow rendered inside ReceiptProvider tree in both layouts. (PR #247) |
+| 2026-02-22 | Session health | Detect expired OAuth sessions and show recovery overlay. `sessionHealthBus` (pub/sub) emits `auth-error`/`api-success` from custom fetch in `supabase.ts`. `useSessionHealth` hook combines token expiry checks, `visibilitychange`/`online` listeners, periodic polling, and bus events. `StaleSessionOverlay` prompts page refresh (children remain mounted to preserve form data). `SessionHealthGate` wraps app inside `AuthProvider`. Also added try/catch + destructive toasts to `QuickExpenseSheet` and `QuickSettlementSheet`. (PR #249) |
