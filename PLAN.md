@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-22 (Phases 1–6 ✅ done)
+> Last updated: 2026-02-22 (Phases 1–6 ✅ done; bug fixes PRs #221–#224)
 
 ---
 
@@ -500,11 +500,13 @@ Keeps users in Quick mode throughout the entire onboarding flow.
 - **Nudge card** in `QuickGroupDetailPage`: amber card shown when `participants.length <= 1` (just the auto-linked creator or empty). Tapping "Add" opens `QuickParticipantSetupSheet`. Card disappears once group is populated.
 - Full-mode flow via `TripsPage` is **unchanged** — still redirects to `/t/{code}/manage`.
 
-### Phase 5 — Receipt reminder emails ✅ Done (PR #213)
-Extends payment reminder emails with receipt image attachments from Phase 3 storage.
-- `SettlementsPage.handleRemind()` collects `receipt_image_paths` for expenses paid by the creditor (up to 3); handles both individuals mode (by participant ID) and families mode (by family_id → participant lookup)
-- `send-email` edge function: downloads each image from private `receipts` bucket using service-role client, converts to base64, adds as Resend API attachments
-- Email shows "📎 Receipt(s) attached" notice when attachments present; graceful degradation on download failure
+### Phase 5 — Receipt reminder emails ✅ Done (PRs #213, #214)
+Extends payment reminder emails with receipt data. PR #213 attached JPEG images; PR #214 replaced attachments with inline line-item tables (better UX, smaller payload).
+- `SettlementsPage.handleRemind()` collects structured receipt data (`merchant`, `items`, `confirmed_total`, `tip_amount`, `currency`) from `receiptByExpenseId` for expenses paid by the creditor (up to 3); handles individuals + families mode
+- `send-email` edge function: `ReceiptEmailData` type; `receiptTableHtml()` renders a bordered HTML table per receipt (item / qty / price rows, tip row if > 0, bold total row); `formatPrice()` handles null/unknown currencies gracefully
+- Receipt section injected between amount box and CTA button; italic note "Full receipt photo available in the Spl1t app." follows last table
+- No-receipt path unchanged — email sends without any receipt section
+- **Deployed ✅** 2026-02-22 (PR #214)
 
 ---
 
@@ -522,4 +524,6 @@ Extends payment reminder emails with receipt image attachments from Phase 3 stor
 | 2026-02-21 | Phase 4 | Email & Invitations — send-email edge function (Resend), participant email fields, invitation flow, /join/:token page, payment reminder button (PRs #198–#200) |
 | 2026-02-21 | Phase 4 deploy | RESEND_API_KEY set, send-email deployed, migration 022 pushed to production |
 | 2026-02-22 | Phase 5 | Receipt reminder emails — attach receipt images to payment reminders (PR #213); send-email deployed |
+| 2026-02-22 | Phase 5 refine | Replace receipt JPEG attachments with inline HTML line-item tables (PR #214) — structured data from client, receiptTableHtml() in edge function, no more storage downloads at send time; deployed |
 | 2026-02-22 | Phase 6 | Quick-mode event creation + participant setup via bottom sheets (PR #218) — QuickCreateSheet wraps EventForm, QuickParticipantSetupSheet wraps IndividualsSetup/FamiliesSetup; nudge card on detail page when ≤1 participant |
+| 2026-02-22 | Bug fixes | #215 (PR #221): JoinPage calls refreshTrips() before navigate() so stale-list redirect after invite accept is fixed; #216 (PR #222): UserCheck icon in IndividualsSetup + FamiliesSetup for participants with user_id set; #217 (PR #223): receipt email highlights debtor's items — mapped_items + debtor_participant_ids passed from SettlementsPage, receiptTableHtml() applies faf5ff/8b5cf6 row highlight; send-email redeployed; #220 (PR #224): QuickCreateSheet + QuickParticipantSetupSheet — applied useKeyboardHeight fix (same pattern as MobileWizard) so iOS keyboard no longer clips sheet header |
