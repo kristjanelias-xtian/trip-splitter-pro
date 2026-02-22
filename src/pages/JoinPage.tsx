@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTripContext } from '@/contexts/TripContext'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
@@ -22,6 +23,7 @@ type PageState = 'loading' | 'found' | 'not_found' | 'accepted' | 'linking'
 export function JoinPage() {
   const { token } = useParams<{ token: string }>()
   const { user } = useAuth()
+  const { refreshTrips } = useTripContext()
   const navigate = useNavigate()
 
   const [pageState, setPageState] = useState<PageState>('loading')
@@ -119,6 +121,9 @@ export function JoinPage() {
           invitation_id: invitation!.id,
           trip_id: invitation!.trip_id,
         })
+
+        // Refresh trips so the newly linked trip appears before navigating
+        await refreshTrips()
 
         // Navigate to the trip
         navigate(`/t/${invitation!.trip_code}/quick`, { replace: true })
