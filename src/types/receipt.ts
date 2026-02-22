@@ -21,6 +21,7 @@ export interface ReceiptTask {
   extracted_items: ExtractedItem[] | null;
   extracted_total: number | null;
   extracted_currency: string | null;
+  extracted_date: string | null;
   confirmed_total: number | null;
   tip_amount: number;
   mapped_items: MappedItem[] | null;

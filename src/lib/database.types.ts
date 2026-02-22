@@ -323,6 +323,7 @@ export type Database = {
           extracted_items: Json | null
           extracted_total: number | null
           extracted_currency: string | null
+          extracted_date: string | null
           confirmed_total: number | null
           tip_amount: number
           mapped_items: Json | null
@@ -341,6 +342,7 @@ export type Database = {
           extracted_items?: Json | null
           extracted_total?: number | null
           extracted_currency?: string | null
+          extracted_date?: string | null
           confirmed_total?: number | null
           tip_amount?: number
           mapped_items?: Json | null
@@ -359,6 +361,7 @@ export type Database = {
           extracted_items?: Json | null
           extracted_total?: number | null
           extracted_currency?: string | null
+          extracted_date?: string | null
           confirmed_total?: number | null
           tip_amount?: number
           mapped_items?: Json | null
