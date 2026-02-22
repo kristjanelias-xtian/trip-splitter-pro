@@ -51,7 +51,8 @@ const CHIP_COLORS = [
 ]
 
 function getChipColor(index: number, assigned: boolean) {
-  return CHIP_COLORS[index % CHIP_COLORS.length][assigned ? 'on' : 'off']
+  if (!assigned) return 'bg-muted text-muted-foreground border border-border'
+  return CHIP_COLORS[index % CHIP_COLORS.length].on
 }
 
 
@@ -598,7 +599,7 @@ interface ItemRowProps {
 }
 
 function ItemRow({
-  index: _index,
+  index,
   item,
   participants,
   onNameChange,
@@ -610,7 +611,7 @@ function ItemRow({
   const allAssigned = participants.length > 0 && participants.every(p => item.assignedIds.has(p.id))
 
   return (
-    <div className="border border-border rounded-lg p-3 space-y-2">
+    <div className={`border border-border rounded-lg p-3 space-y-2 ${index % 2 !== 0 ? 'bg-muted/25' : ''}`}>
       {/* Name + Price */}
       <div className="flex gap-2 items-center">
         <Input

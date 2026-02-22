@@ -117,13 +117,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   }
 
   const handleClose = () => {
-    if (createdTripCode) {
-      // If group was created, navigate to it before closing
-      onOpenChange(false)
-      navigate(`/t/${createdTripCode}/quick`)
-    } else {
-      onOpenChange(false)
-    }
+    onOpenChange(false)
     // Reset state after close animation
     setTimeout(() => {
       setStep('camera')
