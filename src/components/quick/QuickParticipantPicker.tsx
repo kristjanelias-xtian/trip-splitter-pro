@@ -286,6 +286,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               value={name}
               onChange={e => setName(e.target.value)}
               className="flex-1"
+              autoComplete="section-participant name"
             />
             <Button type="submit" size="sm" disabled={adding || !name.trim()}>
               {adding ? '…' : 'Add'}
@@ -300,6 +301,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               placeholder="Email (optional)"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              autoComplete="section-participant email"
             />
           </div>
           {error && (
