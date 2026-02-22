@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ArrowRight, ArrowLeft, PartyPopper } from 'lucide-react'
+import { ArrowRight, ArrowLeft, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
@@ -34,14 +35,29 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const { expenses } = useExpenseContext()
   const { participants, families } = useParticipantContext()
   const { settlements, createSettlement } = useSettlementContext()
+  const { receiptByExpenseId } = useReceiptContext()
   const { myParticipant } = useMyParticipant()
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
 
   const [view, setView] = useState<'suggestions' | 'form'>('suggestions')
   const [prefill, setPrefill] = useState<Prefill | null>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
+  const [confirmingRemindIdx, setConfirmingRemindIdx] = useState<number | null>(null)
+  const [sendingRemind, setSendingRemind] = useState(false)
+  const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
+
+  // Build email map: entity ID (participant.id or family_id) → email
+  const fromEmailMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const p of participants) {
+      if (!p.email) continue
+      if (p.family_id) map[p.family_id] = p.email
+      map[p.id] = p.email
+    }
+    return map
+  }, [participants])
 
   if (!currentTrip) return null
 
@@ -147,6 +163,79 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     return adult?.id || entityId
   }
 
+  const handleRemind = async (tx: SettlementTransaction, idx: number) => {
+    if (!currentTrip || !user) return
+    const fromEmail = fromEmailMap[tx.fromId]
+    if (!fromEmail) return
+
+    setSendingRemind(true)
+    try {
+      const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
+
+      // Collect receipt data for expenses paid by the creditor (max 3)
+      const creditorParticipantIds = new Set(
+        currentTrip.tracking_mode === 'families'
+          ? participants.filter(p => p.family_id === tx.toId).map(p => p.id)
+          : [tx.toId]
+      )
+      const debtorParticipantIds =
+        currentTrip.tracking_mode === 'families'
+          ? participants.filter(p => p.family_id === tx.fromId).map(p => p.id)
+          : [tx.fromId]
+
+      const receipts: Array<{
+        merchant: string | null
+        items: Array<{ name: string; price: number; qty: number }> | null
+        confirmed_total: number | null
+        tip_amount: number
+        currency: string | null
+        mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
+        debtor_participant_ids: string[]
+      }> = []
+      for (const expense of expenses) {
+        if (receipts.length >= 3) break
+        if (!creditorParticipantIds.has(expense.paid_by)) continue
+        const receipt = receiptByExpenseId[expense.id]
+        if (receipt) {
+          receipts.push({
+            merchant: receipt.extracted_merchant,
+            items: receipt.extracted_items,
+            confirmed_total: receipt.confirmed_total,
+            tip_amount: receipt.tip_amount,
+            currency: receipt.extracted_currency ?? currentTrip.default_currency,
+            mapped_items: receipt.mapped_items,
+            debtor_participant_ids: debtorParticipantIds,
+          })
+        }
+      }
+
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'payment_reminder',
+          trip_id: currentTrip.id,
+          trip_name: currentTrip.name,
+          trip_code: currentTrip.trip_code,
+          recipient_name: tx.fromName,
+          recipient_email: fromEmail,
+          amount: tx.amount,
+          currency: currentTrip.default_currency,
+          pay_to_name: tx.toName,
+          organiser_name: organiserName,
+          ...(receipts.length > 0 && { receipts }),
+        },
+      })
+      if (error) throw new Error(String(error))
+
+      setRemindResults(prev => ({ ...prev, [idx]: 'sent' }))
+      setConfirmingRemindIdx(null)
+    } catch (err) {
+      logger.error('QuickSettlementSheet: failed to send reminder', { error: String(err) })
+      setRemindResults(prev => ({ ...prev, [idx]: 'error' }))
+    } finally {
+      setSendingRemind(false)
+    }
+  }
+
   const handleRecord = (tx: SettlementTransaction) => {
     setPrefill({
       fromId: resolveParticipantId(tx.fromId, tx.isFromFamily),
@@ -188,6 +277,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       // Reset state when closing
       setView('suggestions')
       setPrefill(null)
+      setConfirmingRemindIdx(null)
+      setRemindResults({})
     }
     onOpenChange(isOpen)
   }
@@ -252,10 +343,14 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                 </p>
                 {myTransactions.map((tx, i) => {
                   const iOwe = tx.fromId === myEntityId
+                  const fromEmail = !iOwe ? fromEmailMap[tx.fromId] : undefined
+                  const canRemind = !iOwe && !!fromEmail
+                  const isConfirmingRemind = confirmingRemindIdx === i
+                  const remindResult = remindResults[i]
                   return (
                     <div
                       key={i}
-                      className="border border-border rounded-lg p-4 flex items-center justify-between gap-3"
+                      className="border border-border rounded-lg p-4 flex items-start justify-between gap-3"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm">
@@ -297,13 +392,78 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                             </p>
                           )
                         })()}
+
+                        {/* Inline remind confirm */}
+                        {isConfirmingRemind && fromEmail && (
+                          <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
+                            <p className="text-sm text-foreground">
+                              Send payment reminder to <strong>{tx.fromName}</strong>?
+                            </p>
+                            <p className="text-xs text-muted-foreground">{fromEmail}</p>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => handleRemind(tx, i)}
+                                disabled={sendingRemind}
+                              >
+                                {sendingRemind ? 'Sending…' : 'Send'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs"
+                                onClick={() => { setConfirmingRemindIdx(null) }}
+                                disabled={sendingRemind}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {remindResult === 'sent' && (
+                          <p className="mt-2 text-xs text-positive flex items-center gap-1">
+                            <Check size={12} />
+                            Reminder sent to {tx.fromName}
+                          </p>
+                        )}
+                        {remindResult === 'error' && (
+                          <p className="mt-2 text-xs text-destructive">
+                            Failed to send reminder. Please try again.
+                          </p>
+                        )}
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleRecord(tx)}
-                      >
-                        Record
-                      </Button>
+
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => handleRecord(tx)}
+                        >
+                          Record
+                        </Button>
+                        {canRemind && !isConfirmingRemind && remindResult !== 'sent' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setConfirmingRemindIdx(i); setRemindResults(prev => { const n = { ...prev }; delete n[i]; return n }) }}
+                            title={`Send payment reminder to ${tx.fromName}`}
+                          >
+                            <Bell size={14} className="mr-1" />
+                            Remind
+                          </Button>
+                        )}
+                        {isConfirmingRemind && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-muted-foreground"
+                            onClick={() => setConfirmingRemindIdx(null)}
+                          >
+                            <X size={14} />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
