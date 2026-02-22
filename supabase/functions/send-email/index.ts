@@ -36,6 +36,7 @@ type SendEmailBody =
       currency: string
       pay_to_name: string
       organiser_name: string
+      receipt_image_paths?: string[]
     }
 
 function invitationEmailHtml(params: {
@@ -110,8 +111,9 @@ function paymentReminderEmailHtml(params: {
   formattedAmount: string
   payToName: string
   tripUrl: string
+  hasReceipts?: boolean
 }): string {
-  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl } = params
+  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, hasReceipts } = params
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,6 +146,10 @@ function paymentReminderEmailHtml(params: {
                 <p style="margin:0 0 4px;color:#4c1d95;font-size:36px;font-weight:700;">${formattedAmount}</p>
                 <p style="margin:0;color:#7c3aed;font-size:14px;">to <strong>${payToName}</strong></p>
               </div>
+              ${hasReceipts ? `<!-- Receipt notice -->
+              <p style="margin:0 0 20px;color:#64748b;font-size:13px;text-align:center;">
+                📎 Receipt(s) from ${organiserName} are attached to this email.
+              </p>` : ''}
               <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -207,6 +213,8 @@ Deno.serve(async (req) => {
     const body = await req.json() as SendEmailBody
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    type ResendAttachment = { filename: string; content: string }
+
     let subject: string
     let html: string
     let toEmail: string
@@ -214,6 +222,7 @@ Deno.serve(async (req) => {
     let emailType: string
     let tripId: string | null = null
     let invitationId: string | null = null
+    let attachments: ResendAttachment[] = []
 
     if (body.type === 'invitation') {
       const joinUrl = `${APP_URL}/join/${body.token}`
@@ -244,6 +253,34 @@ Deno.serve(async (req) => {
         currency: body.currency,
       }).format(body.amount)
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
+
+      // Download receipt images and prepare as attachments
+      if (body.receipt_image_paths && body.receipt_image_paths.length > 0) {
+        for (let i = 0; i < body.receipt_image_paths.length; i++) {
+          const imagePath = body.receipt_image_paths[i]
+          try {
+            const { data: imageData, error: downloadError } = await supabase.storage
+              .from('receipts')
+              .download(imagePath)
+            if (downloadError || !imageData) {
+              logger.warn('Failed to download receipt image for attachment', { imagePath, error: String(downloadError) })
+              continue
+            }
+            const arrayBuffer = await imageData.arrayBuffer()
+            const bytes = new Uint8Array(arrayBuffer)
+            let binary = ''
+            for (let j = 0; j < bytes.byteLength; j++) {
+              binary += String.fromCharCode(bytes[j])
+            }
+            const base64 = btoa(binary)
+            const suffix = attachments.length > 0 ? `_${attachments.length + 1}` : ''
+            attachments.push({ filename: `receipt${suffix}.jpg`, content: base64 })
+          } catch (err) {
+            logger.warn('Exception downloading receipt image', { imagePath, error: String(err) })
+          }
+        }
+      }
+
       subject = `Payment reminder for "${body.trip_name}"`
       html = paymentReminderEmailHtml({
         recipientName: body.recipient_name,
@@ -252,6 +289,7 @@ Deno.serve(async (req) => {
         formattedAmount,
         payToName: body.pay_to_name,
         tripUrl,
+        hasReceipts: attachments.length > 0,
       })
       toEmail = body.recipient_email
       toName = body.recipient_name
@@ -267,18 +305,23 @@ Deno.serve(async (req) => {
     logger.info('Sending email via Resend', { type: emailType, to: toEmail })
     const resendStart = performance.now()
 
+    const resendPayload: Record<string, unknown> = {
+      from: FROM_ADDRESS,
+      to: [toEmail],
+      subject,
+      html,
+    }
+    if (attachments.length > 0) {
+      resendPayload.attachments = attachments
+    }
+
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [toEmail],
-        subject,
-        html,
-      }),
+      body: JSON.stringify(resendPayload),
     })
 
     const resendLatencyMs = Math.round(performance.now() - resendStart)

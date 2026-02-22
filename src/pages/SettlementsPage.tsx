@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
@@ -23,6 +24,7 @@ export function SettlementsPage() {
   const { participants, families } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { createSettlement, settlements } = useSettlementContext()
+  const { receiptByExpenseId } = useReceiptContext()
   const [showCustomSettlement, setShowCustomSettlement] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
   const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
@@ -163,6 +165,24 @@ export function SettlementsPage() {
   const handleRemind = async (transaction: SettlementTransaction, fromEmail: string): Promise<void> => {
     if (!currentTrip || !user) return
     const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
+
+    // Collect receipt image paths for expenses paid by the creditor (toId)
+    // In families mode toId is a family_id; in individuals mode it's a participant ID
+    const creditorParticipantIds = new Set(
+      currentTrip.tracking_mode === 'families'
+        ? participants.filter(p => p.family_id === transaction.toId).map(p => p.id)
+        : [transaction.toId]
+    )
+    const receiptImagePaths: string[] = []
+    for (const expense of expenses) {
+      if (receiptImagePaths.length >= 3) break
+      if (!creditorParticipantIds.has(expense.paid_by)) continue
+      const receipt = receiptByExpenseId[expense.id]
+      if (receipt?.receipt_image_path) {
+        receiptImagePaths.push(receipt.receipt_image_path)
+      }
+    }
+
     const { error } = await supabase.functions.invoke('send-email', {
       body: {
         type: 'payment_reminder',
@@ -175,6 +195,7 @@ export function SettlementsPage() {
         currency: currentTrip.default_currency,
         pay_to_name: transaction.toName,
         organiser_name: organiserName,
+        ...(receiptImagePaths.length > 0 && { receipt_image_paths: receiptImagePaths }),
       },
     })
     if (error) {
