@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (139 tests) |
+| Tests | Vitest + Testing Library (139 unit tests), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -529,3 +529,6 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-22 | Bug fixes | #215 (PR #221): JoinPage calls refreshTrips() before navigate() so stale-list redirect after invite accept is fixed; #216 (PR #222): UserCheck icon in IndividualsSetup + FamiliesSetup for participants with user_id set; #217 (PR #223): receipt email highlights debtor's items — mapped_items + debtor_participant_ids passed from SettlementsPage, receiptTableHtml() applies faf5ff/8b5cf6 row highlight; send-email redeployed; #220 (PR #224): QuickCreateSheet + QuickParticipantSetupSheet — applied useKeyboardHeight fix |
 | 2026-02-22 | iOS sheet fixes | PR #227: QuickCreateSheet + QuickParticipantSetupSheet — two root causes fixed: (1) `vh`→`dvh` so sheet top no longer hides behind iOS browser chrome on initial open; (2) restructured to `flex flex-col` with `shrink-0` sticky header + `flex-1 overflow-y-auto` content, so title and X close button stay pinned regardless of scroll or input focus (same pattern as ReceiptReviewSheet) |
 | 2026-02-22 | Group members sheet | PR #229: `QuickGroupMembersSheet` — Users chip (absolute top-right on relative hero wrapper) opens bottom sheet listing all participants/families with balances, "You" badge, UserCheck for linked accounts, colour-coded amount + status text. Read-only sheet: no keyboard hook needed, fixed `75dvh`. `myParticipantId = myBalance?.id`. |
+| 2026-02-22 | Scan-first onboarding | PR #231: Scan button as primary entry on QuickHomeScreen. 0 groups → QuickScanCreateFlow. 1 group → navigate + openScan state. 2+ groups → QuickScanContextSheet. QuickParticipantPicker: recent people, Contacts API, manual form. Migration 024: extracted_date on receipt_tasks. |
+| 2026-02-22 | Abort stale requests | PR #234: `useAbortController` hook — cancels previous in-flight request on re-fetch. Applied to all 10 contexts + 3 page-level components. Added missing `withTimeout` to 20+ mutations. |
+| 2026-02-22 | E2E smoke tests | Playwright setup — 26 tests (13 routes × 2 viewports: mobile 375×812 + desktop 1280×720). Supabase fully mocked via `page.route()` interceptor + localStorage seeding. `npm run test:e2e` / `test:e2e:ui`. |

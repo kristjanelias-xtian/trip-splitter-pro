@@ -34,3 +34,8 @@ scripts/migrate.js
 
 # Supabase
 .supabase
+
+# Playwright
+test-results/
+playwright-report/
+/playwright/.cache/
