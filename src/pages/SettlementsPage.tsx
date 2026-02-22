@@ -166,20 +166,32 @@ export function SettlementsPage() {
     if (!currentTrip || !user) return
     const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
-    // Collect receipt image paths for expenses paid by the creditor (toId)
+    // Collect structured receipt data for expenses paid by the creditor (toId)
     // In families mode toId is a family_id; in individuals mode it's a participant ID
     const creditorParticipantIds = new Set(
       currentTrip.tracking_mode === 'families'
         ? participants.filter(p => p.family_id === transaction.toId).map(p => p.id)
         : [transaction.toId]
     )
-    const receiptImagePaths: string[] = []
+    const receipts: Array<{
+      merchant: string | null
+      items: Array<{ name: string; price: number; qty: number }> | null
+      confirmed_total: number | null
+      tip_amount: number
+      currency: string | null
+    }> = []
     for (const expense of expenses) {
-      if (receiptImagePaths.length >= 3) break
+      if (receipts.length >= 3) break
       if (!creditorParticipantIds.has(expense.paid_by)) continue
       const receipt = receiptByExpenseId[expense.id]
-      if (receipt?.receipt_image_path) {
-        receiptImagePaths.push(receipt.receipt_image_path)
+      if (receipt) {
+        receipts.push({
+          merchant: receipt.extracted_merchant,
+          items: receipt.extracted_items,
+          confirmed_total: receipt.confirmed_total,
+          tip_amount: receipt.tip_amount,
+          currency: receipt.extracted_currency ?? currentTrip.default_currency,
+        })
       }
     }
 
@@ -195,7 +207,7 @@ export function SettlementsPage() {
         currency: currentTrip.default_currency,
         pay_to_name: transaction.toName,
         organiser_name: organiserName,
-        ...(receiptImagePaths.length > 0 && { receipt_image_paths: receiptImagePaths }),
+        ...(receipts.length > 0 && { receipts }),
       },
     })
     if (error) {
