@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Session } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { sessionHealthBus } from '@/lib/sessionHealthBus'
 import { logger } from '@/lib/logger'
 
@@ -16,16 +17,38 @@ function isTokenExpired(session: Session | null): boolean {
 export function useSessionHealth(session: Session | null) {
   const [isExpired, setIsExpired] = useState(false)
   const lastHiddenAt = useRef<number>(0)
+  const refreshingRef = useRef(false)
 
-  const checkAndSetExpired = useCallback(() => {
+  // Attempt a silent token refresh before showing the overlay.
+  // If the refresh succeeds, the user never sees the stale-session overlay.
+  // If it fails, we fall through to setIsExpired(true) as before.
+  const tryRefreshThenExpire = useCallback(async () => {
     if (!session) return
-    if (isTokenExpired(session)) {
-      logger.warn('Session health: token expired locally', {
-        expires_at: session.expires_at,
-        now: Math.floor(Date.now() / 1000),
-      })
-      setIsExpired(true)
+    if (!isTokenExpired(session)) return
+
+    // Prevent concurrent refresh attempts
+    if (refreshingRef.current) return
+    refreshingRef.current = true
+
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (!error && data.session) {
+        logger.info('Session health: silent refresh succeeded — no overlay needed')
+        setIsExpired(false)
+        return
+      }
+      logger.warn('Session health: silent refresh failed', { error: String(error) })
+    } catch (err) {
+      logger.warn('Session health: silent refresh threw', { error: String(err) })
+    } finally {
+      refreshingRef.current = false
     }
+
+    logger.warn('Session health: token expired and refresh failed — showing overlay', {
+      expires_at: session.expires_at,
+      now: Math.floor(Date.now() / 1000),
+    })
+    setIsExpired(true)
   }, [session])
 
   const refresh = useCallback(() => {
@@ -40,14 +63,14 @@ export function useSessionHealth(session: Session | null) {
 
     // Check immediately on mount / session change
     if (isTokenExpired(session)) {
-      setIsExpired(true)
+      tryRefreshThenExpire()
       return
     }
 
     // --- Bus listeners ---
     const offAuthError = sessionHealthBus.on('auth-error', () => {
-      logger.warn('Session health: auth error detected from API')
-      setIsExpired(true)
+      logger.warn('Session health: auth error detected from API — attempting silent refresh')
+      tryRefreshThenExpire()
     })
 
     const offApiSuccess = sessionHealthBus.on('api-success', () => {
@@ -66,16 +89,16 @@ export function useSessionHealth(session: Session | null) {
       if (away < BACKGROUND_THRESHOLD_MS) return
 
       // Delay check to let network reconnect (Android)
-      setTimeout(checkAndSetExpired, VISIBILITY_DELAY_MS)
+      setTimeout(() => tryRefreshThenExpire(), VISIBILITY_DELAY_MS)
     }
 
     // --- Online event ---
     const handleOnline = () => {
-      setTimeout(checkAndSetExpired, VISIBILITY_DELAY_MS)
+      setTimeout(() => tryRefreshThenExpire(), VISIBILITY_DELAY_MS)
     }
 
     // --- Periodic check ---
-    const intervalId = setInterval(checkAndSetExpired, CHECK_INTERVAL_MS)
+    const intervalId = setInterval(() => tryRefreshThenExpire(), CHECK_INTERVAL_MS)
 
     document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('online', handleOnline)
@@ -87,7 +110,7 @@ export function useSessionHealth(session: Session | null) {
       window.removeEventListener('online', handleOnline)
       clearInterval(intervalId)
     }
-  }, [session, checkAndSetExpired])
+  }, [session, tryRefreshThenExpire])
 
   return { isExpired, refresh }
 }
