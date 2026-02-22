@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-22 (Phases 1–6 ✅ done; bug fixes PRs #221–#227; group members sheet PR #229)
+> Last updated: 2026-02-22 (Phases 1–6 ✅ done; E2E smoke tests PR #238; unit test fixes PR #243)
 
 ---
 
@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (139 unit tests), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (139 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -531,4 +531,5 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-22 | Group members sheet | PR #229: `QuickGroupMembersSheet` — Users chip (absolute top-right on relative hero wrapper) opens bottom sheet listing all participants/families with balances, "You" badge, UserCheck for linked accounts, colour-coded amount + status text. Read-only sheet: no keyboard hook needed, fixed `75dvh`. `myParticipantId = myBalance?.id`. |
 | 2026-02-22 | Scan-first onboarding | PR #231: Scan button as primary entry on QuickHomeScreen. 0 groups → QuickScanCreateFlow. 1 group → navigate + openScan state. 2+ groups → QuickScanContextSheet. QuickParticipantPicker: recent people, Contacts API, manual form. Migration 024: extracted_date on receipt_tasks. |
 | 2026-02-22 | Abort stale requests | PR #234: `useAbortController` hook — cancels previous in-flight request on re-fetch. Applied to all 10 contexts + 3 page-level components. Added missing `withTimeout` to 20+ mutations. |
-| 2026-02-22 | E2E smoke tests | Playwright setup — 26 tests (13 routes × 2 viewports: mobile 375×812 + desktop 1280×720). Supabase fully mocked via `page.route()` interceptor + localStorage seeding. `npm run test:e2e` / `test:e2e:ui`. |
+| 2026-02-22 | E2E smoke tests | Playwright setup — 26 tests (13 routes × 2 viewports: mobile 375×812 + desktop 1280×720). Supabase fully mocked via `page.route()` interceptor + localStorage seeding. `npm run test:e2e` / `test:e2e:ui`. (PR #238) |
+| 2026-02-22 | Unit test fixes | Fix 9 pre-existing test failures from PR #234's `.abortSignal()` additions: updated mock chains in 5 context test files; fixed real bug in `ShoppingContext.tsx` (missing `setLoading(false)` in no-trip branch); added `functions.invoke` mock to `AuthContext.test.tsx`. 139/139 tests pass. (PR #243) |
