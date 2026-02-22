@@ -4,6 +4,7 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { CreateExpenseInput } from '@/types/expense'
 import { useToast } from '@/hooks/use-toast'
+import { logger } from '@/lib/logger'
 
 interface QuickExpenseSheetProps {
   open: boolean
@@ -27,11 +28,22 @@ export function QuickExpenseSheet({ open, onOpenChange }: QuickExpenseSheetProps
   }
 
   const handleSubmit = async (input: CreateExpenseInput) => {
-    await createExpense(input)
-    toast({
-      title: 'Expense added',
-      description: `${input.description} - ${input.currency} ${input.amount.toFixed(2)}`,
-    })
+    try {
+      await createExpense(input)
+      toast({
+        title: 'Expense added',
+        description: `${input.description} - ${input.currency} ${input.amount.toFixed(2)}`,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      logger.error('QuickExpenseSheet: failed to create expense', { error: message })
+      toast({
+        variant: 'destructive',
+        title: 'Failed to add expense',
+        description: message,
+      })
+      throw err
+    }
   }
 
   return (

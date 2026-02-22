@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
+import { sessionHealthBus } from './sessionHealthBus'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -37,7 +38,20 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
         init.signal.addEventListener('abort', () => controller.abort())
       }
 
-      return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+      return fetch(input, { ...init, signal: controller.signal })
+        .then(response => {
+          // Emit session health events for non-auth API calls
+          const isAuthEndpoint = url.includes('/auth/')
+          if (!isAuthEndpoint) {
+            if (response.status === 401 || response.status === 403) {
+              sessionHealthBus.emit('auth-error')
+            } else if (response.ok) {
+              sessionHealthBus.emit('api-success')
+            }
+          }
+          return response
+        })
+        .finally(() => clearTimeout(timer))
     },
   },
 })

@@ -4,6 +4,7 @@ import { AppRoutes } from './routes'
 import { TripProvider } from './contexts/TripContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext'
+import { SessionHealthGate } from './components/SessionHealthGate'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -12,11 +13,13 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
         <AuthProvider>
-          <TripProvider>
-            <UserPreferencesProvider>
-              <AppRoutes />
-            </UserPreferencesProvider>
-          </TripProvider>
+          <SessionHealthGate>
+            <TripProvider>
+              <UserPreferencesProvider>
+                <AppRoutes />
+              </UserPreferencesProvider>
+            </TripProvider>
+          </SessionHealthGate>
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
