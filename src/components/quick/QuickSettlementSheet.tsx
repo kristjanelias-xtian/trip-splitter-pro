@@ -296,7 +296,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle>
-            {view === 'suggestions' ? 'Log a payment' : (
+            {view === 'suggestions' ? 'Settle up' : (
               <button
                 onClick={() => setView('suggestions')}
                 className="flex items-center gap-1.5 text-base font-semibold hover:text-primary transition-colors"
@@ -440,7 +440,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                           size="sm"
                           onClick={() => handleRecord(tx)}
                         >
-                          Record
+                          Settle
                         </Button>
                         {canRemind && !isConfirmingRemind && remindResult !== 'sent' && (
                           <Button
@@ -476,7 +476,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                 className="w-full"
                 onClick={handleRecordDifferent}
               >
-                Record a different payment
+                Record a custom payment
               </Button>
             </div>
           </div>

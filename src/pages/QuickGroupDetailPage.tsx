@@ -272,8 +272,8 @@ export function QuickGroupDetailPage() {
         />
         <QuickActionButton
           icon={CreditCard}
-          label="Log your payment"
-          description="Record a payment you made"
+          label="Settle up"
+          description="Record a payment between people"
           onClick={() => setSettlementOpen(true)}
         />
         <QuickActionButton

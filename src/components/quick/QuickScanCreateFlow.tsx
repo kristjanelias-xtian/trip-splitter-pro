@@ -247,14 +247,26 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
       >
         {/* Sticky header */}
         <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
-          <SheetTitle className="flex items-center gap-2">
-            <ScanLine size={20} />
-            {step === 'camera' && 'Scan a Receipt'}
-            {step === 'scanning' && 'Reading receipt…'}
-            {step === 'participants' && (createdTripName ?? 'Add People')}
-          </SheetTitle>
+          <div className="flex items-center gap-2 min-w-0">
+            {/* X close button — always visible on all steps */}
+            <button
+              onClick={handleClose}
+              aria-label="Close"
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+            >
+              <X size={18} />
+            </button>
+            <SheetTitle className="flex items-center gap-2 truncate">
+              <ScanLine size={20} className="flex-shrink-0" />
+              <span className="truncate">
+                {step === 'camera' && 'Scan a Receipt'}
+                {step === 'scanning' && 'Reading receipt…'}
+                {step === 'participants' && (createdTripName ?? 'Add People')}
+              </span>
+            </SheetTitle>
+          </div>
           {step === 'participants' && (
-            <Button size="sm" onClick={handleDone} className="gap-1">
+            <Button size="sm" onClick={handleDone} className="gap-1 flex-shrink-0">
               Done
               <ChevronRight size={14} />
             </Button>
