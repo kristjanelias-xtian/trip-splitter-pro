@@ -69,7 +69,7 @@ describe('ActivityContext', () => {
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
-          order: () => Promise.resolve({ data: activities, error: null }),
+          order: () => ({ abortSignal: () => Promise.resolve({ data: activities, error: null }) }),
         }),
       }),
     })

@@ -90,6 +90,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         setChannel(null)
       }
       setShoppingItems([])
+      setLoading(false)
       return cancel
     }
 

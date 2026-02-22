@@ -68,7 +68,7 @@ describe('StayContext', () => {
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
-          order: () => Promise.resolve({ data: [stay1, stay2], error: null }),
+          order: () => ({ abortSignal: () => Promise.resolve({ data: [stay1, stay2], error: null }) }),
         }),
       }),
     })
@@ -96,7 +96,7 @@ describe('StayContext', () => {
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
-          order: () => Promise.resolve({ data: [stay1, stay2], error: null }),
+          order: () => ({ abortSignal: () => Promise.resolve({ data: [stay1, stay2], error: null }) }),
         }),
       }),
     })

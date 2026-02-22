@@ -19,6 +19,7 @@ const mockSupabase = vi.hoisted(() => {
       signInWithIdToken: fn().mockResolvedValue({ error: null }),
       signOut: fn().mockResolvedValue({ error: null }),
     },
+    functions: { invoke: fn().mockResolvedValue({ data: null, error: null }) },
     channel: fn(),
     removeChannel: fn(),
   }

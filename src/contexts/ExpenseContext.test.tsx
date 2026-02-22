@@ -79,7 +79,7 @@ describe('ExpenseContext', () => {
       select: () => ({
         eq: () => ({
           order: () => ({
-            order: () => Promise.resolve({ data: sampleExpenses, error: null }),
+            order: () => ({ abortSignal: () => Promise.resolve({ data: sampleExpenses, error: null }) }),
           }),
         }),
       }),

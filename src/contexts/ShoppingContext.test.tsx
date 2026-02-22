@@ -57,6 +57,19 @@ function TestConsumer() {
   )
 }
 
+/** Build the select→eq→order→order→abortSignal chain for shopping item fetches */
+function mockSelectChain(data: ShoppingItem[]) {
+  return {
+    select: () => ({
+      eq: () => ({
+        order: () => ({
+          order: () => ({ abortSignal: () => Promise.resolve({ data, error: null }) }),
+        }),
+      }),
+    }),
+  }
+}
+
 describe('ShoppingContext', () => {
   beforeEach(() => {
     mockCurrentTrip.currentTrip = null
@@ -86,15 +99,7 @@ describe('ShoppingContext', () => {
     mockCurrentTrip.currentTrip = { id: 'trip-1' }
     mockCurrentTrip.tripCode = 'test-trip-Ab1234'
 
-    mockSupabase.from.mockReturnValue({
-      select: () => ({
-        eq: () => ({
-          order: () => ({
-            order: () => Promise.resolve({ data: sampleItems, error: null }),
-          }),
-        }),
-      }),
-    })
+    mockSupabase.from.mockReturnValue(mockSelectChain(sampleItems))
 
     render(
       <ShoppingProvider>
@@ -115,13 +120,7 @@ describe('ShoppingContext', () => {
     mockCurrentTrip.tripCode = 'test-trip-Ab1234'
 
     mockSupabase.from.mockReturnValue({
-      select: () => ({
-        eq: () => ({
-          order: () => ({
-            order: () => Promise.resolve({ data: [...sampleItems], error: null }),
-          }),
-        }),
-      }),
+      ...mockSelectChain([...sampleItems]),
       update: () => ({
         eq: () => ({
           select: () => ({
@@ -172,15 +171,7 @@ describe('ShoppingContext', () => {
     mockCurrentTrip.currentTrip = { id: 'trip-1' }
     mockCurrentTrip.tripCode = 'test-trip-Ab1234'
 
-    mockSupabase.from.mockReturnValue({
-      select: () => ({
-        eq: () => ({
-          order: () => ({
-            order: () => Promise.resolve({ data: [], error: null }),
-          }),
-        }),
-      }),
-    })
+    mockSupabase.from.mockReturnValue(mockSelectChain([]))
 
     const { unmount } = render(
       <ShoppingProvider>

@@ -56,7 +56,7 @@ describe('TripContext', () => {
   it('waits for authLoading=false before fetching', async () => {
     mockAuth.loading = true
     mockSupabase.from.mockReturnValue({
-      select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }),
+      select: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: [], error: null }) }) }),
     })
 
     render(
@@ -76,7 +76,7 @@ describe('TripContext', () => {
     ]
 
     mockSupabase.from.mockReturnValue({
-      select: () => ({ order: () => Promise.resolve({ data: trips, error: null }) }),
+      select: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: trips, error: null }) }) }),
     })
 
     render(
@@ -96,7 +96,7 @@ describe('TripContext', () => {
 
   it('getTripById returns undefined when not found', async () => {
     mockSupabase.from.mockReturnValue({
-      select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }),
+      select: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: [], error: null }) }) }),
     })
 
     render(
