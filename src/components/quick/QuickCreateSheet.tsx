@@ -3,6 +3,7 @@ import { useTripContext } from '@/contexts/TripContext'
 import { EventForm } from '@/components/EventForm'
 import { CreateEventInput } from '@/types/trip'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
 interface QuickCreateSheetProps {
   open: boolean
@@ -12,6 +13,7 @@ interface QuickCreateSheetProps {
 export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) {
   const navigate = useNavigate()
   const { createTrip } = useTripContext()
+  const keyboard = useKeyboardHeight()
 
   const handleCreate = async (input: CreateEventInput) => {
     const newEvent = await createTrip(input)
@@ -23,7 +25,14 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl overflow-y-auto">
+      <SheetContent
+        side="bottom"
+        className="rounded-t-2xl overflow-y-auto"
+        style={{
+          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92vh',
+          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+        }}
+      >
         <SheetHeader className="mb-4">
           <SheetTitle>Create New</SheetTitle>
         </SheetHeader>
