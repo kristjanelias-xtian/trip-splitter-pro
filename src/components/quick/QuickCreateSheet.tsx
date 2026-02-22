@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTripContext } from '@/contexts/TripContext'
 import { EventForm } from '@/components/EventForm'
 import { CreateEventInput } from '@/types/trip'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
 interface QuickCreateSheetProps {
@@ -27,19 +27,24 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl overflow-y-auto"
+        className="flex flex-col p-0 rounded-t-2xl"
         style={{
-          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92vh',
+          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        <SheetHeader className="mb-4">
+        {/* Sticky header — never scrolls */}
+        <div className="px-6 py-4 border-b border-border shrink-0">
           <SheetTitle>Create New</SheetTitle>
-        </SheetHeader>
-        <EventForm
-          onSubmit={handleCreate}
-          onCancel={() => onOpenChange(false)}
-        />
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <EventForm
+            onSubmit={handleCreate}
+            onCancel={() => onOpenChange(false)}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   )
