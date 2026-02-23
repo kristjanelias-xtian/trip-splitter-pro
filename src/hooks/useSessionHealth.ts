@@ -23,6 +23,12 @@ export function useSessionHealth(session: Session | null) {
   // Attempt a silent token refresh before showing the overlay.
   // If the refresh succeeds, the user never sees the stale-session overlay.
   // If it fails, we fall through to setIsExpired(true) as before.
+  //
+  // Safety: This calls supabase.auth.refreshSession() which acquires the auth
+  // lock and fires _notifyAllSubscribers('TOKEN_REFRESHED'). The AuthContext
+  // subscriber is now synchronous (no awaited DB queries) so the lock releases
+  // cleanly. The refreshingRef guard prevents concurrent calls from this hook,
+  // and Supabase's internal refreshingDeferred deduplicates at the network level.
   const tryRefreshThenExpire = useCallback(async () => {
     if (!session) return
     if (!isTokenExpired(session)) return
