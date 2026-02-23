@@ -397,6 +397,23 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                             </p>
                           )
                         })()}
+                        {!iOwe && (() => {
+                          const myBank = userProfile?.bank_account_holder || userProfile?.bank_iban
+                          if (myBank) {
+                            return (
+                              <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                                <p className="font-medium text-foreground/70">Your payment details:</p>
+                                {userProfile?.bank_account_holder && <p>Account: {userProfile.bank_account_holder}</p>}
+                                {userProfile?.bank_iban && <p className="font-mono">{userProfile.bank_iban}</p>}
+                              </div>
+                            )
+                          }
+                          return (
+                            <p className="mt-2 text-xs text-muted-foreground italic">
+                              Add your bank details in your profile so others can pay you
+                            </p>
+                          )
+                        })()}
 
                         {/* Inline remind confirm */}
                         {isConfirmingRemind && fromEmail && (
