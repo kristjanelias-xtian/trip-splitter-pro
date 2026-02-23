@@ -36,6 +36,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { CreateEventInput } from '@/types/trip'
 import { StaySection } from '@/components/StaySection'
+import { removeFromMyTrips } from '@/lib/myTripsStorage'
 
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -197,10 +198,8 @@ export function ManageTripPage() {
       const success = await deleteTrip(currentTrip.id)
 
       if (success) {
-        // Remove from localStorage
-        const myTrips = JSON.parse(localStorage.getItem('myTrips') || '[]')
-        const filtered = myTrips.filter((t: any) => t.id !== currentTrip.id)
-        localStorage.setItem('myTrips', JSON.stringify(filtered))
+        // Remove from My Trips localStorage (FINDING-11: was using wrong key 'myTrips')
+        removeFromMyTrips(currentTrip.trip_code)
 
         toast({
           title: `${entityLabel} deleted`,

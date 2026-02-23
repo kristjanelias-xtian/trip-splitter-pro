@@ -113,14 +113,17 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('participants')
           .insert([input])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Creating participant timed out. Please check your connection and try again.'
+        'Creating participant timed out. Please check your connection and try again.',
+        controller
       )
 
       if (createError) throw createError
@@ -141,13 +144,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout<any>(
         (supabase as any)
           .from('participants')
           .update(input)
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating participant timed out. Please check your connection and try again.'
+        'Updating participant timed out. Please check your connection and try again.',
+        controller
       )
 
       if (updateError) throw updateError
@@ -169,13 +175,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout(
         supabase
           .from('participants')
           .delete()
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting participant timed out. Please check your connection and try again.'
+        'Deleting participant timed out. Please check your connection and try again.',
+        controller
       )
 
       if (deleteError) throw deleteError
@@ -195,14 +204,17 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('families')
           .insert([input])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Creating family timed out. Please check your connection and try again.'
+        'Creating family timed out. Please check your connection and try again.',
+        controller
       )
 
       if (createError) throw createError
@@ -223,13 +235,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout<any>(
         (supabase as any)
           .from('families')
           .update(input)
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating family timed out. Please check your connection and try again.'
+        'Updating family timed out. Please check your connection and try again.',
+        controller
       )
 
       if (updateError) throw updateError
@@ -251,13 +266,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout(
         supabase
           .from('families')
           .delete()
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting family timed out. Please check your connection and try again.'
+        'Deleting family timed out. Please check your connection and try again.',
+        controller
       )
 
       if (deleteError) throw deleteError
@@ -278,13 +296,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: linkError } = await withTimeout<any>(
         (supabase as any)
           .from('participants')
           .update({ user_id: userId })
-          .eq('id', participantId),
+          .eq('id', participantId)
+          .abortSignal(controller.signal),
         15000,
-        'Linking user timed out. Please check your connection and try again.'
+        'Linking user timed out. Please check your connection and try again.',
+        controller
       )
 
       if (linkError) throw linkError
@@ -306,13 +327,16 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: unlinkError } = await withTimeout<any>(
         (supabase as any)
           .from('participants')
           .update({ user_id: null })
-          .eq('id', participantId),
+          .eq('id', participantId)
+          .abortSignal(controller.signal),
         15000,
-        'Unlinking user timed out. Please check your connection and try again.'
+        'Unlinking user timed out. Please check your connection and try again.',
+        controller
       )
 
       if (unlinkError) throw unlinkError

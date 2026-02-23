@@ -32,11 +32,18 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     }
   })
   const hasInitialized = useRef(false)
+  const previousUserIdRef = useRef<string | undefined>(undefined)
 
   // Sync from Supabase when user signs in
   useEffect(() => {
     // Wait for auth to finish before deciding
     if (authLoading) return
+
+    // Reset if user identity changed (sign-out/sign-in as different user) — FINDING-14
+    if (previousUserIdRef.current !== user?.id) {
+      hasInitialized.current = false
+      previousUserIdRef.current = user?.id
+    }
 
     if (!user) {
       // No user — local preferences are authoritative, done loading

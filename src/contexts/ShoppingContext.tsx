@@ -180,14 +180,17 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         category: itemData.category || 'other',
       }
 
-      const { data, error } = await withTimeout(
-        supabase
+      const controller = new AbortController()
+      const { data, error } = await withTimeout<any>(
+        (supabase as any)
           .from('shopping_items')
-          .insert([itemToInsert] as any)
+          .insert([itemToInsert])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Creating shopping item timed out. Please check your connection and try again.'
+        'Creating shopping item timed out. Please check your connection and try again.',
+        controller
       )
 
       if (error) {
@@ -202,12 +205,15 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           shopping_item_id: (data as any).id,
         }))
 
+        const linkController = new AbortController()
         const { error: linkError } = await withTimeout(
           supabase
             .from('meal_shopping_items')
-            .insert(links as any),
+            .insert(links as any)
+            .abortSignal(linkController.signal),
           10000,
-          'Linking shopping item to meals timed out.'
+          'Linking shopping item to meals timed out.',
+          linkController
         )
 
         if (linkError) {
@@ -232,15 +238,18 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     input: UpdateShoppingItemInput
   ): Promise<ShoppingItem | null> => {
     try {
+      const controller = new AbortController()
       const { data, error } = await withTimeout<any>(
         (supabase
           .from('shopping_items') as any)
           .update({ ...input, updated_at: new Date().toISOString() })
           .eq('id', id)
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Updating shopping item timed out. Please check your connection and try again.'
+        'Updating shopping item timed out. Please check your connection and try again.',
+        controller
       )
 
       if (error) {
@@ -264,35 +273,24 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     // Save for potential rollback
     const previousItems = shoppingItems
 
+    // Optimistic update: Remove from local state immediately
+    setShoppingItems((prev) => prev.filter((item) => item.id !== id))
+
     try {
-      // First, delete all meal-shopping links
-      const { error: linkError } = await withTimeout(
-        supabase
-          .from('meal_shopping_items')
-          .delete()
-          .eq('shopping_item_id', id),
-        10000,
-        'Unlinking shopping item from meals timed out.'
-      )
-
-      if (linkError) {
-        logger.error('Failed to delete shopping item links', { item_id: id, error: linkError.message })
-        return false
-      }
-
-      // Optimistic update: Remove from local state immediately
-      setShoppingItems((prev) => prev.filter((item) => item.id !== id))
-
-      // Then delete the shopping item
+      // meal_shopping_items FK has ON DELETE CASCADE on shopping_item_id,
+      // so deleting the item automatically removes all meal links.
+      // No need for a separate link deletion step (fixes FINDING-17).
+      const controller = new AbortController()
       const { error } = await withTimeout(
-        supabase.from('shopping_items').delete().eq('id', id),
+        supabase.from('shopping_items').delete().eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting shopping item timed out. Please check your connection and try again.'
+        'Deleting shopping item timed out. Please check your connection and try again.',
+        controller
       )
 
       if (error) {
         logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
-        // Rollback optimistic update on error
         setShoppingItems(previousItems)
         return false
       }
@@ -300,7 +298,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       return true
     } catch (error) {
       logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
-      // Rollback optimistic update on error
       setShoppingItems(previousItems)
       return false
     }

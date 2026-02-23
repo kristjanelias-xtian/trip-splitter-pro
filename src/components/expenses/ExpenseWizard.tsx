@@ -92,6 +92,7 @@ function MobileWizard({
   const [currentStep, setCurrentStep] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmittingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
@@ -261,8 +262,12 @@ function MobileWizard({
   }
 
   const handleSubmit = async () => {
-    if (isSubmitting) return
-    if (!currentTrip || !canProceed()) return
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+    if (!currentTrip || !canProceed()) {
+      isSubmittingRef.current = false
+      return
+    }
 
     setError(null)
     setIsSubmitting(true)
@@ -428,6 +433,7 @@ function MobileWizard({
       setError(err instanceof Error ? err.message : 'Failed to create expense.')
       setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
+      isSubmittingRef.current = false
       if (isMounted.current) setIsSubmitting(false)
     }
   }

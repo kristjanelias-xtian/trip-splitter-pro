@@ -52,7 +52,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
           .from('receipt_tasks')
           .select('*')
           .eq('trip_id', currentTrip.id)
-          .in('status', ['review', 'complete'])
+          .in('status', ['review', 'complete', 'failed'])
           .order('created_at', { ascending: false })
           .abortSignal(signal),
         15000,
@@ -68,7 +68,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       }
 
       const all = (data as ReceiptTask[]) ?? []
-      setPendingReceipts(all.filter(t => t.status === 'review'))
+      setPendingReceipts(all.filter(t => t.status === 'review' || t.status === 'failed'))
       setCompletedReceipts(all.filter(t => t.status === 'complete'))
     } catch (err) {
       if (signal.aborted) return
@@ -92,8 +92,9 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       throw new Error('You must be signed in to scan a receipt.')
     }
     try {
-      const { data, error: insertError } = await withTimeout(
-        supabase
+      const controller = new AbortController()
+      const { data, error: insertError } = await withTimeout<any>(
+        (supabase as any)
           .from('receipt_tasks')
           .insert({
             trip_id: tripId,
@@ -102,9 +103,11 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
             receipt_image_path: imagePath ?? null,
           })
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Creating receipt task timed out.'
+        'Creating receipt task timed out.',
+        controller
       )
 
       if (insertError) {
@@ -127,14 +130,17 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
   const updateReceiptTask = async (id: string, updates: Partial<ReceiptTask>): Promise<boolean> => {
     try {
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout(
         supabase
           .from('receipt_tasks')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .update({ ...updates, updated_at: new Date().toISOString() } as any)
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating receipt task timed out.'
+        'Updating receipt task timed out.',
+        controller
       )
 
       if (updateError) {
@@ -153,6 +159,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
   const completeReceiptTask = async (id: string, expenseId: string): Promise<boolean> => {
     try {
+      const completeController = new AbortController()
       const { error: updateError } = await withTimeout(
         supabase
           .from('receipt_tasks')
@@ -161,9 +168,11 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
             expense_id: expenseId,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(completeController.signal),
         15000,
-        'Completing receipt task timed out.'
+        'Completing receipt task timed out.',
+        completeController
       )
 
       if (updateError) {
@@ -184,13 +193,16 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const dismissReceiptTask = async (id: string): Promise<boolean> => {
     const imagePath = pendingReceipts.find(r => r.id === id)?.receipt_image_path ?? null
     try {
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout(
         supabase
           .from('receipt_tasks')
           .delete()
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Dismissing receipt task timed out.'
+        'Dismissing receipt task timed out.',
+        controller
       )
 
       if (deleteError) {
