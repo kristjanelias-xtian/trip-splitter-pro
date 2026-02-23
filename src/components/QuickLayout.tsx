@@ -108,14 +108,14 @@ export function QuickLayout() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {isInTrip && <ReportIssueButton onGradient={onGradient} />}
+                <ReportIssueButton onGradient={onGradient} />
                 {!isInTrip && <ModeToggle onGradient={onGradient} />}
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
 
             {/* Row 2: full-width action strip — only on trip detail page, not sub-pages */}
-            {isInTrip && !isSubPage && (
+            {isInTrip && !isSubPage && currentTrip && (
               <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                 <button
                   onClick={handleScanTap}
@@ -141,10 +141,10 @@ export function QuickLayout() {
                 </button>
                 <button
                   onClick={() => { void setMode('full'); navigate(`/t/${tripCode}/expenses`) }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border ${
                     onGradient
-                      ? 'bg-white/10 hover:bg-white/20 text-white'
-                      : 'bg-muted hover:bg-muted/70 text-foreground'
+                      ? 'border-white/40 bg-white/15 hover:bg-white/25 text-white'
+                      : 'border-primary/40 bg-primary/10 hover:bg-primary/15 text-primary'
                   }`}
                 >
                   <LayoutGrid size={14} />

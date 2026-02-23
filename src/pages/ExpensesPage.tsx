@@ -147,14 +147,6 @@ export function ExpensesPage() {
                 <FileDown size={18} />
               </Button>
             )}
-            <Button
-              onClick={() => setShowReceiptCapture(true)}
-              variant="ghost"
-              size="icon"
-              title="Scan a receipt"
-            >
-              <ScanLine size={18} />
-            </Button>
             <div className="relative">
               <Button
                 onClick={() => setFiltersVisible(v => !v)}
