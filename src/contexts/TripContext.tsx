@@ -107,14 +107,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
         ...(user ? { created_by: user.id } : {}),
       }
 
+      const controller = new AbortController()
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('trips')
           .insert([tripData])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Creating trip timed out. Please check your connection and try again.'
+        'Creating trip timed out. Please check your connection and try again.',
+        controller
       )
 
       if (createError) throw createError
@@ -168,13 +171,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout<any>(
         (supabase as any)
           .from('trips')
           .update(input)
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating trip timed out. Please check your connection and try again.'
+        'Updating trip timed out. Please check your connection and try again.',
+        controller
       )
 
       if (updateError) throw updateError
@@ -198,13 +204,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout(
         supabase
           .from('trips')
           .delete()
-          .eq('id', id),
+          .eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting trip timed out. Please check your connection and try again.'
+        'Deleting trip timed out. Please check your connection and try again.',
+        controller
       )
 
       if (deleteError) throw deleteError

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { ArrowRight, ArrowLeft, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -47,6 +47,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [confirmingRemindIdx, setConfirmingRemindIdx] = useState<number | null>(null)
   const [sendingRemind, setSendingRemind] = useState(false)
   const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
+  const isSubmittingRef = useRef(false)
 
   // Build email map: entity ID (participant.id or family_id) → email
   const fromEmailMap = useMemo(() => {
@@ -251,6 +252,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   }
 
   const handleSubmit = async (input: CreateSettlementInput) => {
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
     try {
       await createSettlement(input)
       toast({
@@ -269,6 +272,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         description: message,
       })
       throw err
+    } finally {
+      isSubmittingRef.current = false
     }
   }
 

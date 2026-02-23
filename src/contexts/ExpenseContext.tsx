@@ -84,22 +84,30 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      // Client-side UUID so a retry after timeout hits a PK conflict
+      // instead of creating a duplicate row (FINDING-8)
+      const id = crypto.randomUUID()
+
       // Default expense_date to today if not provided
       const expenseData = {
+        id,
         ...input,
         expense_date: input.expense_date || new Date().toISOString().split('T')[0],
       }
 
       logger.info('Creating expense', { trip_id: expenseData.trip_id, amount: expenseData.amount })
 
+      const controller = new AbortController()
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('expenses')
           .insert([expenseData])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Saving expense timed out. Please check your connection and try again.'
+        'Saving expense timed out. Please check your connection and try again.',
+        controller
       )
 
       if (createError) throw new Error(createError.message)
@@ -123,10 +131,13 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       logger.info('Updating expense', { expense_id: id, trip_id: currentTrip?.id })
 
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout<any>(
-        (supabase as any).from('expenses').update(input).eq('id', id),
+        (supabase as any).from('expenses').update(input).eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating expense timed out. Please check your connection and try again.'
+        'Updating expense timed out. Please check your connection and try again.',
+        controller
       )
 
       if (updateError) throw new Error(updateError.message)
@@ -148,10 +159,13 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
 
       logger.info('Deleting expense', { expense_id: id, trip_id: currentTrip?.id })
 
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout<any>(
-        supabase.from('expenses').delete().eq('id', id),
+        supabase.from('expenses').delete().eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting expense timed out. Please check your connection and try again.'
+        'Deleting expense timed out. Please check your connection and try again.',
+        controller
       )
 
       if (deleteError) throw deleteError

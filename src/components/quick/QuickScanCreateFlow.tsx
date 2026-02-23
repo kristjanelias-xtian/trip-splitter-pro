@@ -87,6 +87,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const isScanningRef = useRef(false)
 
   const [step, setStep] = useState<Step>('camera')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -129,7 +130,8 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   }
 
   const handleScan = async () => {
-    if (!selectedFile) return
+    if (!selectedFile || isScanningRef.current) return
+    isScanningRef.current = true
     setStep('scanning')
     setError(null)
 
@@ -198,12 +200,20 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
         )
         setCreatedTripName(autoName)
       } else {
+        // Mark task as 'failed' so it doesn't orphan in 'processing' state (FINDING-27)
         const errDetail =
           fnResult.status === 'rejected'
             ? String(fnResult.reason)
             : fnResult.value.error?.message ?? 'Unknown error'
-        logger.warn('process-receipt did not return ok', { error: errDetail })
-        // Non-fatal: group is created, just won't have a merchant name
+        logger.warn('process-receipt did not return ok — marking task failed', { task_id: task.id, error: errDetail })
+        supabase
+          .from('receipt_tasks')
+          .update({ status: 'failed', error_message: 'Processing failed — please try again' } as any)
+          .eq('id', task.id)
+          .eq('status', 'processing')
+          .then(({ error: markErr }) => {
+            if (markErr) logger.warn('Failed to mark receipt task as failed', { task_id: task.id, error: markErr.message })
+          })
       }
 
       await refreshPendingReceipts()
@@ -216,6 +226,8 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
       logger.error('QuickScanCreateFlow failed', { error: message })
       setError(message)
       setStep('camera')
+    } finally {
+      isScanningRef.current = false
     }
   }
 

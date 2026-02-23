@@ -124,9 +124,11 @@ describe('ShoppingContext', () => {
       update: () => ({
         eq: () => ({
           select: () => ({
-            single: () => Promise.resolve({
-              data: { ...sampleItems[0], is_completed: true },
-              error: null,
+            single: () => ({
+              abortSignal: () => Promise.resolve({
+                data: { ...sampleItems[0], is_completed: true },
+                error: null,
+              }),
             }),
           }),
         }),
@@ -147,9 +149,11 @@ describe('ShoppingContext', () => {
       update: () => ({
         eq: () => ({
           select: () => ({
-            single: () => Promise.resolve({
-              data: { ...sampleItems[0], is_completed: true },
-              error: null,
+            single: () => ({
+              abortSignal: () => Promise.resolve({
+                data: { ...sampleItems[0], is_completed: true },
+                error: null,
+              }),
             }),
           }),
         }),

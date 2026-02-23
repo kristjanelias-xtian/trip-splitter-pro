@@ -79,20 +79,28 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      // Client-side UUID so a retry after timeout hits a PK conflict
+      // instead of creating a duplicate row (FINDING-8)
+      const id = crypto.randomUUID()
+
       // Default settlement_date to today if not provided
       const settlementData = {
+        id,
         ...input,
         settlement_date: input.settlement_date || new Date().toISOString().split('T')[0],
       }
 
+      const controller = new AbortController()
       const { data, error: createError } = await withTimeout<any>(
         (supabase as any)
           .from('settlements')
           .insert([settlementData])
           .select()
-          .single(),
+          .single()
+          .abortSignal(controller.signal),
         15000,
-        'Saving settlement timed out. Please check your connection and try again.'
+        'Saving settlement timed out. Please check your connection and try again.',
+        controller
       )
 
       if (createError) throw new Error(createError.message)
@@ -114,10 +122,13 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: updateError } = await withTimeout<any>(
-        (supabase as any).from('settlements').update(input).eq('id', id),
+        (supabase as any).from('settlements').update(input).eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Updating settlement timed out. Please check your connection and try again.'
+        'Updating settlement timed out. Please check your connection and try again.',
+        controller
       )
 
       if (updateError) throw new Error(updateError.message)
@@ -137,10 +148,13 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
+      const controller = new AbortController()
       const { error: deleteError } = await withTimeout<any>(
-        supabase.from('settlements').delete().eq('id', id),
+        supabase.from('settlements').delete().eq('id', id)
+          .abortSignal(controller.signal),
         15000,
-        'Deleting settlement timed out. Please check your connection and try again.'
+        'Deleting settlement timed out. Please check your connection and try again.',
+        controller
       )
 
       if (deleteError) throw deleteError

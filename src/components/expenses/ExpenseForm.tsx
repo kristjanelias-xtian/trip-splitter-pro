@@ -95,6 +95,7 @@ export function ExpenseForm({
   }, [splitMode, selectedFamilies, selectedParticipants, amount])
 
   const [loading, setLoading] = useState(false)
+  const isSubmittingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
@@ -241,7 +242,7 @@ export function ExpenseForm({
   }
 
   const executeSubmit = async () => {
-    if (loading) return
+    if (isSubmittingRef.current) return
     setError(null)
 
     if (!description.trim()) {
@@ -402,6 +403,7 @@ export function ExpenseForm({
       return
     }
 
+    isSubmittingRef.current = true
     setLoading(true)
     try {
       await onSubmit({
@@ -427,6 +429,7 @@ export function ExpenseForm({
       setError(err instanceof Error ? err.message : 'Failed to save expense.')
       setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
+      isSubmittingRef.current = false
       if (isMounted.current) setLoading(false)
     }
   }
