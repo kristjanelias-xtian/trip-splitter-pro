@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
-import { Zap, Settings2 } from 'lucide-react'
+import { Zap, LayoutGrid } from 'lucide-react'
 
 interface ModeToggleProps {
   onGradient?: boolean
@@ -68,7 +68,7 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
           effectiveMode === 'full' ? activeClass : inactiveClass
         }`}
       >
-        <Settings2 size={14} />
+        <LayoutGrid size={14} />
         Full
       </button>
     </div>
