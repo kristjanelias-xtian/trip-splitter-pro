@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS UX triage PRs #268–#297, 19 issues resolved; auth deadlock fix; auth-error hardening; security audit fixes; production smoke test)
+> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS UX triage PRs #268–#297, 19 issues resolved; auth deadlock fix; auth-error hardening; security audit fixes; production smoke test; **Phase 7: UX/UI Unification planned**)
 
 ---
 
@@ -122,6 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
+| E | UX/UI Unification | 📋 Planned (Phase 7a–7h) | — |
 
 ---
 
@@ -508,6 +509,172 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 - No-receipt path unchanged — email sends without any receipt section
 - **Deployed ✅** 2026-02-22 (PR #214)
 
+### Phase 7 — UX/UI Unification (Planned)
+
+**Goal**: Converge Quick and Full modes toward a single adaptive UI. Quick mode = reduced-clutter view of the same app, not a separate app. Full mode = detailed view with all features visible.
+
+**Design Decisions** (from UX/UI audit session 2026-02-23):
+
+| Decision | Choice |
+|----------|--------|
+| Architecture direction | Adaptive UI — converge toward one layout system |
+| Quick mode desktop | Two-column layout using extra space (balance+actions left, content right) |
+| Mode toggle placement | Keep in top bar (frequently used) |
+| Mobile nav per mode | Keep distinct — Quick: no bottom nav, Full: bottom tab bar |
+| Admin page | Wrap in Full mode Layout (standard header/nav) |
+| Full home hero | Replace "Split costs with anyone" with Quick-style personal greeting |
+| Trip card info | Balance + dates, code hidden (unified card component) |
+| Redundant Quick buttons | Remove "See in Full Mode" + "My Groups" from Quick trip detail body |
+| Scan prominence | Primary action — promoted above manual entry everywhere |
+| Receipt pending banner | Extract into shared `PendingReceiptBanner` component |
+| Loading/error states | Formalize as `<PageLoadingState />` and `<PageErrorState />` components |
+| Mode toggle icons | `Zap` / `LayoutGrid` everywhere (ModeToggle + Row 2 pills) |
+
+#### Phase 7a — Shared UI primitives (no visual change)
+Extract reusable components that currently exist as duplicated patterns. Foundation for all subsequent phases.
+
+**Tasks:**
+1. **`PendingReceiptBanner`** — extract from `QuickGroupDetailPage` + `ExpensesPage` into `src/components/receipts/PendingReceiptBanner.tsx`. Standardize on `rounded-xl`. Props: `tasks`, `onReview`, `onDismiss`, `defaultCurrency`.
+2. **`PageLoadingState`** — new `src/components/PageLoadingState.tsx`. Centered `Loader2` spinner with optional "Taking longer than expected..." after configurable timeout (default 8s). Props: `slowMessage?: string`, `slowTimeout?: number`.
+3. **`PageErrorState`** — new `src/components/PageErrorState.tsx`. Red `AlertCircle` card with error message + Retry button. Props: `error: string`, `onRetry`, `retrying?: boolean`.
+4. **Unified trip card component** — new `src/components/TripCard.tsx` (rename existing `EventCard.tsx`). Shows: name, balance (colored), date range (compact secondary line), Active badge. No trip code. Used by both Quick home and Full home. Props: `trip`, `balance`, `isActive`, `onClick`.
+
+**Files touched:** `QuickGroupDetailPage.tsx`, `ExpensesPage.tsx`, `QuickHomeScreen.tsx`, `HomePage.tsx`, `SettlementsPage.tsx`, `DashboardPage.tsx`, `ManageTripPage.tsx`, `PlannerPage.tsx`, `ShoppingPage.tsx`
+
+**Acceptance:** All existing pages use the new shared components. No visual regression. Type-check + tests pass.
+
+#### Phase 7b — Mode toggle icon unification
+Small, self-contained change.
+
+**Tasks:**
+1. Update `ModeToggle.tsx` — replace `Zap`/`Settings2` with `Zap`/`LayoutGrid` icons (matching Row 2 pills)
+2. Verify Row 2 pills in both `Layout.tsx` and `QuickLayout.tsx` already use `Zap`/`LayoutGrid` — no change needed if so
+
+**Files touched:** `src/components/quick/ModeToggle.tsx`
+
+**Acceptance:** `Zap` = Quick, `LayoutGrid` = Full in all locations. Visual consistency confirmed.
+
+#### Phase 7c — Remove redundant Quick mode buttons
+Clean up the Quick trip detail page.
+
+**Tasks:**
+1. Remove "My Groups" outline button from bottom of `QuickGroupDetailPage` (← back arrow in header already navigates to groups)
+2. Remove "See in Full Mode" outline button from bottom of `QuickGroupDetailPage` (Row 2 "Full view" pill already does this)
+3. Verify the `space-y-3` container at the bottom is removed entirely (both buttons gone)
+
+**Files touched:** `src/pages/QuickGroupDetailPage.tsx`
+
+**Acceptance:** Quick trip detail page ends after the action buttons. No way-finding regression (header provides both paths).
+
+#### Phase 7d — Full mode home page overhaul
+Replace the marketing-style hero with Quick-style personal greeting. Unify trip cards.
+
+**Tasks:**
+1. Replace "Split costs with anyone" hero + subtitle in `HomePage.tsx` with personal greeting:
+   - Authenticated: avatar + "Hi, {firstName}" + "Your events & trips"
+   - Unauthenticated: generic "Events & Trips" heading
+2. Replace existing trip card rendering with the unified `TripCard` component from 7a
+   - Show balance per trip (requires `useMyTripBalances` — currently only in Quick mode)
+   - Show date range as secondary line
+   - Remove trip code display from cards
+   - Keep "Create New" button
+3. Keep the 2-column grid on desktop (`grid-cols-1 md:grid-cols-2`) but with the new card design
+
+**Files touched:** `src/pages/HomePage.tsx`
+
+**New dependency:** `useMyTripBalances` hook used in `HomePage` (currently only used in `QuickHomeScreen`)
+
+**Acceptance:** Full home page shows balance-forward trip cards with personal greeting. Matches Quick home in information density. Type-check + tests pass.
+
+#### Phase 7e — Admin page in Layout
+Wrap the admin page in the standard Full mode Layout.
+
+**Tasks:**
+1. Move `/admin/all-trips` route inside the `Layout` route group in `routes.tsx`
+2. Remove standalone `min-h-screen bg-background` wrapper from `AdminAllTripsPage.tsx` (Layout provides this)
+3. Verify admin page gets standard header, side nav (desktop), bottom nav (mobile)
+4. Admin page should work for unauthenticated users who land there — the `isAdminUser()` gate already handles access control
+
+**Files touched:** `src/routes.tsx`, `src/pages/AdminAllTripsPage.tsx`
+
+**Acceptance:** Admin page has standard header with logo. Desktop shows side nav. Mobile shows bottom nav with "More". Back navigation works.
+
+#### Phase 7f — Scan as primary action
+Establish Scan as the most prominent action across the app. Reduce visual weight of "Add an expense" to secondary.
+
+**Tasks:**
+1. **Quick trip detail**: Swap order — "Scan a receipt" becomes the first `QuickActionButton`, "Add an expense" becomes second
+2. **Quick trip detail**: Give Scan button visual emphasis — e.g., `border-primary/30 bg-primary/5` to distinguish it from the other action cards
+3. **Full mode Expenses page**: Add a prominent "Scan Receipt" button next to "Add Expense" (currently the scan button is icon-only in the header — easy to miss)
+4. Verify Quick home "Scan a Receipt" CTA (coral bg) remains the top-level primary action — no change needed
+
+**Files touched:** `src/pages/QuickGroupDetailPage.tsx`, `src/pages/ExpensesPage.tsx`
+
+**Acceptance:** Scan is visually the #1 action on both Quick trip detail and Full Expenses pages.
+
+#### Phase 7g — Quick mode desktop two-column layout
+Make Quick mode feel purposeful on desktop instead of phone-sized.
+
+**Tasks:**
+1. Update `QuickGroupDetailPage` — on `lg:` breakpoint, render a two-column layout:
+   - **Left column**: Balance hero + "4 members" chip + action buttons (Scan, Add expense, Settle up, View history)
+   - **Right column**: Pending receipt banners + recent expenses/transactions (mini-list, last 5)
+2. Update `max-w-lg` to `max-w-lg lg:max-w-4xl` in `QuickLayout.tsx` content area (or apply per-page)
+3. Quick home (`QuickHomeScreen`) stays single-column — the groups list doesn't benefit from two columns
+4. Ensure mobile layout is unchanged — two columns only at `lg:` breakpoint
+
+**Files touched:** `src/pages/QuickGroupDetailPage.tsx`, `src/components/QuickLayout.tsx` (max-width adjustment)
+
+**New dependency:** Need a compact recent-transactions list for the right column (may reuse parts of `QuickHistoryPage`)
+
+**Acceptance:** On desktop (≥1024px), Quick trip detail shows two-column layout. On mobile, unchanged. No horizontal scroll.
+
+#### Phase 7h — Standardize loading/error states across all pages
+Replace ad-hoc loading/error patterns with the shared components from 7a.
+
+**Tasks:**
+1. `QuickGroupDetailPage` — already uses the pattern; refactor to `<PageLoadingState />` and `<PageErrorState />`
+2. `ExpensesPage` — replace "Loading expenses..." text with `<PageLoadingState />`; replace red banner with `<PageErrorState />`
+3. `SettlementsPage` — add loading state (currently has none); add error state
+4. `DashboardPage` — add loading/error states
+5. `PlannerPage` — add loading/error states
+6. `ShoppingPage` — add loading/error states (Shopping has its own error toast; add card-level error too)
+7. `ManageTripPage` — add loading/error states
+8. `QuickHistoryPage` — verify loading state exists; add error state if missing
+9. `QuickHomeScreen` — already has spinner; standardize to `<PageLoadingState />`
+10. `AdminAllTripsPage` — add loading state (currently shows 0 trips briefly before data loads)
+
+**Files touched:** All page-level components listed above
+
+**Acceptance:** Every page uses `<PageLoadingState />` for loading and `<PageErrorState />` for errors. Consistent spinner + retry pattern app-wide. Visual regression check.
+
+#### Implementation Order & Dependencies
+
+```
+7a (primitives)  ──→  7d (Full home overhaul)
+                 ──→  7f (Scan primary)
+                 ──→  7h (loading/error everywhere)
+
+7b (icons)       ──→  (standalone, no deps)
+7c (remove btns) ──→  (standalone, no deps)
+7e (admin)       ──→  (standalone, no deps)
+7g (desktop 2col)──→  depends on 7a (shared components), 7c (buttons removed), 7f (scan order)
+```
+
+**Recommended PR sequence:**
+1. PR: Phase 7a — shared UI primitives
+2. PR: Phase 7b + 7c — icon unification + remove redundant buttons (small, combine)
+3. PR: Phase 7e — admin page in Layout
+4. PR: Phase 7d — Full home overhaul
+5. PR: Phase 7f — Scan as primary action
+6. PR: Phase 7h — standardize loading/error states
+7. PR: Phase 7g — Quick mode desktop two-column (largest change, last)
+
+**Risk notes:**
+- Phase 7d (Full home overhaul) changes the main landing page — high visibility, test thoroughly
+- Phase 7g (two-column) is the most complex layout change — prototype on a branch before committing
+- `useMyTripBalances` currently fires N+1 queries (one per trip) — may need optimization before using on Full home with many trips
+
 ---
 
 ## 7. Session Log
@@ -552,6 +719,7 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-23 | Security audit fixes | 10 findings from AUDIT.md (2, 3, 4, 5, 6, 16, 20, 41, 42, 43). (1) Admin auth: replaced password-based system with Supabase user ID allowlist (`isAdminUser`); removed `authenticateAdmin`, `isAdminAuthenticated`, `logoutAdmin`, `getAdminPasswordHint`, all sessionStorage usage; AdminAllTripsPage uses `useAuth()` + `isAdminUser()`. (2) Trips RLS: migration 026 — per-operation policies; INSERT auth-only, UPDATE/DELETE creator-only; SELECT open for shared link flow (documented tradeoff). (3) JWT verification: shared `_shared/auth.ts` helper; all 4 edge functions verify Bearer token via `supabase.auth.getUser()`. (4) CORS: restricted from `*` to `https://split.xtian.me` on all 4 edge functions. (5) HTML escaping: `escapeHtml()` in send-email for all user-supplied strings. (6) Image size limits: 5MB client-side (QuickScanCreateFlow + ReceiptCaptureSheet), 10MB server-side (process-receipt returns 413). (7) Receipt ownership: process-receipt verifies `task.created_by === user.id`. (8) Idempotency: process-receipt only processes tasks in 'pending' status; conditional update `.eq('status', 'pending')`. |
 | 2026-02-23 | Audit cleanup | 14 remaining low-severity findings from AUDIT.md resolved. (1) localStorage caps: myTrips MAX_ENTRIES=100, mutedTrips MAX_MUTED=200, trim on insert. (2) Unmount guards: AuthContext cancelled flag + clearTimeout on profileTimerId; UserPreferencesContext cancelled flag. (3) ReceiptContext error surfacing: clearError + setError in all mutation catch blocks; toast in ReceiptReviewSheet. (4) ParticipantContext clearError exposed; toast in ManageTripPage. (5) ReceiptTaskUpdate type replaces `as any` cast. (6) ShoppingContext stale channel dead code removed. (7) Schema versioning (SCHEMA_VERSION=1) on myTripsStorage, mutedTripsStorage, userPreferencesStorage. (8) OnboardingPrompts keys renamed to spl1t: prefix. (9) Debug logger debounced (500ms flush + beforeunload sync). (10) withTimeout on all Shopping/Meal helper queries + link/unlink mutations. (11) Global toast for unhandled promise rejections via custom event. All 44 audit findings now resolved. 139/139 tests pass, type-check clean. |
 | 2026-02-23 | Production smoke test | Interactive Playwright MCP smoke test against https://split.xtian.me. 6/8 scenarios PASS, 2 SKIPPED (require OAuth). Verified: unauthenticated shared link access (RLS fix PR #310), double-tap submit guard (PR #307), ErrorBoundary (PR #308), admin access control (PR #309), trip state clearing (PR #308). Console baseline clean — only pre-existing Radix DialogTitle warnings and expected log-proxy 401s. **Bug found**: authenticated users cannot load shared trips they didn't create — `TripContext.fetchTrips()` applies client-side `created_by` filter that excludes shared-link trips. Database RLS is correct (`SELECT USING (true)`); issue is React-side only. Results in `SMOKE_TEST_RESULTS.md`. |
+| 2026-02-23 | UX/UI audit | Full UX/UI audit of the entire app — top bar inventory, navigation consistency, typography, color, components, mobile/desktop experience, empty/loading states, iconography, micro-interactions. 14 top findings documented. Playwright MCP screenshots (19 screens across both modes, desktop + mobile). Phase 3 design decisions captured via sequential questions. **Phase 7: UX/UI Unification** planned — 8 sub-phases (7a–7h), 7 PRs. Key decisions: adaptive UI direction, Scan as primary action, unified trip cards with balance+dates, shared loading/error components, admin page in Layout, Quick-style greeting on Full home, two-column Quick desktop layout. |
 
 ---
 
