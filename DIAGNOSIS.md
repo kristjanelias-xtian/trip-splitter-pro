@@ -104,3 +104,10 @@ The Supabase auth client holds a lock during `_notifyAllSubscribers`, which `awa
 Remove `await`ed Supabase DB queries from the `onAuthStateChange` callback. Defer profile operations to `setTimeout(fn, 0)` so they execute in the next macrotask, after the auth lock is released.
 
 For `TOKEN_REFRESHED` events specifically, no profile fetch is needed at all — the user data hasn't changed, only the access token.
+
+## Secondary fixes (PR #288)
+
+- 403 responses no longer trigger `auth-error` bus event (permissions issue, not token expiry)
+- `auth-error` handler now checks token expiry before attempting refresh — a 401 with a valid token (e.g. RLS rejection, race condition) is logged and ignored
+- 30-second cooldown added between refresh attempts to prevent rapid sequential calls
+- `updateBankDetails` timeout reduced from 35s to 10s (consistent with other contexts)

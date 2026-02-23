@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS user issue triage PRs #268–#278, 15 issues resolved; auth deadlock fix; quick header grid strip PR #285)
+> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS user issue triage PRs #268–#278, 15 issues resolved; auth deadlock fix; auth-error hardening PR #288)
 
 ---
 
@@ -543,6 +543,7 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-23 | Header declutter + back button | PR #280: QuickLayout switched to two-row header when isInTrip && !isSubPage — Row 1 gives trip name full horizontal width (only avatar on right), Row 2 is a compact action strip (Bug, Scan, Gear, ModeToggle, size=18 p-1.5). Sub-pages and home screen keep single-row. Main padding pt-[96px] for two-row, pt-16 otherwise. ManageTripPage 'Back to Quick View' replaced with coral-outlined Button (border-primary text-primary hover:bg-primary). |
 | 2026-02-23 | Auth deadlock fix | **Root cause**: `onAuthStateChange` callback in `AuthContext.tsx` `await`ed Supabase DB queries (`fetchProfile`/`upsertProfile`) while the Supabase auth lock was held. Every PostgREST request calls `getSession()` which re-acquires the same lock → circular deadlock. Triggered after any token refresh (manual or auto). **Fix**: made `onAuthStateChange` callback synchronous — profile upsert deferred to `setTimeout(0)`, `TOKEN_REFRESHED` profile fetch removed (user data unchanged). Added `debugLogger.ts` (`localStorage.setItem('spl1t_debug','true')`) for production diagnostics. Auth safety rule added to CLAUDE.md. Full analysis in `DIAGNOSIS.md`. Files: `src/contexts/AuthContext.tsx`, `src/hooks/useSessionHealth.ts`, `src/lib/debugLogger.ts`, `DIAGNOSIS.md`, `CLAUDE.md`. |
 | 2026-02-23 | Quick header grid strip | PR #285 (issue #282): replaced right-aligned bare icon row in QuickLayout two-row header with a structured `grid-cols-3` ghost-pill action bar — **Scan / Manage / Full view** — each with 14px icon + 11px label. Removed `ReportIssueButton` from header entirely. `Full view` pill calls `setMode('full')` + navigates to expenses. Hairline `border-t` divider between rows; `bg-white/10` pills on gradients, `bg-muted` on plain bg. Main padding `pt-[96px]` → `pt-[108px]`. Home screen (`!isInTrip`) row 1: `ModeToggle` + avatar only. |
+| 2026-02-23 | Auth-error hardening | PR #288: (1) 403 no longer emits `auth-error` — only 401 triggers session health check; (2) `auth-error` bus handler checks `isTokenExpired()` before attempting refresh — valid-token 401s (RLS, race conditions) are logged and skipped; (3) 30s cooldown between refresh attempts via `lastRefreshAttemptRef`; (4) `updateBankDetails` timeout 35s→10s for consistency. |
 
 ---
 
