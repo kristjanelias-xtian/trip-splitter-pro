@@ -143,10 +143,18 @@ export function ReceiptReviewSheet({
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
   const { createExpense } = useExpenseContext()
-  const { completeReceiptTask } = useReceiptContext()
+  const { completeReceiptTask, error: receiptError, clearError: clearReceiptError } = useReceiptContext()
   const { updateTrip } = useTripContext()
   const { user } = useAuth()
   const { toast } = useToast()
+
+  // Surface receipt context errors as toasts
+  useEffect(() => {
+    if (receiptError) {
+      toast({ title: 'Receipt error', description: receiptError, variant: 'destructive' })
+      clearReceiptError()
+    }
+  }, [receiptError])
 
   const adultParticipants = getAdultParticipants()
   const baseCurrency = currentTrip?.default_currency ?? 'EUR'

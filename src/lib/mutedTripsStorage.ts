@@ -1,17 +1,43 @@
 /**
  * Hidden Trips Storage
- * Tracks trips the user has hidden from Quick Mode home
+ * Tracks trips the user has hidden from Quick Mode home.
+ *
+ * Schema versioning: stored as { version, entries }. Old format (plain array)
+ * is treated as version mismatch and cleared — hidden trips list rebuilds
+ * as the user hides trips again.
  */
 
 const STORAGE_KEY = 'trip-splitter:hidden-trips'
+const MAX_MUTED = 200
+const SCHEMA_VERSION = 1
+
+interface StoredHiddenTrips {
+  version: number
+  entries: string[]
+}
 
 export function getHiddenTripCodes(): string[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
+    if (!stored) return []
+
+    const parsed = JSON.parse(stored)
+
+    // Version check — clear if schema changed or old format (plain array)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.version !== SCHEMA_VERSION) {
+      localStorage.removeItem(STORAGE_KEY)
+      return []
+    }
+
+    return (parsed as StoredHiddenTrips).entries ?? []
   } catch {
     return []
   }
+}
+
+function saveHiddenTrips(entries: string[]): void {
+  const stored: StoredHiddenTrips = { version: SCHEMA_VERSION, entries }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
 }
 
 export function hideTrip(tripCode: string): void {
@@ -19,8 +45,10 @@ export function hideTrip(tripCode: string): void {
     const hidden = getHiddenTripCodes()
     if (!hidden.includes(tripCode)) {
       hidden.push(tripCode)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden))
     }
+    // Trim to keep most recent entries
+    const trimmed = hidden.slice(-MAX_MUTED)
+    saveHiddenTrips(trimmed)
   } catch (error) {
     console.error('Error hiding trip:', error)
   }
@@ -29,7 +57,7 @@ export function hideTrip(tripCode: string): void {
 export function showTrip(tripCode: string): void {
   try {
     const hidden = getHiddenTripCodes().filter(c => c !== tripCode)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden))
+    saveHiddenTrips(hidden)
   } catch (error) {
     console.error('Error showing trip:', error)
   }

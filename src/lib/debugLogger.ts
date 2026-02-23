@@ -4,6 +4,10 @@
  * Writes to localStorage as a circular buffer. Survives page refreshes.
  * Only active when `localStorage.getItem('spl1t_debug') === 'true'`.
  *
+ * Writes are debounced (max once per 500ms) to avoid excessive
+ * localStorage serialization on busy sessions. A synchronous flush
+ * runs on beforeunload to prevent data loss.
+ *
  * Usage in browser console:
  *   localStorage.setItem('spl1t_debug', 'true')  // enable, then refresh
  *   window.__spl1tLogs()     // dump all logs as formatted JSON
@@ -14,6 +18,7 @@
 const STORAGE_KEY = 'spl1t:debug-logs'
 const MAX_ENTRIES = 500
 const SESSION_KEY = 'spl1t:debug-session-id'
+const FLUSH_INTERVAL_MS = 500
 
 type LogEntry = {
   ts: string
@@ -21,6 +26,9 @@ type LogEntry = {
   type: string
   payload: Record<string, unknown>
 }
+
+let pendingLogs: LogEntry[] = []
+let flushTimer: ReturnType<typeof setTimeout> | null = null
 
 function getSessionId(): string {
   let id = sessionStorage.getItem(SESSION_KEY)
@@ -39,7 +47,7 @@ function isEnabled(): boolean {
   }
 }
 
-function readLogs(): LogEntry[] {
+function readStoredLogs(): LogEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
@@ -62,20 +70,40 @@ function writeLogs(logs: LogEntry[]) {
   }
 }
 
+function flushNow() {
+  if (flushTimer !== null) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  if (pendingLogs.length === 0) return
+  const stored = readStoredLogs()
+  const merged = [...stored, ...pendingLogs].slice(-MAX_ENTRIES)
+  pendingLogs = []
+  writeLogs(merged)
+}
+
+function scheduleFlush() {
+  if (flushTimer !== null) return
+  flushTimer = setTimeout(() => {
+    flushTimer = null
+    flushNow()
+  }, FLUSH_INTERVAL_MS)
+}
+
 function appendLog(type: string, payload: Record<string, unknown>) {
   if (!isEnabled()) return
-  const logs = readLogs()
-  logs.push({
+  pendingLogs.push({
     ts: new Date().toISOString(),
     sessionId: getSessionId(),
     type,
     payload,
   })
-  // Trim to circular buffer size
-  if (logs.length > MAX_ENTRIES) {
-    logs.splice(0, logs.length - MAX_ENTRIES)
-  }
-  writeLogs(logs)
+  scheduleFlush()
+}
+
+// Synchronous flush on page unload to prevent data loss
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushNow)
 }
 
 // --- Public API ---
@@ -102,17 +130,24 @@ export const debugLog = {
 
 if (typeof window !== 'undefined') {
   (window as any).__spl1tLogs = () => {
-    const logs = readLogs()
+    flushNow()
+    const logs = readStoredLogs()
     console.log(JSON.stringify(logs, null, 2))
     return logs
   };
   (window as any).__spl1tLastN = (n: number) => {
-    const logs = readLogs()
+    flushNow()
+    const logs = readStoredLogs()
     const last = logs.slice(-n)
     console.log(JSON.stringify(last, null, 2))
     return last
   };
   (window as any).__spl1tClear = () => {
+    pendingLogs = []
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer)
+      flushTimer = null
+    }
     localStorage.removeItem(STORAGE_KEY)
     console.log('Debug logs cleared')
   }

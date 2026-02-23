@@ -12,12 +12,28 @@ interface ReceiptContextType {
   receiptByExpenseId: Record<string, ReceiptTask>
   loading: boolean
   error: string | null
+  clearError: () => void
   createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask>
-  updateReceiptTask: (id: string, updates: Partial<ReceiptTask>) => Promise<boolean>
+  updateReceiptTask: (id: string, updates: ReceiptTaskUpdate) => Promise<boolean>
   completeReceiptTask: (id: string, expenseId: string) => Promise<boolean>
   dismissReceiptTask: (id: string) => Promise<boolean>
   refreshPendingReceipts: () => Promise<void>
 }
+
+/** Fields that callers are allowed to update on a receipt task */
+export type ReceiptTaskUpdate = Partial<Pick<ReceiptTask,
+  | 'status'
+  | 'extracted_merchant'
+  | 'extracted_items'
+  | 'extracted_total'
+  | 'extracted_currency'
+  | 'extracted_date'
+  | 'confirmed_total'
+  | 'tip_amount'
+  | 'mapped_items'
+  | 'error_message'
+  | 'receipt_image_path'
+>>
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined)
 
@@ -26,6 +42,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [completedReceipts, setCompletedReceipts] = useState<ReceiptTask[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const clearError = () => setError(null)
 
   const receiptByExpenseId = completedReceipts.reduce<Record<string, ReceiptTask>>((acc, task) => {
     if (task.expense_id) acc[task.expense_id] = task
@@ -128,14 +146,13 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updateReceiptTask = async (id: string, updates: Partial<ReceiptTask>): Promise<boolean> => {
+  const updateReceiptTask = async (id: string, updates: ReceiptTaskUpdate): Promise<boolean> => {
     try {
       const controller = new AbortController()
       const { error: updateError } = await withTimeout(
         supabase
           .from('receipt_tasks')
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .update({ ...updates, updated_at: new Date().toISOString() } as any)
+          .update({ ...updates, updated_at: new Date().toISOString() } as Record<string, unknown>)
           .eq('id', id)
           .abortSignal(controller.signal),
         15000,
@@ -144,6 +161,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       )
 
       if (updateError) {
+        const message = updateError.message || 'Failed to update receipt task'
+        setError(message)
         logger.error('Failed to update receipt task', { error: updateError.message })
         return false
       }
@@ -152,6 +171,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       fetchPendingReceipts()
       return true
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update receipt task'
+      setError(message)
       logger.error('Unhandled error updating receipt task', { error: String(err) })
       return false
     }
@@ -176,6 +197,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       )
 
       if (updateError) {
+        const message = updateError.message || 'Failed to complete receipt task'
+        setError(message)
         logger.error('Failed to complete receipt task', { error: updateError.message })
         return false
       }
@@ -185,6 +208,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       fetchPendingReceipts()
       return true
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to complete receipt task'
+      setError(message)
       logger.error('Unhandled error completing receipt task', { error: String(err) })
       return false
     }
@@ -206,6 +231,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       )
 
       if (deleteError) {
+        const message = deleteError.message || 'Failed to dismiss receipt task'
+        setError(message)
         logger.error('Failed to dismiss receipt task', { error: deleteError.message })
         return false
       }
@@ -222,6 +249,8 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
       return true
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to dismiss receipt task'
+      setError(message)
       logger.error('Unhandled error dismissing receipt task', { error: String(err) })
       return false
     }
@@ -234,6 +263,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         receiptByExpenseId,
         loading,
         error,
+        clearError,
         createReceiptTask,
         updateReceiptTask,
         completeReceiptTask,

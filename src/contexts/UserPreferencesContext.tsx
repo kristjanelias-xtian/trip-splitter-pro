@@ -36,6 +36,8 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
 
   // Sync from Supabase when user signs in
   useEffect(() => {
+    let cancelled = false
+
     // Wait for auth to finish before deciding
     if (authLoading) return
 
@@ -66,6 +68,8 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         'Loading preferences timed out.'
       )
 
+      if (cancelled) return
+
       if (!error && data) {
         const serverMode = data.preferred_mode as AppMode
         const serverTripId = data.default_trip_id as string | null
@@ -78,6 +82,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     }
 
     fetchPreferences()
+    return () => { cancelled = true }
   }, [user, authLoading])
 
   const upsertPreferences = useCallback(async (updates: Record<string, unknown>) => {
