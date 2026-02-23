@@ -52,7 +52,7 @@ export function QuickLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Simplified header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? '' : 'bg-card border-b border-border soft-shadow-sm'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
         {/* Gradient background when in a trip */}
         {pattern && (
           <>
