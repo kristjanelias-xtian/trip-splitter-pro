@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS user issue triage PRs #268–#278, 15 issues resolved; auth deadlock fix)
+> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS user issue triage PRs #268–#278, 15 issues resolved; auth deadlock fix; quick header grid strip PR #285)
 
 ---
 
@@ -542,6 +542,7 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-23 | Quick mode UX follow-up | 3 follow-up issues from iOS users triaged + fixed. PR #278: removed 'Manage group' QuickActionButton (fix #277), added gear (Settings) icon to QuickLayout header (isInTrip only) navigating to /manage with fromQuick state, ManageTripPage shows '← Back to Quick View' link when fromQuick state set (fix #277); increased gradient overlay from black/30→black/50 + inline textShadow on h1 for reliable name contrast on all gradients/browsers (fix #275); renamed settlement form-view back button 'Back'→'Settlement plan' for context (fix #274). |
 | 2026-02-23 | Header declutter + back button | PR #280: QuickLayout switched to two-row header when isInTrip && !isSubPage — Row 1 gives trip name full horizontal width (only avatar on right), Row 2 is a compact action strip (Bug, Scan, Gear, ModeToggle, size=18 p-1.5). Sub-pages and home screen keep single-row. Main padding pt-[96px] for two-row, pt-16 otherwise. ManageTripPage 'Back to Quick View' replaced with coral-outlined Button (border-primary text-primary hover:bg-primary). |
 | 2026-02-23 | Auth deadlock fix | **Root cause**: `onAuthStateChange` callback in `AuthContext.tsx` `await`ed Supabase DB queries (`fetchProfile`/`upsertProfile`) while the Supabase auth lock was held. Every PostgREST request calls `getSession()` which re-acquires the same lock → circular deadlock. Triggered after any token refresh (manual or auto). **Fix**: made `onAuthStateChange` callback synchronous — profile upsert deferred to `setTimeout(0)`, `TOKEN_REFRESHED` profile fetch removed (user data unchanged). Added `debugLogger.ts` (`localStorage.setItem('spl1t_debug','true')`) for production diagnostics. Auth safety rule added to CLAUDE.md. Full analysis in `DIAGNOSIS.md`. Files: `src/contexts/AuthContext.tsx`, `src/hooks/useSessionHealth.ts`, `src/lib/debugLogger.ts`, `DIAGNOSIS.md`, `CLAUDE.md`. |
+| 2026-02-23 | Quick header grid strip | PR #285 (issue #282): replaced right-aligned bare icon row in QuickLayout two-row header with a structured `grid-cols-3` ghost-pill action bar — **Scan / Manage / Full view** — each with 14px icon + 11px label. Removed `ReportIssueButton` from header entirely. `Full view` pill calls `setMode('full')` + navigates to expenses. Hairline `border-t` divider between rows; `bg-white/10` pills on gradients, `bg-muted` on plain bg. Main padding `pt-[96px]` → `pt-[108px]`. Home screen (`!isInTrip`) row 1: `ModeToggle` + avatar only. |
 
 ---
 
