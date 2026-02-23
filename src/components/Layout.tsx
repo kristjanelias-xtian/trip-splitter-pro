@@ -150,7 +150,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? '' : 'bg-card border-b border-border soft-shadow-sm'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
         {/* Gradient background when in a trip */}
         {pattern && (
           <>
@@ -203,19 +203,17 @@ export function Layout() {
               )}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <ReportIssueButton onGradient={onGradient} />
-                {!tripCode && (
-                  /* No trip: show scan + mode toggle in row 1 */
-                  <>
-                    <button
-                      onClick={handleScanTap}
-                      aria-label="Scan receipt"
-                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                    >
-                      <ScanLine size={20} />
-                    </button>
-                    <ModeToggle onGradient={onGradient} />
-                  </>
-                )}
+                {/* No trip: always show scan + mode toggle; In trip: show on desktop only (Row 2 handles mobile) */}
+                <div className={`${tripCode ? 'hidden lg:flex' : 'flex'} items-center gap-2`}>
+                  <button
+                    onClick={handleScanTap}
+                    aria-label="Scan receipt"
+                    className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  >
+                    <ScanLine size={20} />
+                  </button>
+                  <ModeToggle onGradient={onGradient} />
+                </div>
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
@@ -229,7 +227,7 @@ export function Layout() {
                 onGradient ? 'border-white/40 bg-white/15 hover:bg-white/25 text-white' : 'border-primary/40 bg-primary/10 hover:bg-primary/15 text-primary'
               }`
               return (
-                <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
+                <div className={`lg:hidden grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                   <button onClick={handleScanTap} className={pillClass}>
                     <ScanLine size={14} />
                     Scan
@@ -250,7 +248,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px]' : 'mt-20'}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
@@ -388,7 +386,7 @@ export function Layout() {
       </nav>
 
       {/* Side navigation (desktop) */}
-      {tripCode && <aside className="hidden lg:block fixed left-0 top-[108px] bottom-0 w-64 bg-card border-r border-border soft-shadow">
+      {tripCode && <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
         <nav className="px-3 py-6 space-y-1">
           {desktopNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
