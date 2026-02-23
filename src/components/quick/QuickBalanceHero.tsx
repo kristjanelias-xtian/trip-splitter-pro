@@ -19,7 +19,7 @@ export function QuickBalanceHero({ balance }: QuickBalanceHeroProps) {
 
   return (
     <motion.div
-      className="text-center py-8 mb-6"
+      className="text-center py-8 mb-2"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
