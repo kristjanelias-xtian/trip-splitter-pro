@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
-import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { GroupActions } from '@/components/quick/GroupActions'
 import { QuickCreateSheet } from '@/components/quick/QuickCreateSheet'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
+import { TripCard } from '@/components/TripCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -138,52 +138,20 @@ export function QuickHomeScreen() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="overflow-hidden">
-                  <div
-                    className="cursor-pointer hover:bg-accent/30 transition-colors"
-                    onClick={() => navigate(`/t/${trip.trip_code}/quick`)}
-                  >
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-foreground truncate">
-                              {trip.name}
-                            </h3>
-                            {trip.id === activeTripId && (
-                              <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          {myBalance ? (
-                            <p className={`text-lg font-bold tabular-nums ${getBalanceColorClass(myBalance.balance)}`}>
-                              {myBalance.balance === 0
-                                ? 'Settled up'
-                                : myBalance.balance > 0
-                                  ? `You are owed ${formatBalance(myBalance.balance)}`
-                                  : `You owe ${formatBalance(myBalance.balance).replace('-', '')}`
-                              }
-                            </p>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              Link yourself to see your balance
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 ml-3" />
-                      </div>
-                    </CardContent>
-                  </div>
-                  <div className="px-4 pb-2 flex justify-end">
+                <TripCard
+                  trip={trip}
+                  balance={myBalance}
+                  isActive={trip.id === activeTripId}
+                  onClick={() => navigate(`/t/${trip.trip_code}/quick`)}
+                  actions={
                     <GroupActions
                       tripCode={trip.trip_code}
                       tripName={trip.name}
                       onHidden={() => handleHidden(trip.trip_code)}
                       onLeft={() => handleLeft(trip.trip_code)}
                     />
-                  </div>
-                </Card>
+                  }
+                />
               </motion.div>
             ))}
           </div>
