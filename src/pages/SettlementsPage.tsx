@@ -240,9 +240,8 @@ export function SettlementsPage() {
             </p>
           </div>
           {expenses.length > 0 && (
-            <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
-              <FileDown size={16} />
-              Export PDF
+            <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export PDF">
+              <FileDown size={18} />
             </Button>
           )}
         </div>
