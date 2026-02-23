@@ -35,6 +35,7 @@ interface ReceiptReviewSheetProps {
   extractedTotal: number | null
   currency: string
   imagePath?: string | null
+  extractedCategory?: string | null
   onDone: () => void
 }
 
@@ -135,6 +136,7 @@ export function ReceiptReviewSheet({
   extractedTotal,
   currency,
   imagePath,
+  extractedCategory,
   onDone,
 }: ReceiptReviewSheetProps) {
   const keyboard = useKeyboardHeight()
@@ -168,7 +170,10 @@ export function ReceiptReviewSheet({
   const [confirmedTotal, setConfirmedTotal] = useState('')
   const [tipAmount, setTipAmount] = useState('0')
   const [paidBy, setPaidBy] = useState('')
-  const [category, setCategory] = useState<ExpenseCategory>('Food')
+  const validCategories: ExpenseCategory[] = ['Food', 'Accommodation', 'Transport', 'Activities', 'Training', 'Other']
+  const [category, setCategory] = useState<ExpenseCategory>(
+    validCategories.includes(extractedCategory as ExpenseCategory) ? extractedCategory as ExpenseCategory : 'Food'
+  )
   const [merchantName, setMerchantName] = useState('')
   const [activeCurrency, setActiveCurrency] = useState(currency)
   const [exchangeRate, setExchangeRate] = useState('')
@@ -208,7 +213,7 @@ export function ReceiptReviewSheet({
     setTipAmount('0')
     setPaidBy(defaultPayerId)
     setMerchantName(merchant ?? '')
-    setCategory('Food')
+    setCategory(validCategories.includes(extractedCategory as ExpenseCategory) ? extractedCategory as ExpenseCategory : 'Food')
     setActiveCurrency(currency)
     setExchangeRate('')
     setShowAllItems(true)

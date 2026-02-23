@@ -21,7 +21,8 @@ Return ONLY valid JSON with this exact structure:
   "items": [{"name": "item name", "price": 12.50, "qty": 1}],
   "subtotal": 25.00,
   "total": 27.50,
-  "currency": "USD"
+  "currency": "USD",
+  "category": "Food"
 }
 Rules:
 - merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. If truly no business name is readable anywhere, invent a short creative name (2–4 words) that evokes the vibe of the items ordered — e.g. "The Wandering Wok" for Thai food, "Mystery Grill" for a barbecue spot, "Island Bites" for tropical drinks. Never return null.
@@ -32,6 +33,7 @@ Rules:
 - If a value cannot be read, use null
 - Do NOT include tax lines as items — include them in total but not subtotal
 - DO include service charges, tips, and gratuities as separate line items (name them "Service Charge", "Tip", etc.)
+- category: one of "Food", "Accommodation", "Transport", "Activities", "Training", or "Other". Infer from the merchant name and items. Examples: restaurants/cafes/groceries → "Food", hotels/hostels/Airbnb → "Accommodation", Grab/Uber/taxi/bus/train/flights → "Transport", tours/parks/museums → "Activities". Default to "Other" if unclear.
 - Return ONLY the JSON object, no other text`
 
 Deno.serve(async (req) => {
@@ -167,6 +169,7 @@ Deno.serve(async (req) => {
       subtotal?: number | null
       total?: number | null
       currency?: string | null
+      category?: string | null
     } = {}
 
     try {
@@ -204,6 +207,8 @@ Deno.serve(async (req) => {
     const extractedDate = typeof extracted.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(extracted.date)
       ? extracted.date
       : null
+    const validCategories = ['Food', 'Accommodation', 'Transport', 'Activities', 'Training', 'Other']
+    const extractedCategory = validCategories.includes(extracted.category ?? '') ? extracted.category! : null
 
     // Save results and mark as ready for review
     await supabase
@@ -215,6 +220,7 @@ Deno.serve(async (req) => {
         extracted_total: extractedTotal,
         extracted_currency: extractedCurrency,
         extracted_date: extractedDate,
+        extracted_category: extractedCategory,
         updated_at: new Date().toISOString(),
       })
       .eq('id', receipt_task_id)
@@ -234,6 +240,7 @@ Deno.serve(async (req) => {
         total: extractedTotal,
         currency: extractedCurrency,
         date: extractedDate,
+        category: extractedCategory,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     )
