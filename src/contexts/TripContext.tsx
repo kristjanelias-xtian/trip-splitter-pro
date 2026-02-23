@@ -13,6 +13,7 @@ interface TripContextType {
   error: string | null
   getTripById: (id: string) => Event | undefined
   getTripByCode: (tripCode: string) => Event | undefined
+  ensureTripLoaded: (tripCode: string) => Promise<Event | null>
   createTrip: (input: CreateEventInput) => Promise<Event | null>
   updateTrip: (id: string, input: UpdateEventInput) => Promise<boolean>
   deleteTrip: (id: string) => Promise<boolean>
@@ -90,6 +91,34 @@ export function TripProvider({ children }: { children: ReactNode }) {
   // Get trip by code
   const getTripByCode = (tripCode: string) => {
     return trips.find(trip => trip.trip_code === tripCode)
+  }
+
+  // Fetch a single trip by code and add it to the local array.
+  // Used when an authenticated user navigates to a trip they didn't create
+  // and aren't a participant of — URL is the access token.
+  const ensureTripLoaded = async (tripCode: string): Promise<Event | null> => {
+    const existing = trips.find(t => t.trip_code === tripCode)
+    if (existing) return existing
+
+    try {
+      const { data, error: fetchError } = await withTimeout<any>(
+        (supabase as any).from('trips').select('*').eq('trip_code', tripCode).maybeSingle().abortSignal(newSignal()),
+        15000,
+        'Loading trip timed out.'
+      )
+      if (fetchError) throw fetchError
+      if (!data) return null
+
+      const trip = data as unknown as Event
+      setTrips(prev => {
+        if (prev.some(t => t.id === trip.id)) return prev
+        return [...prev, trip]
+      })
+      return trip
+    } catch (err) {
+      logger.error('Failed to fetch trip by code', { tripCode, error: err instanceof Error ? err.message : String(err) })
+      return null
+    }
   }
 
   // Create new trip
@@ -248,6 +277,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     error,
     getTripById,
     getTripByCode,
+    ensureTripLoaded,
     createTrip,
     updateTrip,
     deleteTrip,
