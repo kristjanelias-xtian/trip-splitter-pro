@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt, FileDown, ScanLine } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown, ScanLine, SlidersHorizontal } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -57,6 +57,7 @@ export function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all')
+  const [filtersVisible, setFiltersVisible] = useState(false)
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
   const [showReceiptCapture, setShowReceiptCapture] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
@@ -95,6 +96,9 @@ export function ExpensesPage() {
 
     exportExpensesToExcel(currentTrip, expenses, participants, families, balances, settlements)
   }
+
+  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all'
+  const showFilters = filtersVisible || hasActiveFilters
 
   // Filter expenses
   const filteredExpenses = expenses.filter(expense => {
@@ -137,23 +141,33 @@ export function ExpensesPage() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-y-2">
           <h2 className="text-xl font-bold text-foreground">Expenses</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {expenses.length > 0 && (
-              <Button onClick={handleExportExcel} variant="outline" size="sm" className="gap-2">
-                <FileDown size={16} />
-                Export Excel
+              <Button onClick={handleExportExcel} variant="ghost" size="icon" title="Export Excel">
+                <FileDown size={18} />
               </Button>
             )}
             <Button
               onClick={() => setShowReceiptCapture(true)}
-              variant="outline"
-              size="sm"
-              className="gap-2"
+              variant="ghost"
+              size="icon"
               title="Scan a receipt"
             >
-              <ScanLine size={16} />
-              Scan Receipt
+              <ScanLine size={18} />
             </Button>
+            <div className="relative">
+              <Button
+                onClick={() => setFiltersVisible(v => !v)}
+                variant={hasActiveFilters ? 'secondary' : 'ghost'}
+                size="icon"
+                title="Toggle filters"
+              >
+                <SlidersHorizontal size={18} />
+              </Button>
+              {hasActiveFilters && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary pointer-events-none" />
+              )}
+            </div>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
               {showForm ? 'Cancel' : 'Add Expense'}
@@ -245,8 +259,8 @@ export function ExpensesPage() {
           mode={editingExpense ? 'edit' : 'create'}
         />
 
-        {/* Filters */}
-        <Card>
+        {/* Filters — shown only when toggled or when a filter is active */}
+        {showFilters && <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Search */}
@@ -284,7 +298,7 @@ export function ExpensesPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Expense List */}
         <Card>
