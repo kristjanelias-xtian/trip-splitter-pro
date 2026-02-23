@@ -221,6 +221,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     if (tripCode && currentTrip) {
       setInitialLoadDone(false)
       fetchExpenses()
+    } else {
+      setExpenses([])
+      setError(null)
     }
     return cancel
   }, [tripCode, currentTrip?.id])

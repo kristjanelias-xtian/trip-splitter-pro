@@ -9,6 +9,8 @@ import { useAbortController } from '@/hooks/useAbortController'
 interface MealContextValue {
   meals: Meal[]
   loading: boolean
+  error: string | null
+  clearError: () => void
   createMeal: (input: CreateMealInput) => Promise<Meal | null>
   updateMeal: (id: string, input: UpdateMealInput) => Promise<Meal | null>
   deleteMeal: (id: string) => Promise<boolean>
@@ -25,8 +27,11 @@ export function MealProvider({ children }: { children: ReactNode }) {
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { newSignal, cancel } = useAbortController()
+
+  const clearError = () => setError(null)
 
   const fetchMeals = async () => {
     const signal = newSignal()
@@ -78,6 +83,9 @@ export function MealProvider({ children }: { children: ReactNode }) {
     if (tripCode && currentTrip) {
       setInitialLoadDone(false)
       fetchMeals()
+    } else {
+      setMeals([])
+      setError(null)
     }
     return cancel
   }, [tripCode, currentTrip?.id])
@@ -95,6 +103,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to create meal'
+        setError(message)
         logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -107,7 +117,9 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
       return data as Meal
     } catch (error) {
-      logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to create meal'
+      setError(message)
+      logger.error('Failed to create meal', { trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -129,6 +141,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to update meal'
+        setError(message)
         logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -145,7 +159,9 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to update meal'
+      setError(message)
+      logger.error('Failed to update meal', { meal_id: id, trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -163,6 +179,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (linkError) {
+        const message = linkError.message || 'Failed to delete meal links'
+        setError(message)
         logger.error('Failed to delete meal shopping links', { meal_id: id, error: linkError.message })
         return false
       }
@@ -175,6 +193,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to delete meal'
+        setError(message)
         logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: error.message })
         return false
       }
@@ -182,7 +202,9 @@ export function MealProvider({ children }: { children: ReactNode }) {
       setMeals((prev) => prev.filter((meal) => meal.id !== id))
       return true
     } catch (error) {
-      logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to delete meal'
+      setError(message)
+      logger.error('Failed to delete meal', { meal_id: id, trip_id: currentTrip?.id, error: message })
       return false
     }
   }
@@ -308,6 +330,8 @@ export function MealProvider({ children }: { children: ReactNode }) {
   const value: MealContextValue = {
     meals,
     loading: loading || (!!currentTrip && !initialLoadDone),
+    error,
+    clearError,
     createMeal,
     updateMeal,
     deleteMeal,

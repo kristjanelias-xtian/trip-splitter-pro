@@ -10,6 +10,8 @@ import { useAbortController } from '@/hooks/useAbortController'
 interface StayContextValue {
   stays: Stay[]
   loading: boolean
+  error: string | null
+  clearError: () => void
   createStay: (input: CreateStayInput) => Promise<Stay | null>
   updateStay: (id: string, input: UpdateStayInput) => Promise<Stay | null>
   deleteStay: (id: string) => Promise<boolean>
@@ -25,9 +27,12 @@ export function StayProvider({ children }: { children: ReactNode }) {
   const [stays, setStays] = useState<Stay[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { trips } = useTripContext()
   const { newSignal, cancel } = useAbortController()
+
+  const clearError = () => setError(null)
 
   const fetchStays = async () => {
     const signal = newSignal()
@@ -78,6 +83,9 @@ export function StayProvider({ children }: { children: ReactNode }) {
     if (tripCode && currentTrip) {
       setInitialLoadDone(false)
       fetchStays()
+    } else {
+      setStays([])
+      setError(null)
     }
     return cancel
   }, [tripCode, currentTrip?.id, trips.length])
@@ -94,6 +102,8 @@ export function StayProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to create stay'
+        setError(message)
         logger.error('Failed to create stay', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -108,7 +118,9 @@ export function StayProvider({ children }: { children: ReactNode }) {
       await refreshStays()
       return stays[stays.length - 1] ?? ({} as Stay)
     } catch (error) {
-      logger.error('Failed to create stay', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to create stay'
+      setError(message)
+      logger.error('Failed to create stay', { trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -129,6 +141,8 @@ export function StayProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to update stay'
+        setError(message)
         logger.error('Failed to update stay', { stay_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -147,7 +161,9 @@ export function StayProvider({ children }: { children: ReactNode }) {
       await refreshStays()
       return getStayById(id) ?? ({ id, ...input } as Stay)
     } catch (error) {
-      logger.error('Failed to update stay', { stay_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to update stay'
+      setError(message)
+      logger.error('Failed to update stay', { stay_id: id, trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -161,6 +177,8 @@ export function StayProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to delete stay'
+        setError(message)
         logger.error('Failed to delete stay', { stay_id: id, trip_id: currentTrip?.id, error: error.message })
         return false
       }
@@ -168,7 +186,9 @@ export function StayProvider({ children }: { children: ReactNode }) {
       setStays((prev) => prev.filter((stay) => stay.id !== id))
       return true
     } catch (error) {
-      logger.error('Failed to delete stay', { stay_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to delete stay'
+      setError(message)
+      logger.error('Failed to delete stay', { stay_id: id, trip_id: currentTrip?.id, error: message })
       return false
     }
   }
@@ -188,6 +208,8 @@ export function StayProvider({ children }: { children: ReactNode }) {
   const value: StayContextValue = {
     stays,
     loading: loading || (!!currentTrip && !initialLoadDone),
+    error,
+    clearError,
     createStay,
     updateStay,
     deleteStay,

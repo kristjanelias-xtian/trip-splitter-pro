@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
+import { useToast } from '@/hooks/use-toast'
 import type { ShoppingItemWithMeals } from '@/types/shopping'
 import { CATEGORY_ORDER } from '@/types/shopping'
 import { ShoppingItemRow } from '@/components/ShoppingItemRow'
@@ -20,11 +21,19 @@ type SortDirection = 'asc' | 'desc'
 
 export function ShoppingPage() {
   const { currentTrip } = useCurrentTrip()
-  const { shoppingItems, loading, getShoppingItemsWithMeals } = useShoppingContext()
+  const { shoppingItems, loading, error: shoppingError, clearError: clearShoppingError, getShoppingItemsWithMeals } = useShoppingContext()
+  const { toast } = useToast()
   const [itemsWithMeals, setItemsWithMeals] = useState<ShoppingItemWithMeals[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [sortColumn, setSortColumn] = useState<SortColumn>('status')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+
+  useEffect(() => {
+    if (shoppingError) {
+      toast({ title: 'Error', description: shoppingError, variant: 'destructive' })
+      clearShoppingError()
+    }
+  }, [shoppingError])
 
   useEffect(() => {
     const loadItemsWithMeals = async () => {

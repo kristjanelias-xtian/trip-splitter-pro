@@ -9,6 +9,8 @@ import { useAbortController } from '@/hooks/useAbortController'
 interface ActivityContextValue {
   activities: Activity[]
   loading: boolean
+  error: string | null
+  clearError: () => void
   createActivity: (input: CreateActivityInput) => Promise<Activity | null>
   updateActivity: (id: string, input: UpdateActivityInput) => Promise<Activity | null>
   deleteActivity: (id: string) => Promise<boolean>
@@ -31,8 +33,11 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { currentTrip, tripCode } = useCurrentTrip()
   const { newSignal, cancel } = useAbortController()
+
+  const clearError = () => setError(null)
 
   const fetchActivities = async () => {
     const signal = newSignal()
@@ -83,6 +88,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     if (tripCode && currentTrip) {
       setInitialLoadDone(false)
       fetchActivities()
+    } else {
+      setActivities([])
+      setError(null)
     }
     return cancel
   }, [tripCode, currentTrip?.id])
@@ -100,6 +108,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to create activity'
+        setError(message)
         logger.error('Failed to create activity', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -107,7 +117,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setActivities((prev) => [...prev, data as Activity].sort(sortActivities))
       return data as Activity
     } catch (error) {
-      logger.error('Failed to create activity', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to create activity'
+      setError(message)
+      logger.error('Failed to create activity', { trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -129,6 +141,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to update activity'
+        setError(message)
         logger.error('Failed to update activity', { activity_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -141,7 +155,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      logger.error('Failed to update activity', { activity_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to update activity'
+      setError(message)
+      logger.error('Failed to update activity', { activity_id: id, trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -155,6 +171,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to delete activity'
+        setError(message)
         logger.error('Failed to delete activity', { activity_id: id, trip_id: currentTrip?.id, error: error.message })
         return false
       }
@@ -162,7 +180,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setActivities((prev) => prev.filter((activity) => activity.id !== id))
       return true
     } catch (error) {
-      logger.error('Failed to delete activity', { activity_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to delete activity'
+      setError(message)
+      logger.error('Failed to delete activity', { activity_id: id, trip_id: currentTrip?.id, error: message })
       return false
     }
   }
@@ -178,6 +198,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const value: ActivityContextValue = {
     activities,
     loading: loading || (!!currentTrip && !initialLoadDone),
+    error,
+    clearError,
     createActivity,
     updateActivity,
     deleteActivity,
