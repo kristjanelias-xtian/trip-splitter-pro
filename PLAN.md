@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 🔧 In Progress (7a ✅, 7b–7h remaining) | — |
+| E | UX/UI Unification | 🔧 In Progress (7a–7c ✅, 7d–7h remaining) | — |
 
 ---
 
@@ -551,7 +551,7 @@ Extract reusable components that currently exist as duplicated patterns. Foundat
 
 **Acceptance:** All existing pages use the new shared components. No visual regression. Type-check + tests pass.
 
-#### Phase 7b — Mode toggle icon unification
+#### Phase 7b — Mode toggle icon unification ✅ Done (PR #338)
 Small, self-contained change.
 
 **Tasks:**
@@ -562,7 +562,7 @@ Small, self-contained change.
 
 **Acceptance:** `Zap` = Quick, `LayoutGrid` = Full in all locations. Visual consistency confirmed.
 
-#### Phase 7c — Remove redundant Quick mode buttons
+#### Phase 7c — Remove redundant Quick mode buttons ✅ Done (PR #338)
 Clean up the Quick trip detail page.
 
 **Tasks:**
