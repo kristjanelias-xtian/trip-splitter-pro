@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createLogger } from '../_shared/logger.ts'
+import { verifyAuth } from '../_shared/auth.ts'
 
 const VALID_LEVELS = new Set(['debug', 'info', 'warn', 'error'])
 const MAX_MESSAGE_LEN = 2000
@@ -8,7 +9,7 @@ const MAX_CONTEXT_KEYS = 20
 const MAX_CONTEXT_VALUE_LEN = 500
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://split.xtian.me",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
@@ -18,6 +19,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify JWT
+    const auth = await verifyAuth(req, corsHeaders)
+    if (auth.response) return auth.response
+
     const body = await req.json()
     const { level, message, service: rawService, context: rawContext } = body
 

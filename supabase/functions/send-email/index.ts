@@ -2,9 +2,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { createLogger } from '../_shared/logger.ts'
 import { createMetrics } from '../_shared/metrics.ts'
+import { verifyAuth } from '../_shared/auth.ts'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://split.xtian.me",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
@@ -13,6 +14,19 @@ const metrics = createMetrics('send-email')
 
 const APP_URL = 'https://split.xtian.me'
 const FROM_ADDRESS = 'Spl1t <noreply@xtian.me>'
+
+/**
+ * Escape user-supplied strings before interpolation into HTML email templates.
+ * Prevents HTML injection / stored XSS via malicious trip names, participant names, etc.
+ */
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
 
 type ReceiptEmailData = {
   merchant: string | null
@@ -62,7 +76,7 @@ function invitationEmailHtml(params: {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${organiserName} added you to ${tripName}</title>
+<title>${escapeHtml(organiserName)} added you to ${escapeHtml(tripName)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:40px 20px;">
@@ -78,9 +92,9 @@ function invitationEmailHtml(params: {
           <!-- Body -->
           <tr>
             <td style="padding:20px 32px 32px;">
-              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;font-weight:700;">Hey ${participantName}!</h2>
+              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;font-weight:700;">Hey ${escapeHtml(participantName)}!</h2>
               <p style="margin:0 0 28px;color:#475569;font-size:16px;line-height:1.7;">
-                <strong>${organiserName}</strong> added you to <strong>${tripName}</strong>.
+                <strong>${escapeHtml(organiserName)}</strong> added you to <strong>${escapeHtml(tripName)}</strong>.
                 Tap below to see your share of the costs — no account needed.
               </p>
               <!-- CTA Button -->
@@ -102,7 +116,7 @@ function invitationEmailHtml(params: {
           <tr>
             <td style="padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0;color:#94a3b8;font-size:12px;">
-                Sent by <strong>${organiserName}</strong> via Spl1t &middot; <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
+                Sent by <strong>${escapeHtml(organiserName)}</strong> via Spl1t &middot; <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
               </p>
             </td>
           </tr>
@@ -119,14 +133,14 @@ function formatPrice(amount: number, currency: string | null): string {
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
   } catch {
-    return `${currency} ${amount.toFixed(2)}`
+    return `${escapeHtml(currency)} ${amount.toFixed(2)}`
   }
 }
 
 function receiptTableHtml(receipt: ReceiptEmailData): string {
   const currency = receipt.currency
   const items = receipt.items ?? []
-  const merchant = receipt.merchant || 'Receipt'
+  const merchant = escapeHtml(receipt.merchant || 'Receipt')
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0)
   const tip = receipt.tip_amount ?? 0
   const total = receipt.confirmed_total ?? (subtotal + tip)
@@ -147,7 +161,7 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
     const rowBg = highlight ? 'background:#FEF3EF;border-left:3px solid #E76F51;' : ''
     return `
     <tr style="${rowStyle}${rowBg}">
-      <td style="${cellStyle}">${item.name}</td>
+      <td style="${cellStyle}">${escapeHtml(item.name)}</td>
       <td style="${cellStyle}text-align:center;">${item.qty}</td>
       <td style="${cellStyle}text-align:right;">${formatPrice(item.price * item.qty, currency)}</td>
     </tr>`
@@ -212,7 +226,7 @@ function paymentReminderEmailHtml(params: {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment reminder for ${tripName}</title>
+<title>Payment reminder for ${escapeHtml(tripName)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#FAF8F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF8F5;padding:40px 20px;">
@@ -229,15 +243,15 @@ function paymentReminderEmailHtml(params: {
           <!-- Body -->
           <tr>
             <td style="padding:32px;">
-              <h2 style="margin:0 0 8px;color:#2D3142;font-size:20px;font-weight:600;">Hi ${recipientName}!</h2>
+              <h2 style="margin:0 0 8px;color:#2D3142;font-size:20px;font-weight:600;">Hi ${escapeHtml(recipientName)}!</h2>
               <p style="margin:0 0 24px;color:#657085;font-size:15px;line-height:1.6;">
-                This is a friendly reminder from <strong style="color:#2D3142;">${organiserName}</strong> about an outstanding balance from <strong style="color:#2D3142;">${tripName}</strong>.
+                This is a friendly reminder from <strong style="color:#2D3142;">${escapeHtml(organiserName)}</strong> about an outstanding balance from <strong style="color:#2D3142;">${escapeHtml(tripName)}</strong>.
               </p>
               <!-- Amount Box — coral tint -->
               <div style="background:#FEF3EF;border:2px solid #E76F51;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
                 <p style="margin:0 0 4px;color:#E76F51;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
-                <p style="margin:0 0 4px;color:#2D3142;font-size:36px;font-weight:700;">${formattedAmount}</p>
-                <p style="margin:0;color:#657085;font-size:14px;">to <strong style="color:#2D3142;">${payToName}</strong></p>
+                <p style="margin:0 0 4px;color:#2D3142;font-size:36px;font-weight:700;">${escapeHtml(formattedAmount)}</p>
+                <p style="margin:0;color:#657085;font-size:14px;">to <strong style="color:#2D3142;">${escapeHtml(payToName)}</strong></p>
               </div>
               ${receiptSection}
               <!-- CTA Buttons — primary: settlements page, secondary: app home -->
@@ -258,7 +272,7 @@ function paymentReminderEmailHtml(params: {
                 </tr>
               </table>
               <p style="margin:0;color:#657085;font-size:13px;text-align:center;">
-                Questions? Reply to this email or contact ${organiserName} directly.
+                Questions? Reply to this email or contact ${escapeHtml(organiserName)} directly.
               </p>
             </td>
           </tr>
@@ -266,7 +280,7 @@ function paymentReminderEmailHtml(params: {
           <tr>
             <td style="padding:16px 32px;border-top:1px solid #E2E7EE;text-align:center;">
               <p style="margin:0;color:#657085;font-size:12px;">
-                Sent by ${organiserName} via Spl1t &middot; <a href="${tripUrl}" style="color:#E76F51;text-decoration:none;">Open app</a>
+                Sent by ${escapeHtml(organiserName)} via Spl1t &middot; <a href="${tripUrl}" style="color:#E76F51;text-decoration:none;">Open app</a>
               </p>
             </td>
           </tr>
@@ -286,7 +300,11 @@ Deno.serve(async (req) => {
   const requestStart = performance.now()
 
   try {
-    logger.info('Request received', { method: req.method })
+    // Verify JWT
+    const auth = await verifyAuth(req, corsHeaders)
+    if (auth.response) return auth.response
+
+    logger.info('Request received', { method: req.method, user_id: auth.user.id })
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY")
     if (!resendApiKey) {

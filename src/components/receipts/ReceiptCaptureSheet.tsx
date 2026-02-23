@@ -106,6 +106,12 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
     try {
       // 1. Compress image
       const compressed = await compressImage(selectedFile)
+
+      const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
+      if (compressed.size > MAX_SIZE_BYTES) {
+        throw new Error('Image is too large. Please use a clearer, smaller photo.')
+      }
+
       const base64 = await blobToBase64(compressed)
 
       // 2. Create receipt_tasks row (pending) — throws with real error message on failure

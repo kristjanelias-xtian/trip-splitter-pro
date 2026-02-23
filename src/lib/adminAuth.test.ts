@@ -1,29 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { authenticateAdmin, isAdminAuthenticated, logoutAdmin } from './adminAuth'
+import { describe, it, expect } from 'vitest'
+import { isAdminUser } from './adminAuth'
 
 describe('adminAuth', () => {
-  beforeEach(() => {
-    sessionStorage.clear()
+  it('returns false for undefined userId', () => {
+    expect(isAdminUser(undefined)).toBe(false)
   })
 
-  it('starts unauthenticated', () => {
-    expect(isAdminAuthenticated()).toBe(false)
+  it('returns false for empty string userId', () => {
+    expect(isAdminUser('')).toBe(false)
   })
 
-  it('authenticates with correct password', () => {
-    // VITE_ADMIN_PASSWORD is set to 'test-admin-pw' in setup.ts
-    expect(authenticateAdmin('test-admin-pw')).toBe(true)
-    expect(isAdminAuthenticated()).toBe(true)
-  })
-
-  it('rejects wrong password', () => {
-    expect(authenticateAdmin('wrong')).toBe(false)
-    expect(isAdminAuthenticated()).toBe(false)
-  })
-
-  it('logs out', () => {
-    authenticateAdmin('test-admin-pw')
-    logoutAdmin()
-    expect(isAdminAuthenticated()).toBe(false)
+  it('returns false for a non-admin userId', () => {
+    expect(isAdminUser('00000000-0000-0000-0000-000000000099')).toBe(false)
   })
 })
