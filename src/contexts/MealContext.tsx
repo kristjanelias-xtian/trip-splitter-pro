@@ -218,17 +218,21 @@ export function MealProvider({ children }: { children: ReactNode }) {
 
     try {
       // Fetch all meal-shopping links for this trip's meals
-      const { data: links, error } = await supabase
-        .from('meal_shopping_items')
-        .select(`
-          meal_id,
-          shopping_item_id,
-          shopping_items (
-            id,
-            is_completed
-          )
-        `)
-        .in('meal_id', meals.map(m => m.id))
+      const { data: links, error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .select(`
+            meal_id,
+            shopping_item_id,
+            shopping_items (
+              id,
+              is_completed
+            )
+          `)
+          .in('meal_id', meals.map(m => m.id)),
+        15000,
+        'Loading meal ingredients timed out.'
+      )
 
       if (error) {
         console.error('Error fetching meal ingredients:', error)

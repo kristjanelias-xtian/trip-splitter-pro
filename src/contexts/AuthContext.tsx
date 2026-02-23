@@ -72,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let initialSessionHandled = false
+    let cancelled = false
+    let profileTimerId: ReturnType<typeof setTimeout> | null = null
 
     // Get initial session
     debugLog.auth('getSession:start')
@@ -82,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expiresAt: initialSession?.expires_at,
       })
       initialSessionHandled = true
+      if (cancelled) return
       setSession(initialSession)
       setUser(initialSession?.user ?? null)
 
@@ -95,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             8000,
             'Profile load timed out'
           )
-          setUserProfile(profile)
+          if (!cancelled) setUserProfile(profile)
         } catch (profileErr) {
           // Profile failed or timed out — app still loads, profile retries on next auth event
           logger.warn('Auth profile init failed, proceeding without profile', {
@@ -104,10 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }).catch((err) => {
       logger.error('Auth init failed', { error: err instanceof Error ? err.message : String(err) })
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     })
 
     // Listen for auth changes — skip the INITIAL_SESSION event that fires
@@ -141,10 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logger.info('User signed in', { user_id: newSession.user.id })
             // Defer profile upsert to avoid auth lock deadlock
             const userToUpsert = newSession.user
-            setTimeout(async () => {
+            profileTimerId = setTimeout(async () => {
               try {
                 const profile = await upsertProfile(userToUpsert)
-                setUserProfile(profile)
+                if (!cancelled) setUserProfile(profile)
               } catch (err) {
                 logger.warn('Profile upsert after sign-in failed', {
                   error: err instanceof Error ? err.message : String(err),
@@ -160,6 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
 
     return () => {
+      cancelled = true
+      if (profileTimerId !== null) clearTimeout(profileTimerId)
       subscription.unsubscribe()
     }
   }, [])

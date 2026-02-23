@@ -1,10 +1,15 @@
 /**
  * User Preferences localStorage fallback
- * Used for instant reads and as fallback when user is not authenticated
+ * Used for instant reads and as fallback when user is not authenticated.
+ *
+ * Schema versioning: stored as { version, ...preferences }. Old format
+ * (no version field) is treated as version mismatch and cleared —
+ * preferences are re-synced from Supabase on next sign-in.
  */
 
 const PREFERENCES_KEY = 'spl1t:user-preferences'
 const OLD_PREFERENCES_KEY = 'trip-splitter:user-preferences'
+const SCHEMA_VERSION = 1
 
 function migratePreferencesKey(): void {
   try {
@@ -23,6 +28,10 @@ export interface UserPreferencesLocal {
   defaultTripId: string | null
 }
 
+interface StoredPreferences extends UserPreferencesLocal {
+  version: number
+}
+
 function getDefaultMode(): AppMode {
   return typeof window !== 'undefined' && window.innerWidth < 1024 ? 'quick' : 'full'
 }
@@ -36,7 +45,16 @@ export function getLocalPreferences(): UserPreferencesLocal {
   try {
     const stored = localStorage.getItem(PREFERENCES_KEY)
     if (!stored) return defaults
-    return { ...defaults, ...JSON.parse(stored) }
+
+    const parsed = JSON.parse(stored)
+
+    // Version check — clear if schema changed or old format (no version field)
+    if (!parsed || typeof parsed !== 'object' || parsed.version !== SCHEMA_VERSION) {
+      localStorage.removeItem(PREFERENCES_KEY)
+      return defaults
+    }
+
+    return { ...defaults, preferredMode: parsed.preferredMode, defaultTripId: parsed.defaultTripId }
   } catch {
     return defaults
   }
@@ -45,7 +63,7 @@ export function getLocalPreferences(): UserPreferencesLocal {
 export function setLocalPreferences(prefs: Partial<UserPreferencesLocal>): void {
   try {
     const current = getLocalPreferences()
-    const updated = { ...current, ...prefs }
+    const updated: StoredPreferences = { ...current, ...prefs, version: SCHEMA_VERSION }
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify(updated))
   } catch (error) {
     console.error('Error saving preferences to localStorage:', error)

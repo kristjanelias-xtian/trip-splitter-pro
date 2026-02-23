@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Edit, Trash2, Info, X, Plus, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
@@ -43,7 +43,7 @@ export function ManageTripPage() {
   const { updateTrip, deleteTrip } = useTripContext()
   const location = useLocation()
   const fromQuick = !!(location.state as any)?.fromQuick
-  const { participants } = useParticipantContext()
+  const { participants, error: participantError, clearError: clearParticipantError } = useParticipantContext()
   const { meals } = useMealContext()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -51,6 +51,14 @@ export function ManageTripPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Surface participant errors as toasts
+  useEffect(() => {
+    if (participantError) {
+      toast({ title: 'Error', description: participantError, variant: 'destructive' })
+      clearParticipantError()
+    }
+  }, [participantError])
 
   // Currency settings state
   const [currencyDefault, setCurrencyDefault] = useState(currentTrip?.default_currency || 'EUR')

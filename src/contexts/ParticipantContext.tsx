@@ -17,6 +17,7 @@ interface ParticipantContextType {
   families: Family[]
   loading: boolean
   error: string | null
+  clearError: () => void
   createParticipant: (input: CreateParticipantInput) => Promise<Participant | null>
   updateParticipant: (id: string, input: UpdateParticipantInput) => Promise<boolean>
   deleteParticipant: (id: string) => Promise<boolean>
@@ -41,6 +42,8 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
   const { currentTrip, tripCode } = useCurrentTrip()
   const { newSignal, cancel } = useAbortController()
+
+  const clearError = () => setError(null)
 
   // Fetch participants and families for current trip
   const fetchData = async () => {
@@ -386,6 +389,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     families,
     loading: loading || (!!currentTrip && !initialLoadDone),
     error,
+    clearError,
     createParticipant,
     updateParticipant,
     deleteParticipant,

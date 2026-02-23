@@ -227,6 +227,7 @@
 
 ### FINDING-19: myTrips/mutedTrips localStorage can grow unbounded
 
+- **Status: RESOLVED** — Added `MAX_ENTRIES = 100` to myTripsStorage (trims by `lastAccessed` on insert) and `MAX_MUTED = 200` to mutedTripsStorage (trims on insert). Both now use schema versioning.
 - **Area:** 2 (Local storage layers)
 - **File(s):** `src/lib/myTripsStorage.ts:8`, `src/lib/mutedTripsStorage.ts:6`
 - **Description:** `trip-splitter:my-trips` appends a `MyTripEntry` for every trip visited. There is no maximum entry limit and no eviction strategy. Similarly, `trip-splitter:hidden-trips` grows without cap.
@@ -244,6 +245,7 @@
 
 ### FINDING-21: AuthContext and UserPreferencesContext have no abort/unmount guards
 
+- **Status: RESOLVED** — AuthContext: added `cancelled` flag + `profileTimerId` tracking with `clearTimeout` in cleanup. UserPreferencesContext: added `cancelled` flag to fetchPreferences useEffect with cleanup.
 - **Area:** 3 (useAbortController) + 13 (Memory leaks)
 - **File(s):** `src/contexts/AuthContext.tsx:73-165`, `src/contexts/UserPreferencesContext.tsx:37-74`
 - **Description:** Both contexts have async operations in useEffects that call setState without cancelled/isMounted guards. AuthContext's `setTimeout`-deferred profile upsert (line 144-153) is never cleared on unmount. UserPreferencesContext's fetch has no cleanup function.
@@ -270,6 +272,7 @@
 
 ### FINDING-24: ReceiptContext mutations swallowed — callers must check boolean return
 
+- **Status: RESOLVED** — Added `clearError()` to ReceiptContext. All mutation catch blocks now call `setError(message)`. ReceiptReviewSheet watches `error` and fires destructive toast, then clears it.
 - **Area:** 4 (Error surfacing)
 - **File(s):** `src/contexts/ReceiptContext.tsx:128-216`
 - **Description:** `updateReceiptTask`, `completeReceiptTask`, and `dismissReceiptTask` return boolean `false` on failure but do not throw. Error state is only set by `fetchPendingReceipts`, not by mutations. Callers must explicitly check the return value.
@@ -278,6 +281,7 @@
 
 ### FINDING-25: ParticipantContext error not displayed on most consuming pages
 
+- **Status: RESOLVED** — Added `clearError()` to ParticipantContext. ManageTripPage now watches `participantError` and fires destructive toast, then clears it.
 - **Area:** 4 (Error surfacing)
 - **File(s):** `src/contexts/ParticipantContext.tsx:112-191`
 - **Description:** ParticipantContext sets `error` state on failure but doesn't throw. `QuickGroupDetailPage` displays it, but `ManageTripPage` and other pages that call `createParticipant`/`deleteParticipant` don't check for or display the error.
@@ -304,6 +308,7 @@
 
 ### FINDING-28: ReceiptContext updateReceiptTask uses `as any` — bypasses type safety
 
+- **Status: RESOLVED** — Defined `ReceiptTaskUpdate` type (Partial Pick of updatable fields). Replaced `as any` with `as Record<string, unknown>`. Function signature now takes `ReceiptTaskUpdate` instead of `Partial<ReceiptTask>`.
 - **Area:** 15 (Receipt processing)
 - **File(s):** `src/contexts/ReceiptContext.tsx:134`
 - **Description:** `{ ...updates, updated_at: ... } as any` casts away all TypeScript type checking. A caller could pass arbitrary fields like `{ created_by: '...' }` and the function would send them to Supabase.
@@ -312,6 +317,7 @@
 
 ### FINDING-29: Unbounded AI output from process-receipt — no item count or merchant name limit
 
+- **Status: RESOLVED** — Already applied in a previous session: `items.slice(0, 100)`, `item.name.slice(0, 200)`, `merchant.slice(0, 200)` on lines 193-201 of `process-receipt/index.ts`.
 - **Area:** 15 (Receipt processing)
 - **File(s):** `supabase/functions/process-receipt/index.ts:126-161`
 - **Description:** The AI output validation checks types and defaults but doesn't limit the number of items or the length of the merchant name. A hallucinated response with hundreds of items or a very long merchant name would be stored as-is.
@@ -320,6 +326,7 @@
 
 ### FINDING-30: Stale `channel` closure in ShoppingContext early-exit path
 
+- **Status: RESOLVED** — Removed `channel` useState, the `if (channel)` early-exit block, and `setChannel()` call. The local `shoppingChannel` captured by the cleanup closure is sufficient. Also removed unused `RealtimeChannel` import.
 - **Area:** 8 (Real-time subscriptions)
 - **File(s):** `src/contexts/ShoppingContext.tsx:85-95`
 - **Description:** The useEffect reads `channel` state at line 88, but `channel` is not in the dependency array. The `if (channel)` check captures a stale closure. In practice, the cleanup return on line 165-168 handles the normal path correctly, making the stale code unreachable.
@@ -352,7 +359,7 @@
 - **Risk:** Two trips could be created from a single scan attempt. Window is narrow due to React 18 batching but exists.
 - **Recommended fix:** Add an `isScanning` ref guard at the top of `handleScan`.
 
-### FINDING-34: Shopping createShoppingItem has no loading guard
+### FINDING-34: Shopping createShoppingItem has no loading guard — accepted risk
 
 - **Area:** 6 (Concurrent mutation safety)
 - **File(s):** `src/contexts/ShoppingContext.tsx:171-228`
@@ -375,6 +382,7 @@
 
 ### FINDING-36: No localStorage schema versioning
 
+- **Status: RESOLVED** — Added `SCHEMA_VERSION = 1` and `{ version, entries }` wrapper to `myTripsStorage.ts`, `mutedTripsStorage.ts`, and `userPreferencesStorage.ts`. Version check on read clears mismatched/old-format data (acceptable — all are UI caches rebuilt from Supabase).
 - **Area:** 2 (Local storage layers)
 - **File(s):** `src/lib/myTripsStorage.ts`, `src/lib/mutedTripsStorage.ts`, `src/lib/userPreferencesStorage.ts`
 - **Description:** No version field on any localStorage entry. If the schema changes, existing data will be parsed with new code. `userPreferencesStorage` has key migration but no structural migration. `myTripsStorage` casts directly to `MyTripEntry[]` without validation.
@@ -383,6 +391,7 @@
 
 ### FINDING-37: Inconsistent localStorage key naming conventions
 
+- **Status: RESOLVED** — Renamed `split-dismiss-login-prompt` → `spl1t:dismiss-login-prompt` and `split-dismiss-bank-details-prompt` → `spl1t:dismiss-bank-details` in OnboardingPrompts.tsx. Existing users will see the prompts once more after the rename.
 - **Area:** 2 (Local storage layers)
 - **File(s):** `src/components/OnboardingPrompts.tsx:8-9`
 - **Description:** Onboarding dismissal keys use `'split-dismiss-...'` prefix, which matches neither the `spl1t:` nor `trip-splitter:` convention used elsewhere.
@@ -391,6 +400,7 @@
 
 ### FINDING-38: Debug logger writes to localStorage on every event
 
+- **Status: RESOLVED** — Replaced per-call `writeLogs()` with debounced flush (500ms). Pending logs are held in a memory buffer and written in batch. `beforeunload` listener performs synchronous flush to prevent data loss. Console helpers (`__spl1tLogs`, `__spl1tClear`) flush pending logs before reading.
 - **Area:** 2 (Local storage layers)
 - **File(s):** `src/lib/debugLogger.ts:53,78`
 - **Description:** When debug mode is enabled, every `appendLog` call serializes the entire array (up to 500 entries) and writes to localStorage. On a busy session, this creates significant I/O overhead.
@@ -399,6 +409,7 @@
 
 ### FINDING-39: ShoppingContext/MealContext helper queries missing withTimeout
 
+- **Status: RESOLVED** — Added `withTimeout(15000)` to `getShoppingItemsWithMeals`, `getMealsWithIngredients`, `linkShoppingItemToMeal`, and `unlinkShoppingItemFromMeal`.
 - **Area:** 3 (useAbortController)
 - **File(s):** `src/contexts/ShoppingContext.tsx:342-399`, `src/contexts/MealContext.tsx:194-253`
 - **Description:** `getShoppingItemsWithMeals` and `getMealsWithIngredients` make Supabase queries without `withTimeout`. They could hang until the 30s HTTP abort.
@@ -407,6 +418,7 @@
 
 ### FINDING-40: Shopping/meal link mutations inconsistently use withTimeout
 
+- **Status: RESOLVED** — See FINDING-39. All link/unlink mutations in both contexts now consistently use `withTimeout(15000)`.
 - **Area:** 3 (useAbortController)
 - **File(s):** `src/contexts/ShoppingContext.tsx:402-443`, `src/contexts/MealContext.tsx:256-305`
 - **Description:** `linkShoppingItemToMeal`/`unlinkShoppingItemFromMeal` and equivalent MealContext methods are inconsistent — some use `withTimeout`, some don't.
@@ -442,6 +454,7 @@
 
 ### FINDING-44: Async errors not caught by ErrorBoundary (by design)
 
+- **Status: RESOLVED** — Added `spl1t:unhandled-error` custom event dispatch from `main.tsx` unhandledrejection handler. `UnhandledErrorToaster` component in `App.tsx` listens for the event and fires a destructive toast.
 - **Area:** 14 (ErrorBoundary coverage)
 - **File(s):** `src/main.tsx:6-25`
 - **Description:** React ErrorBoundary only catches synchronous render errors. Unhandled promise rejections are caught by `window.addEventListener('unhandledrejection')` and logged to Grafana but provide no UI recovery. All contexts wrap async operations in try/catch, making this defense-in-depth.
@@ -499,10 +512,19 @@
 17. **FINDING-27:** ✅ Add client-side fallback for orphaned receipt_tasks
 18. **FINDING-26:** ✅ Clear trips on user identity change
 
-### Tier 4 — Cleanup (nice to have)
+### Tier 4 — Cleanup (nice to have) ✅ ALL RESOLVED
 19. **FINDING-18:** ✅ Remove dead Zustand store and dependency
-20. **FINDING-19:** Add max entries to myTrips/mutedTrips localStorage
-21. **FINDING-37:** Standardize localStorage key naming
-22. **FINDING-36:** Add schema versioning to localStorage entries
+20. **FINDING-19:** ✅ Max entries (100/200) + schema versioning for myTrips/mutedTrips
+21. **FINDING-37:** ✅ OnboardingPrompts keys renamed to `spl1t:*` convention
+22. **FINDING-36:** ✅ Schema versioning on all 3 localStorage modules
 23. **FINDING-31:** ✅ Improve ErrorBoundary with retry limit and navigation fallback
 24. **FINDING-35:** ✅ Zustand/defaultTripId overlap (resolved via FINDING-18)
+25. **FINDING-21:** ✅ Unmount guards on AuthContext + UserPreferencesContext
+26. **FINDING-24:** ✅ ReceiptContext error surfacing (clearError + toast in ReceiptReviewSheet)
+27. **FINDING-25:** ✅ ParticipantContext error toast on ManageTripPage
+28. **FINDING-28:** ✅ ReceiptTaskUpdate type replaces `as any` cast
+29. **FINDING-29:** ✅ AI output limits already applied (items 100, names 200 chars)
+30. **FINDING-30:** ✅ Stale channel dead code removed from ShoppingContext
+31. **FINDING-38:** ✅ Debug logger debounced (500ms flush + beforeunload sync)
+32. **FINDING-39/40:** ✅ withTimeout on all Shopping/Meal helper queries + link mutations
+33. **FINDING-44:** ✅ Global toast for unhandled promise rejections

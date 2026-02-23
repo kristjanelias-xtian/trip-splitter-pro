@@ -22,6 +22,11 @@ window.addEventListener('unhandledrejection', (event) => {
       reasonName: reason instanceof Error ? reason.name : undefined,
     })
   }).catch(() => {})
+
+  // Dispatch custom event for top-level toast (React context not available here)
+  window.dispatchEvent(new CustomEvent('spl1t:unhandled-error', {
+    detail: { message: event.reason?.message ?? 'An unexpected error occurred' }
+  }))
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

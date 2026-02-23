@@ -7,7 +7,6 @@ import type {
   UpdateShoppingItemInput,
   ShoppingItemWithMeals,
 } from '@/types/shopping'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
@@ -35,7 +34,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { currentTrip, tripCode } = useCurrentTrip()
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null)
   const { newSignal, cancel } = useAbortController()
 
   const clearError = () => setError(null)
@@ -89,11 +87,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   // Setup real-time subscription
   useEffect(() => {
     if (!currentTrip) {
-      // Cleanup existing channel
-      if (channel) {
-        supabase.removeChannel(channel)
-        setChannel(null)
-      }
       setShoppingItems([])
       setLoading(false)
       return cancel
@@ -163,8 +156,6 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         }
       )
       .subscribe()
-
-    setChannel(shoppingChannel)
 
     // Cleanup on unmount or trip change
     return () => {
@@ -353,19 +344,23 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
     try {
       // Fetch all shopping-meal links for this trip's items
-      const { data: links, error } = await supabase
-        .from('meal_shopping_items')
-        .select(`
-          shopping_item_id,
-          meal_id,
-          meals (
-            id,
-            title,
-            meal_date,
-            meal_type
-          )
-        `)
-        .in('shopping_item_id', shoppingItems.map(i => i.id))
+      const { data: links, error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .select(`
+            shopping_item_id,
+            meal_id,
+            meals (
+              id,
+              title,
+              meal_date,
+              meal_type
+            )
+          `)
+          .in('shopping_item_id', shoppingItems.map(i => i.id)),
+        15000,
+        'Loading shopping item meal links timed out.'
+      )
 
       if (error) {
         console.error('Error fetching shopping item meals:', error)
@@ -418,9 +413,13 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     mealId: string
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('meal_shopping_items')
-        .insert([{ meal_id: mealId, shopping_item_id: shoppingItemId }] as any)
+      const { error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .insert([{ meal_id: mealId, shopping_item_id: shoppingItemId }] as any),
+        15000,
+        'Linking shopping item to meal timed out.'
+      )
 
       if (error) {
         console.error('Error linking shopping item to meal:', error)
@@ -439,11 +438,15 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     mealId: string
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('meal_shopping_items')
-        .delete()
-        .eq('shopping_item_id', shoppingItemId)
-        .eq('meal_id', mealId)
+      const { error } = await withTimeout(
+        supabase
+          .from('meal_shopping_items')
+          .delete()
+          .eq('shopping_item_id', shoppingItemId)
+          .eq('meal_id', mealId),
+        15000,
+        'Unlinking shopping item from meal timed out.'
+      )
 
       if (error) {
         console.error('Error unlinking shopping item from meal:', error)

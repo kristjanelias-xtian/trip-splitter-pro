@@ -5,8 +5,8 @@ import { SignInButton } from '@/components/auth/SignInButton'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { Button } from '@/components/ui/button'
 
-const LOGIN_DISMISS_KEY = 'split-dismiss-login-prompt'
-const BANK_DETAILS_DISMISS_KEY = 'split-dismiss-bank-details-prompt'
+const LOGIN_DISMISS_KEY = 'spl1t:dismiss-login-prompt'
+const BANK_DETAILS_DISMISS_KEY = 'spl1t:dismiss-bank-details'
 
 export function OnboardingPrompts() {
   const { user, userProfile, loading } = useAuth()

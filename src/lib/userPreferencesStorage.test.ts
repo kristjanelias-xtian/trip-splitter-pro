@@ -17,12 +17,24 @@ describe('userPreferencesStorage', () => {
 
   it('merges stored preferences with defaults', () => {
     localStorage.setItem(
-      'trip-splitter:user-preferences',
-      JSON.stringify({ preferredMode: 'full', defaultTripId: 'trip-123' })
+      'spl1t:user-preferences',
+      JSON.stringify({ version: 1, preferredMode: 'full', defaultTripId: 'trip-123' })
     )
     const prefs = getLocalPreferences()
     expect(prefs.preferredMode).toBe('full')
     expect(prefs.defaultTripId).toBe('trip-123')
+  })
+
+  it('clears old-format data without version field', () => {
+    localStorage.setItem(
+      'spl1t:user-preferences',
+      JSON.stringify({ preferredMode: 'full', defaultTripId: 'trip-123' })
+    )
+    const prefs = getLocalPreferences()
+    // Old format cleared — returns defaults
+    const expectedMode = window.innerWidth < 1024 ? 'quick' : 'full'
+    expect(prefs.preferredMode).toBe(expectedMode)
+    expect(prefs.defaultTripId).toBeNull()
   })
 
   it('sets and persists preferences', () => {
@@ -40,7 +52,7 @@ describe('userPreferencesStorage', () => {
   })
 
   it('handles corrupted JSON gracefully', () => {
-    localStorage.setItem('trip-splitter:user-preferences', 'not-json')
+    localStorage.setItem('spl1t:user-preferences', 'not-json')
     const prefs = getLocalPreferences()
     expect(prefs).toHaveProperty('preferredMode')
     expect(prefs).toHaveProperty('defaultTripId')
