@@ -102,6 +102,34 @@ export function WizardStep4({
 
   const hasCustomSplitProps = participants !== undefined && onParticipantSplitChange !== undefined
 
+  const handleDistributeEvenly = () => {
+    const target = splitMode === 'percentage' ? 100 : parseFloat(amount || '0')
+    if (isNaN(target) || target <= 0) return
+
+    const allIds: { type: 'family' | 'participant'; id: string }[] = []
+    if (selectedFamilies) {
+      for (const id of selectedFamilies) allIds.push({ type: 'family', id })
+    }
+    if (selectedParticipants) {
+      for (const id of selectedParticipants) allIds.push({ type: 'participant', id })
+    }
+    if (allIds.length === 0) return
+
+    const base = Math.floor((target / allIds.length) * 100) / 100
+    const remainder = Math.round((target - base * allIds.length) * 100) / 100
+
+    for (let i = 0; i < allIds.length; i++) {
+      const { type, id } = allIds[i]
+      // Give remainder to the first entry so totals match exactly
+      const value = i === 0 ? (base + remainder).toFixed(2) : base.toFixed(2)
+      if (type === 'family') {
+        onFamilySplitChange?.(id, value)
+      } else {
+        onParticipantSplitChange?.(id, value)
+      }
+    }
+  }
+
   return (
     <motion.div
       className="space-y-6"
@@ -165,14 +193,24 @@ export function WizardStep4({
           <Label className="text-base font-medium">
             {splitMode === 'percentage' ? 'Percentages' : 'Amounts'}
           </Label>
-          <p className="text-sm text-muted-foreground">
-            {splitMode === 'percentage'
-              ? 'Enter percentages for each party (must sum to 100%)'
-              : `Enter amounts for each party (must sum to ${currency || 'EUR'} ${amount || '0.00'})`
-            }
-          </p>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {splitMode === 'percentage'
+                ? 'Enter percentages for each party (must sum to 100%)'
+                : `Enter amounts for each party (must sum to ${currency || 'EUR'} ${amount || '0.00'})`
+              }
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-xs font-medium text-primary underline underline-offset-2"
+              onClick={handleDistributeEvenly}
+              disabled={disabled}
+            >
+              Split evenly
+            </button>
+          </div>
 
-          <div className="space-y-2 rounded-lg border border-input p-3">
+          <div className="space-y-1 rounded-lg border border-input p-3">
             {/* Families */}
             {!isIndividualsMode && selectedFamilies && selectedFamilies.length > 0 && families && (
               <>

@@ -488,7 +488,7 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-6 gap-0"
+        className="flex flex-col p-6 gap-0 overflow-hidden"
         style={{
           height: keyboard.isVisible
             ? `${keyboard.availableHeight}px`
@@ -527,7 +527,7 @@ function MobileWizard({
 
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto -mx-6 px-6 pb-4"
+          className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 pb-4"
         >
           {currentStep === 1 && (
             <WizardStep1
