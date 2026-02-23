@@ -24,7 +24,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  ExternalLink, ArrowLeftRight, Loader2, Users
+  Loader2, Users
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
@@ -200,26 +200,6 @@ export function QuickGroupDetailPage() {
           description="See transaction history"
           onClick={() => navigate(`/t/${currentTrip.trip_code}/quick/history`)}
         />
-      </div>
-
-      {/* Bottom actions */}
-      <div className="space-y-3">
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => navigate('/quick')}
-        >
-          <ArrowLeftRight size={16} />
-          My Groups
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => navigate(`/t/${currentTrip.trip_code}/dashboard`)}
-        >
-          <ExternalLink size={16} />
-          See in Full Mode
-        </Button>
       </div>
 
       {/* Expense sheet */}
