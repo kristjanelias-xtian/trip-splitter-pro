@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 📋 Planned (Phase 7a–7h) | — |
+| E | UX/UI Unification | 🔧 In Progress (7a ✅, 7b–7h remaining) | — |
 
 ---
 
@@ -513,6 +513,14 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 
 **Goal**: Converge Quick and Full modes toward a single adaptive UI. Quick mode = reduced-clutter view of the same app, not a separate app. Full mode = detailed view with all features visible.
 
+**Dynamic color system — audit and implementation prerequisite:**
+Trip header colors are assigned dynamically at creation time via
+`src/services/gradientService.ts` and `src/services/tripGradientService.ts`.
+Before any Phase 7 header work begins, CC must read both files and verify:
+- The same trip renders an identical gradient in Quick mode and Full mode headers
+- Admin page trip cards use the same color system as the rest of the app
+- Any mockups or examples use representative gradient samples, not a single hardcoded gradient
+
 **Design Decisions** (from UX/UI audit session 2026-02-23):
 
 | Decision | Choice |
@@ -530,7 +538,7 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | Loading/error states | Formalize as `<PageLoadingState />` and `<PageErrorState />` components |
 | Mode toggle icons | `Zap` / `LayoutGrid` everywhere (ModeToggle + Row 2 pills) |
 
-#### Phase 7a — Shared UI primitives (no visual change)
+#### Phase 7a — Shared UI primitives (no visual change) ✅ Done (PR #336)
 Extract reusable components that currently exist as duplicated patterns. Foundation for all subsequent phases.
 
 **Tasks:**
@@ -720,6 +728,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-23 | Audit cleanup | 14 remaining low-severity findings from AUDIT.md resolved. (1) localStorage caps: myTrips MAX_ENTRIES=100, mutedTrips MAX_MUTED=200, trim on insert. (2) Unmount guards: AuthContext cancelled flag + clearTimeout on profileTimerId; UserPreferencesContext cancelled flag. (3) ReceiptContext error surfacing: clearError + setError in all mutation catch blocks; toast in ReceiptReviewSheet. (4) ParticipantContext clearError exposed; toast in ManageTripPage. (5) ReceiptTaskUpdate type replaces `as any` cast. (6) ShoppingContext stale channel dead code removed. (7) Schema versioning (SCHEMA_VERSION=1) on myTripsStorage, mutedTripsStorage, userPreferencesStorage. (8) OnboardingPrompts keys renamed to spl1t: prefix. (9) Debug logger debounced (500ms flush + beforeunload sync). (10) withTimeout on all Shopping/Meal helper queries + link/unlink mutations. (11) Global toast for unhandled promise rejections via custom event. All 44 audit findings now resolved. 139/139 tests pass, type-check clean. |
 | 2026-02-23 | Production smoke test | Interactive Playwright MCP smoke test against https://split.xtian.me. 6/8 scenarios PASS, 2 SKIPPED (require OAuth). Verified: unauthenticated shared link access (RLS fix PR #310), double-tap submit guard (PR #307), ErrorBoundary (PR #308), admin access control (PR #309), trip state clearing (PR #308). Console baseline clean — only pre-existing Radix DialogTitle warnings and expected log-proxy 401s. **Bug found**: authenticated users cannot load shared trips they didn't create — `TripContext.fetchTrips()` applies client-side `created_by` filter that excludes shared-link trips. Database RLS is correct (`SELECT USING (true)`); issue is React-side only. Results in `SMOKE_TEST_RESULTS.md`. |
 | 2026-02-23 | UX/UI audit | Full UX/UI audit of the entire app — top bar inventory, navigation consistency, typography, color, components, mobile/desktop experience, empty/loading states, iconography, micro-interactions. 14 top findings documented. Playwright MCP screenshots (19 screens across both modes, desktop + mobile). Phase 3 design decisions captured via sequential questions. **Phase 7: UX/UI Unification** planned — 8 sub-phases (7a–7h), 7 PRs. Key decisions: adaptive UI direction, Scan as primary action, unified trip cards with balance+dates, shared loading/error components, admin page in Layout, Quick-style greeting on Full home, two-column Quick desktop layout. |
+| 2026-02-23 | Phase 7a | Shared UI primitives (PR #336). 4 new components: `PendingReceiptBanner` (extracted from QuickGroupDetailPage + ExpensesPage), `PageLoadingState` (spinner + slow message), `PageErrorState` (error card + retry), `TripCard` (unified card with balance + actions slot). Wired into QuickGroupDetailPage, ExpensesPage, QuickHomeScreen. Deleted dead `EventCard.tsx` + old `TripCard.tsx`. Net -196 lines. |
 
 ---
 
