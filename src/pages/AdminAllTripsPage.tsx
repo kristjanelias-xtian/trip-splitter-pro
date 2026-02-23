@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert } from 'lucide-react'
+import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTripContext } from '@/contexts/TripContext'
 import { supabase } from '@/lib/supabase'
+import type { Trip } from '@/types/trip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,9 @@ import { useAbortController } from '@/hooks/useAbortController'
 
 export function AdminAllTripsPage() {
   const { user } = useAuth()
-  const { trips } = useTripContext()
+  const [allTrips, setAllTrips] = useState<Trip[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent')
   const [ownerMap, setOwnerMap] = useState<Record<string, { name: string; email: string | null }>>({})
@@ -36,11 +38,47 @@ export function AdminAllTripsPage() {
 
   const isAdmin = isAdminUser(user?.id)
 
+  // Fetch all trips directly (bypasses TripContext client-side filtering)
+  useEffect(() => {
+    if (!isAdmin) return
+
+    const signal = newSignal()
+
+    const fetchAllTrips = async () => {
+      setLoading(true)
+      setError(null)
+
+      const { data, error: fetchError } = await withTimeout(
+        supabase
+          .from('trips')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .abortSignal(signal),
+        15000,
+        'Loading all trips timed out.'
+      )
+
+      if (signal.aborted) return
+
+      if (fetchError) {
+        setError(fetchError.message)
+        setLoading(false)
+        return
+      }
+
+      setAllTrips((data as unknown as Trip[]) ?? [])
+      setLoading(false)
+    }
+
+    fetchAllTrips()
+    return cancel
+  }, [isAdmin])
+
   // Fetch owner info for all trips
   useEffect(() => {
-    if (!isAdmin || trips.length === 0) return
+    if (!isAdmin || allTrips.length === 0) return
 
-    const ownerIds = [...new Set(trips.map(t => t.created_by).filter(Boolean))] as string[]
+    const ownerIds = [...new Set(allTrips.map(t => t.created_by).filter(Boolean))] as string[]
     if (ownerIds.length === 0) return
 
     const signal = newSignal()
@@ -68,7 +106,7 @@ export function AdminAllTripsPage() {
 
     fetchOwners()
     return cancel
-  }, [isAdmin, trips])
+  }, [isAdmin, allTrips])
 
   const handleOpenTrip = (tripCode: string) => {
     window.open(`/t/${tripCode}/dashboard`, '_blank')
@@ -88,7 +126,7 @@ export function AdminAllTripsPage() {
   }
 
   // Filter and sort trips
-  const filteredTrips = trips
+  const filteredTrips = allTrips
     .filter(trip => {
       if (!searchQuery) return true
       const query = searchQuery.toLowerCase()
@@ -148,11 +186,27 @@ export function AdminAllTripsPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">All Trips (Admin)</h1>
             <p className="text-muted-foreground mt-1">
-              Total: {trips.length} {trips.length === 1 ? 'trip' : 'trips'}
+              Total: {allTrips.length} {allTrips.length === 1 ? 'trip' : 'trips'}
             </p>
           </div>
         </div>
 
+        {/* Loading / Error */}
+        {loading && (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="animate-spin text-muted-foreground" size={32} />
+          </div>
+        )}
+
+        {error && !loading && (
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <p className="text-destructive text-center">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !error && <>
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
@@ -282,6 +336,7 @@ export function AdminAllTripsPage() {
             Click "Open" to view the trip in a new tab.
           </p>
         </div>
+        </>}
       </div>
     </div>
   )
