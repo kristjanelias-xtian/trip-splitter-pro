@@ -66,12 +66,12 @@
 
 ### FINDING-4: Trips table RLS policy allows all reads — admin page is security theater
 
-- **Status: PARTIALLY RESOLVED** — Migration 026 replaces the single `FOR ALL USING (true)` policy with per-operation policies: INSERT restricted to authenticated users, UPDATE/DELETE restricted to trip creator. SELECT remains `USING (true)` because the shared link flow requires anonymous read access (TripContext fetches all trips for anon users). Full read restriction requires refactoring the anonymous query to filter by `trip_code` at the DB level.
+- **Status: CORRECTED** — The security session migration incorrectly restricted SELECT in addition to INSERT/UPDATE/DELETE. A follow-up migration 027 (PR #314) drops the SELECT restrictions and restores `USING (true)`. INSERT/UPDATE/DELETE restrictions to trip creator are retained. The app's access model (URL = access token) is now documented in CLAUDE.md under "Access Model — Core Design Rule" to prevent this class of regression.
 - **Area:** 10 (adminAuth)
 - **File(s):** `supabase/migrations/001_initial_schema.sql` (RLS policy: `USING (true)`)
 - **Description:** The trips table RLS policy allows **all** operations to **all** users. Every regular user already has full read access to all trips via `supabase.from('trips').select('*')`. The admin page protects a UI view, not the underlying data.
 - **Risk:** Any authenticated user (or anyone with the public anon key) can query all trips in the database. Trip codes, names, and owner information are exposed.
-- **Recommended fix:** Tighten trips RLS so users can only see trips they created or participate in. If a global admin view is needed, use a service role key from a server-side edge function.
+- **Recommended fix:** ~~Tighten trips RLS so users can only see trips they created or participate in.~~ **CONFLICTS WITH ACCESS MODEL** — this recommendation was incorrect. The app uses trip_code URLs as access tokens; restricting SELECT breaks shared link access for every trip. The correct approach is SELECT USING (true) on trips, with admin views powered by a service role key from a server-side edge function. See CLAUDE.md "Access Model — Core Design Rule".
 
 ### FINDING-5: All 4 edge functions lack JWT verification — callable by anyone with the public anon key
 
@@ -491,7 +491,7 @@
 1. **FINDING-5:** ✅ JWT verification on all 4 edge functions + shared `_shared/auth.ts`
 2. **FINDING-6:** ✅ HTML-escape user strings in email templates (`escapeHtml()`)
 3. **FINDING-2/3/43:** ✅ Admin auth replaced with Supabase user ID allowlist
-4. **FINDING-4:** ✅ (partial) Trips RLS: writes restricted to creator; reads still open for shared links
+4. **FINDING-4:** ✅ Trips RLS: writes restricted to creator; SELECT restored to USING (true) — URL is the access token
 5. **FINDING-16:** ✅ Client-side 5MB + server-side 10MB image size limits
 6. **FINDING-20/42:** ✅ Ownership check + idempotency guard in process-receipt
 7. **FINDING-41:** ✅ CORS restricted to `https://split.xtian.me` on all edge functions

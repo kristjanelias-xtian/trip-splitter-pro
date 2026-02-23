@@ -85,6 +85,47 @@ git branch -d fix/description
 
 ---
 
+## Access Model — Core Design Rule
+
+**Trip URL = access token. Never restrict SELECT on the trips table.**
+
+The app's security model is based on trip_code obscurity, not auth.
+Anyone with the URL (/t/:tripCode) can read and participate in a trip —
+authenticated or not. Authentication unlocks personal features only.
+
+Capability tiers:
+
+Unauthenticated (has URL):
+- Full read access to all trip data
+- Add/edit expenses, settlements, shopping items, meals, activities, stays
+
+Authenticated:
+- Everything above
+- "This is me" participant linking → personal balance summary
+- View bank account details (for settling up)
+- Submit feedback / bug reports
+
+RLS rules that must be maintained on the trips table:
+- SELECT: USING (true) — open to all, authenticated and anonymous
+- INSERT: restricted to authenticated users (auth.uid() IS NOT NULL)
+- UPDATE: restricted to trip creator (auth.uid() = created_by)
+- DELETE: restricted to trip creator (auth.uid() = created_by)
+
+Never add participant-based or owner-based SELECT restrictions to trips.
+If you believe a SELECT restriction is needed for security, stop and
+discuss it first — it will break shared link access for every trip
+in the system.
+
+Features that are auth-gated (bank details, personal balance, feedback)
+are gated in the UI and edge functions, not at the RLS level.
+
+Common pitfall: adding SELECT RLS that looks correct in isolation
+(e.g. "users can only see their own trips") but breaks the shared
+link flow entirely. The trip_code in the URL is the only access
+control needed for reads.
+
+---
+
 ## Architecture
 
 ### App Modes (Quick vs Full)
