@@ -1,5 +1,5 @@
 import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ScanLine, Settings } from 'lucide-react'
+import { ArrowLeft, ScanLine, Settings, LayoutGrid } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -12,10 +12,10 @@ import { ReceiptProvider } from '@/contexts/ReceiptContext'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { ModeToggle } from '@/components/quick/ModeToggle'
-import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { useTripContext } from '@/contexts/TripContext'
+import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
@@ -27,6 +27,7 @@ export function QuickLayout() {
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
   const { trips } = useTripContext()
+  const { setMode } = useUserPreferences()
   const visibleTrips = trips.filter(t => !getHiddenTripCodes().includes(t.trip_code))
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
@@ -106,35 +107,47 @@ export function QuickLayout() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {!isInTrip && (
-                  <>
-                    <ReportIssueButton onGradient={onGradient} />
-                    <ModeToggle onGradient={onGradient} />
-                  </>
-                )}
+                {!isInTrip && <ModeToggle onGradient={onGradient} />}
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
 
-            {/* Row 2: action icons — only on trip detail page, not sub-pages */}
+            {/* Row 2: full-width action strip — only on trip detail page, not sub-pages */}
             {isInTrip && !isSubPage && (
-              <div className="flex items-center justify-end gap-1 pb-1.5">
-                <ReportIssueButton onGradient={onGradient} />
+              <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                 <button
                   onClick={handleScanTap}
-                  aria-label="Scan receipt"
-                  className={`p-1.5 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                    onGradient
+                      ? 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-muted hover:bg-muted/70 text-foreground'
+                  }`}
                 >
-                  <ScanLine size={18} />
+                  <ScanLine size={14} />
+                  Scan
                 </button>
                 <button
                   onClick={() => navigate(`/t/${tripCode}/manage`, { state: { fromQuick: true } })}
-                  aria-label="Manage group"
-                  className={`p-1.5 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                    onGradient
+                      ? 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-muted hover:bg-muted/70 text-foreground'
+                  }`}
                 >
-                  <Settings size={18} />
+                  <Settings size={14} />
+                  Manage
                 </button>
-                <ModeToggle onGradient={onGradient} />
+                <button
+                  onClick={() => { void setMode('full'); navigate(`/t/${tripCode}/expenses`) }}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                    onGradient
+                      ? 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-muted hover:bg-muted/70 text-foreground'
+                  }`}
+                >
+                  <LayoutGrid size={14} />
+                  Full view
+                </button>
               </div>
             )}
           </div>
@@ -142,7 +155,7 @@ export function QuickLayout() {
       </header>
 
       {/* Main content — extra top padding when two-row header is active */}
-      <main className={isInTrip && !isSubPage ? 'pt-[96px]' : 'pt-16'}>
+      <main className={isInTrip && !isSubPage ? 'pt-[108px]' : 'pt-16'}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
