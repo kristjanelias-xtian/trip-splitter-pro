@@ -1,9 +1,9 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
-  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine
+  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -23,6 +23,7 @@ import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { ModeToggle } from '@/components/quick/ModeToggle'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
@@ -52,9 +53,11 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { currentTrip, tripCode } = useCurrentTrip()
   const { user } = useAuth()
   const { trips } = useTripContext()
+  const { setMode } = useUserPreferences()
   const visibleTrips = trips.filter(t => !getHiddenTripCodes().includes(t.trip_code))
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [scanContextOpen, setScanContextOpen] = useState(false)
@@ -168,49 +171,95 @@ export function Layout() {
                 />
               )
             })}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
           </>
         )}
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {currentTrip ? (
-              <div className="flex-1 min-w-0">
-                <h1 className="text-white font-bold text-lg drop-shadow-md truncate">
-                  {currentTrip.name}
-                </h1>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col">
+            {/* Row 1 */}
+            <div className="flex items-center justify-between py-4">
+              {currentTrip ? (
+                <div className="flex-1 min-w-0">
+                  <h1
+                    className={`font-bold text-lg truncate ${onGradient ? 'text-white' : 'text-foreground'}`}
+                    style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
+                  >
+                    {currentTrip.name}
+                  </h1>
+                </div>
+              ) : (
+                <motion.div
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <img src="/logo.png" alt="Spl1t" className="h-9 w-9 rounded-full" />
+                  <h1 className="text-2xl font-bold text-foreground">
+                    Spl1t
+                  </h1>
+                </motion.div>
+              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <ReportIssueButton onGradient={onGradient} />
+                {tripCode ? (
+                  /* Desktop: scan + mode toggle stay in row 1; hidden on mobile (move to row 2) */
+                  <div className="hidden lg:flex items-center gap-2">
+                    <button
+                      onClick={handleScanTap}
+                      aria-label="Scan receipt"
+                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                    >
+                      <ScanLine size={20} />
+                    </button>
+                    <ModeToggle onGradient={onGradient} />
+                  </div>
+                ) : (
+                  /* No trip: always show scan + mode toggle */
+                  <>
+                    <button
+                      onClick={handleScanTap}
+                      aria-label="Scan receipt"
+                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                    >
+                      <ScanLine size={20} />
+                    </button>
+                    <ModeToggle onGradient={onGradient} />
+                  </>
+                )}
+                {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
-            ) : (
-              <motion.div
-                className="flex items-center gap-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <img src="/logo.png" alt="Spl1t" className="h-9 w-9 rounded-full" />
-                <h1 className="text-2xl font-bold text-foreground">
-                  Spl1t
-                </h1>
-              </motion.div>
-            )}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <ReportIssueButton onGradient={onGradient} />
-              <button
-                onClick={handleScanTap}
-                aria-label="Scan receipt"
-                className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-              >
-                <ScanLine size={20} />
-              </button>
-              <ModeToggle onGradient={onGradient} />
-              {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
             </div>
+
+            {/* Row 2: mobile only, shown when in a trip */}
+            {tripCode && (() => {
+              const pillClass = `flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                onGradient ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-muted hover:bg-muted/70 text-foreground'
+              }`
+              return (
+                <div className={`lg:hidden grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
+                  <button onClick={handleScanTap} className={pillClass}>
+                    <ScanLine size={14} />
+                    Scan
+                  </button>
+                  <button onClick={() => navigate(`/t/${tripCode}/manage`)} className={pillClass}>
+                    <Settings size={14} />
+                    Manage
+                  </button>
+                  <button onClick={() => { void setMode('quick'); navigate(`/t/${tripCode}/quick`) }} className={pillClass}>
+                    <Zap size={14} />
+                    Quick view
+                  </button>
+                </div>
+              )
+            })()}
           </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} mt-20`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} ${tripCode ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>

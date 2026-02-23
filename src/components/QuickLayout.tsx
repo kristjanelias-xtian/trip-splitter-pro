@@ -19,6 +19,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
+import { ReportIssueButton } from '@/components/ReportIssueButton'
 
 export function QuickLayout() {
   const { tripCode } = useParams<{ tripCode: string }>()
@@ -107,6 +108,7 @@ export function QuickLayout() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {isInTrip && <ReportIssueButton onGradient={onGradient} />}
                 {!isInTrip && <ModeToggle onGradient={onGradient} />}
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
