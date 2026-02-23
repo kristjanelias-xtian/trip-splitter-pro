@@ -306,7 +306,24 @@ and the user-friendly error message will never be shown.
 
 ## Testing
 
+### Unit Tests
 Vitest + Testing Library. Run with `npm test`. 139 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+
+### E2E Smoke Tests (Playwright)
+26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
+
+### Production Smoke Tests (Playwright MCP)
+Interactive browser testing against https://split.xtian.me using Playwright MCP. Results recorded in `SMOKE_TEST_RESULTS.md`. Scenarios cover:
+1. Shared link access (unauthenticated) — verifies RLS SELECT policy
+2. Shared link access (authenticated non-creator) — requires manual OAuth
+3. Expense submit guard — double-tap prevention
+4. Error boundary — no white screens during navigation
+5. Admin access control — unauthenticated users blocked
+6. Session health — requires manual OAuth + wait
+7. Trip navigation state clearing — no stale data between trips
+8. Console error baseline — no application errors across all pages
+
+Run interactively via Claude Code with Playwright MCP. Scenarios requiring Google OAuth must be tested manually.
 
 ---
 
