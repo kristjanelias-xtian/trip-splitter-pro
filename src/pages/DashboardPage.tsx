@@ -74,16 +74,14 @@ export function DashboardPage() {
             tripCode={tripCode!}
             tripName={currentTrip.name}
             trigger={
-              <Button variant="outline" size="sm" className="gap-2">
-                <Share2 size={16} />
-                Share Trip
+              <Button variant="ghost" size="icon" title="Share Trip">
+                <Share2 size={18} />
               </Button>
             }
           />
           {expenses.length > 0 && (
-            <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
-              <FileDown size={16} />
-              Export Summary
+            <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export Summary">
+              <FileDown size={18} />
             </Button>
           )}
         </div>
