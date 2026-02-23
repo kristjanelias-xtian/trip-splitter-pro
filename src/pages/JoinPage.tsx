@@ -136,7 +136,7 @@ export function JoinPage() {
             .from('participants')
             .update({ user_id: user!.id, email: user!.email || null })
             .eq('id', invitation!.participant_id),
-          35000,
+          15000,
           'Linking account timed out. Please check your connection and try again.'
         )
 
@@ -148,7 +148,7 @@ export function JoinPage() {
             .from('invitations')
             .update({ status: 'accepted', accepted_at: new Date().toISOString() })
             .eq('id', invitation!.id),
-          35000,
+          15000,
           'Accepting invitation timed out.'
         )
 

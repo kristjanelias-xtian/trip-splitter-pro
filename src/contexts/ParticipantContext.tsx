@@ -119,7 +119,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .insert([input])
           .select()
           .single(),
-        35000,
+        15000,
         'Creating participant timed out. Please check your connection and try again.'
       )
 
@@ -146,7 +146,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('participants')
           .update(input)
           .eq('id', id),
-        35000,
+        15000,
         'Updating participant timed out. Please check your connection and try again.'
       )
 
@@ -174,7 +174,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('participants')
           .delete()
           .eq('id', id),
-        35000,
+        15000,
         'Deleting participant timed out. Please check your connection and try again.'
       )
 
@@ -201,7 +201,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .insert([input])
           .select()
           .single(),
-        35000,
+        15000,
         'Creating family timed out. Please check your connection and try again.'
       )
 
@@ -228,7 +228,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('families')
           .update(input)
           .eq('id', id),
-        35000,
+        15000,
         'Updating family timed out. Please check your connection and try again.'
       )
 
@@ -256,7 +256,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('families')
           .delete()
           .eq('id', id),
-        35000,
+        15000,
         'Deleting family timed out. Please check your connection and try again.'
       )
 
@@ -283,7 +283,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('participants')
           .update({ user_id: userId })
           .eq('id', participantId),
-        35000,
+        15000,
         'Linking user timed out. Please check your connection and try again.'
       )
 
@@ -311,7 +311,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
           .from('participants')
           .update({ user_id: null })
           .eq('id', participantId),
-        35000,
+        15000,
         'Unlinking user timed out. Please check your connection and try again.'
       )
 

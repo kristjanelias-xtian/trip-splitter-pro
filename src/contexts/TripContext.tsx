@@ -113,7 +113,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           .insert([tripData])
           .select()
           .single(),
-        35000,
+        15000,
         'Creating trip timed out. Please check your connection and try again.'
       )
 
@@ -173,7 +173,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           .from('trips')
           .update(input)
           .eq('id', id),
-        35000,
+        15000,
         'Updating trip timed out. Please check your connection and try again.'
       )
 
@@ -203,7 +203,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           .from('trips')
           .delete()
           .eq('id', id),
-        35000,
+        15000,
         'Deleting trip timed out. Please check your connection and try again.'
       )
 

@@ -82,7 +82,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
           { user_id: user.id, ...updates, updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
         ),
-      35000,
+      15000,
       'Saving preferences timed out.'
     )
   }, [user])

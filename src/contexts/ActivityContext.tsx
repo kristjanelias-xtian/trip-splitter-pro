@@ -95,7 +95,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
           .insert([input])
           .select()
           .single(),
-        35000,
+        15000,
         'Creating activity timed out. Please check your connection and try again.'
       )
 
@@ -124,7 +124,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
           .eq('id', id)
           .select()
           .single(),
-        35000,
+        15000,
         'Updating activity timed out. Please check your connection and try again.'
       )
 
@@ -150,7 +150,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await withTimeout<any>(
         (supabase.from('activities' as any) as any).delete().eq('id', id),
-        35000,
+        15000,
         'Deleting activity timed out. Please check your connection and try again.'
       )
 

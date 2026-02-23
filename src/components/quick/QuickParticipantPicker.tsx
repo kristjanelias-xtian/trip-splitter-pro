@@ -104,7 +104,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
           .insert([{ trip_id: tripId, participant_id: participantId, inviter_id: user!.id }])
           .select('id, token')
           .single(),
-        35000,
+        15000,
         'Creating invitation timed out.'
       )
 
