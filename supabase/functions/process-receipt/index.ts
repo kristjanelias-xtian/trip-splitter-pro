@@ -31,6 +31,7 @@ Rules:
 - currency is the 3-letter ISO code (default "USD" if unclear)
 - If a value cannot be read, use null
 - Do NOT include tax lines as items — include them in total but not subtotal
+- DO include service charges, tips, and gratuities as separate line items (name them "Service Charge", "Tip", etc.)
 - Return ONLY the JSON object, no other text`
 
 Deno.serve(async (req) => {
