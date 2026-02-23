@@ -16,25 +16,16 @@ import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { QuickParticipantSetupSheet } from '@/components/quick/QuickParticipantSetupSheet'
 import { QuickGroupMembersSheet } from '@/components/quick/QuickGroupMembersSheet'
-import { ExtractedItem } from '@/types/receipt'
+import { PendingReceiptBanner, ReceiptReviewData } from '@/components/receipts/PendingReceiptBanner'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  ExternalLink, ArrowLeftRight, Loader2, RefreshCw, AlertCircle, Users
+  ExternalLink, ArrowLeftRight, Loader2, Users
 } from 'lucide-react'
-
-
-interface ReceiptReviewData {
-  taskId: string
-  merchant: string | null
-  items: ExtractedItem[]
-  total: number | null
-  currency: string
-  imagePath: string | null
-  category: string | null
-}
 
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
@@ -54,7 +45,6 @@ export function QuickGroupDetailPage() {
   const [participantSetupOpen, setParticipantSetupOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
-  const [slowLoading, setSlowLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
 
   // Open receipt capture sheet when navigated here with openScan state
@@ -68,16 +58,6 @@ export function QuickGroupDetailPage() {
 
   const loading = participantsLoading || expensesLoading || settlementsLoading
   const contextError = participantError || expenseError || settlementError
-
-  // Show "taking longer than expected" after 8 seconds of loading
-  useEffect(() => {
-    if (!loading) {
-      setSlowLoading(false)
-      return
-    }
-    const timer = setTimeout(() => setSlowLoading(true), 8000)
-    return () => clearTimeout(timer)
-  }, [loading])
 
   const handleRetry = async () => {
     setRetrying(true)
@@ -140,33 +120,11 @@ export function QuickGroupDetailPage() {
     <div className="max-w-lg mx-auto px-4 py-6">
       {/* Balance hero */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          {slowLoading && (
-            <p className="text-sm text-muted-foreground">Taking longer than expected...</p>
-          )}
-        </div>
+        <PageLoadingState />
       ) : contextError ? (
-        <Card className="mb-6 border-destructive/50">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-            <p className="text-sm text-destructive mb-3">{contextError}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRetry}
-              disabled={retrying}
-              className="gap-2"
-            >
-              {retrying ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="mb-6">
+          <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
+        </div>
       ) : !isLinked ? (
         <Card className="mb-6">
           <CardContent className="pt-6 text-center">
@@ -194,58 +152,14 @@ export function QuickGroupDetailPage() {
       )}
 
       {/* Pending receipts banner */}
-      {pendingReceipts.length > 0 && (
-        <div className="space-y-2 mb-2">
-          {pendingReceipts.map(task => (
-            <div
-              key={task.id}
-              className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
-                  <ScanLine size={16} className="shrink-0" />
-                  <div className="min-w-0">
-                    <span className="font-medium">Unreviewed receipt</span>
-                    {task.extracted_merchant && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 truncate mt-0.5">
-                        {task.extracted_merchant}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() =>
-                      setReceiptReviewData({
-                        taskId: task.id,
-                        merchant: task.extracted_merchant,
-                        items: task.extracted_items ?? [],
-                        total: task.extracted_total,
-                        currency: task.extracted_currency ?? currentTrip.default_currency,
-                        imagePath: task.receipt_image_path ?? null,
-                        category: task.extracted_category ?? null,
-                      })
-                    }
-                  >
-                    Review
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs text-muted-foreground"
-                    onClick={() => dismissReceiptTask(task.id)}
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mb-2">
+        <PendingReceiptBanner
+          tasks={pendingReceipts}
+          defaultCurrency={currentTrip.default_currency}
+          onReview={setReceiptReviewData}
+          onDismiss={dismissReceiptTask}
+        />
+      </div>
 
       {/* Participant setup nudge */}
       {!loading && !contextError && participants.length <= 1 && (
