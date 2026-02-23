@@ -7,10 +7,8 @@
  * Find your UUID: Supabase Dashboard → Authentication → Users
  */
 
-// TODO: Add your Supabase user UUID before merging.
-// Supabase Dashboard → Authentication → Users → copy the UUID for your account.
 const ADMIN_USER_IDS: string[] = [
-  // 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  '4d07e4a8-9630-4692-93c8-c97896e6fc4d',
 ]
 
 /**
