@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { sessionHealthBus } from '@/lib/sessionHealthBus'
 import { logger } from '@/lib/logger'
+import { debugLog } from '@/lib/debugLogger'
 
 const BACKGROUND_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
 const CHECK_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
@@ -31,14 +32,20 @@ export function useSessionHealth(session: Session | null) {
     refreshingRef.current = true
 
     try {
+      debugLog.auth('refreshSession:start', { expiresAt: session.expires_at })
+      const startMs = Date.now()
       const { data, error } = await supabase.auth.refreshSession()
+      const durationMs = Date.now() - startMs
       if (!error && data.session) {
+        debugLog.auth('refreshSession:success', { durationMs, newExpiresAt: data.session.expires_at })
         logger.info('Session health: silent refresh succeeded — no overlay needed')
         setIsExpired(false)
         return
       }
+      debugLog.auth('refreshSession:failed', { durationMs, error: String(error) })
       logger.warn('Session health: silent refresh failed', { error: String(error) })
     } catch (err) {
+      debugLog.auth('refreshSession:threw', { error: String(err) })
       logger.warn('Session health: silent refresh threw', { error: String(err) })
     } finally {
       refreshingRef.current = false
