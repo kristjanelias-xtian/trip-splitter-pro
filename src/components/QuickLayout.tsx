@@ -75,63 +75,74 @@ export function QuickLayout() {
           </>
         )}
 
-        <div className="relative max-w-lg mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              {isInTrip ? (
-                <>
-                  <Link to={backTo} className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}>
-                    <ArrowLeft size={20} />
-                  </Link>
-                  <div className="min-w-0">
-                    <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
-                      {currentTrip?.name}
+        <div className="relative max-w-lg mx-auto px-4">
+          <div className="flex flex-col">
+            {/* Row 1: back/logo + trip name (full width) + avatar */}
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {isInTrip ? (
+                  <>
+                    <Link to={backTo} className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}>
+                      <ArrowLeft size={20} />
+                    </Link>
+                    <div className="min-w-0">
+                      <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
+                        {currentTrip?.name}
+                      </h1>
+                      {currentTrip && (
+                        <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
+                          {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <img src="/logo.png" alt="Spl1t" className="h-8 w-8 rounded-full" />
+                    <h1 className="text-lg font-semibold text-foreground">
+                      Spl1t
                     </h1>
-                    {currentTrip && (
-                      <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
-                        {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
-                      </p>
-                    )}
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <img src="/logo.png" alt="Spl1t" className="h-8 w-8 rounded-full" />
-                  <h1 className="text-lg font-semibold text-foreground">
-                    Spl1t
-                  </h1>
-                </div>
-              )}
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {!isInTrip && (
+                  <>
+                    <ReportIssueButton onGradient={onGradient} />
+                    <ModeToggle onGradient={onGradient} />
+                  </>
+                )}
+                {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <ReportIssueButton onGradient={onGradient} />
-              {isInTrip && (
+
+            {/* Row 2: action icons — only on trip detail page, not sub-pages */}
+            {isInTrip && !isSubPage && (
+              <div className="flex items-center justify-end gap-1 pb-1.5">
+                <ReportIssueButton onGradient={onGradient} />
                 <button
                   onClick={handleScanTap}
                   aria-label="Scan receipt"
-                  className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  className={`p-1.5 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                 >
-                  <ScanLine size={20} />
+                  <ScanLine size={18} />
                 </button>
-              )}
-              {isInTrip && (
                 <button
                   onClick={() => navigate(`/t/${tripCode}/manage`, { state: { fromQuick: true } })}
                   aria-label="Manage group"
-                  className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  className={`p-1.5 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                 >
-                  <Settings size={20} />
+                  <Settings size={18} />
                 </button>
-              )}
-              <ModeToggle onGradient={onGradient} />
-              {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
-            </div>
+                <ModeToggle onGradient={onGradient} />
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="pt-16">
+      {/* Main content — extra top padding when two-row header is active */}
+      <main className={isInTrip && !isSubPage ? 'pt-[96px]' : 'pt-16'}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>

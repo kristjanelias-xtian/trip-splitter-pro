@@ -231,13 +231,15 @@ export function ManageTripPage() {
     <div className="space-y-6">
       {/* Back to Quick View */}
       {fromQuick && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => navigate(`/t/${tripCode}/quick`)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-2"
+          className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={14} />
           Back to Quick View
-        </button>
+        </Button>
       )}
 
       {/* Header */}
