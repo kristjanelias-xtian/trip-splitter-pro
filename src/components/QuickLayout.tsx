@@ -1,5 +1,5 @@
 import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ScanLine, Settings, LayoutGrid } from 'lucide-react'
+import { ArrowLeft, X, ScanLine, Settings, LayoutGrid } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -85,7 +85,7 @@ export function QuickLayout() {
                 {isInTrip ? (
                   <>
                     <Link to={backTo} className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}>
-                      <ArrowLeft size={20} />
+                      {isSubPage ? <X size={20} /> : <ArrowLeft size={20} />}
                     </Link>
                     <div className="min-w-0">
                       <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
