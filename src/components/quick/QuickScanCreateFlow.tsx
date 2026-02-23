@@ -161,6 +161,12 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
 
       // 2. Compress image + create receipt task
       const compressed = await compressImage(selectedFile)
+
+      const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
+      if (compressed.size > MAX_SIZE_BYTES) {
+        throw new Error('Image is too large. Please use a clearer, smaller photo.')
+      }
+
       const base64 = await blobToBase64(compressed)
       const task = await createReceiptTask(newTrip.id)
 

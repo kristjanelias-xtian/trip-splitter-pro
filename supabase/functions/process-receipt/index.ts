@@ -3,9 +3,10 @@ import Anthropic from 'npm:@anthropic-ai/sdk@0.32.1'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { createLogger } from '../_shared/logger.ts'
 import { createMetrics } from '../_shared/metrics.ts'
+import { verifyAuth } from '../_shared/auth.ts'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://split.xtian.me",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
@@ -40,7 +41,12 @@ Deno.serve(async (req) => {
   const requestStart = performance.now()
 
   try {
-    logger.info('Request received', { method: req.method })
+    // Verify JWT
+    const auth = await verifyAuth(req, corsHeaders)
+    if (auth.response) return auth.response
+    const callerUserId = auth.user.id
+
+    logger.info('Request received', { method: req.method, user_id: callerUserId })
 
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")
     if (!anthropicKey) {
@@ -70,13 +76,52 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Server-side image size limit (~7.5MB raw, ~10MB base64)
+    const MAX_BASE64_LENGTH = 10 * 1024 * 1024
+    if (image_base64.length > MAX_BASE64_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: 'Image too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Mark task as processing
+    // Verify caller owns the receipt task (FINDING-20)
+    const { data: task, error: taskError } = await supabase
+      .from('receipt_tasks')
+      .select('id, created_by, status')
+      .eq('id', receipt_task_id)
+      .single()
+
+    if (taskError || !task) {
+      return new Response(
+        JSON.stringify({ error: 'Task not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (task.created_by !== callerUserId) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Idempotency check — only process tasks in 'pending' status (FINDING-42)
+    if (task.status !== 'pending') {
+      return new Response(
+        JSON.stringify({ success: true, status: task.status, already_processed: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Mark task as processing (conditional update — safe against races)
     await supabase
       .from('receipt_tasks')
       .update({ status: 'processing', updated_at: new Date().toISOString() })
       .eq('id', receipt_task_id)
+      .eq('status', 'pending')
 
     logger.info('Calling Anthropic API', { task_id: receipt_task_id })
     const anthropicStart = performance.now()
@@ -145,15 +190,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    const items = (extracted.items ?? []).map(item => ({
-      name: item.name ?? 'Unknown item',
+    const items = (extracted.items ?? []).slice(0, 100).map(item => ({
+      name: (item.name ?? 'Unknown item').slice(0, 200),
       price: typeof item.price === 'number' ? item.price : 0,
       qty: typeof item.qty === 'number' ? item.qty : 1,
     }))
 
     const extractedTotal = typeof extracted.total === 'number' ? extracted.total : null
     const extractedCurrency = extracted.currency ?? 'USD'
-    const extractedMerchant = extracted.merchant ?? 'Mystery Kitchen'
+    const extractedMerchant = (extracted.merchant ?? 'Mystery Kitchen').slice(0, 200)
     // Validate ISO date format (YYYY-MM-DD) — ignore malformed values
     const extractedDate = typeof extracted.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(extracted.date)
       ? extracted.date

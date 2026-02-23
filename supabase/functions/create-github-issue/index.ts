@@ -1,11 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createLogger } from '../_shared/logger.ts'
 import { createMetrics } from '../_shared/metrics.ts'
+import { verifyAuth } from '../_shared/auth.ts'
 
 const GITHUB_REPO = "kristjanelias-xtian/trip-splitter-pro"
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://split.xtian.me",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
@@ -21,7 +22,11 @@ Deno.serve(async (req) => {
   const requestStart = performance.now()
 
   try {
-    logger.info('Request received', { method: req.method })
+    // Verify JWT
+    const auth = await verifyAuth(req, corsHeaders)
+    if (auth.response) return auth.response
+
+    logger.info('Request received', { method: req.method, user_id: auth.user.id })
 
     const githubToken = Deno.env.get("GITHUB_TOKEN")
     if (!githubToken) {

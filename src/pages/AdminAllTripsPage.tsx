@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, LogOut, ExternalLink, Calendar, Users, UserCircle } from 'lucide-react'
+import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -22,29 +21,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { isAdminAuthenticated, authenticateAdmin, logoutAdmin, getAdminPasswordHint } from '@/lib/adminAuth'
+import { isAdminUser } from '@/lib/adminAuth'
 import { generateShareableUrl } from '@/lib/tripCodeGenerator'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
 
 export function AdminAllTripsPage() {
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const { trips } = useTripContext()
-  const [authenticated, setAuthenticated] = useState(false)
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent')
   const [ownerMap, setOwnerMap] = useState<Record<string, { name: string; email: string | null }>>({})
   const { newSignal, cancel } = useAbortController()
 
-  useEffect(() => {
-    setAuthenticated(isAdminAuthenticated())
-  }, [])
+  const isAdmin = isAdminUser(user?.id)
 
   // Fetch owner info for all trips
   useEffect(() => {
-    if (!authenticated || trips.length === 0) return
+    if (!isAdmin || trips.length === 0) return
 
     const ownerIds = [...new Set(trips.map(t => t.created_by).filter(Boolean))] as string[]
     if (ownerIds.length === 0) return
@@ -74,24 +68,7 @@ export function AdminAllTripsPage() {
 
     fetchOwners()
     return cancel
-  }, [authenticated, trips])
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (authenticateAdmin(password)) {
-      setAuthenticated(true)
-      setError('')
-    } else {
-      setError('Incorrect password')
-      setPassword('')
-    }
-  }
-
-  const handleLogout = () => {
-    logoutAdmin()
-    setAuthenticated(false)
-    navigate('/')
-  }
+  }, [isAdmin, trips])
 
   const handleOpenTrip = (tripCode: string) => {
     window.open(`/t/${tripCode}/dashboard`, '_blank')
@@ -132,39 +109,30 @@ export function AdminAllTripsPage() {
       }
     })
 
-  // Login form
-  if (!authenticated) {
+  // Access denied
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Admin Access Required</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert size={20} className="text-destructive" />
+              Access Denied
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
-                  autoFocus
-                />
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
-                )}
-                {import.meta.env.DEV && (
-                  <p className="text-xs text-muted-foreground">
-                    {getAdminPasswordHint()}
-                  </p>
-                )}
-              </div>
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </form>
+            <p className="text-muted-foreground">
+              {user
+                ? 'Your account does not have admin access.'
+                : 'You must be signed in to access this page.'}
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => window.location.href = '/'}
+            >
+              Go to home
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -183,10 +151,6 @@ export function AdminAllTripsPage() {
               Total: {trips.length} {trips.length === 1 ? 'trip' : 'trips'}
             </p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="gap-2">
-            <LogOut size={16} />
-            Logout
-          </Button>
         </div>
 
         {/* Filters */}

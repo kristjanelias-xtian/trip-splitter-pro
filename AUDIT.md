@@ -44,6 +44,7 @@
 
 ### FINDING-2: Hardcoded admin password fallback 'admin123' in client bundle
 
+- **Status: RESOLVED** — Replaced entire password-based admin auth with a Supabase user ID allowlist. `adminAuth.ts` now exports only `isAdminUser(userId)`. No password, no sessionStorage, no env var. `AdminAllTripsPage` uses `useAuth()` + `isAdminUser()` for access control.
 - **Area:** 10 (adminAuth)
 - **File(s):** `src/lib/adminAuth.ts:9`
 - **Description:** `const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'`. If the environment variable is not set at build time, the admin route is protected by a trivially guessable default password. Because `VITE_` prefixed variables are embedded in the production JavaScript bundle, anyone can discover the password by reading the built source.
@@ -56,6 +57,7 @@
 
 ### FINDING-3: Admin auth is entirely client-side — trivially bypassable
 
+- **Status: RESOLVED** — See FINDING-2. Password-based auth removed entirely. Admin access now checks `isAdminUser(user?.id)` against a hardcoded UUID allowlist. No sessionStorage, no client-side password comparison.
 - **Area:** 10 (adminAuth)
 - **File(s):** `src/lib/adminAuth.ts:9,29`, `src/lib/adminAuth.ts:14-21`
 - **Description:** The admin password is compared client-side (line 29), the password is visible in the JS bundle, and the authenticated state is a plain string `'authenticated'` in `sessionStorage`. Any user can bypass it by running `sessionStorage.setItem('spl1t:admin-auth', 'authenticated')` in the browser console.
@@ -64,6 +66,7 @@
 
 ### FINDING-4: Trips table RLS policy allows all reads — admin page is security theater
 
+- **Status: PARTIALLY RESOLVED** — Migration 026 replaces the single `FOR ALL USING (true)` policy with per-operation policies: INSERT restricted to authenticated users, UPDATE/DELETE restricted to trip creator. SELECT remains `USING (true)` because the shared link flow requires anonymous read access (TripContext fetches all trips for anon users). Full read restriction requires refactoring the anonymous query to filter by `trip_code` at the DB level.
 - **Area:** 10 (adminAuth)
 - **File(s):** `supabase/migrations/001_initial_schema.sql` (RLS policy: `USING (true)`)
 - **Description:** The trips table RLS policy allows **all** operations to **all** users. Every regular user already has full read access to all trips via `supabase.from('trips').select('*')`. The admin page protects a UI view, not the underlying data.
@@ -72,6 +75,7 @@
 
 ### FINDING-5: All 4 edge functions lack JWT verification — callable by anyone with the public anon key
 
+- **Status: RESOLVED** — All 4 edge functions now verify the caller's JWT via a shared `_shared/auth.ts` helper (`verifyAuth`). The helper calls `supabase.auth.getUser(token)` and returns 401 if invalid. Applied to: `process-receipt`, `send-email`, `create-github-issue`, `log-proxy`.
 - **Area:** 11 (Edge function security)
 - **File(s):** `supabase/functions/process-receipt/index.ts:35-64`, `supabase/functions/send-email/index.ts:281-310`, `supabase/functions/create-github-issue/index.ts:15-36`, `supabase/functions/log-proxy/index.ts:15-65`
 - **Description:** None of the 4 edge functions verify the caller's JWT. The Supabase anon key (which is public, embedded in the client bundle) is sufficient to invoke any of them. The functions only check the `apikey` header, not the `Authorization` Bearer token.
@@ -89,6 +93,7 @@
 
 ### FINDING-6: HTML injection in email templates — stored XSS via email
 
+- **Status: RESOLVED** — Added `escapeHtml()` function to `send-email/index.ts`. All user-supplied strings (participantName, organiserName, tripName, payToName, recipientName, formattedAmount, merchant, item names) are now escaped before HTML interpolation. URLs (href values) are not escaped with this function.
 - **Area:** 11 (Edge function security)
 - **File(s):** `supabase/functions/send-email/index.ts:59-115,188-279`
 - **Description:** User-supplied strings (participantName, organiserName, tripName, payToName) are interpolated directly into HTML email templates without escaping. Example: `<h2>Hey ${participantName}!</h2>`. A trip name like `<img src=x onerror=alert(1)>` will be rendered as HTML.
@@ -191,6 +196,7 @@
 
 ### FINDING-16: No client-side or server-side image size limit for receipt scanning
 
+- **Status: RESOLVED** — Client-side: 5MB check after `compressImage()` in both `QuickScanCreateFlow.tsx` and `ReceiptCaptureSheet.tsx`. Server-side: 10MB base64 length check in `process-receipt/index.ts` (returns 413).
 - **Area:** 15 (Receipt processing) + 11 (Edge function security)
 - **File(s):** `src/components/quick/QuickScanCreateFlow.tsx:161-162`, `supabase/functions/process-receipt/index.ts:64`
 - **Description:** No maximum file size is enforced before sending the image to the edge function. The `compressImage` function limits width to 1200px but output size is unpredictable. The edge function receives the full base64 string with no length check.
@@ -229,6 +235,7 @@
 
 ### FINDING-20: process-receipt uses service role key without verifying caller owns the receipt_task
 
+- **Status: RESOLVED** — After JWT verification, `process-receipt` now queries `receipt_tasks` by ID and checks `task.created_by === user.id` before processing. Returns 404 if task not found, 403 if caller is not the owner.
 - **Area:** 11 (Edge function security)
 - **File(s):** `supabase/functions/process-receipt/index.ts:73`
 - **Description:** The function creates a Supabase client with the service role key, bypassing all RLS. Combined with FINDING-5 (no JWT verification), an attacker who knows a receipt_task UUID can overwrite its status, extracted data, or error message.
@@ -408,6 +415,7 @@
 
 ### FINDING-41: CORS wildcard on all edge functions
 
+- **Status: RESOLVED** — All 4 edge functions now use `Access-Control-Allow-Origin: "https://split.xtian.me"` instead of `"*"`.
 - **Area:** 11 (Edge function security)
 - **File(s):** All 4 edge functions' CORS headers
 - **Description:** All functions set `Access-Control-Allow-Origin: "*"`, allowing calls from any website.
@@ -416,6 +424,7 @@
 
 ### FINDING-42: No idempotency guard on receipt task processing
 
+- **Status: RESOLVED** — `process-receipt` now checks `task.status !== 'pending'` before processing. Non-pending tasks return 200 with `already_processed: true`. The status update uses conditional `.eq('status', 'pending')` to prevent race conditions.
 - **Area:** 11 (Edge function security)
 - **File(s):** `supabase/functions/process-receipt/index.ts:76-79`
 - **Description:** The function doesn't check current status before marking 'processing'. A completed task could be re-processed, overwriting its data.
@@ -424,6 +433,7 @@
 
 ### FINDING-43: Admin password hint exposes actual password in dev
 
+- **Status: RESOLVED** — See FINDING-2. The entire password-based system was removed. No password, no hint function.
 - **Area:** 10 (adminAuth)
 - **File(s):** `src/lib/adminAuth.ts:56-61`
 - **Description:** `getAdminPasswordHint()` returns the actual password string in dev mode. If tree-shaking fails, this could leak into production.
@@ -464,13 +474,14 @@
 
 ## Recommended Fix Priority Order
 
-### Tier 1 — Security (fix before any feature work)
-1. **FINDING-5:** Add JWT verification to all 4 edge functions
-2. **FINDING-6:** HTML-escape user strings in email templates
-3. **FINDING-2/3:** Remove hardcoded admin password; move admin auth server-side
-4. **FINDING-4:** Tighten trips table RLS policy
-5. **FINDING-16:** Add client and server-side image size limits
-6. **FINDING-20:** Verify caller owns receipt_task in process-receipt
+### Tier 1 — Security (fix before any feature work) ✅ ALL RESOLVED
+1. **FINDING-5:** ✅ JWT verification on all 4 edge functions + shared `_shared/auth.ts`
+2. **FINDING-6:** ✅ HTML-escape user strings in email templates (`escapeHtml()`)
+3. **FINDING-2/3/43:** ✅ Admin auth replaced with Supabase user ID allowlist
+4. **FINDING-4:** ✅ (partial) Trips RLS: writes restricted to creator; reads still open for shared links
+5. **FINDING-16:** ✅ Client-side 5MB + server-side 10MB image size limits
+6. **FINDING-20/42:** ✅ Ownership check + idempotency guard in process-receipt
+7. **FINDING-41:** ✅ CORS restricted to `https://split.xtian.me` on all edge functions
 
 ### Tier 2 — Data integrity (fix soon) ✅ ALL RESOLVED
 7. **FINDING-7:** ✅ Enhance withTimeout to abort the controller on timeout
