@@ -1,5 +1,5 @@
-import { Outlet, Link, useParams, useLocation } from 'react-router-dom'
-import { ArrowLeft, ScanLine } from 'lucide-react'
+import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft, ScanLine, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -23,6 +23,7 @@ import { getTripGradientPattern } from '@/services/tripGradientService'
 export function QuickLayout() {
   const { tripCode } = useParams<{ tripCode: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const { currentTrip } = useCurrentTrip()
   const { user } = useAuth()
   const { trips } = useTripContext()
@@ -70,7 +71,7 @@ export function QuickLayout() {
                 />
               )
             })}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
           </>
         )}
 
@@ -83,7 +84,7 @@ export function QuickLayout() {
                     <ArrowLeft size={20} />
                   </Link>
                   <div className="min-w-0">
-                    <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
+                    <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
                       {currentTrip?.name}
                     </h1>
                     {currentTrip && (
@@ -111,6 +112,15 @@ export function QuickLayout() {
                   className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                 >
                   <ScanLine size={20} />
+                </button>
+              )}
+              {isInTrip && (
+                <button
+                  onClick={() => navigate(`/t/${tripCode}/manage`, { state: { fromQuick: true } })}
+                  aria-label="Manage group"
+                  className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                >
+                  <Settings size={20} />
                 </button>
               )}
               <ModeToggle onGradient={onGradient} />

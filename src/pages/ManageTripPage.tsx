@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Edit, Trash2, Info, X, Plus } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Edit, Trash2, Info, X, Plus, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
@@ -40,6 +40,8 @@ import { StaySection } from '@/components/StaySection'
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
   const { updateTrip, deleteTrip } = useTripContext()
+  const location = useLocation()
+  const fromQuick = !!(location.state as any)?.fromQuick
   const { participants } = useParticipantContext()
   const { meals } = useMealContext()
   const { toast } = useToast()
@@ -227,6 +229,17 @@ export function ManageTripPage() {
 
   return (
     <div className="space-y-6">
+      {/* Back to Quick View */}
+      {fromQuick && (
+        <button
+          onClick={() => navigate(`/t/${tripCode}/quick`)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-2"
+        >
+          <ArrowLeft size={16} />
+          Back to Quick View
+        </button>
+      )}
+
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Manage {entityLabel}</h2>

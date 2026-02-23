@@ -302,7 +302,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                 className="flex items-center gap-1.5 text-base font-semibold hover:text-primary transition-colors"
               >
                 <ArrowLeft size={18} />
-                Back
+                Settlement plan
               </button>
             )}
           </SheetTitle>
