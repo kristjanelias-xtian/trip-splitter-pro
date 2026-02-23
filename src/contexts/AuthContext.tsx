@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { UserProfile } from '@/types/auth'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { debugLog } from '@/lib/debugLogger'
 
 interface AuthContextType {
   user: User | null
@@ -73,7 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialSessionHandled = false
 
     // Get initial session
+    debugLog.auth('getSession:start')
     supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+      debugLog.auth('getSession:resolved', {
+        hasSession: !!initialSession,
+        userId: initialSession?.user?.id,
+        expiresAt: initialSession?.expires_at,
+      })
       initialSessionHandled = true
       setSession(initialSession)
       setUser(initialSession?.user ?? null)
@@ -104,9 +111,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     // Listen for auth changes — skip the INITIAL_SESSION event that fires
-    // concurrently with getSession() to avoid double profile fetches
+    // concurrently with getSession() to avoid double profile fetches.
+    //
+    // CRITICAL: This callback must NOT await Supabase DB queries.
+    // The Supabase auth lock is held while _notifyAllSubscribers awaits
+    // each callback. Any Supabase query inside calls getSession() which
+    // tries to re-acquire the same lock → circular deadlock. Profile
+    // operations are deferred to setTimeout(0) so they run in the next
+    // macrotask, after the lock is released. See DIAGNOSIS.md for details.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
+        debugLog.auth('onAuthStateChange', {
+          event,
+          hasSession: !!newSession,
+          userId: newSession?.user?.id,
+          expiresAt: newSession?.expires_at,
+        })
+
         if (event === 'INITIAL_SESSION') return
 
         // Skip if this fires before getSession resolved (race condition)
@@ -118,14 +139,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (newSession?.user) {
           if (event === 'SIGNED_IN') {
             logger.info('User signed in', { user_id: newSession.user.id })
-            // New sign-in: upsert profile
-            const profile = await upsertProfile(newSession.user)
-            setUserProfile(profile)
-          } else {
-            // Token refresh or other: fetch existing profile
-            const profile = await fetchProfile(newSession.user.id)
-            setUserProfile(profile)
+            // Defer profile upsert to avoid auth lock deadlock
+            const userToUpsert = newSession.user
+            setTimeout(async () => {
+              try {
+                const profile = await upsertProfile(userToUpsert)
+                setUserProfile(profile)
+              } catch (err) {
+                logger.warn('Profile upsert after sign-in failed', {
+                  error: err instanceof Error ? err.message : String(err),
+                })
+              }
+            }, 0)
           }
+          // TOKEN_REFRESHED: no profile fetch needed — user data unchanged
         } else {
           setUserProfile(null)
         }
