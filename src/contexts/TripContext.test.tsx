@@ -33,7 +33,7 @@ vi.mock('@/lib/tripCodeGenerator', () => ({
 }))
 
 function TestConsumer() {
-  const { trips, loading, error, getTripById, getTripByCode } = useTripContext()
+  const { trips, loading, error, getTripById, getTripByCode, ensureTripLoaded } = useTripContext()
   const trip1 = getTripById('trip-1')
   const tripByCode = getTripByCode('summer-trip-Ab1234')
   return (
@@ -43,6 +43,7 @@ function TestConsumer() {
       <span data-testid="count">{trips.length}</span>
       <span data-testid="trip1">{trip1?.name ?? 'null'}</span>
       <span data-testid="tripByCode">{tripByCode?.name ?? 'null'}</span>
+      <span data-testid="ensureTripLoaded">{typeof ensureTripLoaded}</span>
     </div>
   )
 }

@@ -14,6 +14,7 @@ vi.mock('@/contexts/TripContext', () => ({
     trips,
     loading: false,
     getTripByCode: (code: string) => trips.find(t => t.trip_code === code),
+    ensureTripLoaded: vi.fn().mockResolvedValue(null),
   }),
 }))
 
