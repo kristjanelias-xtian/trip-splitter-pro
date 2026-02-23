@@ -176,16 +176,18 @@ export function QuickGroupDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="relative">
+        <div>
           <QuickBalanceHero balance={myBalance} />
           {balanceCalc.balances.length > 0 && (
-            <button
-              onClick={() => setMembersOpen(true)}
-              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Users size={13} />
-              <span>{balanceCalc.balances.length}</span>
-            </button>
+            <div className="flex justify-center -mt-1 mb-5">
+              <button
+                onClick={() => setMembersOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Users size={13} />
+                <span>{balanceCalc.balances.length} members</span>
+              </button>
+            </div>
           )}
         </div>
       )}

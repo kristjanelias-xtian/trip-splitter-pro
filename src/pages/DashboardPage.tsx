@@ -68,7 +68,6 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
-          <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
         </div>
         <div className="flex gap-2">
           <ShareTripDialog
