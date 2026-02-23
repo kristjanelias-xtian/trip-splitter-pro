@@ -15,6 +15,8 @@ import { useAbortController } from '@/hooks/useAbortController'
 interface ShoppingContextValue {
   shoppingItems: ShoppingItem[]
   loading: boolean
+  error: string | null
+  clearError: () => void
   createShoppingItem: (input: CreateShoppingItemInput) => Promise<ShoppingItem | null>
   updateShoppingItem: (id: string, input: UpdateShoppingItemInput) => Promise<ShoppingItem | null>
   deleteShoppingItem: (id: string) => Promise<boolean>
@@ -31,9 +33,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { currentTrip, tripCode } = useCurrentTrip()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
   const { newSignal, cancel } = useAbortController()
+
+  const clearError = () => setError(null)
 
   const fetchShoppingItems = async () => {
     const signal = newSignal()
@@ -194,6 +199,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to create shopping item'
+        setError(message)
         logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -228,7 +235,9 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       // Note: Real-time subscription will also fire, but optimistic update provides instant feedback
       return newItem
     } catch (error) {
-      logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to create shopping item'
+      setError(message)
+      logger.error('Failed to create shopping item', { trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -253,6 +262,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to update shopping item'
+        setError(message)
         logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
         return null
       }
@@ -264,7 +275,9 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
       return data
     } catch (error) {
-      logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to update shopping item'
+      setError(message)
+      logger.error('Failed to update shopping item', { item_id: id, trip_id: currentTrip?.id, error: message })
       return null
     }
   }
@@ -290,6 +303,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
+        const message = error.message || 'Failed to delete shopping item'
+        setError(message)
         logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error.message })
         setShoppingItems(previousItems)
         return false
@@ -297,7 +312,9 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
 
       return true
     } catch (error) {
-      logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: error instanceof Error ? error.message : String(error) })
+      const message = error instanceof Error ? error.message : 'Failed to delete shopping item'
+      setError(message)
+      logger.error('Failed to delete shopping item', { item_id: id, trip_id: currentTrip?.id, error: message })
       setShoppingItems(previousItems)
       return false
     }
@@ -443,6 +460,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const value: ShoppingContextValue = {
     shoppingItems,
     loading: loading || (!!currentTrip && !initialLoadDone),
+    error,
+    clearError,
     createShoppingItem,
     updateShoppingItem,
     deleteShoppingItem,

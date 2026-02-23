@@ -4,6 +4,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useStayContext } from '@/contexts/StayContext'
+import { useToast } from '@/hooks/use-toast'
 import type { MealWithIngredients } from '@/types/meal'
 import type { Activity } from '@/types/activity'
 import { PlannerGrid } from '@/components/PlannerGrid'
@@ -16,12 +17,34 @@ const StayMap = lazy(() => import('@/components/StayMap'))
 
 export function PlannerPage() {
   const { currentTrip } = useCurrentTrip()
-  const { meals, loading: mealsLoading, getMealsWithIngredients } = useMealContext()
-  const { loading: activitiesLoading, getActivitiesForDate } = useActivityContext()
-  const { stays, loading: staysLoading, getStayForDate, getStaysForDate } = useStayContext()
+  const { meals, loading: mealsLoading, error: mealError, clearError: clearMealError, getMealsWithIngredients } = useMealContext()
+  const { loading: activitiesLoading, error: activityError, clearError: clearActivityError, getActivitiesForDate } = useActivityContext()
+  const { stays, loading: staysLoading, error: stayError, clearError: clearStayError, getStayForDate, getStaysForDate } = useStayContext()
+  const { toast } = useToast()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(true)
+
+  useEffect(() => {
+    if (mealError) {
+      toast({ title: 'Error', description: mealError, variant: 'destructive' })
+      clearMealError()
+    }
+  }, [mealError])
+
+  useEffect(() => {
+    if (activityError) {
+      toast({ title: 'Error', description: activityError, variant: 'destructive' })
+      clearActivityError()
+    }
+  }, [activityError])
+
+  useEffect(() => {
+    if (stayError) {
+      toast({ title: 'Error', description: stayError, variant: 'destructive' })
+      clearStayError()
+    }
+  }, [stayError])
 
   const loading = mealsLoading || activitiesLoading || staysLoading
 

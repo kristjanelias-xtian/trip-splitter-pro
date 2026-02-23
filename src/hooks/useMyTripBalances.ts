@@ -33,6 +33,9 @@ export function useMyTripBalances() {
       return
     }
 
+    let cancelled = false
+    const controller = new AbortController()
+
     const fetchBalances = async () => {
       setLoading(true)
 
@@ -48,26 +51,28 @@ export function useMyTripBalances() {
             // Parallel fetch all data for this trip
             const [participantsRes, familiesRes, expensesRes, settlementsRes] = await Promise.all([
               withTimeout(
-                supabase.from('participants').select('*').eq('trip_id', trip.id),
+                supabase.from('participants').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
                 15000,
                 `Loading participants for trip timed out`
               ),
               withTimeout(
-                supabase.from('families').select('*').eq('trip_id', trip.id),
+                supabase.from('families').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
                 15000,
                 `Loading families for trip timed out`
               ),
               withTimeout(
-                supabase.from('expenses').select('*').eq('trip_id', trip.id),
+                supabase.from('expenses').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
                 15000,
                 `Loading expenses for trip timed out`
               ),
               withTimeout(
-                supabase.from('settlements').select('*').eq('trip_id', trip.id),
+                supabase.from('settlements').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
                 15000,
                 `Loading settlements for trip timed out`
               ),
             ])
+
+            if (cancelled) return { trip, myBalance: null, totalExpenses: 0, loading: false }
 
             const participants = (participantsRes.data as Participant[]) || []
             const families = (familiesRes.data as Family[]) || []
@@ -103,17 +108,25 @@ export function useMyTripBalances() {
 
             return { trip, myBalance, totalExpenses: calc.totalExpenses, loading: false }
           } catch (error) {
+            if (cancelled) return { trip, myBalance: null, totalExpenses: 0, loading: false }
             console.error(`Error fetching balance for trip ${trip.id}:`, error)
             return { trip, myBalance: null, totalExpenses: 0, loading: false }
           }
         })
       )
 
-      setTripBalances(balances)
-      setLoading(false)
+      if (!cancelled) {
+        setTripBalances(balances)
+        setLoading(false)
+      }
     }
 
     fetchBalances()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [user, trips])
 
   return { tripBalances, loading }

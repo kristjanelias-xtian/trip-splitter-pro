@@ -26,7 +26,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   )
   const [loading, setLoading] = useState(() => {
     try {
-      return !localStorage.getItem('trip-splitter:user-preferences')
+      return !localStorage.getItem('spl1t:user-preferences')
     } catch {
       return true
     }

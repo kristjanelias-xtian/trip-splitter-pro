@@ -35,6 +35,7 @@
 
 ### FINDING-1: ErrorBoundary defined but never used — any render crash shows blank white screen
 
+- **Status: RESOLVED** — `ErrorBoundary` now wraps the entire provider tree in `App.tsx` (inside BrowserRouter, outside AuthProvider). Per-route boundaries added in `routes.tsx` for every page. Reset loop fix (FINDING-31): after 2 failed retries, shows "Go to home" / "Refresh page" buttons with collapsible error details.
 - **Area:** 14 (ErrorBoundary coverage)
 - **File(s):** `src/components/ErrorBoundary.tsx` (entire file), `src/App.tsx`
 - **Description:** `ErrorBoundary` is a fully implemented class component but is **never imported or used** anywhere in the application. It does not wrap any route, provider, or page component. If any component throws a synchronous error during render, React propagates it up the tree with no boundary to catch it, unmounting the entire app and showing a blank white screen.
@@ -136,6 +137,7 @@
 
 ### FINDING-10: 4 contexts silently swallow all timeout/error messages — errors never reach the user
 
+- **Status: RESOLVED** — All 4 contexts now expose `error: string | null` and `clearError()`. Every mutation catch block calls `setError(message)`. Consumer pages (`ShoppingPage`, `PlannerPage`) watch the error state and fire destructive toasts, then clear it.
 - **Area:** 4 (Error surfacing)
 - **File(s):** `src/contexts/ShoppingContext.tsx`, `src/contexts/MealContext.tsx`, `src/contexts/ActivityContext.tsx`, `src/contexts/StayContext.tsx`
 - **Description:** These 4 contexts catch errors in every mutation (create/update/delete), call `logger.error`, and return `null` or `false`. They do not expose an `error` field in their context interface, do not throw, and do not toast. The withTimeout message (e.g., "Creating shopping item timed out. Please check your connection and try again.") is logged to Grafana but the user sees nothing.
@@ -153,6 +155,7 @@
 
 ### FINDING-12: UserPreferencesContext checks old migrated-away key for loading state
 
+- **Status: RESOLVED** — Changed line 29 to check `'spl1t:user-preferences'` (the current key).
 - **Area:** 2 (Local storage layers)
 - **File(s):** `src/contexts/UserPreferencesContext.tsx:29`
 - **Description:** The `loading` state initializer checks `'trip-splitter:user-preferences'` (the old key), but preferences have been migrated to `'spl1t:user-preferences'`. For returning users who've already been migrated, the old key returns `null`, so `loading` initializes to `true` unnecessarily.
@@ -161,6 +164,7 @@
 
 ### FINDING-13: 5 contexts don't clear state when navigating between trips
 
+- **Status: RESOLVED** — Added `else` branch to all 5 contexts (ExpenseContext, ParticipantContext, MealContext, ActivityContext, StayContext) that clears state arrays and error when no trip is active, matching SettlementContext's pattern.
 - **Area:** 12 (Context init race / sign-out cleanup)
 - **File(s):** `src/contexts/ExpenseContext.tsx:206-212`, `src/contexts/ParticipantContext.tsx:348-354`, `src/contexts/MealContext.tsx:77-83`, `src/contexts/ActivityContext.tsx:82-88`, `src/contexts/StayContext.tsx:77-83`
 - **Description:** These 5 contexts follow the pattern `if (tripCode && currentTrip) { fetch() }` with **no `else` branch** to clear state. When navigating from trip A to trip B, there's a window where `tripCode` changed but `currentTrip` hasn't resolved yet, during which stale data from trip A remains visible. SettlementContext and ShoppingContext correctly handle this with an `else { setItems([]) }` branch.
@@ -178,6 +182,7 @@
 
 ### FINDING-15: useMyTripBalances — no abort controller, no cancelled guard, high fan-out
 
+- **Status: RESOLVED** — Added `cancelled` flag + `AbortController` with cleanup. All 4 queries per trip receive `controller.signal` via `.abortSignal()`. `cancelled` checked before `setTripBalances`. Cleanup aborts controller and sets `cancelled = true`.
 - **Area:** 13 (Memory leaks) + 3 (useAbortController)
 - **File(s):** `src/hooks/useMyTripBalances.ts:29-117`
 - **Description:** The useEffect fires 4 parallel Supabase queries **per trip**. With 10 trips, that's 40 queries. There is no `isMounted`/`cancelled` guard, no `AbortController`, and no cleanup function. Navigating away while loading causes all queries to complete and attempt `setState` on an unmounted component.
@@ -207,6 +212,7 @@
 
 ### FINDING-18: Dead Zustand store — unused dependency adding bundle weight and confusion
 
+- **Status: RESOLVED** — Deleted `src/store/store.ts`, removed `zustand` from `package.json` dependencies. Verified no references in `dist/` after build.
 - **Area:** 1 (Zustand vs Context)
 - **File(s):** `src/store/store.ts:1-11`
 - **Description:** The Zustand store declares a `currentTripId` state but `useStore` is never imported or used anywhere. The actual current trip is URL-driven via `useCurrentTrip()`. The `zustand` package is bundled as a production dependency (~3.5 KB min+gz) for zero runtime value.
@@ -273,6 +279,7 @@
 
 ### FINDING-26: TripContext doesn't clear trips array on user identity change
 
+- **Status: RESOLVED** — Added `setTrips([])` at the start of the `useEffect` that depends on `user?.id`, before calling `fetchTrips()`. Loading state is already set inside `fetchTrips()`, so components show loading skeleton instead of stale data.
 - **Area:** 12 (Context init race / sign-out cleanup)
 - **File(s):** `src/contexts/TripContext.tsx:229-233`
 - **Description:** When user signs out, TripContext re-fetches for anonymous access but doesn't clear `trips` before the fetch. User A's trips persist in state during the fetch. If user B signs in immediately, user A's data is visible until B's fetch completes.
@@ -314,6 +321,7 @@
 
 ### FINDING-31: ErrorBoundary reset loop on deterministic errors
 
+- **Status: RESOLVED** — Added `resetCount` to ErrorBoundary state. After 2 failed retries, "Try Again" is replaced with "Go to home" and "Refresh page" buttons, plus a collapsible `<details>` showing the raw error message and stack trace.
 - **Area:** 14 (ErrorBoundary coverage)
 - **File(s):** `src/components/ErrorBoundary.tsx:36-38`
 - **Description:** The "Try Again" button calls `handleReset` which clears the error, causing React to re-render children. If the error is deterministic (null reference, missing data), clicking "Try Again" immediately throws again — infinite error-reset loop.
@@ -351,6 +359,7 @@
 
 ### FINDING-35: Zustand/defaultTripId conceptual overlap invites future misuse
 
+- **Status: RESOLVED** — Zustand store deleted (see FINDING-18).
 - **Area:** 1 (Zustand vs Context)
 - **File(s):** `src/store/store.ts`, `src/contexts/UserPreferencesContext.tsx:24-25`
 - **Description:** The unused Zustand store's `currentTripId` overlaps conceptually with `defaultTripId` in UserPreferencesContext. If someone starts using the store, there would be an immediate sync risk.
@@ -469,18 +478,20 @@
 9. **FINDING-17:** ✅ Fix shopping item delete partial-failure (reverse operation order or use transaction)
 10. **FINDING-14:** ✅ Reset `hasInitialized` on user identity change in UserPreferencesContext
 
-### Tier 3 — Reliability (fix in normal sprint)
-11. **FINDING-1:** Wire up ErrorBoundary in App.tsx
-12. **FINDING-10:** Add error surfacing (toast or state) to Shopping/Meal/Activity/Stay contexts
-13. **FINDING-13:** Add else-branch state clearing to 5 contexts on trip change
+### Tier 3 — Reliability (fix in normal sprint) ✅ ALL RESOLVED
+11. **FINDING-1:** ✅ Wire up ErrorBoundary in App.tsx
+12. **FINDING-10:** ✅ Add error surfacing (toast or state) to Shopping/Meal/Activity/Stay contexts
+13. **FINDING-13:** ✅ Add else-branch state clearing to 5 contexts on trip change
 14. **FINDING-11:** ✅ Fix wrong localStorage key in ManageTripPage
-15. **FINDING-12:** Fix old key check in UserPreferencesContext loading state
-16. **FINDING-15:** Add abort controller and cancelled guard to useMyTripBalances
+15. **FINDING-12:** ✅ Fix old key check in UserPreferencesContext loading state
+16. **FINDING-15:** ✅ Add abort controller and cancelled guard to useMyTripBalances
 17. **FINDING-27:** ✅ Add client-side fallback for orphaned receipt_tasks
+18. **FINDING-26:** ✅ Clear trips on user identity change
 
 ### Tier 4 — Cleanup (nice to have)
-18. **FINDING-18:** Remove dead Zustand store and dependency
-19. **FINDING-19:** Add max entries to myTrips/mutedTrips localStorage
-20. **FINDING-37:** Standardize localStorage key naming
-21. **FINDING-36:** Add schema versioning to localStorage entries
-22. **FINDING-31:** Improve ErrorBoundary with retry limit and navigation fallback
+19. **FINDING-18:** ✅ Remove dead Zustand store and dependency
+20. **FINDING-19:** Add max entries to myTrips/mutedTrips localStorage
+21. **FINDING-37:** Standardize localStorage key naming
+22. **FINDING-36:** Add schema versioning to localStorage entries
+23. **FINDING-31:** ✅ Improve ErrorBoundary with retry limit and navigation fallback
+24. **FINDING-35:** ✅ Zustand/defaultTripId overlap (resolved via FINDING-18)

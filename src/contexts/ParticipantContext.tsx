@@ -373,6 +373,10 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     if (tripCode && currentTrip) {
       setInitialLoadDone(false)
       fetchData()
+    } else {
+      setParticipants([])
+      setFamilies([])
+      setError(null)
     }
     return cancel
   }, [tripCode, currentTrip?.id])

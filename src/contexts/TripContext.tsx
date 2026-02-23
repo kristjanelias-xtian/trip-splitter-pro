@@ -237,6 +237,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   // Fetch trips after auth has resolved or user changes
   useEffect(() => {
     if (authLoading) return
+    setTrips([])  // Clear immediately on user change to prevent stale data flash
     fetchTrips()
     return cancel
   }, [authLoading, user?.id])
