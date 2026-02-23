@@ -507,7 +507,7 @@ export function ExpenseForm({
             onValueChange={setCurrency}
             disabled={loading}
           >
-            <SelectTrigger className="w-28">
+            <SelectTrigger className="w-28 h-14 text-base">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
