@@ -269,3 +269,28 @@ Vitest + Testing Library. Run with `npm test`. 139 tests covering contexts, hook
 | Errors missing from Grafana | Logger goes through Supabase which was down | Logs buffered in localStorage; replayed on recovery |
 | Amount input rejects comma on iOS | European locale decimal | `inputMode="decimal"` + `replace(',', '.')` |
 | Duplicate items in shopping list | Real-time subscription fires on own inserts | Existence check before adding to state |
+| All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
+
+---
+
+## Auth Safety Rule — NEVER VIOLATE
+
+Never `await` Supabase DB queries inside an `onAuthStateChange` callback. The Supabase auth client (`@supabase/auth-js`) holds an internal lock during subscriber notification (`_notifyAllSubscribers`). Any DB query calls `getSession()` which tries to re-acquire the same lock via `_acquireLock()`. This causes a **permanent circular deadlock** — all queries freeze until page refresh. This is a known upstream issue ([auth-js #762](https://github.com/supabase/auth-js/issues/762)), unfixed as of auth-js 2.84.0.
+
+If you need to fetch/write data after an auth event: use `setTimeout(fn, 0)` to defer the operation to the next macrotask, after the lock is released.
+
+```tsx
+// WRONG — will deadlock on token refresh:
+supabase.auth.onAuthStateChange(async (event, session) => {
+  const { data } = await supabase.from('profiles').select('*')  // DEADLOCK
+})
+
+// CORRECT — defers DB work until after lock release:
+supabase.auth.onAuthStateChange((event, session) => {
+  setTimeout(async () => {
+    const { data } = await supabase.from('profiles').select('*')  // Safe
+  }, 0)
+})
+```
+
+This rule applies to **ALL** auth subscribers in **ALL** files, not just `AuthContext.tsx`. See `DIAGNOSIS.md` for the full deadlock chain analysis.
