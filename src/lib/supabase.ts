@@ -43,7 +43,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
           // Emit session health events for non-auth API calls
           const isAuthEndpoint = url.includes('/auth/')
           if (!isAuthEndpoint) {
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
+              // 403 intentionally excluded — it's an RLS/permissions issue, not token expiry
               sessionHealthBus.emit('auth-error')
             } else if (response.ok) {
               sessionHealthBus.emit('api-success')

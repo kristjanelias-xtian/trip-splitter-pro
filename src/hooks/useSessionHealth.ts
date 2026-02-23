@@ -19,6 +19,7 @@ export function useSessionHealth(session: Session | null) {
   const [isExpired, setIsExpired] = useState(false)
   const lastHiddenAt = useRef<number>(0)
   const refreshingRef = useRef(false)
+  const lastRefreshAttemptRef = useRef<number>(0)
 
   // Attempt a silent token refresh before showing the overlay.
   // If the refresh succeeds, the user never sees the stale-session overlay.
@@ -32,6 +33,16 @@ export function useSessionHealth(session: Session | null) {
   const tryRefreshThenExpire = useCallback(async () => {
     if (!session) return
     if (!isTokenExpired(session)) return
+
+    // Cooldown: at most one refresh attempt per 30 seconds
+    const now = Date.now()
+    if (now - lastRefreshAttemptRef.current < 30_000) {
+      logger.info('Session health: refresh cooldown active — skipping', {
+        msUntilNextAllowed: 30_000 - (now - lastRefreshAttemptRef.current),
+      })
+      return
+    }
+    lastRefreshAttemptRef.current = now
 
     // Prevent concurrent refresh attempts
     if (refreshingRef.current) return
@@ -82,6 +93,14 @@ export function useSessionHealth(session: Session | null) {
 
     // --- Bus listeners ---
     const offAuthError = sessionHealthBus.on('auth-error', () => {
+      if (!session) return
+      if (!isTokenExpired(session)) {
+        logger.warn('Session health: 401 received but token not expired — skipping refresh', {
+          expires_at: session.expires_at,
+          now: Math.floor(Date.now() / 1000),
+        })
+        return
+      }
       logger.warn('Session health: auth error detected from API — attempting silent refresh')
       tryRefreshThenExpire()
     })

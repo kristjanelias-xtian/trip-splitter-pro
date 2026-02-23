@@ -270,6 +270,7 @@ Vitest + Testing Library. Run with `npm test`. 139 tests covering contexts, hook
 | Amount input rejects comma on iOS | European locale decimal | `inputMode="decimal"` + `replace(',', '.')` |
 | Duplicate items in shopping list | Real-time subscription fires on own inserts | Existence check before adding to state |
 | All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
+| 403 triggers token refresh | `sessionHealthBus` emitted `auth-error` on 403 | Only emit `auth-error` on 401; 403 is RLS/permissions |
 
 ---
 

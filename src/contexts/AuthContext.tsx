@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           bank_iban: iban || null,
         })
         .eq('id', user.id),
-      35000,
+      10000,
       'Saving bank details timed out. Please check your connection and try again.'
     )
 
