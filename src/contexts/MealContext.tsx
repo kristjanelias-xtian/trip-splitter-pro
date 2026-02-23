@@ -90,7 +90,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
           .insert([input])
           .select()
           .single(),
-        35000,
+        15000,
         'Creating meal timed out. Please check your connection and try again.'
       )
 
@@ -124,7 +124,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
           .eq('id', id)
           .select()
           .single()),
-        35000,
+        15000,
         'Updating meal timed out. Please check your connection and try again.'
       )
 
@@ -158,7 +158,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
           .from('meal_shopping_items')
           .delete()
           .eq('meal_id', id),
-        35000,
+        15000,
         'Deleting meal links timed out. Please check your connection and try again.'
       )
 
@@ -170,7 +170,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
       // Then delete the meal
       const { error } = await withTimeout(
         supabase.from('meals').delete().eq('id', id),
-        35000,
+        15000,
         'Deleting meal timed out. Please check your connection and try again.'
       )
 
@@ -262,7 +262,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
         supabase
           .from('meal_shopping_items')
           .insert([{ meal_id: mealId, shopping_item_id: shoppingItemId }] as any),
-        35000,
+        15000,
         'Linking meal to shopping item timed out.'
       )
 
@@ -289,7 +289,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
           .delete()
           .eq('meal_id', mealId)
           .eq('shopping_item_id', shoppingItemId),
-        35000,
+        15000,
         'Unlinking meal from shopping item timed out.'
       )
 

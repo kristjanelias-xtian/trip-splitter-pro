@@ -186,7 +186,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           .insert([itemToInsert] as any)
           .select()
           .single(),
-        35000,
+        15000,
         'Creating shopping item timed out. Please check your connection and try again.'
       )
 
@@ -239,7 +239,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           .eq('id', id)
           .select()
           .single(),
-        35000,
+        15000,
         'Updating shopping item timed out. Please check your connection and try again.'
       )
 
@@ -286,7 +286,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       // Then delete the shopping item
       const { error } = await withTimeout(
         supabase.from('shopping_items').delete().eq('id', id),
-        35000,
+        15000,
         'Deleting shopping item timed out. Please check your connection and try again.'
       )
 

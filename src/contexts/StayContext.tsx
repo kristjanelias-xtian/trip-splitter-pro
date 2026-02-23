@@ -89,7 +89,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
           .from('stays' as any) as any)
           .insert([input])
           .select(),
-        35000,
+        15000,
         'Creating stay timed out. Please check your connection and try again.'
       )
 
@@ -124,7 +124,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
           .update({ ...input, updated_at: new Date().toISOString() })
           .eq('id', id)
           .select(),
-        35000,
+        15000,
         'Updating stay timed out. Please check your connection and try again.'
       )
 
@@ -156,7 +156,7 @@ export function StayProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await withTimeout<any>(
         (supabase.from('stays' as any) as any).delete().eq('id', id),
-        35000,
+        15000,
         'Deleting stay timed out. Please check your connection and try again.'
       )
 

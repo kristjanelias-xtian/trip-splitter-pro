@@ -91,6 +91,9 @@ export function useSessionHealth(session: Session | null) {
       return
     }
 
+    // Guard against firing setTimeout callbacks after unmount
+    const isMounted = { current: true }
+
     // --- Bus listeners ---
     const offAuthError = sessionHealthBus.on('auth-error', () => {
       if (!session) return
@@ -121,12 +124,16 @@ export function useSessionHealth(session: Session | null) {
       if (away < BACKGROUND_THRESHOLD_MS) return
 
       // Delay check to let network reconnect (Android)
-      setTimeout(() => tryRefreshThenExpire(), VISIBILITY_DELAY_MS)
+      setTimeout(() => {
+        if (isMounted.current) tryRefreshThenExpire()
+      }, VISIBILITY_DELAY_MS)
     }
 
     // --- Online event ---
     const handleOnline = () => {
-      setTimeout(() => tryRefreshThenExpire(), VISIBILITY_DELAY_MS)
+      setTimeout(() => {
+        if (isMounted.current) tryRefreshThenExpire()
+      }, VISIBILITY_DELAY_MS)
     }
 
     // --- Periodic check ---
@@ -136,6 +143,7 @@ export function useSessionHealth(session: Session | null) {
     window.addEventListener('online', handleOnline)
 
     return () => {
+      isMounted.current = false
       offAuthError()
       offApiSuccess()
       document.removeEventListener('visibilitychange', handleVisibility)

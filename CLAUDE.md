@@ -230,6 +230,17 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 await withTimeout(supabase.from(...).select(...), 15000, 'Descriptive timeout message')
 ```
 
+**withTimeout standard values:**
+- Regular Supabase queries (select, insert, update, delete): 15000 (15s)
+- File uploads / Supabase Storage operations: 55000 (55s)
+- Edge function calls: 55000 (55s)
+- Auth/profile DB calls: 8000–10000 (8–10s)
+
+Never set withTimeout higher than 29000 for regular queries or 59000
+for uploads. The fetch-level AbortController in src/lib/supabase.ts
+fires at 30s/60s — any withTimeout above these thresholds is dead code
+and the user-friendly error message will never be shown.
+
 **Reset pattern in MobileWizard:** Form state resets 300 ms after `open` becomes `false` (to let the close animation complete). Uses `isMounted` ref guard.
 
 ---

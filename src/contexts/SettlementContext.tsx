@@ -91,7 +91,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
           .insert([settlementData])
           .select()
           .single(),
-        35000,
+        15000,
         'Saving settlement timed out. Please check your connection and try again.'
       )
 
@@ -116,7 +116,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
 
       const { error: updateError } = await withTimeout<any>(
         (supabase as any).from('settlements').update(input).eq('id', id),
-        35000,
+        15000,
         'Updating settlement timed out. Please check your connection and try again.'
       )
 
@@ -139,7 +139,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
 
       const { error: deleteError } = await withTimeout<any>(
         supabase.from('settlements').delete().eq('id', id),
-        35000,
+        15000,
         'Deleting settlement timed out. Please check your connection and try again.'
       )
 
