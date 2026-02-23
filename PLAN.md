@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS user issue triage PRs #268–#278, 15 issues resolved; auth deadlock fix; auth-error hardening PR #288; full mode header redesign + bug button restore PR #290)
+> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS UX triage PRs #268–#297, 19 issues resolved; auth deadlock fix; auth-error hardening)
 
 ---
 
@@ -546,6 +546,7 @@ Extends payment reminder emails with receipt data. PR #213 attached JPEG images;
 | 2026-02-23 | Auth-error hardening | PR #288: (1) 403 no longer emits `auth-error` — only 401 triggers session health check; (2) `auth-error` bus handler checks `isTokenExpired()` before attempting refresh — valid-token 401s (RLS, race conditions) are logged and skipped; (3) 30s cooldown between refresh attempts via `lastRefreshAttemptRef`; (4) `updateBankDetails` timeout 35s→10s for consistency. |
 | 2026-02-23 | Full mode header redesign + bug button | PR #290: (1) QuickLayout — restored `ReportIssueButton` to row 1 right side when `isInTrip` (accidentally removed in PR #285); (2) Layout — two-row header on mobile when in trip: row 1 keeps name + bug button + avatar, row 2 (`lg:hidden`) adds `grid-cols-3` pill strip — Scan / Manage / Quick view — matching QuickLayout's pattern; desktop in-trip unchanged (scan + mode toggle stay in row 1 via `hidden lg:flex`); main padding `mt-[108px] lg:mt-20` when in trip; gradient overlay `black/30→black/50`; trip name h1 uses inline `textShadow` instead of `drop-shadow-md`. |
 | 2026-02-23 | Timeout audit | Audited all `withTimeout`, `setTimeout`, and `setInterval` calls across the codebase. Found 40 `withTimeout(35000)` calls wrapping regular PostgREST mutations — all dead code because the fetch-level AbortController fires at 30s first. Changed all 40 to 15000. Added unmount guard (`isMounted`) to two `setTimeout` calls in `useSessionHealth.ts`. Updated CLAUDE.md with standardised timeout values. |
+| 2026-02-23 | iOS UX batch #2 | 4 open issues resolved across 3 PRs. **PR #295** (issues #294, #283): removed duplicate trip name subtitle from DashboardPage (Layout header already shows it); moved members count chip from `absolute top-right` overlay to centered below-balance document flow with "N members" label. **PR #296** (issue #289): quick mode sub-pages now show `✕` instead of `←` — consistent with sheet dismiss pattern across all quick mode screens. **PR #297** (issue #293): Expenses page decluttered — Export Excel + Scan Receipt reduced to icon-only ghost buttons; search/category filters hidden behind collapsible `SlidersHorizontal` toggle with active-filter badge dot indicator. |
 
 ---
 
