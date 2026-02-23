@@ -150,7 +150,7 @@ export function AdminAllTripsPage() {
   // Access denied
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center py-24">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -179,10 +179,9 @@ export function AdminAllTripsPage() {
 
   // Admin view
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">All Trips (Admin)</h1>
             <p className="text-muted-foreground mt-1">
@@ -337,7 +336,6 @@ export function AdminAllTripsPage() {
           </p>
         </div>
         </>}
-      </div>
     </div>
   )
 }
