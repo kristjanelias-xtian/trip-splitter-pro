@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-23 (Phases 1–6 ✅ done; iOS UX triage PRs #268–#297, 19 issues resolved; auth deadlock fix; auth-error hardening; security audit fixes; production smoke test; **Phase 7: UX/UI Unification planned**)
+> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; Phase 7 UX/UI Unification complete — 8 sub-phases, 7 PRs)
 
 ---
 
@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 🔧 In Progress (7a–7f ✅, 7h ✅; 7g remaining) | — |
+| E | UX/UI Unification | ✅ Done (7a–7h all complete) | — |
 
 ---
 
@@ -620,22 +620,23 @@ Establish Scan as the most prominent action across the app. Reduce visual weight
 
 **Acceptance:** Scan is visually the #1 action on both Quick trip detail and Full Expenses pages.
 
-#### Phase 7g — Quick mode desktop two-column layout
-Make Quick mode feel purposeful on desktop instead of phone-sized.
+#### Phase 7g — Unified home page + bug fixes ✅ Done (PR #351)
+**Pivot**: Instead of a two-column Quick desktop layout (original plan), merged the home pages into one responsive view. The Quick/Full mode distinction only matters inside trip views now.
 
-**Tasks:**
-1. Update `QuickGroupDetailPage` — on `lg:` breakpoint, render a two-column layout:
-   - **Left column**: Balance hero + "4 members" chip + action buttons (Scan, Add expense, Settle up, View history)
-   - **Right column**: Pending receipt banners + recent expenses/transactions (mini-list, last 5)
-2. Update `max-w-lg` to `max-w-lg lg:max-w-4xl` in `QuickLayout.tsx` content area (or apply per-page)
-3. Quick home (`QuickHomeScreen`) stays single-column — the groups list doesn't benefit from two columns
-4. Ensure mobile layout is unchanged — two columns only at `lg:` breakpoint
+**What changed:**
+1. Merged `QuickHomeScreen` features (scan CTA, `QuickCreateSheet`, motion animations, scan flows) into `HomePage`
+2. Simplified `ConditionalHomePage` — only redirects on mobile + active trip; always renders `<HomePage />` otherwise
+3. Removed `/quick` home route; added `<Navigate to="/" />` redirect for backward compat
+4. Fixed "Full view" pill navigating to `/expenses` instead of `/dashboard` (#345)
+5. Fixed QuickLayout back arrow pointing to `/quick` instead of `/`
+6. Hidden scan + mode toggle from Layout header on home page (page has its own CTA)
+7. Mode toggle only navigates when inside a trip
+8. Deleted `QuickHomeScreen.tsx`
+9. Updated unit + e2e tests
 
-**Files touched:** `src/pages/QuickGroupDetailPage.tsx`, `src/components/QuickLayout.tsx` (max-width adjustment)
+**Files touched:** `HomePage.tsx`, `ConditionalHomePage.tsx`, `routes.tsx`, `QuickLayout.tsx`, `Layout.tsx`, `ModeToggle.tsx`, `QuickGroupDetailPage.tsx`, `QuickHomeScreen.tsx` (deleted), `ConditionalHomePage.test.tsx`, `quick-mode.spec.ts`
 
-**New dependency:** Need a compact recent-transactions list for the right column (may reuse parts of `QuickHistoryPage`)
-
-**Acceptance:** On desktop (≥1024px), Quick trip detail shows two-column layout. On mobile, unchanged. No horizontal scroll.
+**Closes:** #344, #345, #348
 
 #### Phase 7h — Standardize loading/error states across all pages ✅ Done (PR #349)
 Replace ad-hoc loading/error patterns with the shared components from 7a.
@@ -676,7 +677,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 4. ✅ PR: Phase 7d — Full home overhaul (PR #342)
 5. ✅ PR: Phase 7f — Scan as primary action (PR #346)
 6. ✅ PR: Phase 7h — standardize loading/error states (PR #349)
-7. PR: Phase 7g — Quick mode desktop two-column (largest change, last)
+7. ✅ PR: Phase 7g — Unified home page + bug fixes (PR #351)
 
 **Risk notes:**
 - Phase 7d (Full home overhaul) changes the main landing page — high visibility, test thoroughly
@@ -732,6 +733,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Phase 7d | Full mode home page overhaul (PR #342). Replaced "Split costs with anyone" hero with Quick-style personal greeting (avatar + "Hi, {firstName}" for auth, "Events & Trips" for anon). `HomePage` now uses `useMyTripBalances` + unified `TripCard` with balance, dates, active badge, and `GroupActions` (hide/leave). Added hidden trips section. `TripCard` gained date range secondary line (both modes). Removed trip code from cards. `PageLoadingState` for auth loading. Anonymous view keeps localStorage cards with share/remove. |
 | 2026-02-24 | Phase 7f | Scan as primary action (PR #346). Swapped "Scan a receipt" to position 1 in Quick trip detail with `emphasis` prop (`border-primary/30 bg-primary/5`). Added `ScanLine` icon-only ghost button to Expenses page header action bar. Quick home coral CTA unchanged. |
 | 2026-02-24 | Phase 7h | Standardize loading/error states (PR #349). Replaced ad-hoc loading text and error toasts/banners with `<PageLoadingState />` and `<PageErrorState />` on 9 pages: ExpensesPage, SettlementsPage, DashboardPage, PlannerPage, ShoppingPage, ManageTripPage, QuickHistoryPage, QuickHomeScreen, AdminAllTripsPage. Every page now has a consistent centered spinner + retry-on-error pattern. Removed toast-based error surfacing from Planner/Shopping/Manage pages. |
+| 2026-02-24 | Phase 7g | Unified home page + bug fixes (PR #351). Pivoted from two-column Quick desktop layout to merging home pages — QuickHomeScreen features (scan CTA, QuickCreateSheet, motion animations, scan flows) merged into HomePage. ConditionalHomePage simplified to mobile-only active-trip redirect. `/quick` route removed (redirect added). Fixed "Full view" pill → `/dashboard` (#345), back arrow → `/`, header scan/toggle hidden on home. Deleted QuickHomeScreen.tsx. Closes #344, #345, #348. **Phase 7 complete.** |
 
 ---
 
