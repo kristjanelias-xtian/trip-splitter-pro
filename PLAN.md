@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 🔧 In Progress (7a–7f ✅; 7g–7h remaining) | — |
+| E | UX/UI Unification | 🔧 In Progress (7a–7f ✅, 7h ✅; 7g remaining) | — |
 
 ---
 
@@ -637,20 +637,20 @@ Make Quick mode feel purposeful on desktop instead of phone-sized.
 
 **Acceptance:** On desktop (≥1024px), Quick trip detail shows two-column layout. On mobile, unchanged. No horizontal scroll.
 
-#### Phase 7h — Standardize loading/error states across all pages
+#### Phase 7h — Standardize loading/error states across all pages ✅ Done (PR #349)
 Replace ad-hoc loading/error patterns with the shared components from 7a.
 
 **Tasks:**
-1. `QuickGroupDetailPage` — already uses the pattern; refactor to `<PageLoadingState />` and `<PageErrorState />`
-2. `ExpensesPage` — replace "Loading expenses..." text with `<PageLoadingState />`; replace red banner with `<PageErrorState />`
-3. `SettlementsPage` — add loading state (currently has none); add error state
-4. `DashboardPage` — add loading/error states
-5. `PlannerPage` — add loading/error states
-6. `ShoppingPage` — add loading/error states (Shopping has its own error toast; add card-level error too)
-7. `ManageTripPage` — add loading/error states
-8. `QuickHistoryPage` — verify loading state exists; add error state if missing
-9. `QuickHomeScreen` — already has spinner; standardize to `<PageLoadingState />`
-10. `AdminAllTripsPage` — add loading state (currently shows 0 trips briefly before data loads)
+1. ~~`QuickGroupDetailPage` — already uses the pattern; refactor to `<PageLoadingState />` and `<PageErrorState />`~~ (already done in 7a)
+2. ✅ `ExpensesPage` — replace "Loading expenses..." text with `<PageLoadingState />`; replace red banner with `<PageErrorState />`
+3. ✅ `SettlementsPage` — add loading state (currently has none); add error state
+4. ✅ `DashboardPage` — add loading/error states
+5. ✅ `PlannerPage` — add loading/error states
+6. ✅ `ShoppingPage` — add loading/error states (Shopping has its own error toast; add card-level error too)
+7. ✅ `ManageTripPage` — add loading/error states
+8. ✅ `QuickHistoryPage` — verify loading state exists; add error state if missing
+9. ✅ `QuickHomeScreen` — already has spinner; standardize to `<PageLoadingState />`
+10. ✅ `AdminAllTripsPage` — add loading state (currently shows 0 trips briefly before data loads)
 
 **Files touched:** All page-level components listed above
 
@@ -670,12 +670,12 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 ```
 
 **Recommended PR sequence:**
-1. PR: Phase 7a — shared UI primitives
-2. PR: Phase 7b + 7c — icon unification + remove redundant buttons (small, combine)
-3. PR: Phase 7e — admin page in Layout
-4. PR: Phase 7d — Full home overhaul
-5. PR: Phase 7f — Scan as primary action
-6. PR: Phase 7h — standardize loading/error states
+1. ✅ PR: Phase 7a — shared UI primitives (PR #336)
+2. ✅ PR: Phase 7b + 7c — icon unification + remove redundant buttons (PR #338)
+3. ✅ PR: Phase 7e — admin page in Layout (PR #340)
+4. ✅ PR: Phase 7d — Full home overhaul (PR #342)
+5. ✅ PR: Phase 7f — Scan as primary action (PR #346)
+6. ✅ PR: Phase 7h — standardize loading/error states (PR #349)
 7. PR: Phase 7g — Quick mode desktop two-column (largest change, last)
 
 **Risk notes:**
@@ -731,6 +731,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-23 | Phase 7a | Shared UI primitives (PR #336). 4 new components: `PendingReceiptBanner` (extracted from QuickGroupDetailPage + ExpensesPage), `PageLoadingState` (spinner + slow message), `PageErrorState` (error card + retry), `TripCard` (unified card with balance + actions slot). Wired into QuickGroupDetailPage, ExpensesPage, QuickHomeScreen. Deleted dead `EventCard.tsx` + old `TripCard.tsx`. Net -196 lines. |
 | 2026-02-24 | Phase 7d | Full mode home page overhaul (PR #342). Replaced "Split costs with anyone" hero with Quick-style personal greeting (avatar + "Hi, {firstName}" for auth, "Events & Trips" for anon). `HomePage` now uses `useMyTripBalances` + unified `TripCard` with balance, dates, active badge, and `GroupActions` (hide/leave). Added hidden trips section. `TripCard` gained date range secondary line (both modes). Removed trip code from cards. `PageLoadingState` for auth loading. Anonymous view keeps localStorage cards with share/remove. |
 | 2026-02-24 | Phase 7f | Scan as primary action (PR #346). Swapped "Scan a receipt" to position 1 in Quick trip detail with `emphasis` prop (`border-primary/30 bg-primary/5`). Added `ScanLine` icon-only ghost button to Expenses page header action bar. Quick home coral CTA unchanged. |
+| 2026-02-24 | Phase 7h | Standardize loading/error states (PR #349). Replaced ad-hoc loading text and error toasts/banners with `<PageLoadingState />` and `<PageErrorState />` on 9 pages: ExpensesPage, SettlementsPage, DashboardPage, PlannerPage, ShoppingPage, ManageTripPage, QuickHistoryPage, QuickHomeScreen, AdminAllTripsPage. Every page now has a consistent centered spinner + retry-on-error pattern. Removed toast-based error surfacing from Planner/Shopping/Manage pages. |
 
 ---
 
