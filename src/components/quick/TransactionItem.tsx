@@ -17,11 +17,17 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  const formatDualCurrency = (amount: number, currency: string) => {
-    const base = formatAmount(amount, currency)
-    if (!defaultCurrency || !exchangeRates || currency === defaultCurrency) return base
-    const converted = convertToBaseCurrency(amount, currency, defaultCurrency, exchangeRates)
-    return `${formatAmount(converted, defaultCurrency)} (${base})`
+  const isForeignCurrency = !!defaultCurrency && !!exchangeRates && tx.currency !== defaultCurrency
+
+  const formatBaseAmount = (amount: number, currency: string) => {
+    if (!isForeignCurrency) return formatAmount(amount, currency)
+    const converted = convertToBaseCurrency(amount, currency, defaultCurrency!, exchangeRates!)
+    return formatAmount(converted, defaultCurrency!)
+  }
+
+  const formatOriginalAmount = (amount: number, currency: string) => {
+    if (!isForeignCurrency) return null
+    return formatAmount(amount, currency)
   }
 
   const getRoleDisplay = () => {
@@ -30,8 +36,12 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
         return {
           label: 'You paid',
           icon: <DollarSign size={16} className="text-primary" />,
-          amountText: `Total: ${formatDualCurrency(tx.roleAmount, tx.currency)}`,
-          subText: tx.myShare !== undefined ? `Your share: ${formatDualCurrency(tx.myShare, tx.currency)}` : null,
+          prefix: 'Total:',
+          mainAmount: formatBaseAmount(tx.roleAmount, tx.currency),
+          originalAmount: formatOriginalAmount(tx.roleAmount, tx.currency),
+          subPrefix: tx.myShare !== undefined ? 'Your share:' : null,
+          subAmount: tx.myShare !== undefined ? formatBaseAmount(tx.myShare, tx.currency) : null,
+          subOriginal: tx.myShare !== undefined ? formatOriginalAmount(tx.myShare, tx.currency) : null,
           amountClass: 'text-foreground font-semibold',
           bgClass: 'bg-primary/5',
         }
@@ -39,8 +49,12 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
         return {
           label: `${tx.payerName} paid`,
           icon: <DollarSign size={16} className="text-muted-foreground" />,
-          amountText: `Your share: ${formatDualCurrency(tx.roleAmount, tx.currency)}`,
-          subText: `Total: ${formatDualCurrency(tx.amount, tx.currency)}`,
+          prefix: 'Your share:',
+          mainAmount: formatBaseAmount(tx.roleAmount, tx.currency),
+          originalAmount: formatOriginalAmount(tx.roleAmount, tx.currency),
+          subPrefix: 'Total:',
+          subAmount: formatBaseAmount(tx.amount, tx.currency),
+          subOriginal: formatOriginalAmount(tx.amount, tx.currency),
           amountClass: 'text-muted-foreground',
           bgClass: 'bg-muted/30',
         }
@@ -48,8 +62,12 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
         return {
           label: `You paid ${tx.recipientName}`,
           icon: <ArrowUpRight size={16} className="text-red-500" />,
-          amountText: formatDualCurrency(tx.roleAmount, tx.currency),
-          subText: null,
+          prefix: null,
+          mainAmount: formatBaseAmount(tx.roleAmount, tx.currency),
+          originalAmount: formatOriginalAmount(tx.roleAmount, tx.currency),
+          subPrefix: null,
+          subAmount: null,
+          subOriginal: null,
           amountClass: 'text-red-600 dark:text-red-400 font-semibold',
           bgClass: 'bg-red-50 dark:bg-red-950/20',
         }
@@ -57,8 +75,12 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
         return {
           label: `${tx.payerName} paid you`,
           icon: <ArrowDownLeft size={16} className="text-green-500" />,
-          amountText: formatDualCurrency(tx.roleAmount, tx.currency),
-          subText: null,
+          prefix: null,
+          mainAmount: formatBaseAmount(tx.roleAmount, tx.currency),
+          originalAmount: formatOriginalAmount(tx.roleAmount, tx.currency),
+          subPrefix: null,
+          subAmount: null,
+          subOriginal: null,
           amountClass: 'text-green-600 dark:text-green-400 font-semibold',
           bgClass: 'bg-green-50 dark:bg-green-950/20',
         }
@@ -68,29 +90,41 @@ export function TransactionItem({ transaction: tx, defaultCurrency, exchangeRate
   const display = getRoleDisplay()
 
   return (
-    <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${display.bgClass}`}>
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex-shrink-0">{display.icon}</div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground break-words">
-            {tx.type === 'expense' ? tx.description : display.label}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {tx.type === 'expense' ? display.label : tx.description}
-            {' \u00B7 '}
-            {formatDate(tx.date)}
-          </p>
+    <div className={`flex items-start gap-3 px-4 py-3 rounded-lg ${display.bgClass}`}>
+      <div className="flex-shrink-0 mt-0.5">{display.icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground truncate">
+              {tx.type === 'expense' ? tx.description : display.label}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {tx.type === 'expense' ? display.label : tx.description}
+              {' \u00B7 '}
+              {formatDate(tx.date)}
+            </p>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <p className={`text-sm tabular-nums ${display.amountClass}`}>
+              {display.prefix && <span className="text-xs font-normal text-muted-foreground">{display.prefix} </span>}
+              {display.mainAmount}
+            </p>
+            {display.originalAmount && (
+              <p className="text-[11px] text-muted-foreground/70 tabular-nums">{display.originalAmount}</p>
+            )}
+            {display.subAmount && (
+              <>
+                <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                  {display.subPrefix && <span>{display.subPrefix} </span>}
+                  {display.subAmount}
+                </p>
+                {display.subOriginal && (
+                  <p className="text-[11px] text-muted-foreground/70 tabular-nums">{display.subOriginal}</p>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex-shrink-0 ml-3 text-right">
-        <p className={`text-sm tabular-nums ${display.amountClass}`}>
-          {display.amountText}
-        </p>
-        {display.subText && (
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {display.subText}
-          </p>
-        )}
       </div>
     </div>
   )
