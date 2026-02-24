@@ -10,7 +10,8 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
 import { SettlementForm } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
@@ -48,6 +49,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [sendingRemind, setSendingRemind] = useState(false)
   const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
   const isSubmittingRef = useRef(false)
+  const keyboard = useKeyboardHeight()
 
   // Build email map: entity ID (participant.id or family_id) → email
   const fromEmailMap = useMemo(() => {
@@ -298,8 +300,15 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-        <SheetHeader className="mb-4">
+      <SheetContent
+        side="bottom"
+        className="flex flex-col p-0 rounded-t-2xl"
+        style={{
+          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+        }}
+      >
+        <div className="px-6 py-4 border-b border-border shrink-0">
           <SheetTitle>
             {view === 'suggestions' ? 'Settle up' : (
               <button
@@ -311,8 +320,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               </button>
             )}
           </SheetTitle>
-        </SheetHeader>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-6 py-4">
         {view === 'suggestions' ? (
           <div className="space-y-4">
             {allSettled ? (
@@ -511,6 +521,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             initialAmount={prefill?.amount}
           />
         )}
+        </div>
       </SheetContent>
     </Sheet>
   )
