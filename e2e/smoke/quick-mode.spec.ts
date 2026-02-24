@@ -12,10 +12,11 @@ test.describe('Quick mode — smoke tests', () => {
     page.on('pageerror', (err) => pageErrors.push(err))
   }
 
-  test('/quick — quick home screen loads', async ({ quickModePage: page }) => {
+  test('/quick — redirects to / (unified home)', async ({ quickModePage: page }) => {
     trackErrors(page)
     await page.goto('/quick')
     await waitForLoadingToFinish(page)
+    await expect(page).toHaveURL('/')
     await expect(page.locator('#root')).not.toBeEmpty()
     expect(pageErrors).toHaveLength(0)
   })

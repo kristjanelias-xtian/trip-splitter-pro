@@ -86,7 +86,7 @@ export function QuickGroupDetailPage() {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">{entityLabel} not found</p>
-            <Button onClick={() => navigate('/quick')} variant="outline" size="sm">
+            <Button onClick={() => navigate('/')} variant="outline" size="sm">
               My Groups
             </Button>
           </CardContent>

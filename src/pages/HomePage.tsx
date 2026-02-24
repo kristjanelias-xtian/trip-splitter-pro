@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Trash2, Share2 } from 'lucide-react'
+import { Plus, Calendar, Trash2, Share2, ChevronRight, ScanLine, ChevronDown, Eye, ExternalLink } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
@@ -10,20 +10,28 @@ import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 import { TripCard } from '@/components/TripCard'
 import { GroupActions } from '@/components/quick/GroupActions'
+import { QuickCreateSheet } from '@/components/quick/QuickCreateSheet'
+import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
+import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
+import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
-import { ChevronDown, Eye } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export function HomePage() {
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
   const { loading: tripsLoading } = useTripContext()
+  const { mode } = useUserPreferences()
   const { tripBalances, loading: balancesLoading } = useMyTripBalances()
   const [localTrips, setLocalTrips] = useState<MyTripEntry[]>([])
   const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
   const [showHidden, setShowHidden] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [scanContextOpen, setScanContextOpen] = useState(false)
+  const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
   const isAuthenticated = !!user
   const loading = isAuthenticated && (balancesLoading || tripsLoading)
@@ -61,11 +69,24 @@ export function HomePage() {
   }, [])
 
   const handleCreateTrip = () => {
-    navigate('/create-trip')
+    if (isAuthenticated) {
+      setCreateOpen(true)
+    } else {
+      navigate('/create-trip')
+    }
   }
 
   const handleOpenTrip = (tripCode: string) => {
-    navigate(`/t/${tripCode}/dashboard`)
+    navigate(mode === 'quick' ? `/t/${tripCode}/quick` : `/t/${tripCode}/dashboard`)
+  }
+
+  const handleScanTap = () => {
+    if (loading) return
+    if (visibleTrips.length === 0) {
+      setScanCreateOpen(true)
+    } else {
+      setScanContextOpen(true)
+    }
   }
 
   const handleRemoveLocalTrip = (tripCode: string, tripName: string) => {
@@ -109,23 +130,37 @@ export function HomePage() {
     return (
       <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleTrips.map(({ trip, myBalance }) => (
-            <TripCard
+          {visibleTrips.map(({ trip, myBalance }, i) => (
+            <motion.div
               key={trip.id}
-              trip={trip}
-              balance={myBalance}
-              isActive={trip.id === activeTripId}
-              onClick={() => handleOpenTrip(trip.trip_code)}
-              actions={
-                <GroupActions
-                  tripCode={trip.trip_code}
-                  tripName={trip.name}
-                  onHidden={() => handleHidden(trip.trip_code)}
-                  onLeft={() => handleLeft(trip.trip_code)}
-                />
-              }
-            />
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <TripCard
+                trip={trip}
+                balance={myBalance}
+                isActive={trip.id === activeTripId}
+                onClick={() => handleOpenTrip(trip.trip_code)}
+                actions={
+                  <GroupActions
+                    tripCode={trip.trip_code}
+                    tripName={trip.name}
+                    onHidden={() => handleHidden(trip.trip_code)}
+                    onLeft={() => handleLeft(trip.trip_code)}
+                  />
+                }
+              />
+            </motion.div>
           ))}
+        </div>
+
+        {/* Create trip button */}
+        <div className="mt-6 text-center">
+          <Button variant="outline" onClick={handleCreateTrip} className="gap-2">
+            <Plus size={16} />
+            New Trip or Event
+          </Button>
         </div>
 
         {/* Hidden trips section */}
@@ -274,19 +309,67 @@ export function HomePage() {
 
         <OnboardingPrompts />
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mb-8">
-          <Button onClick={handleCreateTrip} className="gap-2">
-            <Plus size={18} />
-            Create New
-          </Button>
-        </div>
+        {/* Scan CTA — authenticated users only */}
+        {isAuthenticated && (
+          <button
+            onClick={handleScanTap}
+            disabled={loading}
+            className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all mb-6 disabled:opacity-50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                <ScanLine size={20} />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm leading-tight">Scan a Receipt</p>
+                <p className="text-xs text-primary-foreground/70 mt-0.5">
+                  {visibleTrips.length === 0 ? 'Creates a new group automatically' : 'Add expenses from a photo'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="opacity-70" />
+          </button>
+        )}
+
+        {/* Action Buttons — unauthenticated only (authenticated uses sheet + scan CTA) */}
+        {!isAuthenticated && (
+          <div className="flex gap-3 mb-8">
+            <Button onClick={handleCreateTrip} className="gap-2">
+              <Plus size={18} />
+              Create New
+            </Button>
+          </div>
+        )}
 
         {/* Trips List */}
         <div>
           {isAuthenticated ? renderAuthenticatedTrips() : renderLocalTrips()}
         </div>
+
+        {/* What's New link */}
+        {isAuthenticated && (
+          <div className="mt-8 text-center">
+            <a
+              href="https://github.com/kristjanelias-xtian/trip-splitter-pro/blob/main/RELEASE_NOTES.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              What's New · v0.9.4
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
       </div>
+
+      <QuickCreateSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <QuickScanContextSheet
+        open={scanContextOpen}
+        onOpenChange={setScanContextOpen}
+        trips={visibleTrips.map(tb => tb.trip)}
+        onNewGroup={() => setScanCreateOpen(true)}
+      />
+      <QuickScanCreateFlow open={scanCreateOpen} onOpenChange={setScanCreateOpen} />
     </div>
   )
 }

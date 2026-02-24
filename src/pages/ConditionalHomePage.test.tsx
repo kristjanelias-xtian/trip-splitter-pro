@@ -28,18 +28,6 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mockAuth,
 }))
 
-// Mock UserPreferencesContext
-const mockPrefs = {
-  mode: 'full' as 'full' | 'quick',
-  defaultTripId: null,
-  setMode: vi.fn(),
-  setDefaultTripId: vi.fn(),
-  loading: false,
-}
-vi.mock('@/contexts/UserPreferencesContext', () => ({
-  useUserPreferences: () => mockPrefs,
-}))
-
 // Mock TripContext
 const mockTrips = {
   trips: [] as any[],
@@ -68,7 +56,7 @@ vi.mock('@/lib/myTripsStorage', () => ({
 
 // Mock HomePage
 vi.mock('./HomePage', () => ({
-  HomePage: () => <div data-testid="home-page">Full Mode Home</div>,
+  HomePage: () => <div data-testid="home-page">Home Page</div>,
 }))
 
 import { getActiveTripId } from '@/lib/activeTripDetection'
@@ -77,15 +65,16 @@ describe('ConditionalHomePage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     mockAuth.loading = false
-    mockPrefs.loading = false
-    mockPrefs.mode = 'full'
     mockTrips.loading = false
     mockTrips.trips = []
     vi.mocked(getActiveTripId).mockReturnValue(null)
+    // Default: desktop viewport (no mobile redirect)
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true })
   })
 
-  it('shows spinner while loading', () => {
-    mockPrefs.loading = true
+  it('shows spinner while loading on mobile', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    mockTrips.loading = true
 
     render(
       <MemoryRouter>
@@ -93,14 +82,11 @@ describe('ConditionalHomePage', () => {
       </MemoryRouter>
     )
 
-    // Should show loading spinner (svg element with animate-spin class)
     const spinner = document.querySelector('.animate-spin')
     expect(spinner).toBeTruthy()
   })
 
-  it('renders HomePage in full mode', async () => {
-    mockPrefs.mode = 'full'
-
+  it('renders HomePage', async () => {
     render(
       <MemoryRouter>
         <ConditionalHomePage />
@@ -112,8 +98,8 @@ describe('ConditionalHomePage', () => {
     })
   })
 
-  it('navigates to /t/{code}/quick in quick mode with active trip', async () => {
-    mockPrefs.mode = 'quick'
+  it('navigates to /t/{code}/quick on mobile with active trip', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
     const trip = buildTrip({
       id: 'trip-1',
       trip_code: 'summer-trip-Ab1234',
@@ -135,8 +121,8 @@ describe('ConditionalHomePage', () => {
     })
   })
 
-  it('navigates to /quick in quick mode with no active trip', async () => {
-    mockPrefs.mode = 'quick'
+  it('renders HomePage on mobile with no active trip', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
     vi.mocked(getActiveTripId).mockReturnValue(null)
 
     render(
@@ -146,7 +132,8 @@ describe('ConditionalHomePage', () => {
     )
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/quick', { replace: true })
+      expect(screen.getByTestId('home-page')).toBeInTheDocument()
     })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })

@@ -11,7 +11,6 @@ import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { ReceiptProvider } from '@/contexts/ReceiptContext'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
-import { ModeToggle } from '@/components/quick/ModeToggle'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { useTripContext } from '@/contexts/TripContext'
@@ -42,9 +41,9 @@ export function QuickLayout() {
   }
 
   const isInTrip = !!tripCode
-  // On sub-pages (e.g. history), back goes to trip detail; on trip detail, back goes to /quick
+  // On sub-pages (e.g. history), back goes to trip detail; on trip detail, back goes to home
   const isSubPage = isInTrip && location.pathname !== `/t/${tripCode}/quick`
-  const backTo = isSubPage ? `/t/${tripCode}/quick` : '/quick'
+  const backTo = isSubPage ? `/t/${tripCode}/quick` : '/'
 
   const pattern = currentTrip ? getTripGradientPattern(currentTrip.name) : null
   const onGradient = !!pattern
@@ -109,7 +108,6 @@ export function QuickLayout() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <ReportIssueButton onGradient={onGradient} />
-                {!isInTrip && <ModeToggle onGradient={onGradient} />}
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
@@ -140,7 +138,7 @@ export function QuickLayout() {
                   Manage
                 </button>
                 <button
-                  onClick={() => { void setMode('full'); navigate(`/t/${tripCode}/expenses`) }}
+                  onClick={() => { void setMode('full'); navigate(`/t/${tripCode}/dashboard`) }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border ${
                     onGradient
                       ? 'border-white/40 bg-white/15 hover:bg-white/25 text-white'
