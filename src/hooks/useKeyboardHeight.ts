@@ -4,6 +4,7 @@ interface KeyboardState {
   isVisible: boolean
   keyboardHeight: number
   availableHeight: number
+  viewportOffset: number
 }
 
 /**
@@ -21,6 +22,7 @@ export function useKeyboardHeight(): KeyboardState {
     isVisible: false,
     keyboardHeight: 0,
     availableHeight: typeof window !== 'undefined' ? window.innerHeight : 0,
+    viewportOffset: 0,
   })
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export function useKeyboardHeight(): KeyboardState {
         isVisible,
         keyboardHeight: isVisible ? keyboardHeight : 0,
         availableHeight: visualHeight,
+        viewportOffset: isVisible ? visualViewport.offsetTop : 0,
       })
     }
 
