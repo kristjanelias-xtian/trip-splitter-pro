@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; Phase 7 UX/UI Unification complete — 8 sub-phases, 7 PRs)
+> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; issue triage session — nav redirect loop, sheet consistency)
 
 ---
 
@@ -735,6 +735,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Phase 7h | Standardize loading/error states (PR #349). Replaced ad-hoc loading text and error toasts/banners with `<PageLoadingState />` and `<PageErrorState />` on 9 pages: ExpensesPage, SettlementsPage, DashboardPage, PlannerPage, ShoppingPage, ManageTripPage, QuickHistoryPage, QuickHomeScreen, AdminAllTripsPage. Every page now has a consistent centered spinner + retry-on-error pattern. Removed toast-based error surfacing from Planner/Shopping/Manage pages. |
 | 2026-02-24 | Phase 7g | Unified home page + bug fixes (PR #351). Pivoted from two-column Quick desktop layout to merging home pages — QuickHomeScreen features (scan CTA, QuickCreateSheet, motion animations, scan flows) merged into HomePage. ConditionalHomePage simplified to mobile-only active-trip redirect. `/quick` route removed (redirect added). Fixed "Full view" pill → `/dashboard` (#345), back arrow → `/`, header scan/toggle hidden on home. Deleted QuickHomeScreen.tsx. Closes #344, #345, #348. **Phase 7 complete.** |
 | 2026-02-24 | Issue triage | 3 user-reported issues triaged. #355 (back button broken) already fixed by PR #351 — closed. #356 (inconsistent desktop headers) + #352 (edit dialog mobile alignment) fixed in PR #357: QuickLayout desktop header unified with Layout (Row 2 `lg:hidden`, scan+toggle in Row 1 `hidden lg:flex`, header widened to `max-w-lg lg:max-w-7xl`); ManageTripPage edit dialog `max-w-2xl` → `max-w-lg mx-4 sm:mx-auto`. |
+| 2026-02-24 | Issue triage #2 | 4 issues triaged (#358–#361). **PR #363** (closes #361, #360): mobile redirect loop fix — back arrow on `/t/:code/quick` passed `state.fromTrip` to `/`; `ConditionalHomePage` skips auto-redirect when `fromTrip` present; trip name in Layout header wrapped in `<Link to="/" state={{ fromTrip: true }}>` for single-tap home access in full mode; overflow menu "Events & Trips" also passes state; new test added. **PR #364** (closes #359): `QuickSettlementSheet` standardized to iOS sheet pattern — `h-[85vh] overflow-y-auto` replaced with `flex flex-col` + sticky header (`shrink-0` + `border-b`) + `flex-1 overflow-y-auto` content + `useKeyboardHeight` for iOS keyboard handling. **#358** closed with comment (positive feedback, not a bug). **#360** closed as duplicate of #361. |
 
 ---
 
