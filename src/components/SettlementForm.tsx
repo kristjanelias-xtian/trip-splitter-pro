@@ -29,7 +29,7 @@ interface SettlementFormProps {
 
 export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId }: SettlementFormProps) {
   const { currentTrip } = useCurrentTrip()
-  const { participants, families } = useParticipantContext()
+  const { participants } = useParticipantContext()
 
   const [fromParticipantId, setFromParticipantId] = useState(initialFromId || '')
   const [toParticipantId, setToParticipantId] = useState(initialToId || '')
@@ -73,39 +73,19 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
     }
   }, [initialToId])
 
-  const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
-
   // Compute available currencies from trip settings
   const availableCurrencies = currentTrip
     ? [currentTrip.default_currency, ...Object.keys(currentTrip.exchange_rates || {})]
     : ['EUR', 'USD', 'GBP', 'THB']
 
   // Get all adults for selection
-  // Note: Settlements always use participant IDs (adults), even in families mode
-  // In families mode, we show which family they belong to
-  const getAdults = () => {
-    const adults = participants.filter(p => p.is_adult)
-
-    if (isIndividualsMode) {
-      return adults.map(p => ({
-        id: p.id,
-        name: p.name,
-        familyName: null
-      }))
-    } else {
-      // In families mode, show adults with their family name
-      return adults.map(p => {
-        const family = families.find(f => f.id === p.family_id)
-        return {
-          id: p.id,
-          name: p.name,
-          familyName: family?.family_name || null
-        }
-      })
-    }
-  }
-
-  const adultsForSelection = getAdults()
+  const adultsForSelection = participants
+    .filter(p => p.is_adult)
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      groupName: p.wallet_group || null,
+    }))
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -198,7 +178,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           <SelectContent>
             {adultsForSelection.map(adult => (
               <SelectItem key={adult.id} value={adult.id}>
-                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
+                {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -219,7 +199,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           <SelectContent>
             {adultsForSelection.map(adult => (
               <SelectItem key={adult.id} value={adult.id}>
-                {adult.familyName ? `${adult.name} (${adult.familyName})` : adult.name}
+                {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -238,9 +218,9 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
               <span className="font-semibold text-foreground block">
                 {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
               </span>
-              {adultsForSelection.find(a => a.id === fromParticipantId)?.familyName && (
+              {adultsForSelection.find(a => a.id === fromParticipantId)?.groupName && (
                 <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === fromParticipantId)?.familyName})
+                  ({adultsForSelection.find(a => a.id === fromParticipantId)?.groupName})
                 </span>
               )}
             </div>
@@ -249,9 +229,9 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
               <span className="font-semibold text-foreground block">
                 {adultsForSelection.find(a => a.id === toParticipantId)?.name}
               </span>
-              {adultsForSelection.find(a => a.id === toParticipantId)?.familyName && (
+              {adultsForSelection.find(a => a.id === toParticipantId)?.groupName && (
                 <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === toParticipantId)?.familyName})
+                  ({adultsForSelection.find(a => a.id === toParticipantId)?.groupName})
                 </span>
               )}
             </div>

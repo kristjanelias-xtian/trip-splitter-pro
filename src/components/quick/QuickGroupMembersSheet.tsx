@@ -21,7 +21,7 @@ export function QuickGroupMembersSheet({
   participants,
 }: QuickGroupMembersSheetProps) {
   function isLinked(balanceId: string): boolean {
-    return !!participants.find(p => p.id === balanceId || p.family_id === balanceId)?.user_id
+    return !!participants.find(p => p.id === balanceId)?.user_id
   }
 
   function statusText(balance: number): string {

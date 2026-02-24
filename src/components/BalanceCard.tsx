@@ -72,7 +72,7 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
                 {balance.name}
               </h3>
               {balance.isFamily && (
-                <Badge variant="soft">Family</Badge>
+                <Badge variant="soft">Group</Badge>
               )}
             </div>
           </div>

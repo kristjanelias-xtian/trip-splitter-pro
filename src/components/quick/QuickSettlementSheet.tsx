@@ -6,7 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
-import { calculateBalancesV2 } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
 import { SettlementForm } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -36,7 +36,7 @@ interface Prefill {
 export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementSheetProps) {
   const { currentTrip } = useCurrentTrip()
   const { expenses } = useExpenseContext()
-  const { participants, families } = useParticipantContext()
+  const { participants } = useParticipantContext()
   const { settlements, createSettlement } = useSettlementContext()
   const { receiptByExpenseId } = useReceiptContext()
   const { myParticipant } = useMyParticipant()
@@ -54,16 +54,18 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const keyboard = useKeyboardHeight()
   const isMobile = useMediaQuery('(max-width: 767px)')
 
-  // Build email map: entity ID (participant.id or family_id) → email
+  // Build email map: entity ID → email
   const fromEmailMap = useMemo(() => {
+    if (!currentTrip) return {}
+    const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
     const map: Record<string, string> = {}
     for (const p of participants) {
       if (!p.email) continue
-      if (p.family_id) map[p.family_id] = p.email
-      map[p.id] = p.email
+      const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
+      map[entityId] = p.email
     }
     return map
-  }, [participants])
+  }, [participants, currentTrip])
 
   if (!currentTrip) return null
 
@@ -73,10 +75,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   // Compute optimal settlement plan
   const { myTransactions, allSettled, currency } = useMemo(() => {
-    const balanceCalc = calculateBalancesV2(
+    const balanceCalc = calculateBalances(
       expenses,
       participants,
-      families,
       trackingMode,
       settlements,
       defaultCurrency,
@@ -88,11 +89,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       return { myTransactions: [], allSettled: plan.transactions.length === 0, currency: plan.currency }
     }
 
-    // Determine which entity ID represents "me" in the optimizer
-    // In families mode, the optimizer uses family IDs
-    const myEntityId = trackingMode === 'families' && myParticipant.family_id
-      ? myParticipant.family_id
-      : myParticipant.id
+    // Determine which entity ID represents "me" via entity map
+    const entityMap = buildEntityMap(participants, trackingMode)
+    const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
 
     // Filter transactions involving me
     const mine = plan.transactions.filter(
@@ -104,13 +103,13 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       allSettled: plan.transactions.length === 0,
       currency: plan.currency,
     }
-  }, [expenses, participants, families, settlements, trackingMode, defaultCurrency, exchangeRates, myParticipant])
+  }, [expenses, participants, settlements, trackingMode, defaultCurrency, exchangeRates, myParticipant])
 
-  const myEntityId = myParticipant
-    ? (trackingMode === 'families' && myParticipant.family_id
-        ? myParticipant.family_id
-        : myParticipant.id)
-    : null
+  const myEntityId = useMemo(() => {
+    if (!myParticipant) return null
+    const entityMap = buildEntityMap(participants, trackingMode)
+    return entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
+  }, [myParticipant, participants, trackingMode])
 
   const recipientKey = useMemo(() => {
     if (!myEntityId) return ''
@@ -126,14 +125,14 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     if (recipientIds.length === 0) return
 
     const fetchBankDetails = async () => {
-      const recipientParticipants = participants.filter(p =>
-        p.user_id &&
-        (recipientIds.includes(p.id) || (p.family_id != null && recipientIds.includes(p.family_id)))
-      )
+      const entityMap = buildEntityMap(participants, trackingMode)
+      const recipientParticipants = participants.filter(p => {
+        if (!p.user_id) return false
+        const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
+        return recipientIds.includes(entityId)
+      })
       const linkedEntityIds = new Set<string>(
-        recipientParticipants.map(p =>
-          p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
-        )
+        recipientParticipants.map(p => entityMap.participantToEntityId.get(p.id) ?? p.id)
       )
       setLinkedParticipantIds(linkedEntityIds)
       if (recipientParticipants.length === 0) return
@@ -150,7 +149,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         if (profile.bank_account_holder || profile.bank_iban) {
           const matching = recipientParticipants.filter(p => p.user_id === profile.id)
           for (const p of matching) {
-            const entityId = p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
+            const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
             map[entityId] = { holder: profile.bank_account_holder || '', iban: profile.bank_iban || '' }
           }
         }
@@ -160,14 +159,6 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
     fetchBankDetails()
   }, [user, recipientKey, participants])
-
-  // Map optimizer entity ID to an adult participant ID for the settlement form
-  const resolveParticipantId = (entityId: string, isFamily: boolean): string => {
-    if (!isFamily) return entityId
-    // In families mode, find the first adult in that family
-    const adult = participants.find(p => p.family_id === entityId && p.is_adult)
-    return adult?.id || entityId
-  }
 
   const handleRemind = async (tx: SettlementTransaction, idx: number) => {
     if (!currentTrip || !user) return
@@ -179,15 +170,16 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
       // Collect receipt data for expenses paid by the creditor (max 3)
+      // Entity IDs are participant IDs — find all members of the same wallet_group
+      const entityMap = buildEntityMap(participants, trackingMode)
       const creditorParticipantIds = new Set(
-        currentTrip.tracking_mode === 'families'
-          ? participants.filter(p => p.family_id === tx.toId).map(p => p.id)
-          : [tx.toId]
+        participants
+          .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === tx.toId)
+          .map(p => p.id)
       )
-      const debtorParticipantIds =
-        currentTrip.tracking_mode === 'families'
-          ? participants.filter(p => p.family_id === tx.fromId).map(p => p.id)
-          : [tx.fromId]
+      const debtorParticipantIds = participants
+        .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === tx.fromId)
+        .map(p => p.id)
 
       const receipts: Array<{
         merchant: string | null
@@ -243,9 +235,10 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   }
 
   const handleRecord = (tx: SettlementTransaction) => {
+    // Entity IDs are already participant IDs (canonical adult in wallet_group)
     setPrefill({
-      fromId: resolveParticipantId(tx.fromId, tx.isFromFamily),
-      toId: resolveParticipantId(tx.toId, tx.isToFamily),
+      fromId: tx.fromId,
+      toId: tx.toId,
       amount: tx.amount,
     })
     setView('form')

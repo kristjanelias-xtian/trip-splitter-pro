@@ -24,7 +24,7 @@ interface QuickHistorySheetProps {
 export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps) {
   const { currentTrip } = useCurrentTrip()
   const { myParticipant } = useMyParticipant()
-  const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
+  const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
   const [filter, setFilter] = useState<FilterType>('all')
@@ -50,11 +50,10 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
       expenses,
       settlements,
       participants,
-      families,
       myParticipant,
       currentTrip.tracking_mode
     )
-  }, [expenses, settlements, participants, families, myParticipant, currentTrip])
+  }, [expenses, settlements, participants, myParticipant, currentTrip])
 
   const filtered = useMemo(() => {
     if (filter === 'all') return transactions

@@ -20,7 +20,7 @@ interface LinkParticipantDialogProps {
 
 export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDialogProps) {
   const { user } = useAuth()
-  const { participants, families, linkUserToParticipant } = useParticipantContext()
+  const { participants, linkUserToParticipant } = useParticipantContext()
   const { isLinked } = useMyParticipant()
   const [open, setOpen] = useState(false)
   const [linking, setLinking] = useState(false)
@@ -39,11 +39,6 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
       setOpen(false)
       onLinked?.()
     }
-  }
-
-  const getFamilyName = (familyId: string | null) => {
-    if (!familyId) return null
-    return families.find(f => f.id === familyId)?.family_name || null
   }
 
   return (
@@ -69,24 +64,21 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
               No unlinked participants available. All participants are already claimed.
             </p>
           ) : (
-            adultParticipants.map(participant => {
-              const familyName = getFamilyName(participant.family_id)
-              return (
-                <button
-                  key={participant.id}
-                  onClick={() => handleLink(participant.id)}
-                  disabled={linking}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-border hover:bg-accent/50 hover:border-accent transition-colors disabled:opacity-50"
-                >
-                  <span className="font-medium">{participant.name}</span>
-                  {familyName && (
-                    <span className="text-sm text-muted-foreground ml-2">
-                      ({familyName})
-                    </span>
-                  )}
-                </button>
-              )
-            })
+            adultParticipants.map(participant => (
+              <button
+                key={participant.id}
+                onClick={() => handleLink(participant.id)}
+                disabled={linking}
+                className="w-full text-left px-4 py-3 rounded-lg border border-border hover:bg-accent/50 hover:border-accent transition-colors disabled:opacity-50"
+              >
+                <span className="font-medium">{participant.name}</span>
+                {participant.wallet_group && (
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({participant.wallet_group})
+                  </span>
+                )}
+              </button>
+            ))
           )}
         </div>
       </DialogContent>

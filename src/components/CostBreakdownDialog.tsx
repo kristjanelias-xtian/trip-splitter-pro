@@ -2,9 +2,9 @@ import { useMemo } from 'react'
 import { Receipt, Wallet } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseSharesV2 } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
-import { Participant, Family } from '@/types/participant'
+import { Participant } from '@/types/participant'
 
 interface CostBreakdownDialogProps {
   open: boolean
@@ -12,7 +12,6 @@ interface CostBreakdownDialogProps {
   balance: ParticipantBalance
   expenses: Expense[]
   participants: Participant[]
-  families: Family[]
   trackingMode: 'individuals' | 'families'
   defaultCurrency: string
   exchangeRates: Record<string, number>
@@ -29,29 +28,25 @@ export function CostBreakdownDialog({
   balance,
   expenses,
   participants,
-  families,
   trackingMode,
   defaultCurrency,
   exchangeRates,
 }: CostBreakdownDialogProps) {
+  const entityMap = useMemo(() => buildEntityMap(participants, trackingMode), [participants, trackingMode])
+
   const { paidExpenses, shareExpenses } = useMemo(() => {
     const paid: Expense[] = []
     const shares: ExpenseShareItem[] = []
 
     expenses.forEach(expense => {
       // Check if this entity paid the expense
-      const payer = participants.find(p => p.id === expense.paid_by)
-      if (payer) {
-        const payerEntityId = trackingMode === 'families' && payer.family_id
-          ? payer.family_id
-          : payer.id
-        if (payerEntityId === balance.id) {
-          paid.push(expense)
-        }
+      const payerEntityId = entityMap.participantToEntityId.get(expense.paid_by) ?? expense.paid_by
+      if (payerEntityId === balance.id) {
+        paid.push(expense)
       }
 
       // Check if this entity has a share in the expense
-      const expenseShares = calculateExpenseSharesV2(expense, participants, families, trackingMode)
+      const expenseShares = calculateExpenseShares(expense, participants, trackingMode, entityMap)
       const entityShare = expenseShares.get(balance.id)
       if (entityShare && entityShare > 0) {
         const convertedAmount = convertToBaseCurrency(expense.amount, expense.currency, defaultCurrency, exchangeRates)
@@ -68,7 +63,7 @@ export function CostBreakdownDialog({
     shares.sort((a, b) => b.expense.expense_date.localeCompare(a.expense.expense_date))
 
     return { paidExpenses: paid, shareExpenses: shares }
-  }, [expenses, participants, families, trackingMode, balance.id, defaultCurrency, exchangeRates])
+  }, [expenses, participants, entityMap, trackingMode, balance.id, defaultCurrency, exchangeRates])
 
   const fmt = (amount: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: defaultCurrency }).format(amount)
@@ -84,7 +79,7 @@ export function CostBreakdownDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {balance.name}
-            {balance.isFamily && <Badge variant="soft">Family</Badge>}
+            {balance.isFamily && <Badge variant="soft">Group</Badge>}
           </DialogTitle>
           <DialogDescription>
             Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>

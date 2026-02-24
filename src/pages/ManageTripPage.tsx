@@ -8,8 +8,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useMealContext } from '@/contexts/MealContext'
-import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
-import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
+import { ParticipantsSetup } from '@/components/setup/ParticipantsSetup'
 import { EventForm } from '@/components/EventForm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -119,14 +118,17 @@ export function ManageTripPage() {
     }
   }
 
+  const hasWalletGroups = participants.some(p => !!p.wallet_group)
+
   const featureLabels: Record<string, string> = {
     enable_meals: 'Meal planning',
     enable_activities: 'Activity planning',
     enable_shopping: 'Shopping list',
     default_split_all: 'Split between everyone',
+    account_for_family_size: 'Proportional group splitting',
   }
 
-  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all', value: boolean) => {
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all' | 'account_for_family_size', value: boolean) => {
     setTogglingFeatures(prev => new Set(prev).add(feature))
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
@@ -253,7 +255,7 @@ export function ManageTripPage() {
       {/* Participants Section — top position for easy onboarding */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">
-          Participants & Families
+          Participants
         </h3>
         {participantsLoading ? (
           <PageLoadingState />
@@ -275,11 +277,7 @@ export function ManageTripPage() {
               </CardContent>
             </Card>
           )}
-          {currentTrip.tracking_mode === 'individuals' ? (
-            <IndividualsSetup />
-          ) : (
-            <FamiliesSetup />
-          )}
+          <ParticipantsSetup />
         </>}
       </div>
 
@@ -385,6 +383,19 @@ export function ManageTripPage() {
               disabled={togglingFeatures.has('default_split_all')}
             />
           </div>
+          {hasWalletGroups && (
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Proportional Group Splitting</Label>
+                <p className="text-xs text-muted-foreground">Larger groups pay proportionally more based on group size</p>
+              </div>
+              <Switch
+                checked={currentTrip.account_for_family_size}
+                onCheckedChange={(checked) => handleToggleFeature('account_for_family_size', checked)}
+                disabled={togglingFeatures.has('account_for_family_size')}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

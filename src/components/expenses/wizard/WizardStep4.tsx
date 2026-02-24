@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
-import type { Participant, Family } from '@/types/participant'
+import type { Participant } from '@/types/participant'
 
 type ExpenseCategory = 'Food' | 'Accommodation' | 'Transport' | 'Activities' | 'Training' | 'Other'
 type SplitMode = 'equal' | 'percentage' | 'amount'
@@ -38,15 +38,10 @@ interface WizardStep4Props {
   // Custom split props
   amount?: string
   currency?: string
-  isIndividualsMode?: boolean
   participants?: Participant[]
-  families?: Family[]
   selectedParticipants?: string[]
-  selectedFamilies?: string[]
   participantSplitValues?: Record<string, string>
-  familySplitValues?: Record<string, string>
   onParticipantSplitChange?: (id: string, value: string) => void
-  onFamilySplitChange?: (id: string, value: string) => void
 }
 
 export function WizardStep4({
@@ -61,15 +56,10 @@ export function WizardStep4({
   disabled = false,
   amount,
   currency,
-  isIndividualsMode,
   participants,
-  families,
   selectedParticipants,
-  selectedFamilies,
   participantSplitValues,
-  familySplitValues,
   onParticipantSplitChange,
-  onFamilySplitChange,
 }: WizardStep4Props) {
   // Compute running total for custom split modes
   const computeTotal = () => {
@@ -77,12 +67,6 @@ export function WizardStep4({
     if (selectedParticipants && participantSplitValues) {
       for (const id of selectedParticipants) {
         const v = parseFloat(participantSplitValues[id] || '0')
-        if (!isNaN(v)) total += v
-      }
-    }
-    if (selectedFamilies && familySplitValues) {
-      for (const id of selectedFamilies) {
-        const v = parseFloat(familySplitValues[id] || '0')
         if (!isNaN(v)) total += v
       }
     }
@@ -106,27 +90,17 @@ export function WizardStep4({
     const target = splitMode === 'percentage' ? 100 : parseFloat(amount || '0')
     if (isNaN(target) || target <= 0) return
 
-    const allIds: { type: 'family' | 'participant'; id: string }[] = []
-    if (selectedFamilies) {
-      for (const id of selectedFamilies) allIds.push({ type: 'family', id })
-    }
-    if (selectedParticipants) {
-      for (const id of selectedParticipants) allIds.push({ type: 'participant', id })
-    }
-    if (allIds.length === 0) return
+    if (!selectedParticipants || selectedParticipants.length === 0) return
 
-    const base = Math.floor((target / allIds.length) * 100) / 100
-    const remainder = Math.round((target - base * allIds.length) * 100) / 100
+    const count = selectedParticipants.length
+    const base = Math.floor((target / count) * 100) / 100
+    const remainder = Math.round((target - base * count) * 100) / 100
 
-    for (let i = 0; i < allIds.length; i++) {
-      const { type, id } = allIds[i]
+    for (let i = 0; i < count; i++) {
+      const id = selectedParticipants[i]
       // Give remainder to the first entry so totals match exactly
       const value = i === 0 ? (base + remainder).toFixed(2) : base.toFixed(2)
-      if (type === 'family') {
-        onFamilySplitChange?.(id, value)
-      } else {
-        onParticipantSplitChange?.(id, value)
-      }
+      onParticipantSplitChange?.(id, value)
     }
   }
 
@@ -211,32 +185,6 @@ export function WizardStep4({
           </div>
 
           <div className="space-y-1 rounded-lg border border-input p-3">
-            {/* Families */}
-            {!isIndividualsMode && selectedFamilies && selectedFamilies.length > 0 && families && (
-              <>
-                {families
-                  .filter(f => selectedFamilies.includes(f.id))
-                  .map(family => (
-                    <div key={family.id} className="flex items-center justify-between min-h-[44px] gap-3">
-                      <span className="text-sm text-foreground flex-1">
-                        {family.family_name}
-                      </span>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={familySplitValues?.[family.id] || ''}
-                        onChange={(e) => onFamilySplitChange?.(family.id, e.target.value.replace(',', '.'))}
-                        placeholder={splitMode === 'percentage' ? '%' : currency || 'EUR'}
-                        pattern="[0-9]*[.,]?[0-9]*"
-                        disabled={disabled}
-                        className="w-24 h-10"
-                      />
-                    </div>
-                  ))}
-              </>
-            )}
-
-            {/* Participants */}
             {selectedParticipants && selectedParticipants.length > 0 && participants && (
               <>
                 {participants

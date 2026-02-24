@@ -75,7 +75,7 @@ export function exportSettlementPlanToPDF(
 
   autoTable(doc, {
     startY: finalY + 6,
-    head: [['Participant/Family', 'Total Paid', 'Total Share', 'Balance', 'Status']],
+    head: [['Participant', 'Total Paid', 'Total Share', 'Balance', 'Status']],
     body: sortedBalances.map(b => [
       b.name,
       `€${b.totalPaid.toFixed(2)}`,
@@ -221,7 +221,7 @@ export function exportTripSummaryToPDF(
 
   autoTable(doc, {
     startY: balancesY + 6,
-    head: [['Participant/Family', 'Total Paid', 'Total Share', 'Balance']],
+    head: [['Participant', 'Total Paid', 'Total Share', 'Balance']],
     body: sortedBalances.map(b => [
       b.name,
       `€${b.totalPaid.toFixed(2)}`,

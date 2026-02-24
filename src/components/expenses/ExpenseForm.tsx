@@ -6,12 +6,11 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
-import { calculateBalancesV2, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
@@ -46,7 +45,7 @@ export function ExpenseForm({
   submitLabel = 'Add Expense',
 }: ExpenseFormProps) {
   const { currentTrip } = useCurrentTrip()
-  const { participants, families, getAdultParticipants } = useParticipantContext()
+  const { participants, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
 
@@ -61,38 +60,26 @@ export function ExpenseForm({
   const [comment, setComment] = useState(initialValues?.comment || '')
   const [showMoreDetails, setShowMoreDetails] = useState(false)
 
-  // Distribution state
+  // Distribution state — always individuals
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
-  const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
   const [splitMode, setSplitMode] = useState<SplitMode>('equal')
-  const [accountForFamilySize, setAccountForFamilySize] = useState(true)
 
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
-  const [familySplitValues, setFamilySplitValues] = useState<Record<string, string>>({})
 
   // Auto-fill split value when exactly one party is selected in "By Amount" mode
   useEffect(() => {
     if (splitMode !== 'amount') return
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) return
-    const totalSelected = selectedParticipants.length + selectedFamilies.length
-    if (totalSelected !== 1) return
+    if (selectedParticipants.length !== 1) return
 
-    if (selectedFamilies.length === 1) {
-      const id = selectedFamilies[0]
-      const current = familySplitValues[id]
-      if (!current || current === '' || current === '0') {
-        setFamilySplitValues(prev => ({ ...prev, [id]: amount }))
-      }
-    } else if (selectedParticipants.length === 1) {
-      const id = selectedParticipants[0]
-      const current = participantSplitValues[id]
-      if (!current || current === '' || current === '0') {
-        setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
-      }
+    const id = selectedParticipants[0]
+    const current = participantSplitValues[id]
+    if (!current || current === '' || current === '0') {
+      setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
     }
-  }, [splitMode, selectedFamilies, selectedParticipants, amount])
+  }, [splitMode, selectedParticipants, amount])
 
   const [loading, setLoading] = useState(false)
   const isSubmittingRef = useRef(false)
@@ -105,7 +92,6 @@ export function ExpenseForm({
   }, [])
 
   const adults = getAdultParticipants()
-  const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
   // Compute available currencies from trip settings
   const availableCurrencies = currentTrip
@@ -114,22 +100,19 @@ export function ExpenseForm({
 
   // Calculate balances to find suggested payer (including settlements)
   const balanceCalculation = currentTrip
-    ? calculateBalancesV2(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
+    ? calculateBalances(expenses, participants, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
-  // Auto-select all participants/families on mount if not editing and trip setting allows it
+  // Auto-select all participants on mount if not editing and trip setting allows it
   const defaultSplitAll = currentTrip?.default_split_all ?? true
   useEffect(() => {
     if (!initialValues?.distribution && defaultSplitAll) {
       if (participants.length > 0 && selectedParticipants.length === 0) {
         setSelectedParticipants(participants.map(p => p.id))
       }
-      if (families.length > 0 && selectedFamilies.length === 0) {
-        setSelectedFamilies(families.map(f => f.id))
-      }
     }
-  }, [participants, families])
+  }, [participants])
 
   // Restore distribution selections when editing existing expense
   useEffect(() => {
@@ -138,19 +121,6 @@ export function ExpenseForm({
 
       if (dist.type === 'individuals') {
         setSelectedParticipants(dist.participants || [])
-        setSelectedFamilies([])
-      } else if (dist.type === 'families') {
-        setSelectedFamilies(dist.families || [])
-        setSelectedParticipants([])
-        if ('accountForFamilySize' in dist && dist.accountForFamilySize !== undefined) {
-          setAccountForFamilySize(dist.accountForFamilySize)
-        }
-      } else if (dist.type === 'mixed') {
-        setSelectedFamilies(dist.families || [])
-        setSelectedParticipants(dist.participants || [])
-        if ('accountForFamilySize' in dist && dist.accountForFamilySize !== undefined) {
-          setAccountForFamilySize(dist.accountForFamilySize)
-        }
       }
 
       // Restore split mode
@@ -166,13 +136,6 @@ export function ExpenseForm({
             values[split.participantId] = split.value.toString()
           })
           setParticipantSplitValues(values)
-        }
-        if ('familySplits' in dist && dist.familySplits) {
-          const values: Record<string, string> = {}
-          dist.familySplits.forEach(split => {
-            values[split.familyId] = split.value.toString()
-          })
-          setFamilySplitValues(values)
         }
       }
     }
@@ -194,30 +157,12 @@ export function ExpenseForm({
     })
   }
 
-  const handleFamilyToggle = (id: string) => {
-    setSelectedFamilies(prev => {
-      const newSelection = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-
-      // Initialize split value for new selections in non-equal mode
-      if (!prev.includes(id) && splitMode !== 'equal') {
-        setFamilySplitValues(vals => ({
-          ...vals,
-          [id]: ''
-        }))
-      }
-
-      return newSelection
-    })
-  }
-
   const handleSelectAll = () => {
     setSelectedParticipants(participants.map(p => p.id))
-    setSelectedFamilies(families.map(f => f.id))
   }
 
   const handleDeselectAll = () => {
     setSelectedParticipants([])
-    setSelectedFamilies([])
   }
 
   const handleParticipantSplitChange = (id: string, value: string) => {
@@ -227,18 +172,10 @@ export function ExpenseForm({
     }))
   }
 
-  const handleFamilySplitChange = (id: string, value: string) => {
-    setFamilySplitValues(prev => ({
-      ...prev,
-      [id]: value
-    }))
-  }
-
   const handleSplitModeChange = (mode: SplitMode) => {
     setSplitMode(mode)
     // Reset custom split values when switching modes
     setParticipantSplitValues({})
-    setFamilySplitValues({})
   }
 
   const executeSubmit = async () => {
@@ -261,17 +198,9 @@ export function ExpenseForm({
       return
     }
 
-    // Validate distribution
-    if (isIndividualsMode) {
-      if (selectedParticipants.length === 0) {
-        setError('Please select at least one person to split between')
-        return
-      }
-    } else {
-      if (selectedFamilies.length === 0 && selectedParticipants.length === 0) {
-        setError('Please select at least one family or person to split between')
-        return
-      }
+    if (selectedParticipants.length === 0) {
+      setError('Please select at least one person to split between')
+      return
     }
 
     // Validate split mode values
@@ -281,14 +210,6 @@ export function ExpenseForm({
         const value = parseFloat(participantSplitValues[id] || '0')
         if (isNaN(value) || value <= 0) {
           setError('Please enter valid percentages for all selected participants')
-          return
-        }
-        totalPercentage += value
-      }
-      for (const id of selectedFamilies) {
-        const value = parseFloat(familySplitValues[id] || '0')
-        if (isNaN(value) || value <= 0) {
-          setError('Please enter valid percentages for all selected families')
           return
         }
         totalPercentage += value
@@ -307,95 +228,23 @@ export function ExpenseForm({
         }
         totalAmount += value
       }
-      for (const id of selectedFamilies) {
-        const value = parseFloat(familySplitValues[id] || '0')
-        if (isNaN(value) || value <= 0) {
-          setError('Please enter valid amounts for all selected families')
-          return
-        }
-        totalAmount += value
-      }
       if (Math.abs(totalAmount - amountNum) > 0.01) {
         setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
         return
       }
     }
 
-    // Build distribution object
-    let distribution: ExpenseDistribution
-    if (isIndividualsMode) {
-      distribution = {
-        type: 'individuals',
-        participants: selectedParticipants,
-        splitMode,
-        participantSplits: splitMode !== 'equal'
-          ? selectedParticipants.map(id => ({
-              participantId: id,
-              value: parseFloat(participantSplitValues[id] || '0')
-            }))
-          : undefined
-      }
-    } else {
-      // Families mode
-      if (selectedFamilies.length > 0 && selectedParticipants.length > 0) {
-        // CRITICAL: Filter out family members from participants to avoid double-counting
-        const standaloneParticipants = selectedParticipants.filter(participantId => {
-          const participant = participants.find(p => p.id === participantId)
-          // Only include participants who are NOT in any selected family
-          if (!participant) return false
-
-          // If participant has no family, they're standalone
-          if (participant.family_id === null) return true
-
-          // If participant belongs to a selected family, exclude them
-          return !selectedFamilies.includes(participant.family_id)
-        })
-
-        distribution = {
-          type: 'mixed',
-          families: selectedFamilies,
-          participants: standaloneParticipants,
-          splitMode,
-          accountForFamilySize, // Include toggle value
-          familySplits: splitMode !== 'equal'
-            ? selectedFamilies.map(id => ({
-                familyId: id,
-                value: parseFloat(familySplitValues[id] || '0')
-              }))
-            : undefined,
-          participantSplits: splitMode !== 'equal'
-            ? standaloneParticipants.map(id => ({
-                participantId: id,
-                value: parseFloat(participantSplitValues[id] || '0')
-              }))
-            : undefined
-        }
-      } else if (selectedFamilies.length > 0) {
-        distribution = {
-          type: 'families',
-          families: selectedFamilies,
-          splitMode,
-          accountForFamilySize, // Include toggle value
-          familySplits: splitMode !== 'equal'
-            ? selectedFamilies.map(id => ({
-                familyId: id,
-                value: parseFloat(familySplitValues[id] || '0')
-              }))
-            : undefined
-        }
-      } else {
-        distribution = {
-          type: 'individuals',
-          participants: selectedParticipants,
-          splitMode,
-          participantSplits: splitMode !== 'equal'
-            ? selectedParticipants.map(id => ({
-                participantId: id,
-                value: parseFloat(participantSplitValues[id] || '0')
-              }))
-            : undefined
-        }
-      }
+    // Build distribution object — always individuals
+    const distribution: ExpenseDistribution = {
+      type: 'individuals',
+      participants: selectedParticipants,
+      splitMode,
+      participantSplits: splitMode !== 'equal'
+        ? selectedParticipants.map(id => ({
+            participantId: id,
+            value: parseFloat(participantSplitValues[id] || '0')
+          }))
+        : undefined
     }
 
     if (!currentTrip) {
@@ -423,7 +272,6 @@ export function ExpenseForm({
       setAmount('')
       setComment('')
       setSelectedParticipants(participants.map(p => p.id))
-      setSelectedFamilies(families.map(f => f.id))
       setShowMoreDetails(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save expense.')
@@ -438,6 +286,32 @@ export function ExpenseForm({
     e.preventDefault()
     await executeSubmit()
   }
+
+  // Group participants by wallet_group for display
+  const participantGroups = (() => {
+    const groups: { label: string | null; members: typeof participants }[] = []
+    const grouped = new Map<string, typeof participants>()
+    const standalone: typeof participants = []
+
+    for (const p of participants) {
+      if (p.wallet_group) {
+        const existing = grouped.get(p.wallet_group) || []
+        existing.push(p)
+        grouped.set(p.wallet_group, existing)
+      } else {
+        standalone.push(p)
+      }
+    }
+
+    for (const [label, members] of grouped) {
+      groups.push({ label, members })
+    }
+    if (standalone.length > 0) {
+      groups.push({ label: null, members: standalone })
+    }
+
+    return groups
+  })()
 
   return (
     <motion.form
@@ -543,9 +417,6 @@ export function ExpenseForm({
                   </span>
                 </p>
               </div>
-              {!isIndividualsMode && suggestedPayer.isFamily && (
-                <Badge variant="soft">Family</Badge>
-              )}
             </div>
           </motion.div>
         )}
@@ -613,34 +484,6 @@ export function ExpenseForm({
         )}
       </div>
 
-      {/* Account for Family Size Toggle */}
-      {selectedFamilies.length > 0 && splitMode === 'equal' && (
-        <div className="space-y-2 p-3 bg-accent/5 rounded-lg border border-accent/10">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="accountForFamilySize"
-              checked={accountForFamilySize}
-              onCheckedChange={(checked) => setAccountForFamilySize(checked as boolean)}
-              disabled={loading}
-            />
-            <div className="flex-1 space-y-1">
-              <label
-                htmlFor="accountForFamilySize"
-                className="text-sm font-medium text-foreground cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Account for family size
-              </label>
-              <p className="text-xs text-muted-foreground">
-                {accountForFamilySize
-                  ? 'Families pay proportionally by number of people (e.g., family of 4 pays 2× family of 2)'
-                  : 'All families pay equally regardless of size'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-
       {/* Split Between */}
       <div className="space-y-2">
         <Label>Split Between</Label>
@@ -670,218 +513,57 @@ export function ExpenseForm({
           </Button>
         </div>
 
-        {isIndividualsMode ? (
-          // Individuals mode - show participants
-          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
-            {participants.map(participant => (
-              <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
-                <Checkbox
-                  id={`participant-${participant.id}`}
-                  checked={selectedParticipants.includes(participant.id)}
-                  onCheckedChange={() => handleParticipantToggle(participant.id)}
-                  disabled={loading}
-                />
-                <label
-                  htmlFor={`participant-${participant.id}`}
-                  className="text-sm text-foreground cursor-pointer flex-1"
-                >
-                  {participant.name} {participant.is_adult ? '' : '(child)'}
-                </label>
-                {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={participantSplitValues[participant.id] || ''}
-                    onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
-                    placeholder={splitMode === 'percentage' ? '%' : currency}
-                    pattern="[0-9]*[.,]?[0-9]*"
+        <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
+          {participantGroups.map((group, gi) => (
+            <div key={group.label ?? `standalone-${gi}`}>
+              {group.label && (
+                <p className="text-xs text-muted-foreground mb-1 mt-2 first:mt-0">{group.label}</p>
+              )}
+              {group.members.map(participant => (
+                <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
+                  <Checkbox
+                    id={`participant-${participant.id}`}
+                    checked={selectedParticipants.includes(participant.id)}
+                    onCheckedChange={() => handleParticipantToggle(participant.id)}
                     disabled={loading}
-                    className="w-24 h-9"
                   />
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Families mode - show families and standalone individuals only
-          <div className="space-y-3">
-            {families.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Families</p>
-                <div className="space-y-2 rounded-lg border border-input p-3">
-                  {families.map(family => (
-                    <div key={family.id} className="flex items-center space-x-2 min-h-[44px]">
-                      <Checkbox
-                        id={`family-${family.id}`}
-                        checked={selectedFamilies.includes(family.id)}
-                        onCheckedChange={() => handleFamilyToggle(family.id)}
-                        disabled={loading}
-                      />
-                      <label
-                        htmlFor={`family-${family.id}`}
-                        className="text-sm text-foreground cursor-pointer flex-1"
-                      >
-                        {family.family_name} ({family.adults} adults
-                        {family.children > 0 && `, ${family.children} children`})
-                      </label>
-                      {splitMode !== 'equal' && selectedFamilies.includes(family.id) && (
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          value={familySplitValues[family.id] || ''}
-                          onChange={(e) => handleFamilySplitChange(family.id, e.target.value.replace(',', '.'))}
-                          placeholder={splitMode === 'percentage' ? '%' : currency}
-                          pattern="[0-9]*[.,]?[0-9]*"
-                          disabled={loading}
-                          className="w-24 h-9"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Standalone individuals (not in any family) */}
-            {(() => {
-              const standaloneParticipants = participants.filter(p => p.family_id === null)
-              return standaloneParticipants.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Standalone Individuals</p>
-                  <div className="space-y-2 rounded-lg border border-input p-3">
-                    {standaloneParticipants.map(participant => (
-                      <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
-                        <Checkbox
-                          id={`participant-${participant.id}`}
-                          checked={selectedParticipants.includes(participant.id)}
-                          onCheckedChange={() => handleParticipantToggle(participant.id)}
-                          disabled={loading}
-                        />
-                        <label
-                          htmlFor={`participant-${participant.id}`}
-                          className="text-sm text-foreground cursor-pointer flex-1"
-                        >
-                          {participant.name} {participant.is_adult ? '' : '(child)'}
-                        </label>
-                        {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            value={participantSplitValues[participant.id] || ''}
-                            onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
-                            placeholder={splitMode === 'percentage' ? '%' : currency}
-                            step={splitMode === 'percentage' ? '0.1' : '0.01'}
-                            min="0"
-                            disabled={loading}
-                            className="w-24 h-9"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-            {/* All individuals - allows selecting specific people from families */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">Individuals</p>
-              <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
-                {participants.map(participant => (
-                  <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
-                    <Checkbox
-                      id={`individual-${participant.id}`}
-                      checked={selectedParticipants.includes(participant.id)}
-                      onCheckedChange={() => handleParticipantToggle(participant.id)}
+                  <label
+                    htmlFor={`participant-${participant.id}`}
+                    className="text-sm text-foreground cursor-pointer flex-1"
+                  >
+                    {participant.name} {participant.is_adult ? '' : '(child)'}
+                  </label>
+                  {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={participantSplitValues[participant.id] || ''}
+                      onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
+                      placeholder={splitMode === 'percentage' ? '%' : currency}
+                      pattern="[0-9]*[.,]?[0-9]*"
                       disabled={loading}
+                      className="w-24 h-9"
                     />
-                    <label
-                      htmlFor={`individual-${participant.id}`}
-                      className="text-sm text-foreground cursor-pointer flex-1"
-                    >
-                      {participant.name} {participant.is_adult ? '' : '(child)'}
-                      {participant.family_id && (() => {
-                        const family = families.find(f => f.id === participant.family_id)
-                        return family ? ` (${family.family_name})` : ''
-                      })()}
-                    </label>
-                    {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        value={participantSplitValues[participant.id] || ''}
-                        onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value)}
-                        placeholder={splitMode === 'percentage' ? '%' : currency}
-                        step={splitMode === 'percentage' ? '0.1' : '0.01'}
-                        min="0"
-                        disabled={loading}
-                        className="w-24 h-9"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
       {/* Split Preview */}
-      {parseFloat(amount) > 0 && (selectedParticipants.length > 0 || selectedFamilies.length > 0) && (() => {
-        // Build distribution object for preview
-        const distributionType: ExpenseDistribution['type'] =
-          selectedFamilies.length > 0 && selectedParticipants.length > 0
-            ? 'mixed'
-            : selectedFamilies.length > 0
-            ? 'families'
-            : 'individuals'
-
-        let previewDistribution: ExpenseDistribution
-
-        if (distributionType === 'individuals') {
-          const dist: ExpenseDistribution = {
-            type: 'individuals',
-            participants: selectedParticipants,
-            splitMode,
-          }
-          if (splitMode === 'percentage' || splitMode === 'amount') {
-            dist.participantSplits = selectedParticipants.map(id => ({
-              participantId: id,
-              value: parseFloat(participantSplitValues[id] || '0')
-            }))
-          }
-          previewDistribution = dist
-        } else if (distributionType === 'families') {
-          const dist: ExpenseDistribution = {
-            type: 'families',
-            families: selectedFamilies,
-            splitMode,
-            accountForFamilySize, // Include the toggle value
-          }
-          if (splitMode === 'percentage' || splitMode === 'amount') {
-            dist.familySplits = selectedFamilies.map(id => ({
-              familyId: id,
-              value: parseFloat(familySplitValues[id] || '0')
-            }))
-          }
-          previewDistribution = dist
-        } else {
-          const dist: ExpenseDistribution = {
-            type: 'mixed',
-            families: selectedFamilies,
-            participants: selectedParticipants,
-            splitMode,
-            accountForFamilySize, // Include the toggle value
-          }
-          if (splitMode === 'percentage' || splitMode === 'amount') {
-            dist.familySplits = selectedFamilies.map(id => ({
-              familyId: id,
-              value: parseFloat(familySplitValues[id] || '0')
-            }))
-            dist.participantSplits = selectedParticipants.map(id => ({
-              participantId: id,
-              value: parseFloat(participantSplitValues[id] || '0')
-            }))
-          }
-          previewDistribution = dist
+      {parseFloat(amount) > 0 && selectedParticipants.length > 0 && (() => {
+        const previewDistribution: ExpenseDistribution = {
+          type: 'individuals',
+          participants: selectedParticipants,
+          splitMode,
+        }
+        if (splitMode === 'percentage' || splitMode === 'amount') {
+          previewDistribution.participantSplits = selectedParticipants.map(id => ({
+            participantId: id,
+            value: parseFloat(participantSplitValues[id] || '0')
+          }))
         }
 
         return (
@@ -890,7 +572,6 @@ export function ExpenseForm({
             currency={currency}
             distribution={previewDistribution}
             participants={participants}
-            families={families}
           />
         )
       })()}

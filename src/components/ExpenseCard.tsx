@@ -28,7 +28,7 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: ExpenseCardProps) {
-  const { participants, families } = useParticipantContext()
+  const { participants } = useParticipantContext()
   const { currentTrip } = useCurrentTrip()
 
   const defaultCurrency = currentTrip?.default_currency || 'EUR'
@@ -57,42 +57,14 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
 
   const getDistributionText = () => {
     const dist = expense.distribution
-
-    if (dist.type === 'individuals') {
-      const names = dist.participants
-        .map(id => participants.find(p => p.id === id)?.name)
-        .filter(Boolean)
-      if (names.length === participants.length) {
-        return 'Everyone'
-      }
-      return names.join(', ')
+    const ids = dist.type === 'individuals' ? dist.participants : []
+    const names = ids
+      .map(id => participants.find(p => p.id === id)?.name)
+      .filter(Boolean)
+    if (names.length === participants.length) {
+      return 'Everyone'
     }
-
-    if (dist.type === 'families') {
-      const names = dist.families
-        .map(id => families.find(f => f.id === id)?.family_name)
-        .filter(Boolean)
-      if (names.length === families.length) {
-        return 'All families'
-      }
-      return names.join(', ')
-    }
-
-    if (dist.type === 'mixed') {
-      const familyNames = (dist.families || [])
-        .map(id => families.find(f => f.id === id)?.family_name)
-        .filter(Boolean)
-      const participantNames = (dist.participants || [])
-        .map(id => {
-          const participant = participants.find(p => p.id === id)
-          // Only include standalone individuals (not in any family)
-          return participant?.family_id === null ? participant.name : null
-        })
-        .filter(Boolean)
-      return [...familyNames, ...participantNames].join(', ')
-    }
-
-    return 'Unknown'
+    return names.length > 0 ? names.join(', ') : 'Unknown'
   }
 
   const getCategoryIcon = (category: string) => {

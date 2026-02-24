@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { buildTransactionHistory } from './transactionHistoryBuilder'
-import { buildParticipant, buildFamily, buildExpense, buildSettlement } from '@/test/factories'
+import { buildParticipant, buildExpense, buildSettlement } from '@/test/factories'
 
 // Mock the balanceCalculator dependency
 vi.mock('@/services/balanceCalculator', async (importOriginal) => {
@@ -14,7 +14,7 @@ describe('buildTransactionHistory', () => {
   const participants = [alice, bob]
 
   it('returns empty array with no expenses or settlements', () => {
-    const result = buildTransactionHistory([], [], participants, [], alice, 'individuals')
+    const result = buildTransactionHistory([], [], participants, alice, 'individuals')
     expect(result).toHaveLength(0)
   })
 
@@ -27,7 +27,7 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [expense], [], participants, [], alice, 'individuals'
+      [expense], [], participants, alice, 'individuals'
     )
 
     expect(result).toHaveLength(1)
@@ -45,7 +45,7 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [expense], [], participants, [], alice, 'individuals'
+      [expense], [], participants, alice, 'individuals'
     )
 
     expect(result).toHaveLength(1)
@@ -62,7 +62,7 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [expense], [], [alice, bob, carol], [], alice, 'individuals'
+      [expense], [], [alice, bob, carol], alice, 'individuals'
     )
     expect(result).toHaveLength(0)
   })
@@ -76,7 +76,7 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [], [settlement], participants, [], alice, 'individuals'
+      [], [settlement], participants, alice, 'individuals'
     )
 
     expect(result).toHaveLength(1)
@@ -93,7 +93,7 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [], [settlement], participants, [], alice, 'individuals'
+      [], [settlement], participants, alice, 'individuals'
     )
 
     expect(result).toHaveLength(1)
@@ -117,27 +117,25 @@ describe('buildTransactionHistory', () => {
     })
 
     const result = buildTransactionHistory(
-      [expense1, expense2], [], participants, [], alice, 'individuals'
+      [expense1, expense2], [], participants, alice, 'individuals'
     )
 
     expect(result[0].date).toBe('2025-07-15')
     expect(result[1].date).toBe('2025-07-10')
   })
 
-  it('resolves entity to family in families tracking mode', () => {
-    const famAlice = buildParticipant({ id: 'fp1', name: 'Alice', family_id: 'f1', wallet_group: 'AliceFamily' })
-    const famBob = buildParticipant({ id: 'fp2', name: 'Bob', family_id: 'f2', wallet_group: 'BobFamily' })
-    const fam1 = buildFamily({ id: 'f1', family_name: 'AliceFamily', adults: 1, children: 0 })
-    const fam2 = buildFamily({ id: 'f2', family_name: 'BobFamily', adults: 1, children: 0 })
+  it('resolves entity via wallet_group in families tracking mode', () => {
+    const famAlice = buildParticipant({ id: 'fp1', name: 'Alice', wallet_group: 'AliceFamily', is_adult: true })
+    const famBob = buildParticipant({ id: 'fp2', name: 'Bob', wallet_group: 'BobFamily', is_adult: true })
 
     const expense = buildExpense({
       paid_by: 'fp2',
       amount: 200,
-      distribution: { type: 'families', families: ['f1', 'f2'] },
+      distribution: { type: 'individuals', participants: ['fp1', 'fp2'] },
     })
 
     const result = buildTransactionHistory(
-      [expense], [], [famAlice, famBob], [fam1, fam2], famAlice, 'families'
+      [expense], [], [famAlice, famBob], famAlice, 'families'
     )
 
     // Alice's family has a share, Bob paid
