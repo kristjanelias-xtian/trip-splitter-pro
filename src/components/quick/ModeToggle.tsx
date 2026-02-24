@@ -14,7 +14,7 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
 
   // If the user is on a quick route (e.g. mobile redirect overrode a stored
   // 'full' preference), the toggle should reflect where they actually are.
-  const isOnQuickRoute = location.pathname === '/quick' || location.pathname.includes('/quick')
+  const isOnQuickRoute = location.pathname.includes('/quick')
   const isOnFullTripRoute = !isOnQuickRoute && /\/t\/[^/]+\//.test(location.pathname)
   const effectiveMode = isOnQuickRoute ? 'quick' : isOnFullTripRoute ? 'full' : mode
 
@@ -22,21 +22,15 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
     if (newMode === effectiveMode) return
     await setMode(newMode)
 
-    // Navigate to the appropriate view
-    if (newMode === 'quick') {
-      if (tripCode) {
+    // Navigate to the appropriate view only when inside a trip
+    if (tripCode) {
+      if (newMode === 'quick') {
         navigate(`/t/${tripCode}/quick`)
       } else {
-        navigate('/quick')
-      }
-    } else {
-      // Full mode
-      if (tripCode) {
         navigate(`/t/${tripCode}/dashboard`)
-      } else {
-        navigate('/')
       }
     }
+    // On home page (no tripCode): just update preference, no navigation needed
   }
 
   const containerClass = onGradient

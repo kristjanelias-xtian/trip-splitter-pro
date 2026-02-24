@@ -203,17 +203,19 @@ export function Layout() {
               )}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <ReportIssueButton onGradient={onGradient} />
-                {/* No trip: always show scan + mode toggle; In trip: show on desktop only (Row 2 handles mobile) */}
-                <div className={`${tripCode ? 'hidden lg:flex' : 'flex'} items-center gap-2`}>
-                  <button
-                    onClick={handleScanTap}
-                    aria-label="Scan receipt"
-                    className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                  >
-                    <ScanLine size={20} />
-                  </button>
-                  <ModeToggle onGradient={onGradient} />
-                </div>
+                {/* In trip: show scan + mode toggle (desktop only; Row 2 handles mobile). On home: hidden (page has its own scan CTA) */}
+                {tripCode && (
+                  <div className="hidden lg:flex items-center gap-2">
+                    <button
+                      onClick={handleScanTap}
+                      aria-label="Scan receipt"
+                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                    >
+                      <ScanLine size={20} />
+                    </button>
+                    <ModeToggle onGradient={onGradient} />
+                  </div>
+                )}
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>

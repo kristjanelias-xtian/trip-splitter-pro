@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { getActiveTripId } from '@/lib/activeTripDetection'
 import { getMyTrips } from '@/lib/myTripsStorage'
@@ -9,30 +8,19 @@ import { HomePage } from './HomePage'
 import { Loader2 } from 'lucide-react'
 
 /**
- * Renders at `/` - redirects to Quick Mode if user has it set,
- * otherwise shows the original HomePage (Full Mode).
- *
- * In Quick Mode, auto-detects the active trip based on dates
- * and redirects directly to it.
+ * Renders at `/` — on mobile with an active trip, auto-redirects to Quick view.
+ * Otherwise renders the unified HomePage.
  */
 export function ConditionalHomePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { mode, loading: prefsLoading } = useUserPreferences()
   const { trips, loading: tripsLoading } = useTripContext()
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const shouldGoQuick = mode === 'quick' || (isMobile && mode !== 'full')
-
-  const isLoading = prefsLoading || (shouldGoQuick && tripsLoading)
 
   useEffect(() => {
-    if (isLoading) return
-    if (!shouldGoQuick) return
+    if (!isMobile || tripsLoading) return
 
-    // For quick mode, auto-detect active trip from user's linked trips.
-    // When signed in, TripContext already returns only user's trips; use directly.
-    // When not signed in, fall back to localStorage for anonymous use.
     const myTrips = user
       ? trips
       : trips.filter(t => new Set(getMyTrips().map(e => e.tripCode)).has(t.trip_code))
@@ -42,16 +30,11 @@ export function ConditionalHomePage() {
       const activeTrip = trips.find(t => t.id === activeTripId)
       if (activeTrip) {
         navigate(`/t/${activeTrip.trip_code}/quick`, { replace: true })
-        return
       }
     }
+  }, [isMobile, tripsLoading, user, trips, navigate])
 
-    // No active trip found, show the quick home screen
-    navigate('/quick', { replace: true })
-  }, [isLoading, user, mode, shouldGoQuick, trips, navigate])
-
-  // Show spinner while any context is still loading
-  if (isLoading) {
+  if (isMobile && tripsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -59,9 +42,5 @@ export function ConditionalHomePage() {
     )
   }
 
-  // Don't render HomePage when we're about to redirect to quick mode
-  if (shouldGoQuick) return null
-
-  // Show Full Mode home page by default
   return <HomePage />
 }

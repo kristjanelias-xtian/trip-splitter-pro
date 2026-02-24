@@ -14,7 +14,6 @@ import { DashboardPage } from './pages/DashboardPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
-import { QuickHomeScreen } from './pages/QuickHomeScreen'
 import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
 import { QuickHistoryPage } from './pages/QuickHistoryPage'
 import { useUserPreferences } from './contexts/UserPreferencesContext'
@@ -34,10 +33,7 @@ export function AppRoutes() {
       {/* Mode-aware redirect for shared trip links */}
       <Route path="t/:tripCode" element={<TripModeRedirect />} />
 
-      {/* Quick Mode routes */}
-      <Route path="/quick" element={<QuickLayout />}>
-        <Route index element={<ErrorBoundary><QuickHomeScreen /></ErrorBoundary>} />
-      </Route>
+      {/* Quick Mode routes — trip-scoped only */}
       <Route path="/t/:tripCode/quick" element={<QuickLayout />}>
         <Route index element={<ErrorBoundary><QuickGroupDetailPage /></ErrorBoundary>} />
         <Route path="history" element={<ErrorBoundary><QuickHistoryPage /></ErrorBoundary>} />
@@ -46,6 +42,7 @@ export function AppRoutes() {
       {/* Full Mode routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<ErrorBoundary><ConditionalHomePage /></ErrorBoundary>} />
+        <Route path="quick" element={<Navigate to="/" replace />} />
         <Route path="admin/all-trips" element={<ErrorBoundary><AdminAllTripsPage /></ErrorBoundary>} />
         <Route path="create-trip" element={<ErrorBoundary><TripsPage /></ErrorBoundary>} />
         <Route path="t/:tripCode/manage" element={<TripRouteGuard><ErrorBoundary><ManageTripPage /></ErrorBoundary></TripRouteGuard>} />
