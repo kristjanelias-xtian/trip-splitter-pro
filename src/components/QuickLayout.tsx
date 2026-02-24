@@ -104,7 +104,7 @@ export function QuickLayout() {
                   </>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <img src="/logo.png" alt="Spl1t" className="h-8 w-8 rounded-full" />
+                    <img src="/logo.png?v=2" alt="Spl1t" className="h-8 w-8 rounded-full" />
                     <h1 className="text-lg font-semibold text-foreground">
                       Spl<span className="text-[#E8714A]">1</span>t
                     </h1>
