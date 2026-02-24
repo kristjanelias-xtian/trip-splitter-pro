@@ -4,8 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
-import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
-import { useScrollIntoView } from '@/hooks/useScrollIntoView'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,15 +47,6 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
   useEffect(() => {
     return () => { isMounted.current = false }
   }, [])
-
-  // Keyboard detection for mobile
-  const formRef = useRef<HTMLFormElement>(null)
-  const keyboard = useKeyboardHeight()
-
-  useScrollIntoView(formRef, {
-    enabled: keyboard.isVisible,
-    offset: 20,
-  })
 
   // Update form when initial values change
   useEffect(() => {
@@ -175,7 +165,6 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
 
   return (
     <motion.form
-      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-4"
       variants={fadeInUp}
