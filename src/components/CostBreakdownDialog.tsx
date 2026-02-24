@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Receipt, Wallet } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseSharesV2 } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
 import { Participant, Family } from '@/types/participant'
 
@@ -51,7 +51,7 @@ export function CostBreakdownDialog({
       }
 
       // Check if this entity has a share in the expense
-      const expenseShares = calculateExpenseShares(expense, participants, families, trackingMode)
+      const expenseShares = calculateExpenseSharesV2(expense, participants, families, trackingMode)
       const entityShare = expenseShares.get(balance.id)
       if (entityShare && entityShare > 0) {
         const convertedAmount = convertToBaseCurrency(expense.amount, expense.currency, defaultCurrency, exchangeRates)
