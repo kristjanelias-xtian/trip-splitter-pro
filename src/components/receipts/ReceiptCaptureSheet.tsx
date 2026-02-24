@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
 import { Camera, Upload, Loader2, X, ScanLine } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { logger } from '@/lib/logger'
 
 interface ReceiptCaptureSheetProps {
@@ -69,6 +71,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
   const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -200,137 +203,160 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
     onOpenChange(nextOpen)
   }
 
-  return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        hideClose
-        className="flex flex-col p-0 rounded-t-2xl"
-        style={{ height: '92dvh' }}
-      >
-        {/* Sticky header — never scrolls */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="w-8" />
-          <SheetTitle className="text-base font-semibold flex items-center gap-2">
-            <ScanLine size={20} />
-            Scan Receipt
-          </SheetTitle>
-          <button
-            onClick={() => handleOpenChange(false)}
-            aria-label="Close"
-            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
+  const closeBtn = (
+    <button
+      onClick={() => handleOpenChange(false)}
+      aria-label="Close"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <X className="w-4 h-4 text-muted-foreground" />
+    </button>
+  )
+
+  const scrollContent = (
+    <div className="flex-1 overflow-y-auto overscroll-contain">
+      {!previewUrl ? (
+        /* File selection state */
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-4">
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+            <Camera size={40} className="text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <p className="font-medium text-foreground">Add a receipt photo</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Take a photo or upload from your library
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <Button
+              variant="default"
+              className="gap-2"
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              <Camera size={16} />
+              Take Photo
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={16} />
+              Choose from Library
+            </Button>
+          </div>
+
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileInputChange}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileInputChange}
+          />
         </div>
-
-        {/* Scrollable content — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          {!previewUrl ? (
-            /* File selection state */
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-4">
-              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-                <Camera size={40} className="text-muted-foreground" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium text-foreground">Add a receipt photo</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Take a photo or upload from your library
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2 w-full max-w-xs">
-                <Button
-                  variant="default"
-                  className="gap-2"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
-                  <Camera size={16} />
-                  Take Photo
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload size={16} />
-                  Choose from Library
-                </Button>
-              </div>
-
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleFileInputChange}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileInputChange}
-              />
-            </div>
-          ) : (
-            /* Preview state */
-            <div className="flex flex-col gap-4 px-4 py-4">
-              <div className="relative rounded-lg overflow-hidden border border-border">
-                <img
-                  src={previewUrl}
-                  alt="Receipt preview"
-                  className="w-full max-h-64 object-contain bg-muted"
-                />
-                {!scanning && (
-                  <button
-                    onClick={handleReset}
-                    className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
-                    aria-label="Remove image"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-
-              {error && (
-                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 space-y-1">
-                  <p className="font-medium">{error}</p>
-                  {errorDetail && (
-                    <pre className="text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
-                  )}
-                </div>
-              )}
-
-              <Button
-                onClick={handleScan}
-                disabled={scanning}
-                size="lg"
-                className="gap-2"
+      ) : (
+        /* Preview state */
+        <div className="flex flex-col gap-4 px-4 py-4">
+          <div className="relative rounded-lg overflow-hidden border border-border">
+            <img
+              src={previewUrl}
+              alt="Receipt preview"
+              className="w-full max-h-64 object-contain bg-muted"
+            />
+            {!scanning && (
+              <button
+                onClick={handleReset}
+                className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
+                aria-label="Remove image"
               >
-                {scanning ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Analyzing receipt...
-                  </>
-                ) : (
-                  <>
-                    <ScanLine size={16} />
-                    Scan Receipt
-                  </>
-                )}
-              </Button>
+                <X size={16} />
+              </button>
+            )}
+          </div>
 
-              {scanning && (
-                <p className="text-xs text-muted-foreground text-center">
-                  This usually takes 5–10 seconds
-                </p>
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 space-y-1">
+              <p className="font-medium">{error}</p>
+              {errorDetail && (
+                <pre className="text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
               )}
             </div>
           )}
+
+          <Button
+            onClick={handleScan}
+            disabled={scanning}
+            size="lg"
+            className="gap-2"
+          >
+            {scanning ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Analyzing receipt...
+              </>
+            ) : (
+              <>
+                <ScanLine size={16} />
+                Scan Receipt
+              </>
+            )}
+          </Button>
+
+          {scanning && (
+            <p className="text-xs text-muted-foreground text-center">
+              This usually takes 5–10 seconds
+            </p>
+          )}
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{ height: '92dvh' }}
+        >
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold flex items-center gap-2">
+              <ScanLine size={20} />
+              Scan Receipt
+            </SheetTitle>
+            {closeBtn}
+          </div>
+          {scrollContent}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <DialogTitle className="text-base font-semibold flex items-center gap-2">
+            <ScanLine size={20} />
+            Scan Receipt
+          </DialogTitle>
+          {closeBtn}
+        </div>
+        {scrollContent}
+      </DialogContent>
+    </Dialog>
   )
 }

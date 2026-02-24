@@ -16,6 +16,7 @@ import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { QuickParticipantSetupSheet } from '@/components/quick/QuickParticipantSetupSheet'
 import { QuickGroupMembersSheet } from '@/components/quick/QuickGroupMembersSheet'
+import { QuickHistorySheet } from '@/components/quick/QuickHistorySheet'
 import { PendingReceiptBanner, ReceiptReviewData } from '@/components/receipts/PendingReceiptBanner'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
@@ -44,6 +45,7 @@ export function QuickGroupDetailPage() {
   const [receiptCaptureOpen, setReceiptCaptureOpen] = useState(false)
   const [participantSetupOpen, setParticipantSetupOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [retrying, setRetrying] = useState(false)
 
@@ -199,7 +201,7 @@ export function QuickGroupDetailPage() {
           icon={FileText}
           label="View expenses & payments"
           description="See transaction history"
-          onClick={() => navigate(`/t/${currentTrip.trip_code}/quick/history`)}
+          onClick={() => setHistoryOpen(true)}
         />
       </div>
 
@@ -255,6 +257,12 @@ export function QuickGroupDetailPage() {
         myParticipantId={myBalance?.id ?? null}
         currency={currentTrip.default_currency}
         participants={participants}
+      />
+
+      {/* History sheet */}
+      <QuickHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
       />
     </div>
   )

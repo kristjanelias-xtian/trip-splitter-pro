@@ -11,7 +11,9 @@ import { calculateOptimalSettlement, SettlementTransaction } from '@/services/se
 import { SettlementForm } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
@@ -50,6 +52,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
   const isSubmittingRef = useRef(false)
   const keyboard = useKeyboardHeight()
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   // Build email map: entity ID (participant.id or family_id) → email
   const fromEmailMap = useMemo(() => {
@@ -298,242 +301,271 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     }).format(amount)
   }
 
-  return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        hideClose
-        className="flex flex-col p-0 rounded-t-2xl"
-        style={{
-          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
-        }}
-      >
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          {view === 'form' ? (
-            <button
-              onClick={() => setView('suggestions')}
-              aria-label="Go back"
-              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            </button>
+  const leftSlot = view === 'form' ? (
+    <button
+      onClick={() => setView('suggestions')}
+      aria-label="Go back"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+    </button>
+  ) : (
+    <div className="w-8" />
+  )
+
+  const closeBtn = (
+    <button
+      onClick={() => handleOpenChange(false)}
+      aria-label="Close"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <X className="w-4 h-4 text-muted-foreground" />
+    </button>
+  )
+
+  const titleText = view === 'suggestions' ? 'Settle up' : 'Record payment'
+
+  const scrollContent = (
+    <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+      {view === 'suggestions' ? (
+        <div className="space-y-4">
+          {allSettled ? (
+            <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
+              <PartyPopper size={48} className="mx-auto text-positive mb-2" />
+              <h3 className="text-lg font-semibold text-foreground mb-1">
+                All Settled!
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Everyone is squared up. No payments needed.
+              </p>
+            </div>
+          ) : !myParticipant ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground text-sm">
+                Link yourself to a participant to see suggested payments.
+              </p>
+            </div>
+          ) : myTransactions.length === 0 ? (
+            <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
+              <PartyPopper size={48} className="mx-auto text-positive mb-2" />
+              <h3 className="text-lg font-semibold text-foreground mb-1">
+                You're all settled!
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                You have no pending payments.
+              </p>
+            </div>
           ) : (
-            <div className="w-8" />
-          )}
-          <SheetTitle className="text-base font-semibold">
-            {view === 'suggestions' ? 'Settle up' : 'Record payment'}
-          </SheetTitle>
-          <button
-            onClick={() => handleOpenChange(false)}
-            aria-label="Close"
-            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
-        {view === 'suggestions' ? (
-          <div className="space-y-4">
-            {allSettled ? (
-              <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
-                <PartyPopper size={48} className="mx-auto text-positive mb-2" />
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  All Settled!
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Everyone is squared up. No payments needed.
-                </p>
-              </div>
-            ) : !myParticipant ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">
-                  Link yourself to a participant to see suggested payments.
-                </p>
-              </div>
-            ) : myTransactions.length === 0 ? (
-              <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
-                <PartyPopper size={48} className="mx-auto text-positive mb-2" />
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  You're all settled!
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  You have no pending payments.
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Suggested payments to settle up:
-                </p>
-                {myTransactions.map((tx, i) => {
-                  const iOwe = tx.fromId === myEntityId
-                  const fromEmail = !iOwe ? fromEmailMap[tx.fromId] : undefined
-                  const canRemind = !iOwe && !!fromEmail
-                  const isConfirmingRemind = confirmingRemindIdx === i
-                  const remindResult = remindResults[i]
-                  return (
-                    <div
-                      key={i}
-                      className="border border-border rounded-lg p-4 flex items-start justify-between gap-3"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium truncate">
-                            {iOwe ? 'You' : tx.fromName}
-                          </span>
-                          <ArrowRight size={16} className="text-muted-foreground flex-shrink-0" />
-                          <span className="font-medium truncate">
-                            {iOwe ? tx.toName : 'You'}
-                          </span>
-                        </div>
-                        <p className={`text-lg font-bold tabular-nums mt-0.5 ${iOwe ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                          {formatAmount(tx.amount)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {iOwe ? 'You owe' : 'Owed to you'}
-                        </p>
-                        {iOwe && (() => {
-                          const bankDetails = bankDetailsMap[tx.toId]
-                          const isLinked = linkedParticipantIds.has(tx.toId)
-                          if (bankDetails && (bankDetails.iban || bankDetails.holder)) {
-                            return (
-                              <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                                {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
-                                {bankDetails.iban && <p className="font-mono">{bankDetails.iban}</p>}
-                              </div>
-                            )
-                          }
-                          if (isLinked) {
-                            return (
-                              <p className="mt-2 text-xs text-muted-foreground italic">
-                                Ask {tx.toName} to add their bank details
-                              </p>
-                            )
-                          }
-                          return (
-                            <p className="mt-2 text-xs text-muted-foreground italic">
-                              Ask {tx.toName} to join Spl1t to share payment details
-                            </p>
-                          )
-                        })()}
-                        {!iOwe && (() => {
-                          const myBank = userProfile?.bank_account_holder || userProfile?.bank_iban
-                          if (myBank) {
-                            return (
-                              <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                                <p className="font-medium text-foreground/70">Your payment details:</p>
-                                {userProfile?.bank_account_holder && <p>Account: {userProfile.bank_account_holder}</p>}
-                                {userProfile?.bank_iban && <p className="font-mono">{userProfile.bank_iban}</p>}
-                              </div>
-                            )
-                          }
-                          return (
-                            <p className="mt-2 text-xs text-muted-foreground italic">
-                              Add your bank details in your profile so others can pay you
-                            </p>
-                          )
-                        })()}
-
-                        {/* Inline remind confirm */}
-                        {isConfirmingRemind && fromEmail && (
-                          <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
-                            <p className="text-sm text-foreground">
-                              Send payment reminder to <strong>{tx.fromName}</strong>?
-                            </p>
-                            <p className="text-xs text-muted-foreground">{fromEmail}</p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() => handleRemind(tx, i)}
-                                disabled={sendingRemind}
-                              >
-                                {sendingRemind ? 'Sending…' : 'Send'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 text-xs"
-                                onClick={() => { setConfirmingRemindIdx(null) }}
-                                disabled={sendingRemind}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {remindResult === 'sent' && (
-                          <p className="mt-2 text-xs text-positive flex items-center gap-1">
-                            <Check size={12} />
-                            Reminder sent to {tx.fromName}
-                          </p>
-                        )}
-                        {remindResult === 'error' && (
-                          <p className="mt-2 text-xs text-destructive">
-                            Failed to send reminder. Please try again.
-                          </p>
-                        )}
+            <>
+              <p className="text-sm text-muted-foreground">
+                Suggested payments to settle up:
+              </p>
+              {myTransactions.map((tx, i) => {
+                const iOwe = tx.fromId === myEntityId
+                const fromEmail = !iOwe ? fromEmailMap[tx.fromId] : undefined
+                const canRemind = !iOwe && !!fromEmail
+                const isConfirmingRemind = confirmingRemindIdx === i
+                const remindResult = remindResults[i]
+                return (
+                  <div
+                    key={i}
+                    className="border border-border rounded-lg p-4 flex items-start justify-between gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium truncate">
+                          {iOwe ? 'You' : tx.fromName}
+                        </span>
+                        <ArrowRight size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium truncate">
+                          {iOwe ? tx.toName : 'You'}
+                        </span>
                       </div>
+                      <p className={`text-lg font-bold tabular-nums mt-0.5 ${iOwe ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                        {formatAmount(tx.amount)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {iOwe ? 'You owe' : 'Owed to you'}
+                      </p>
+                      {iOwe && (() => {
+                        const bankDetails = bankDetailsMap[tx.toId]
+                        const isLinked = linkedParticipantIds.has(tx.toId)
+                        if (bankDetails && (bankDetails.iban || bankDetails.holder)) {
+                          return (
+                            <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                              {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
+                              {bankDetails.iban && <p className="font-mono">{bankDetails.iban}</p>}
+                            </div>
+                          )
+                        }
+                        if (isLinked) {
+                          return (
+                            <p className="mt-2 text-xs text-muted-foreground italic">
+                              Ask {tx.toName} to add their bank details
+                            </p>
+                          )
+                        }
+                        return (
+                          <p className="mt-2 text-xs text-muted-foreground italic">
+                            Ask {tx.toName} to join Spl1t to share payment details
+                          </p>
+                        )
+                      })()}
+                      {!iOwe && (() => {
+                        const myBank = userProfile?.bank_account_holder || userProfile?.bank_iban
+                        if (myBank) {
+                          return (
+                            <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                              <p className="font-medium text-foreground/70">Your payment details:</p>
+                              {userProfile?.bank_account_holder && <p>Account: {userProfile.bank_account_holder}</p>}
+                              {userProfile?.bank_iban && <p className="font-mono">{userProfile.bank_iban}</p>}
+                            </div>
+                          )
+                        }
+                        return (
+                          <p className="mt-2 text-xs text-muted-foreground italic">
+                            Add your bank details in your profile so others can pay you
+                          </p>
+                        )
+                      })()}
 
-                      <div className="flex flex-col gap-2 flex-shrink-0">
+                      {/* Inline remind confirm */}
+                      {isConfirmingRemind && fromEmail && (
+                        <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
+                          <p className="text-sm text-foreground">
+                            Send payment reminder to <strong>{tx.fromName}</strong>?
+                          </p>
+                          <p className="text-xs text-muted-foreground">{fromEmail}</p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleRemind(tx, i)}
+                              disabled={sendingRemind}
+                            >
+                              {sendingRemind ? 'Sending…' : 'Send'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs"
+                              onClick={() => { setConfirmingRemindIdx(null) }}
+                              disabled={sendingRemind}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {remindResult === 'sent' && (
+                        <p className="mt-2 text-xs text-positive flex items-center gap-1">
+                          <Check size={12} />
+                          Reminder sent to {tx.fromName}
+                        </p>
+                      )}
+                      {remindResult === 'error' && (
+                        <p className="mt-2 text-xs text-destructive">
+                          Failed to send reminder. Please try again.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => handleRecord(tx)}
+                      >
+                        Settle
+                      </Button>
+                      {canRemind && !isConfirmingRemind && remindResult !== 'sent' && (
                         <Button
                           size="sm"
-                          onClick={() => handleRecord(tx)}
+                          variant="outline"
+                          onClick={() => { setConfirmingRemindIdx(i); setRemindResults(prev => { const n = { ...prev }; delete n[i]; return n }) }}
+                          title={`Send payment reminder to ${tx.fromName}`}
                         >
-                          Settle
+                          <Bell size={14} className="mr-1" />
+                          Remind
                         </Button>
-                        {canRemind && !isConfirmingRemind && remindResult !== 'sent' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => { setConfirmingRemindIdx(i); setRemindResults(prev => { const n = { ...prev }; delete n[i]; return n }) }}
-                            title={`Send payment reminder to ${tx.fromName}`}
-                          >
-                            <Bell size={14} className="mr-1" />
-                            Remind
-                          </Button>
-                        )}
-                        {isConfirmingRemind && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-muted-foreground"
-                            onClick={() => setConfirmingRemindIdx(null)}
-                          >
-                            <X size={14} />
-                          </Button>
-                        )}
-                      </div>
+                      )}
+                      {isConfirmingRemind && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-muted-foreground"
+                          onClick={() => setConfirmingRemindIdx(null)}
+                        >
+                          <X size={14} />
+                        </Button>
+                      )}
                     </div>
-                  )
-                })}
-              </>
-            )}
+                  </div>
+                )
+              })}
+            </>
+          )}
 
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleRecordDifferent}
-              >
-                Record a custom payment
-              </Button>
-            </div>
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleRecordDifferent}
+            >
+              Record a custom payment
+            </Button>
           </div>
-        ) : (
-          <SettlementForm
-            onSubmit={handleSubmit}
-            onCancel={() => setView('suggestions')}
-            initialFromId={prefill?.fromId}
-            initialToId={prefill?.toId}
-            initialAmount={prefill?.amount}
-          />
-        )}
         </div>
-      </SheetContent>
-    </Sheet>
+      ) : (
+        <SettlementForm
+          onSubmit={handleSubmit}
+          onCancel={() => setView('suggestions')}
+          initialFromId={prefill?.fromId}
+          initialToId={prefill?.toId}
+          initialAmount={prefill?.amount}
+        />
+      )}
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{
+            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+            bottom: keyboard.isVisible
+              ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
+              : undefined,
+            paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
+              ? `${keyboard.viewportOffset}px`
+              : undefined,
+          }}
+        >
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            {leftSlot}
+            <SheetTitle className="text-base font-semibold">{titleText}</SheetTitle>
+            {closeBtn}
+          </div>
+          {scrollContent}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          {leftSlot}
+          <DialogTitle className="text-base font-semibold">{titleText}</DialogTitle>
+          {closeBtn}
+        </div>
+        {scrollContent}
+      </DialogContent>
+    </Dialog>
   )
 }
