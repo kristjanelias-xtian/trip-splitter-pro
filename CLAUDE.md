@@ -188,6 +188,18 @@ Distribution type is stored as JSONB on the expense. `balanceCalculator.ts` hand
 
 All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render inside `Layout`; quick routes inside `QuickLayout`. The home page (`/`) renders inside `Layout`.
 
+### Header Layout (Layout + QuickLayout)
+
+Both layouts use the same responsive header pattern:
+
+- **Mobile (in-trip, not sub-page):** Two-row header. Row 1: back arrow + trip name + avatar. Row 2: `grid-cols-3` action pills (Scan / Manage / mode toggle). Row 2 is `lg:hidden`.
+- **Desktop (in-trip):** Single-row header. Back arrow + trip name on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
+- **Home page:** Single-row. Logo on left, avatar on right. No scan/toggle (the page has its own scan CTA).
+
+Header container: `max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8`. Main content padding: `pt-[108px] lg:pt-16` (two-row) or `pt-16` (single-row).
+
+Trip gradient pattern: `getTripGradientPattern(trip.name)` returns gradient + decorative icons. Text on gradient uses inline `textShadow: '0 1px 4px rgba(0,0,0,0.9)'` and overlay `from-black/50`.
+
 ---
 
 ## Key Components & Patterns
