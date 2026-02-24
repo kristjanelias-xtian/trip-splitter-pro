@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Camera, Upload, Loader2, X, ScanLine } from 'lucide-react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
@@ -202,18 +202,33 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] flex flex-col">
-        <SheetHeader className="pb-2">
-          <SheetTitle className="flex items-center gap-2">
+      <SheetContent
+        side="bottom"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
+        style={{ height: '92dvh' }}
+      >
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <SheetTitle className="text-base font-semibold flex items-center gap-2">
             <ScanLine size={20} />
             Scan Receipt
           </SheetTitle>
-        </SheetHeader>
+          <button
+            onClick={() => handleOpenChange(false)}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
 
-        <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
+        {/* Scrollable content — only this scrolls */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {!previewUrl ? (
             /* File selection state */
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-4">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
                 <Camera size={40} className="text-muted-foreground" />
               </div>
@@ -225,7 +240,6 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
               </div>
 
               <div className="flex flex-col gap-2 w-full max-w-xs">
-                {/* Camera capture (mobile) */}
                 <Button
                   variant="default"
                   className="gap-2"
@@ -234,8 +248,6 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
                   <Camera size={16} />
                   Take Photo
                 </Button>
-
-                {/* File picker */}
                 <Button
                   variant="outline"
                   className="gap-2"
@@ -246,7 +258,6 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
                 </Button>
               </div>
 
-              {/* Hidden file inputs */}
               <input
                 ref={cameraInputRef}
                 type="file"
@@ -265,7 +276,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
             </div>
           ) : (
             /* Preview state */
-            <div className="flex-1 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 px-4 py-4">
               <div className="relative rounded-lg overflow-hidden border border-border">
                 <img
                   src={previewUrl}

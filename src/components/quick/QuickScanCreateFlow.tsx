@@ -257,42 +257,35 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="bottom"
+        hideClose
         className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        {/* Sticky header */}
-        <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            {/* X close button — always visible on all steps */}
-            <button
-              onClick={handleClose}
-              aria-label="Close"
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
-            >
-              <X size={18} />
-            </button>
-            <SheetTitle className="flex items-center gap-2 truncate">
-              <ScanLine size={20} className="flex-shrink-0" />
-              <span className="truncate">
-                {step === 'camera' && 'Scan a Receipt'}
-                {step === 'scanning' && 'Reading receipt…'}
-                {step === 'participants' && (createdTripName ?? 'Add People')}
-              </span>
-            </SheetTitle>
-          </div>
-          {step === 'participants' && (
-            <Button size="sm" onClick={handleDone} className="gap-1 flex-shrink-0">
-              Done
-              <ChevronRight size={14} />
-            </Button>
-          )}
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <SheetTitle className="text-base font-semibold flex items-center gap-2 truncate">
+            <ScanLine size={20} className="flex-shrink-0" />
+            <span className="truncate">
+              {step === 'camera' && 'Scan a Receipt'}
+              {step === 'scanning' && 'Reading receipt…'}
+              {step === 'participants' && (createdTripName ?? 'Add People')}
+            </span>
+          </SheetTitle>
+          <button
+            onClick={handleClose}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        {/* Scrollable content — only this scrolls */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
           {/* Step 1: Camera */}
           {step === 'camera' && (
             <div className="flex flex-col gap-4 h-full">
@@ -398,6 +391,16 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
             </div>
           )}
         </div>
+
+        {/* Sticky footer — participants step */}
+        {step === 'participants' && (
+          <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+            <Button className="w-full gap-1" onClick={handleDone}>
+              Done
+              <ChevronRight size={14} />
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   )

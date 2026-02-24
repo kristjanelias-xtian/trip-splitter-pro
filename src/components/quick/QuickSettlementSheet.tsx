@@ -302,27 +302,38 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
+        hideClose
         className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <SheetTitle>
-            {view === 'suggestions' ? 'Settle up' : (
-              <button
-                onClick={() => setView('suggestions')}
-                className="flex items-center gap-1.5 text-base font-semibold hover:text-primary transition-colors"
-              >
-                <ArrowLeft size={18} />
-                Settlement plan
-              </button>
-            )}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          {view === 'form' ? (
+            <button
+              onClick={() => setView('suggestions')}
+              aria-label="Go back"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+            </button>
+          ) : (
+            <div className="w-8" />
+          )}
+          <SheetTitle className="text-base font-semibold">
+            {view === 'suggestions' ? 'Settle up' : 'Record payment'}
           </SheetTitle>
+          <button
+            onClick={() => handleOpenChange(false)}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
         {view === 'suggestions' ? (
           <div className="space-y-4">
             {allSettled ? (

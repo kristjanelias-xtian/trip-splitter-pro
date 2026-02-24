@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
+import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image, X } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
@@ -372,17 +372,26 @@ export function ReceiptReviewSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-0"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
           bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
         }}
       >
-        <div className="px-4 py-3 border-b border-border shrink-0">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
           <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
-        <div ref={contentRef} className="flex-1 overflow-y-auto">
+        <div ref={contentRef} className="flex-1 overflow-y-auto overscroll-contain">
         <div className="px-4 py-3 space-y-4">
           {/* Receipt image thumbnail (collapsible) */}
           {receiptImageUrl && (
@@ -573,7 +582,7 @@ export function ReceiptReviewSheet({
         </div>
 
         {/* Submit */}
-        <div className="px-4 py-3 border-t border-border" style={{ flexShrink: 0 }}>
+        <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
