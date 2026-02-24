@@ -180,14 +180,14 @@ export function Layout() {
             {/* Row 1 */}
             <div className="flex items-center justify-between py-4">
               {currentTrip ? (
-                <div className="flex-1 min-w-0">
+                <Link to="/" state={{ fromTrip: true }} className="flex-1 min-w-0">
                   <h1
                     className={`font-bold text-lg truncate ${onGradient ? 'text-white' : 'text-foreground'}`}
                     style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
                   >
                     {currentTrip.name}
                   </h1>
-                </div>
+                </Link>
               ) : (
                 <motion.div
                   className="flex items-center gap-2"
@@ -364,6 +364,7 @@ export function Layout() {
                     <Link
                       key={item.path}
                       to={item.path}
+                      state={item.path === '/' ? { fromTrip: true } : undefined}
                       onClick={() => setMoreMenuOpen(false)}
                       className="block relative"
                     >

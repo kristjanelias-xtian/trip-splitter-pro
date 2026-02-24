@@ -84,7 +84,11 @@ export function QuickLayout() {
               <div className="flex items-center gap-3 min-w-0">
                 {isInTrip ? (
                   <>
-                    <Link to={backTo} className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}>
+                    <Link
+                      to={backTo}
+                      state={backTo === '/' ? { fromTrip: true } : undefined}
+                      className={onGradient ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}
+                    >
                       {isSubPage ? <X size={20} /> : <ArrowLeft size={20} />}
                     </Link>
                     <div className="min-w-0">
