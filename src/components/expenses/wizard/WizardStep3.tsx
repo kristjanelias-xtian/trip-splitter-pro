@@ -155,17 +155,9 @@ export function WizardStep3({
                           >
                             <Checkbox
                               id={`group-${group.label}`}
-                              checked={allGroupSelected}
-                              ref={(el) => {
-                                if (el) {
-                                  const input = el as unknown as HTMLButtonElement
-                                  input.dataset.indeterminate = someGroupSelected ? 'true' : 'false'
-                                  input.setAttribute('aria-checked', someGroupSelected ? 'mixed' : String(allGroupSelected))
-                                }
-                              }}
+                              checked={someGroupSelected ? 'indeterminate' : allGroupSelected}
                               onCheckedChange={() => onGroupToggle(memberIds)}
                               disabled={disabled}
-                              className={someGroupSelected ? 'opacity-60' : ''}
                             />
                             <label
                               htmlFor={`group-${group.label}`}
