@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; issue triage session — nav redirect loop, sheet consistency)
+> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; logo + favicon refresh)
 
 ---
 
@@ -737,6 +737,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Issue triage | 3 user-reported issues triaged. #355 (back button broken) already fixed by PR #351 — closed. #356 (inconsistent desktop headers) + #352 (edit dialog mobile alignment) fixed in PR #357: QuickLayout desktop header unified with Layout (Row 2 `lg:hidden`, scan+toggle in Row 1 `hidden lg:flex`, header widened to `max-w-lg lg:max-w-7xl`); ManageTripPage edit dialog `max-w-2xl` → `max-w-lg mx-4 sm:mx-auto`. |
 | 2026-02-24 | Issue triage #2 | 4 issues triaged (#358–#361). **PR #363** (closes #361, #360): mobile redirect loop fix — back arrow on `/t/:code/quick` passed `state.fromTrip` to `/`; `ConditionalHomePage` skips auto-redirect when `fromTrip` present; trip name in Layout header wrapped in `<Link to="/" state={{ fromTrip: true }}>` for single-tap home access in full mode; overflow menu "Events & Trips" also passes state; new test added. **PR #364** (closes #359): `QuickSettlementSheet` standardized to iOS sheet pattern — `h-[85vh] overflow-y-auto` replaced with `flex flex-col` + sticky header (`shrink-0` + `border-b`) + `flex-1 overflow-y-auto` content + `useKeyboardHeight` for iOS keyboard handling. **#358** closed with comment (positive feedback, not a bug). **#360** closed as duplicate of #361. |
 | 2026-02-24 | Sheet/dialog audit | Full audit of all 11 bottom sheets + 20+ desktop dialogs. Defined single structural standard: `hideClose` + 3-slot header (back/spacer | title | close) + `flex flex-col` + `shrink-0` header + `flex-1 overflow-y-auto overscroll-contain` content + `dvh` heights. Created `AppSheet` reusable component (`src/components/ui/AppSheet.tsx`). Fixed all 11 sheets: 6 minor (close btn + hideClose + overscroll-contain), 3 moderate (header refactor), 2 full rebuilds (ReceiptCaptureSheet, DayDetailSheet). Added 3 sheet pitfalls to CLAUDE.md + new "Bottom Sheet Standard" section. Verified 5 sheets via Playwright MCP (localhost, 375×812). 140/140 tests pass, type-check clean. Full audit log in `SHEET_AUDIT.md`. |
+| 2026-02-24 | Logo + favicon refresh | Replaced old Trip-Splitter Pro circular clipart logo with new Spl1t split-S letter mark (coral + cream). Generated favicon at 32px + 16px (coral background for legibility) and apple-touch-icon at 180px. Updated index.html favicon tags, Layout.tsx + QuickLayout.tsx already had correct alt text. Updated marketing.html nav to show logo mark (32px) + wordmark side by side. Source assets archived in public/brand/. |
 
 ---
 
