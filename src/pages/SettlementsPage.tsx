@@ -8,7 +8,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalancesV2 } from '@/services/balanceCalculator'
+import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
@@ -23,7 +23,7 @@ import { logger } from '@/lib/logger'
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
   const { user, userProfile } = useAuth()
-  const { participants, families, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
+  const { participants, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
   const { createSettlement, settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { receiptByExpenseId } = useReceiptContext()
@@ -47,15 +47,11 @@ export function SettlementsPage() {
     }
   }
 
-  // Build a map of entity ID (participant ID or family_id) → email for the "from" side of transactions
+  // Build a map of entity ID → email for the "from" side of transactions
   const fromEmailMap = useMemo(() => {
     const map: Record<string, string> = {}
     for (const p of participants) {
       if (!p.email) continue
-      // In families mode, transactions use family_id as the entity ID
-      if (p.family_id) {
-        map[p.family_id] = p.email
-      }
       map[p.id] = p.email
     }
     return map
@@ -77,15 +73,14 @@ export function SettlementsPage() {
   }
 
   // Calculate balances (including settlements, with currency conversion)
-  const balanceCalculation = useMemo(() => calculateBalancesV2(
+  const balanceCalculation = useMemo(() => calculateBalances(
     expenses,
     participants,
-    families,
     currentTrip.tracking_mode,
     settlements,
     currentTrip.default_currency,
     currentTrip.exchange_rates
-  ), [expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates])
+  ), [expenses, participants, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates])
 
   // Calculate optimal settlement
   const optimalSettlement = useMemo(() => calculateOptimalSettlement(
@@ -108,15 +103,12 @@ export function SettlementsPage() {
       const recipientIds = optimalSettlement.transactions.map(t => t.toId)
       if (recipientIds.length === 0) return
 
-      // Look up user_ids for these participants (match by participant ID or family ID)
+      // Look up user_ids for recipient participants
       const recipientParticipants = participants.filter(p =>
-        p.user_id &&
-        (recipientIds.includes(p.id) || (p.family_id != null && recipientIds.includes(p.family_id)))
+        p.user_id && recipientIds.includes(p.id)
       )
       const linkedEntityIds = new Set<string>(
-        recipientParticipants.map(p =>
-          p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
-        )
+        recipientParticipants.map(p => p.id)
       )
       setLinkedParticipantIds(linkedEntityIds)
       if (recipientParticipants.length === 0) return
@@ -135,8 +127,7 @@ export function SettlementsPage() {
         if (profile.bank_account_holder || profile.bank_iban) {
           const matchingParticipants = recipientParticipants.filter(p => p.user_id === profile.id)
           for (const p of matchingParticipants) {
-            const entityId = p.family_id && recipientIds.includes(p.family_id) ? p.family_id : p.id
-            map[entityId] = {
+            map[p.id] = {
               holder: profile.bank_account_holder || '',
               iban: profile.bank_iban || '',
             }
@@ -182,16 +173,8 @@ export function SettlementsPage() {
     const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
     // Collect structured receipt data for expenses paid by the creditor (toId)
-    // In families mode toId is a family_id; in individuals mode it's a participant ID
-    const creditorParticipantIds = new Set(
-      currentTrip.tracking_mode === 'families'
-        ? participants.filter(p => p.family_id === transaction.toId).map(p => p.id)
-        : [transaction.toId]
-    )
-    const debtorParticipantIds =
-      currentTrip.tracking_mode === 'families'
-        ? participants.filter(p => p.family_id === transaction.fromId).map(p => p.id)
-        : [transaction.fromId]
+    const creditorParticipantIds = new Set([transaction.toId])
+    const debtorParticipantIds = [transaction.fromId]
     const receipts: Array<{
       merchant: string | null
       items: Array<{ name: string; price: number; qty: number }> | null
@@ -353,11 +336,6 @@ export function SettlementsPage() {
                 <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-4">
                     Record a payment that happened outside of the optimal settlement plan (e.g., partial payments, cash transfers, etc.)
-                    {currentTrip.tracking_mode === 'families' && (
-                      <span className="block mt-2 text-xs text-accent">
-                        Tip: In families mode, select the adult who made/received the payment. The balance will update for their family.
-                      </span>
-                    )}
                   </p>
                   <SettlementForm
                     onSubmit={handleCustomSettlement}

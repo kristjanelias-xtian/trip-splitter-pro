@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx'
 import type { Trip } from '@/types/trip'
 import type { Expense } from '@/types/expense'
-import type { Participant, Family } from '@/types/participant'
+import type { Participant } from '@/types/participant'
 import type { ParticipantBalance } from '@/services/balanceCalculator'
 import type { Settlement } from '@/types/settlement'
 
@@ -12,7 +12,6 @@ export function exportExpensesToExcel(
   trip: Trip,
   expenses: Expense[],
   participants: Participant[],
-  families: Family[],
   balances: ParticipantBalance[],
   settlements: Settlement[]
 ): void {
@@ -28,17 +27,6 @@ export function exportExpensesToExcel(
         .map(id => participants.find(p => p.id === id)?.name || 'Unknown')
         .join(', ')
       splitWith = names
-    } else if (expense.distribution.type === 'families') {
-      const names = expense.distribution.families
-        .map(id => families.find(f => f.id === id)?.family_name || 'Unknown')
-        .join(', ')
-      splitWith = names
-    } else if (expense.distribution.type === 'mixed') {
-      const familyNames = expense.distribution.families
-        .map(id => families.find(f => f.id === id)?.family_name || 'Unknown')
-      const participantNames = expense.distribution.participants
-        .map(id => participants.find(p => p.id === id)?.name || 'Unknown')
-      splitWith = [...familyNames, ...participantNames].join(', ')
     }
 
     return {
@@ -71,7 +59,7 @@ export function exportExpensesToExcel(
 
   // Sheet 2: Balances
   const balancesData = balances.map(balance => ({
-    'Participant/Family': balance.name,
+    'Participant': balance.name,
     'Total Paid': balance.totalPaid,
     'Total Share': balance.totalShare,
     Balance: balance.balance,
@@ -80,7 +68,7 @@ export function exportExpensesToExcel(
 
   const balancesWorksheet = XLSX.utils.json_to_sheet(balancesData)
   balancesWorksheet['!cols'] = [
-    { wch: 25 }, // Participant/Family
+    { wch: 25 }, // Participant
     { wch: 12 }, // Total Paid
     { wch: 12 }, // Total Share
     { wch: 12 }, // Balance
@@ -137,7 +125,6 @@ export function exportExpensesToExcel(
     { Metric: 'Total Expenses', Value: totalExpenses.toFixed(2) },
     { Metric: 'Number of Expenses', Value: expenses.length.toString() },
     { Metric: 'Participants', Value: participants.length.toString() },
-    ...(trip.tracking_mode === 'families' ? [{ Metric: 'Families', Value: families.length.toString() }] : []),
     { Metric: '', Value: '' }, // Empty row
     { Metric: 'Category Breakdown', Value: '' },
     ...Object.entries(expensesByCategory).map(([category, amount]) => ({
@@ -164,48 +151,23 @@ export function exportExpensesToExcel(
 export function exportParticipantsToExcel(
   trip: Trip,
   participants: Participant[],
-  families: Family[]
 ): void {
   const workbook = XLSX.utils.book_new()
 
-  if (trip.tracking_mode === 'families') {
-    // Families sheet
-    const familiesData = families.map(family => ({
-      'Family Name': family.family_name,
-      Adults: family.adults,
-      Children: family.children,
-      'Total Members': family.adults + family.children
-    }))
-
-    const familiesWorksheet = XLSX.utils.json_to_sheet(familiesData)
-    familiesWorksheet['!cols'] = [
-      { wch: 25 }, // Family Name
-      { wch: 10 }, // Adults
-      { wch: 10 }, // Children
-      { wch: 15 }, // Total Members
-    ]
-
-    XLSX.utils.book_append_sheet(workbook, familiesWorksheet, 'Families')
-  }
-
   // Participants sheet
-  const participantsData = participants.map(participant => {
-    const family = participant.family_id
-      ? families.find(f => f.id === participant.family_id)
-      : null
-
-    return {
-      Name: participant.name,
-      'Is Adult': participant.is_adult ? 'Yes' : 'No',
-      ...(trip.tracking_mode === 'families' ? { 'Family': family?.family_name || 'None' } : {})
-    }
-  })
+  const participantsData = participants.map(participant => ({
+    Name: participant.name,
+    'Is Adult': participant.is_adult ? 'Yes' : 'No',
+    ...(trip.tracking_mode === 'families' && participant.wallet_group
+      ? { 'Wallet Group': participant.wallet_group }
+      : {}),
+  }))
 
   const participantsWorksheet = XLSX.utils.json_to_sheet(participantsData)
   participantsWorksheet['!cols'] = [
     { wch: 25 }, // Name
     { wch: 10 }, // Is Adult
-    ...(trip.tracking_mode === 'families' ? [{ wch: 25 }] : []) // Family
+    ...(trip.tracking_mode === 'families' ? [{ wch: 25 }] : []) // Wallet Group
   ]
 
   XLSX.utils.book_append_sheet(workbook, participantsWorksheet, 'Participants')

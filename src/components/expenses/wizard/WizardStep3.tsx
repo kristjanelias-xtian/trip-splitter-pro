@@ -10,72 +10,64 @@ interface Participant {
   id: string
   name: string
   is_adult: boolean
-}
-
-interface Family {
-  id: string
-  family_name: string
-  adults: number
-  children: number
+  wallet_group?: string | null
 }
 
 interface WizardStep3Props {
-  isIndividualsMode: boolean
   participants: Participant[]
-  families: Family[]
   selectedParticipants: string[]
-  selectedFamilies: string[]
   onParticipantToggle: (id: string) => void
-  onFamilyToggle: (id: string) => void
   onSelectAll: () => void
   onDeselectAll: () => void
-  accountForFamilySize: boolean
-  onAccountForFamilySizeChange: (value: boolean) => void
   onAdvancedClick: () => void
   disabled?: boolean
 }
 
 export function WizardStep3({
-  isIndividualsMode,
   participants,
-  families,
   selectedParticipants,
-  selectedFamilies,
   onParticipantToggle,
-  onFamilyToggle,
   onSelectAll,
   onDeselectAll,
-  accountForFamilySize,
-  onAccountForFamilySizeChange,
   onAdvancedClick,
   disabled = false,
 }: WizardStep3Props) {
   const [showDetails, setShowDetails] = useState(false)
-  const [showFamilies, setShowFamilies] = useState(true)
 
-  // Calculate counts
-  const totalParticipants = participants.length
-  const totalFamilies = families.length
-  const selectedCount = isIndividualsMode
-    ? selectedParticipants.length
-    : selectedFamilies.length + selectedParticipants.length
-
-  const allSelected = isIndividualsMode
-    ? selectedParticipants.length === participants.length
-    : selectedFamilies.length === families.length &&
-      selectedParticipants.length === participants.length
+  const allSelected = selectedParticipants.length === participants.length
 
   const getSelectionText = () => {
     if (allSelected) {
-      if (isIndividualsMode) {
-        return `Split equally between all ${totalParticipants} people`
-      }
-      return `Split equally between all ${totalFamilies} families${
-        totalParticipants > 0 ? ` and ${totalParticipants} individuals` : ''
-      }`
+      return `Split equally between all ${participants.length} people`
     }
-    return `Split between ${selectedCount} selected`
+    return `Split between ${selectedParticipants.length} selected`
   }
+
+  // Group participants by wallet_group for display
+  const participantGroups = (() => {
+    const groups: { label: string | null; members: Participant[] }[] = []
+    const grouped = new Map<string, Participant[]>()
+    const standalone: Participant[] = []
+
+    for (const p of participants) {
+      if (p.wallet_group) {
+        const existing = grouped.get(p.wallet_group) || []
+        existing.push(p)
+        grouped.set(p.wallet_group, existing)
+      } else {
+        standalone.push(p)
+      }
+    }
+
+    for (const [label, members] of grouped) {
+      groups.push({ label, members })
+    }
+    if (standalone.length > 0) {
+      groups.push({ label: null, members: standalone })
+    }
+
+    return groups
+  })()
 
   return (
     <motion.div
@@ -118,33 +110,6 @@ export function WizardStep3({
         </Button>
       </div>
 
-      {/* Account for Family Size Toggle - Only show in families mode with families selected */}
-      {!isIndividualsMode && selectedFamilies.length > 0 && (
-        <div className="p-3 bg-accent/5 rounded-lg border border-accent/10">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="accountForFamilySize-mobile"
-              checked={accountForFamilySize}
-              onCheckedChange={(checked) => onAccountForFamilySizeChange(checked as boolean)}
-              disabled={disabled}
-            />
-            <div className="flex-1 space-y-1">
-              <label
-                htmlFor="accountForFamilySize-mobile"
-                className="text-sm font-medium text-foreground cursor-pointer leading-none"
-              >
-                Account for family size
-              </label>
-              <p className="text-xs text-muted-foreground">
-                {accountForFamilySize
-                  ? 'Families pay proportionally by number of people (e.g., family of 4 pays 2× family of 2)'
-                  : 'All families pay equally regardless of size'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Choose Specific People */}
       <div className="space-y-3">
         <Button
@@ -167,133 +132,42 @@ export function WizardStep3({
               transition={{ duration: 0.2 }}
               className="space-y-4 overflow-hidden"
             >
-              {isIndividualsMode ? (
-                // Individuals Mode
-                <div className="space-y-2">
-                  <Label className="text-base font-medium">Participants</Label>
-                  <div className="space-y-2 rounded-lg border border-input p-3">
-                    {participants.map((participant) => (
-                      <div
-                        key={participant.id}
-                        className="flex items-center space-x-3 min-h-[44px] py-1"
-                      >
-                        <Checkbox
-                          id={`participant-${participant.id}`}
-                          checked={selectedParticipants.includes(participant.id)}
-                          onCheckedChange={() => onParticipantToggle(participant.id)}
-                          disabled={disabled}
-                        />
-                        <label
-                          htmlFor={`participant-${participant.id}`}
-                          className="text-base text-foreground cursor-pointer flex-1"
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Participants</Label>
+                <div className="space-y-2 rounded-lg border border-input p-3">
+                  {participantGroups.map((group, gi) => (
+                    <div key={group.label ?? `standalone-${gi}`}>
+                      {group.label && (
+                        <p className="text-xs text-muted-foreground mb-1 mt-2 first:mt-0">{group.label}</p>
+                      )}
+                      {group.members.map((participant) => (
+                        <div
+                          key={participant.id}
+                          className="flex items-center space-x-3 min-h-[44px] py-1"
                         >
-                          {participant.name}
-                          {!participant.is_adult && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              (child)
-                            </span>
-                          )}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                // Families Mode
-                <div className="space-y-4">
-                  {/* Families Section */}
-                  {families.length > 0 && (
-                    <div className="space-y-2">
-                      <Button
-                        type="button"
-                        onClick={() => setShowFamilies(!showFamilies)}
-                        variant="ghost"
-                        className="w-full justify-between h-10 px-0"
-                        disabled={disabled}
-                      >
-                        <Label className="text-base font-medium cursor-pointer">
-                          Families ({families.length})
-                        </Label>
-                        {showFamilies ? (
-                          <ChevronDown size={16} />
-                        ) : (
-                          <ChevronRight size={16} />
-                        )}
-                      </Button>
-
-                      <AnimatePresence>
-                        {showFamilies && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="space-y-2 rounded-lg border border-input p-3 overflow-hidden"
+                          <Checkbox
+                            id={`participant-${participant.id}`}
+                            checked={selectedParticipants.includes(participant.id)}
+                            onCheckedChange={() => onParticipantToggle(participant.id)}
+                            disabled={disabled}
+                          />
+                          <label
+                            htmlFor={`participant-${participant.id}`}
+                            className="text-base text-foreground cursor-pointer flex-1"
                           >
-                            {families.map((family) => (
-                              <div
-                                key={family.id}
-                                className="flex items-center space-x-3 min-h-[44px] py-1"
-                              >
-                                <Checkbox
-                                  id={`family-${family.id}`}
-                                  checked={selectedFamilies.includes(family.id)}
-                                  onCheckedChange={() => onFamilyToggle(family.id)}
-                                  disabled={disabled}
-                                />
-                                <label
-                                  htmlFor={`family-${family.id}`}
-                                  className="text-base text-foreground cursor-pointer flex-1"
-                                >
-                                  {family.family_name}
-                                  <span className="text-sm text-muted-foreground ml-2">
-                                    ({family.adults} adults
-                                    {family.children > 0 && `, ${family.children} children`})
-                                  </span>
-                                </label>
-                              </div>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                            {participant.name}
+                            {!participant.is_adult && (
+                              <span className="text-sm text-muted-foreground ml-2">
+                                (child)
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Individual Members Section */}
-                  {participants.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium">
-                        Individual Members ({participants.length})
-                      </Label>
-                      <div className="space-y-2 rounded-lg border border-input p-3">
-                        {participants.map((participant) => (
-                          <div
-                            key={participant.id}
-                            className="flex items-center space-x-3 min-h-[44px] py-1"
-                          >
-                            <Checkbox
-                              id={`individual-${participant.id}`}
-                              checked={selectedParticipants.includes(participant.id)}
-                              onCheckedChange={() => onParticipantToggle(participant.id)}
-                              disabled={disabled}
-                            />
-                            <label
-                              htmlFor={`individual-${participant.id}`}
-                              className="text-base text-foreground cursor-pointer flex-1"
-                            >
-                              {participant.name}
-                              {!participant.is_adult && (
-                                <span className="text-sm text-muted-foreground ml-2">
-                                  (child)
-                                </span>
-                              )}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

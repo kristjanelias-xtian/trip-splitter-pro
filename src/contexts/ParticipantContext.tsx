@@ -2,11 +2,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/lib/supabase'
 import {
   Participant,
-  Family,
   CreateParticipantInput,
-  CreateFamilyInput,
   UpdateParticipantInput,
-  UpdateFamilyInput,
 } from '@/types/participant'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { withTimeout } from '@/lib/fetchWithTimeout'
@@ -14,19 +11,14 @@ import { useAbortController } from '@/hooks/useAbortController'
 
 interface ParticipantContextType {
   participants: Participant[]
-  families: Family[]
   loading: boolean
   error: string | null
   clearError: () => void
   createParticipant: (input: CreateParticipantInput) => Promise<Participant | null>
   updateParticipant: (id: string, input: UpdateParticipantInput) => Promise<boolean>
   deleteParticipant: (id: string) => Promise<boolean>
-  createFamily: (input: CreateFamilyInput) => Promise<Family | null>
-  updateFamily: (id: string, input: UpdateFamilyInput) => Promise<boolean>
-  deleteFamily: (id: string) => Promise<boolean>
   refreshParticipants: () => Promise<void>
   getAdultParticipants: () => Participant[]
-  getParticipantsByFamily: (familyId: string) => Participant[]
   linkUserToParticipant: (participantId: string, userId: string) => Promise<boolean>
   unlinkUserFromParticipant: (participantId: string) => Promise<boolean>
 }
@@ -35,7 +27,6 @@ const ParticipantContext = createContext<ParticipantContextType | undefined>(und
 
 export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [participants, setParticipants] = useState<Participant[]>([])
-  const [families, setFamilies] = useState<Family[]>([])
   const [loading, setLoading] = useState(false)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,12 +36,11 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
   const clearError = () => setError(null)
 
-  // Fetch participants and families for current trip
+  // Fetch participants for current trip
   const fetchData = async () => {
     const signal = newSignal()
     if (!currentTrip) {
       setParticipants([])
-      setFamilies([])
       setInitialLoadDone(true)
       return
     }
@@ -59,7 +49,6 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      // Fetch participants
       const { data: participantsData, error: participantsError } = await withTimeout(
         supabase
           .from('participants')
@@ -75,34 +64,11 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       if (participantsError) throw participantsError
 
-      // Fetch families if in families mode
-      if (currentTrip.tracking_mode === 'families') {
-        if (signal.aborted) return
-
-        const { data: familiesData, error: familiesError } = await withTimeout(
-          supabase
-            .from('families')
-            .select('*')
-            .eq('trip_id', currentTrip.id)
-            .order('family_name')
-            .abortSignal(signal),
-          15000,
-          'Loading families timed out. Please check your connection and try again.'
-        )
-
-        if (signal.aborted) return
-
-        if (familiesError) throw familiesError
-        setFamilies((familiesData as Family[]) || [])
-      } else {
-        setFamilies([])
-      }
-
       setParticipants((participantsData as Participant[]) || [])
     } catch (err) {
       if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
-      console.error('Error fetching participants/families:', err)
+      console.error('Error fetching participants:', err)
     } finally {
       if (!signal.aborted) {
         setLoading(false)
@@ -202,98 +168,6 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Create family
-  const createFamily = async (input: CreateFamilyInput): Promise<Family | null> => {
-    try {
-      setError(null)
-
-      const controller = new AbortController()
-      const { data, error: createError } = await withTimeout<any>(
-        (supabase as any)
-          .from('families')
-          .insert([input])
-          .select()
-          .single()
-          .abortSignal(controller.signal),
-        15000,
-        'Creating family timed out. Please check your connection and try again.',
-        controller
-      )
-
-      if (createError) throw createError
-
-      const newFamily = data as Family
-      setFamilies(prev => [...prev, newFamily].sort((a, b) => a.family_name.localeCompare(b.family_name)))
-
-      return newFamily
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create family')
-      console.error('Error creating family:', err)
-      return null
-    }
-  }
-
-  // Update family
-  const updateFamily = async (id: string, input: UpdateFamilyInput): Promise<boolean> => {
-    try {
-      setError(null)
-
-      const controller = new AbortController()
-      const { error: updateError } = await withTimeout<any>(
-        (supabase as any)
-          .from('families')
-          .update(input)
-          .eq('id', id)
-          .abortSignal(controller.signal),
-        15000,
-        'Updating family timed out. Please check your connection and try again.',
-        controller
-      )
-
-      if (updateError) throw updateError
-
-      setFamilies(prev =>
-        prev.map(f => (f.id === id ? { ...f, ...input } : f)).sort((a, b) => a.family_name.localeCompare(b.family_name))
-      )
-
-      return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update family')
-      console.error('Error updating family:', err)
-      return false
-    }
-  }
-
-  // Delete family
-  const deleteFamily = async (id: string): Promise<boolean> => {
-    try {
-      setError(null)
-
-      const controller = new AbortController()
-      const { error: deleteError } = await withTimeout(
-        supabase
-          .from('families')
-          .delete()
-          .eq('id', id)
-          .abortSignal(controller.signal),
-        15000,
-        'Deleting family timed out. Please check your connection and try again.',
-        controller
-      )
-
-      if (deleteError) throw deleteError
-
-      setFamilies(prev => prev.filter(f => f.id !== id))
-      // Participants will be cascade deleted by DB
-
-      return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete family')
-      console.error('Error deleting family:', err)
-      return false
-    }
-  }
-
   // Link a user to a participant ("This is me")
   const linkUserToParticipant = async (participantId: string, userId: string): Promise<boolean> => {
     try {
@@ -366,11 +240,6 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     return participants.filter(p => p.is_adult)
   }
 
-  // Helper: Get participants by family
-  const getParticipantsByFamily = (familyId: string) => {
-    return participants.filter(p => p.family_id === familyId)
-  }
-
   // Fetch data when current trip changes
   useEffect(() => {
     if (tripCode && currentTrip) {
@@ -378,7 +247,6 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       fetchData()
     } else {
       setParticipants([])
-      setFamilies([])
       setError(null)
     }
     return cancel
@@ -386,19 +254,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
   const value: ParticipantContextType = {
     participants,
-    families,
     loading: loading || (!!currentTrip && !initialLoadDone),
     error,
     clearError,
     createParticipant,
     updateParticipant,
     deleteParticipant,
-    createFamily,
-    updateFamily,
-    deleteFamily,
     refreshParticipants,
     getAdultParticipants,
-    getParticipantsByFamily,
     linkUserToParticipant,
     unlinkUserFromParticipant,
   }

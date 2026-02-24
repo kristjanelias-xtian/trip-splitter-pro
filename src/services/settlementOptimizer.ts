@@ -6,8 +6,6 @@ export interface SettlementTransaction {
   toId: string
   toName: string
   amount: number
-  isFromFamily: boolean
-  isToFamily: boolean
 }
 
 export interface OptimalSettlementPlan {
@@ -72,8 +70,6 @@ export function calculateOptimalSettlement(
       toId: creditor.id,
       toName: creditor.name,
       amount: Math.round(transactionAmount * 100) / 100, // Round to 2 decimals
-      isFromFamily: debtor.isFamily,
-      isToFamily: creditor.isFamily,
     })
 
     // Update balances

@@ -6,7 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalancesV2 } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { LinkParticipantDialog } from '@/components/LinkParticipantDialog'
 import { QuickBalanceHero } from '@/components/quick/QuickBalanceHero'
 import { QuickActionButton } from '@/components/quick/QuickActionButton'
@@ -33,7 +33,7 @@ export function QuickGroupDetailPage() {
   const location = useLocation()
   const { currentTrip, loading: tripLoading } = useCurrentTrip()
   const { myParticipant, isLinked } = useMyParticipant()
-  const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
+  const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
 
@@ -98,24 +98,21 @@ export function QuickGroupDetailPage() {
   }
 
   // Calculate balance (with currency conversion)
-  const balanceCalc = calculateBalancesV2(
+  const balanceCalc = calculateBalances(
     expenses,
     participants,
-    families,
     currentTrip.tracking_mode,
     settlements,
     currentTrip.default_currency,
     currentTrip.exchange_rates
   )
 
-  // Find user's balance
+  // Find user's balance via entity map
   let myBalance = null
   if (myParticipant) {
-    if (currentTrip.tracking_mode === 'families' && myParticipant.family_id) {
-      myBalance = balanceCalc.balances.find(b => b.id === myParticipant.family_id) || null
-    } else {
-      myBalance = balanceCalc.balances.find(b => b.id === myParticipant.id) || null
-    }
+    const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
+    const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
+    myBalance = balanceCalc.balances.find(b => b.id === myEntityId) || null
   }
 
   return (

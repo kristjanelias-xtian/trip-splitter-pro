@@ -143,7 +143,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
       trip_id: tripId,
       name: personName.trim(),
       is_adult: true,
-      family_id: null,
       email: emailLower || null,
     })
 

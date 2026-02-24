@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { PartyPopper, Lightbulb, Check, Bell, X } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 
 export interface BankDetails {
@@ -137,9 +136,6 @@ function SettlementTransactionCard({
               <span className="font-medium text-foreground">
                 {transaction.fromName}
               </span>
-              {transaction.isFromFamily && (
-                <Badge variant="soft">Family</Badge>
-              )}
             </div>
 
             <span className="text-muted-foreground flex-shrink-0">→</span>
@@ -148,9 +144,6 @@ function SettlementTransactionCard({
               <span className="font-medium text-foreground">
                 {transaction.toName}
               </span>
-              {transaction.isToFamily && (
-                <Badge variant="soft">Family</Badge>
-              )}
             </div>
           </div>
 

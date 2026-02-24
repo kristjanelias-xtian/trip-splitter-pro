@@ -1,7 +1,6 @@
 import { X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
-import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
+import { ParticipantsSetup } from '@/components/setup/ParticipantsSetup'
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
@@ -46,11 +45,7 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
 
         {/* Scrollable content — only this scrolls */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
-          {currentTrip.tracking_mode === 'individuals' ? (
-            <IndividualsSetup />
-          ) : (
-            <FamiliesSetup />
-          )}
+          <ParticipantsSetup />
         </div>
 
         {/* Sticky footer */}

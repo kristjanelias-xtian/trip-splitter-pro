@@ -40,7 +40,7 @@ export function QuickBalanceHero({ balance }: QuickBalanceHeroProps) {
       </p>
       {balance.isFamily && (
         <p className="text-xs text-muted-foreground mt-2">
-          Family: {balance.name}
+          Group: {balance.name}
         </p>
       )}
     </motion.div>

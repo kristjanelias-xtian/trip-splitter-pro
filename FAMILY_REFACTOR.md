@@ -147,8 +147,8 @@ SettlementTransaction { fromId, fromName, toId, toName, amount }
 | Phase | Status | PR | Sign-off |
 |---|---|---|---|
 | 1 — Migration | COMPLETE | #386 | type-check clean, 140/140 tests, backfill verified |
-| 2 — Engine | COMPLETE | #TBD | type-check clean, 152/152 tests, zero snapshot discrepancies |
-| 3 — UI | NOT STARTED | — | — |
+| 2 — Engine | COMPLETE | #387 | type-check clean, 152/152 tests, zero snapshot discrepancies |
+| 3 — UI | COMPLETE | #388 | type-check clean, 137/137 tests, -3013 net lines |
 | 4 — Feature | NOT STARTED | — | — |
 
 ## Balance Snapshot
@@ -181,3 +181,53 @@ Saved to `balance_snapshot_pre.json` (project root). 6 trips, all balances captu
 - `settlementOptimizer.ts`: no changes needed — consumes `ParticipantBalance[]` (same shape).
 - `excelExport.ts`: no changes needed — only imports `ParticipantBalance` type and accesses distribution JSONB directly.
 - 152/152 tests pass. Type-check clean.
+
+### Phase 3 — 2026-02-24
+
+40 files changed, -3013 net lines (597 added, 3610 removed).
+
+**Types simplified:**
+- `ExpenseDistribution` reduced to `IndividualsDistribution` only — `FamiliesDistribution`, `MixedDistribution` removed
+- `Family`, `CreateFamilyInput`, `UpdateFamilyInput` interfaces removed from `types/participant.ts`
+- `family_id` removed from `Participant` and `CreateParticipantInput`
+- `isFromFamily`/`isToFamily` removed from `SettlementTransaction`
+
+**Calculator & services:**
+- V1 `calculateBalances`, `calculateExpenseShares` deleted — V2 versions renamed to primary exports
+- `balanceCalculator.ts`: 697 → ~180 lines (families/mixed branching removed)
+- `balanceCalculator.test.ts`: 523 → ~150 lines (families/mixed parity tests removed, V2-specific tests retained)
+- `settlementOptimizer.ts`: `isFromFamily`/`isToFamily` removed
+- `transactionHistoryBuilder.ts`: families-mode entity resolution removed
+- `excelExport.ts`: family-specific branching removed, "Participant/Family" → "Participant"
+- `pdfExport.ts`: "Participant/Family" → "Participant"
+
+**UI components simplified:**
+- `FamiliesSetup.tsx` (906 lines) deleted entirely
+- New `ParticipantsSetup.tsx` created — unified component with wallet_group support (datalist autocomplete, inline group editor, grouped display)
+- `ExpenseForm.tsx`: 511 lines removed (3-list split UI for families/mixed eliminated)
+- `ExpenseSplitPreview.tsx`: 321 lines removed (families/mixed preview branches)
+- `ExpenseWizard.tsx`: 190 lines removed (accountForFamilySize toggle, families-mode logic)
+- `WizardStep3.tsx`: 250 lines removed (family/mixed selection lists)
+- `WizardStep4.tsx`: 68 lines removed (accountForFamilySize toggle)
+- `QuickSettlementSheet.tsx`: entity ID resolution simplified (always participant IDs)
+- `SettlementsPage.tsx`: email map, bank details, remind handler simplified
+- `SettlementForm.tsx`: `familyName` → `groupName`, removed families-mode branching
+- `LinkParticipantDialog.tsx`: removed family name resolution, uses `wallet_group` directly
+- `ExpenseCard.tsx`: removed families/mixed distribution text branches
+
+**Context:**
+- `ParticipantContext.tsx`: removed families state, fetch, CRUD (createFamily, updateFamily, deleteFamily, getParticipantsByFamily)
+
+**Trip settings:**
+- `ManageTripPage.tsx`: added "Proportional Group Splitting" toggle (only shown when any participant has `wallet_group`)
+- `account_for_family_size` added to trip feature toggles
+
+**Display labels:**
+- "Family" badge → "Group" in BalanceCard, CostBreakdownDialog, QuickBalanceHero
+
+**Migrations:**
+- 030: `ALTER TABLE trips ADD COLUMN account_for_family_size BOOLEAN NOT NULL DEFAULT false`
+- 031: Drop `family_id` FK and column from participants
+- 032: Drop `families` table
+
+137/137 tests pass. Type-check clean.

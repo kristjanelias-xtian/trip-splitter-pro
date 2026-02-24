@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
-import { calculateBalancesV2, ParticipantBalance } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap, ParticipantBalance } from '@/services/balanceCalculator'
 import { Trip } from '@/types/trip'
-import { Participant, Family } from '@/types/participant'
+import { Participant } from '@/types/participant'
 import { Expense } from '@/types/expense'
 import { Settlement } from '@/types/settlement'
 
@@ -49,16 +49,11 @@ export function useMyTripBalances() {
         uniqueTrips.map(async (trip) => {
           try {
             // Parallel fetch all data for this trip
-            const [participantsRes, familiesRes, expensesRes, settlementsRes] = await Promise.all([
+            const [participantsRes, expensesRes, settlementsRes] = await Promise.all([
               withTimeout(
                 supabase.from('participants').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
                 15000,
                 `Loading participants for trip timed out`
-              ),
-              withTimeout(
-                supabase.from('families').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
-                15000,
-                `Loading families for trip timed out`
               ),
               withTimeout(
                 supabase.from('expenses').select('*').eq('trip_id', trip.id).abortSignal(controller.signal),
@@ -75,7 +70,6 @@ export function useMyTripBalances() {
             if (cancelled) return { trip, myBalance: null, totalExpenses: 0, loading: false }
 
             const participants = (participantsRes.data as Participant[]) || []
-            const families = (familiesRes.data as Family[]) || []
             const expenses = (expensesRes.data as unknown as Expense[]) || []
             const settlements = (settlementsRes.data as Settlement[]) || []
 
@@ -87,24 +81,19 @@ export function useMyTripBalances() {
             }
 
             // Calculate balances (with currency conversion)
-            const calc = calculateBalancesV2(
+            const calc = calculateBalances(
               expenses,
               participants,
-              families,
               trip.tracking_mode,
               settlements,
               trip.default_currency,
               trip.exchange_rates
             )
 
-            // Find the user's balance entity
-            // In families mode, if user is in a family, find the family balance
-            let myBalance: ParticipantBalance | null = null
-            if (trip.tracking_mode === 'families' && myParticipant.family_id) {
-              myBalance = calc.balances.find(b => b.id === myParticipant.family_id) || null
-            } else {
-              myBalance = calc.balances.find(b => b.id === myParticipant.id) || null
-            }
+            // Find the user's balance entity via entity map
+            const entityMap = buildEntityMap(participants, trip.tracking_mode)
+            const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
+            const myBalance = calc.balances.find(b => b.id === myEntityId) || null
 
             return { trip, myBalance, totalExpenses: calc.totalExpenses, loading: false }
           } catch (error) {

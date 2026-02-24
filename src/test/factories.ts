@@ -1,4 +1,4 @@
-import type { Participant, Family } from '@/types/participant'
+import type { Participant } from '@/types/participant'
 import type { Expense, ExpenseDistribution } from '@/types/expense'
 import type { Settlement } from '@/types/settlement'
 import type { Event } from '@/types/trip'
@@ -17,21 +17,8 @@ export function buildParticipant(overrides: Partial<Participant> = {}): Particip
   return {
     id,
     trip_id: 'trip-1',
-    family_id: null,
     name: `Participant ${id}`,
     is_adult: true,
-    ...overrides,
-  }
-}
-
-export function buildFamily(overrides: Partial<Family> = {}): Family {
-  const id = overrides.id ?? nextId()
-  return {
-    id,
-    trip_id: 'trip-1',
-    family_name: `Family ${id}`,
-    adults: 2,
-    children: 1,
     ...overrides,
   }
 }
@@ -88,6 +75,7 @@ export function buildEvent(overrides: Partial<Event> = {}): Event {
     enable_activities: true,
     enable_shopping: true,
     default_split_all: true,
+    account_for_family_size: false,
     created_at: '2025-06-01T00:00:00Z',
     ...overrides,
   }

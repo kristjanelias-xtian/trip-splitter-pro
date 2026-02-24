@@ -10,7 +10,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { calculateBalancesV2 } from '@/services/balanceCalculator'
+import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
@@ -76,7 +76,7 @@ function MobileWizard({
   initialValues,
 }: Omit<ExpenseWizardProps, 'mode'>) {
   const { currentTrip } = useCurrentTrip()
-  const { participants, families, getAdultParticipants } = useParticipantContext()
+  const { participants, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
   const { user } = useAuth()
@@ -104,7 +104,6 @@ function MobileWizard({
   const [currency, setCurrency] = useState(initialValues?.currency || currentTrip?.default_currency || 'EUR')
   const [paidBy, setPaidBy] = useState(initialValues?.paid_by || '')
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
-  const [selectedFamilies, setSelectedFamilies] = useState<string[]>([])
   const [splitMode, setSplitMode] = useState<SplitMode>('equal')
   const [category, setCategory] = useState<string>(
     (initialValues?.category as string) || 'Food'
@@ -113,14 +112,11 @@ function MobileWizard({
     initialValues?.expense_date || new Date().toISOString().split('T')[0]
   )
   const [comment, setComment] = useState(initialValues?.comment || '')
-  const [accountForFamilySize, setAccountForFamilySize] = useState(true)
 
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
-  const [familySplitValues, setFamilySplitValues] = useState<Record<string, string>>({})
 
   const adults = getAdultParticipants()
-  const isIndividualsMode = currentTrip?.tracking_mode === 'individuals'
 
   // Compute available currencies from trip settings
   const availableCurrencies = currentTrip
@@ -129,22 +125,19 @@ function MobileWizard({
 
   // Calculate balances for smart payer suggestion
   const balanceCalculation = currentTrip
-    ? calculateBalancesV2(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
+    ? calculateBalances(expenses, participants, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
-  // Auto-select all participants/families on mount if trip setting allows it
+  // Auto-select all participants on mount if trip setting allows it
   const defaultSplitAll = currentTrip?.default_split_all ?? true
   useEffect(() => {
     if (open && !initialValues?.distribution && defaultSplitAll) {
       if (participants.length > 0 && selectedParticipants.length === 0) {
         setSelectedParticipants(participants.map((p) => p.id))
       }
-      if (families.length > 0 && selectedFamilies.length === 0) {
-        setSelectedFamilies(families.map((f) => f.id))
-      }
     }
-  }, [open, participants, families])
+  }, [open, participants])
 
   // Pre-fill paidBy with the authenticated user's linked adult participant
   useEffect(() => {
@@ -172,7 +165,6 @@ function MobileWizard({
         setErrorDetail(null)
         setSplitMode('equal')
         setParticipantSplitValues({})
-        setFamilySplitValues({})
         // Don't reset category, currency, date - likely to be reused
       }, 300)
       return () => clearTimeout(timer)
@@ -185,58 +177,36 @@ function MobileWizard({
     )
   }
 
-  const handleFamilyToggle = (id: string) => {
-    setSelectedFamilies((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
-    )
-  }
-
   const handleSelectAll = () => {
     setSelectedParticipants(participants.map((p) => p.id))
-    setSelectedFamilies(families.map((f) => f.id))
   }
 
   const handleDeselectAll = () => {
     setSelectedParticipants([])
-    setSelectedFamilies([])
   }
 
   const handleParticipantSplitChange = (id: string, value: string) => {
     setParticipantSplitValues(prev => ({ ...prev, [id]: value }))
   }
 
-  const handleFamilySplitChange = (id: string, value: string) => {
-    setFamilySplitValues(prev => ({ ...prev, [id]: value }))
-  }
-
   const handleSplitModeChange = (mode: SplitMode) => {
     setSplitMode(mode)
     setParticipantSplitValues({})
-    setFamilySplitValues({})
   }
 
-  // Auto-fill split value when exactly one party is selected in "By Amount" mode
+  // Auto-fill split value when exactly one participant is selected in "By Amount" mode
   useEffect(() => {
     if (splitMode !== 'amount') return
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) return
-    const totalSelected = selectedParticipants.length + selectedFamilies.length
-    if (totalSelected !== 1) return
+    if (selectedParticipants.length !== 1) return
 
-    if (selectedFamilies.length === 1) {
-      const id = selectedFamilies[0]
-      const current = familySplitValues[id]
-      if (!current || current === '' || current === '0') {
-        setFamilySplitValues(prev => ({ ...prev, [id]: amount }))
-      }
-    } else if (selectedParticipants.length === 1) {
-      const id = selectedParticipants[0]
-      const current = participantSplitValues[id]
-      if (!current || current === '' || current === '0') {
-        setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
-      }
+    const id = selectedParticipants[0]
+    const current = participantSplitValues[id]
+    if (!current || current === '' || current === '0') {
+      setParticipantSplitValues(prev => ({ ...prev, [id]: amount }))
     }
-  }, [splitMode, selectedFamilies, selectedParticipants, amount])
+  }, [splitMode, selectedParticipants, amount])
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
@@ -268,14 +238,8 @@ function MobileWizard({
     setIsSubmitting(true)
 
     try {
-      // Validate selection
-      if (isIndividualsMode && selectedParticipants.length === 0) {
+      if (selectedParticipants.length === 0) {
         setError('Please select at least one person to split between')
-        setIsSubmitting(false)
-        return
-      }
-      if (!isIndividualsMode && selectedFamilies.length === 0 && selectedParticipants.length === 0) {
-        setError('Please select at least one family or person to split between')
         setIsSubmitting(false)
         return
       }
@@ -288,15 +252,6 @@ function MobileWizard({
           const value = parseFloat(participantSplitValues[id] || '0')
           if (isNaN(value) || value <= 0) {
             setError('Please enter valid percentages for all selected participants')
-            setIsSubmitting(false)
-            return
-          }
-          totalPercentage += value
-        }
-        for (const id of selectedFamilies) {
-          const value = parseFloat(familySplitValues[id] || '0')
-          if (isNaN(value) || value <= 0) {
-            setError('Please enter valid percentages for all selected families')
             setIsSubmitting(false)
             return
           }
@@ -318,15 +273,6 @@ function MobileWizard({
           }
           totalAmount += value
         }
-        for (const id of selectedFamilies) {
-          const value = parseFloat(familySplitValues[id] || '0')
-          if (isNaN(value) || value <= 0) {
-            setError('Please enter valid amounts for all selected families')
-            setIsSubmitting(false)
-            return
-          }
-          totalAmount += value
-        }
         if (Math.abs(totalAmount - amountNum) > 0.01) {
           setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
           setIsSubmitting(false)
@@ -334,80 +280,17 @@ function MobileWizard({
         }
       }
 
-      // Build distribution based on tracking mode
-      let distribution: ExpenseDistribution
-
-      if (isIndividualsMode) {
-        distribution = {
-          type: 'individuals',
-          participants: selectedParticipants,
-          splitMode: splitMode,
-          participantSplits: splitMode !== 'equal'
-            ? selectedParticipants.map(id => ({
-                participantId: id,
-                value: parseFloat(participantSplitValues[id] || '0')
-              }))
-            : undefined,
-        }
-      } else {
-        // Families mode or mixed
-        const hasIndividuals = selectedParticipants.length > 0
-        const hasFamilies = selectedFamilies.length > 0
-
-        if (hasIndividuals && hasFamilies) {
-          // Filter out family members from participants to avoid double-counting
-          const standaloneParticipants = selectedParticipants.filter(participantId => {
-            const participant = participants.find(p => p.id === participantId)
-            if (!participant) return false
-            if (participant.family_id === null) return true
-            return !selectedFamilies.includes(participant.family_id)
-          })
-
-          distribution = {
-            type: 'mixed',
-            families: selectedFamilies,
-            participants: standaloneParticipants,
-            splitMode: splitMode,
-            accountForFamilySize,
-            familySplits: splitMode !== 'equal'
-              ? selectedFamilies.map(id => ({
-                  familyId: id,
-                  value: parseFloat(familySplitValues[id] || '0')
-                }))
-              : undefined,
-            participantSplits: splitMode !== 'equal'
-              ? standaloneParticipants.map(id => ({
-                  participantId: id,
-                  value: parseFloat(participantSplitValues[id] || '0')
-                }))
-              : undefined,
-          }
-        } else if (hasFamilies) {
-          distribution = {
-            type: 'families',
-            families: selectedFamilies,
-            splitMode: splitMode,
-            accountForFamilySize,
-            familySplits: splitMode !== 'equal'
-              ? selectedFamilies.map(id => ({
-                  familyId: id,
-                  value: parseFloat(familySplitValues[id] || '0')
-                }))
-              : undefined,
-          }
-        } else {
-          distribution = {
-            type: 'individuals',
-            participants: selectedParticipants,
-            splitMode: splitMode,
-            participantSplits: splitMode !== 'equal'
-              ? selectedParticipants.map(id => ({
-                  participantId: id,
-                  value: parseFloat(participantSplitValues[id] || '0')
-                }))
-              : undefined,
-          }
-        }
+      // Build distribution — always individuals
+      const distribution: ExpenseDistribution = {
+        type: 'individuals',
+        participants: selectedParticipants,
+        splitMode: splitMode,
+        participantSplits: splitMode !== 'equal'
+          ? selectedParticipants.map(id => ({
+              participantId: id,
+              value: parseFloat(participantSplitValues[id] || '0')
+            }))
+          : undefined,
       }
 
       const expenseInput: CreateExpenseInput = {
@@ -440,7 +323,7 @@ function MobileWizard({
       case 2:
         return paidBy !== ''
       case 3:
-        return selectedParticipants.length > 0 || selectedFamilies.length > 0
+        return selectedParticipants.length > 0
       case 4: {
         if (splitMode === 'equal') return true
         const amtNum = parseFloat(amount)
@@ -451,22 +334,12 @@ function MobileWizard({
             if (isNaN(v) || v <= 0) return false
             total += v
           }
-          for (const id of selectedFamilies) {
-            const v = parseFloat(familySplitValues[id] || '0')
-            if (isNaN(v) || v <= 0) return false
-            total += v
-          }
           return Math.abs(total - 100) <= 0.01
         }
         if (splitMode === 'amount') {
           let total = 0
           for (const id of selectedParticipants) {
             const v = parseFloat(participantSplitValues[id] || '0')
-            if (isNaN(v) || v <= 0) return false
-            total += v
-          }
-          for (const id of selectedFamilies) {
-            const v = parseFloat(familySplitValues[id] || '0')
             if (isNaN(v) || v <= 0) return false
             total += v
           }
@@ -578,17 +451,11 @@ function MobileWizard({
 
           {currentStep === 3 && (
             <WizardStep3
-              isIndividualsMode={isIndividualsMode || false}
               participants={participants}
-              families={families}
               selectedParticipants={selectedParticipants}
-              selectedFamilies={selectedFamilies}
               onParticipantToggle={handleParticipantToggle}
-              onFamilyToggle={handleFamilyToggle}
               onSelectAll={handleSelectAll}
               onDeselectAll={handleDeselectAll}
-              accountForFamilySize={accountForFamilySize}
-              onAccountForFamilySizeChange={setAccountForFamilySize}
               onAdvancedClick={handleAdvanced}
               disabled={isSubmitting}
             />
@@ -607,15 +474,10 @@ function MobileWizard({
               disabled={isSubmitting}
               amount={amount}
               currency={currency}
-              isIndividualsMode={isIndividualsMode || false}
               participants={participants}
-              families={families}
               selectedParticipants={selectedParticipants}
-              selectedFamilies={selectedFamilies}
               participantSplitValues={participantSplitValues}
-              familySplitValues={familySplitValues}
               onParticipantSplitChange={handleParticipantSplitChange}
-              onFamilySplitChange={handleFamilySplitChange}
             />
           )}
         </div>

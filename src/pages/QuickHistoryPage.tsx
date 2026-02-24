@@ -16,7 +16,7 @@ type FilterType = 'all' | 'expenses' | 'payments'
 export function QuickHistoryPage() {
   const { currentTrip } = useCurrentTrip()
   const { myParticipant } = useMyParticipant()
-  const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
+  const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
   const [filter, setFilter] = useState<FilterType>('all')
@@ -41,11 +41,10 @@ export function QuickHistoryPage() {
       expenses,
       settlements,
       participants,
-      families,
       myParticipant,
       currentTrip.tracking_mode
     )
-  }, [expenses, settlements, participants, families, myParticipant, currentTrip])
+  }, [expenses, settlements, participants, myParticipant, currentTrip])
 
   const filtered = useMemo(() => {
     if (filter === 'all') return transactions

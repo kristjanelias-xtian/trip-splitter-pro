@@ -107,7 +107,6 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
         trip_id: currentTrip.id,
         name: name.trim(),
         is_adult: isAdult,
-        family_id: null,
         email: email.trim() || null,
       })
       setName('')
