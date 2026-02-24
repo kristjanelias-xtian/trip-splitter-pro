@@ -185,6 +185,21 @@ function MobileWizard({
     setSelectedParticipants([])
   }
 
+  const handleGroupToggle = (memberIds: string[]) => {
+    setSelectedParticipants(prev => {
+      const allSelected = memberIds.every(id => prev.includes(id))
+      if (allSelected) {
+        // Deselect all members of the group
+        return prev.filter(id => !memberIds.includes(id))
+      } else {
+        // Select all members of the group
+        const newSet = new Set(prev)
+        for (const id of memberIds) newSet.add(id)
+        return Array.from(newSet)
+      }
+    })
+  }
+
   const handleParticipantSplitChange = (id: string, value: string) => {
     setParticipantSplitValues(prev => ({ ...prev, [id]: value }))
   }
@@ -454,6 +469,7 @@ function MobileWizard({
               participants={participants}
               selectedParticipants={selectedParticipants}
               onParticipantToggle={handleParticipantToggle}
+              onGroupToggle={handleGroupToggle}
               onSelectAll={handleSelectAll}
               onDeselectAll={handleDeselectAll}
               onAdvancedClick={handleAdvanced}

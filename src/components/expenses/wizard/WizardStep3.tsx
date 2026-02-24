@@ -17,6 +17,7 @@ interface WizardStep3Props {
   participants: Participant[]
   selectedParticipants: string[]
   onParticipantToggle: (id: string) => void
+  onGroupToggle: (memberIds: string[]) => void
   onSelectAll: () => void
   onDeselectAll: () => void
   onAdvancedClick: () => void
@@ -27,6 +28,7 @@ export function WizardStep3({
   participants,
   selectedParticipants,
   onParticipantToggle,
+  onGroupToggle,
   onSelectAll,
   onDeselectAll,
   onAdvancedClick,
@@ -135,37 +137,75 @@ export function WizardStep3({
               <div className="space-y-2">
                 <Label className="text-base font-medium">Participants</Label>
                 <div className="space-y-2 rounded-lg border border-input p-3">
-                  {participantGroups.map((group, gi) => (
-                    <div key={group.label ?? `standalone-${gi}`}>
-                      {group.label && (
-                        <p className="text-xs text-muted-foreground mb-1 mt-2 first:mt-0">{group.label}</p>
-                      )}
-                      {group.members.map((participant) => (
-                        <div
-                          key={participant.id}
-                          className="flex items-center space-x-3 min-h-[44px] py-1"
-                        >
-                          <Checkbox
-                            id={`participant-${participant.id}`}
-                            checked={selectedParticipants.includes(participant.id)}
-                            onCheckedChange={() => onParticipantToggle(participant.id)}
-                            disabled={disabled}
-                          />
-                          <label
-                            htmlFor={`participant-${participant.id}`}
-                            className="text-base text-foreground cursor-pointer flex-1"
+                  {participantGroups.map((group, gi) => {
+                    const memberIds = group.members.map(m => m.id)
+                    const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
+                    const allGroupSelected = selectedCount === memberIds.length
+                    const someGroupSelected = selectedCount > 0 && !allGroupSelected
+
+                    return (
+                      <div
+                        key={group.label ?? `standalone-${gi}`}
+                        className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
+                      >
+                        {group.label && (
+                          <div
+                            className="flex items-center space-x-3 min-h-[44px] py-1 cursor-pointer"
+                            onClick={() => onGroupToggle(memberIds)}
                           >
-                            {participant.name}
-                            {!participant.is_adult && (
-                              <span className="text-sm text-muted-foreground ml-2">
-                                (child)
+                            <Checkbox
+                              id={`group-${group.label}`}
+                              checked={allGroupSelected}
+                              ref={(el) => {
+                                if (el) {
+                                  const input = el as unknown as HTMLButtonElement
+                                  input.dataset.indeterminate = someGroupSelected ? 'true' : 'false'
+                                  input.setAttribute('aria-checked', someGroupSelected ? 'mixed' : String(allGroupSelected))
+                                }
+                              }}
+                              onCheckedChange={() => onGroupToggle(memberIds)}
+                              disabled={disabled}
+                              className={someGroupSelected ? 'opacity-60' : ''}
+                            />
+                            <label
+                              htmlFor={`group-${group.label}`}
+                              className="text-sm font-medium text-foreground cursor-pointer flex-1 flex items-center gap-1.5"
+                            >
+                              <Users size={14} className="text-muted-foreground" />
+                              {group.label}
+                              <span className="text-xs text-muted-foreground font-normal">
+                                ({memberIds.length})
                               </span>
-                            )}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                            </label>
+                          </div>
+                        )}
+                        {group.members.map((participant) => (
+                          <div
+                            key={participant.id}
+                            className={`flex items-center space-x-3 min-h-[44px] py-1 ${group.label ? 'pl-6' : ''}`}
+                          >
+                            <Checkbox
+                              id={`participant-${participant.id}`}
+                              checked={selectedParticipants.includes(participant.id)}
+                              onCheckedChange={() => onParticipantToggle(participant.id)}
+                              disabled={disabled}
+                            />
+                            <label
+                              htmlFor={`participant-${participant.id}`}
+                              className="text-base text-foreground cursor-pointer flex-1"
+                            >
+                              {participant.name}
+                              {!participant.is_adult && (
+                                <span className="text-sm text-muted-foreground ml-2">
+                                  (child)
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </motion.div>

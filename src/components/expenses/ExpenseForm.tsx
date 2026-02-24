@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lightbulb, ChevronDown, ChevronRight } from 'lucide-react'
+import { Lightbulb, ChevronDown, ChevronRight, Users } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -163,6 +163,19 @@ export function ExpenseForm({
 
   const handleDeselectAll = () => {
     setSelectedParticipants([])
+  }
+
+  const handleGroupToggle = (memberIds: string[]) => {
+    setSelectedParticipants(prev => {
+      const allSelected = memberIds.every(id => prev.includes(id))
+      if (allSelected) {
+        return prev.filter(id => !memberIds.includes(id))
+      } else {
+        const newSet = new Set(prev)
+        for (const id of memberIds) newSet.add(id)
+        return Array.from(newSet)
+      }
+    })
   }
 
   const handleParticipantSplitChange = (id: string, value: string) => {
@@ -514,41 +527,79 @@ export function ExpenseForm({
         </div>
 
         <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
-          {participantGroups.map((group, gi) => (
-            <div key={group.label ?? `standalone-${gi}`}>
-              {group.label && (
-                <p className="text-xs text-muted-foreground mb-1 mt-2 first:mt-0">{group.label}</p>
-              )}
-              {group.members.map(participant => (
-                <div key={participant.id} className="flex items-center space-x-2 min-h-[44px]">
-                  <Checkbox
-                    id={`participant-${participant.id}`}
-                    checked={selectedParticipants.includes(participant.id)}
-                    onCheckedChange={() => handleParticipantToggle(participant.id)}
-                    disabled={loading}
-                  />
-                  <label
-                    htmlFor={`participant-${participant.id}`}
-                    className="text-sm text-foreground cursor-pointer flex-1"
+          {participantGroups.map((group, gi) => {
+            const memberIds = group.members.map(m => m.id)
+            const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
+            const allGroupSelected = selectedCount === memberIds.length
+            const someGroupSelected = selectedCount > 0 && !allGroupSelected
+
+            return (
+              <div
+                key={group.label ?? `standalone-${gi}`}
+                className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
+              >
+                {group.label && (
+                  <div
+                    className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
+                    onClick={() => handleGroupToggle(memberIds)}
                   >
-                    {participant.name} {participant.is_adult ? '' : '(child)'}
-                  </label>
-                  {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={participantSplitValues[participant.id] || ''}
-                      onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
-                      placeholder={splitMode === 'percentage' ? '%' : currency}
-                      pattern="[0-9]*[.,]?[0-9]*"
+                    <Checkbox
+                      id={`group-${group.label}`}
+                      checked={allGroupSelected}
+                      ref={(el) => {
+                        if (el) {
+                          const input = el as unknown as HTMLButtonElement
+                          input.dataset.indeterminate = someGroupSelected ? 'true' : 'false'
+                          input.setAttribute('aria-checked', someGroupSelected ? 'mixed' : String(allGroupSelected))
+                        }
+                      }}
+                      onCheckedChange={() => handleGroupToggle(memberIds)}
                       disabled={loading}
-                      className="w-24 h-9"
+                      className={someGroupSelected ? 'opacity-60' : ''}
                     />
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
+                    <label
+                      htmlFor={`group-${group.label}`}
+                      className="text-xs font-medium text-foreground cursor-pointer flex-1 flex items-center gap-1"
+                    >
+                      <Users size={12} className="text-muted-foreground" />
+                      {group.label}
+                      <span className="text-xs text-muted-foreground font-normal">
+                        ({memberIds.length})
+                      </span>
+                    </label>
+                  </div>
+                )}
+                {group.members.map(participant => (
+                  <div key={participant.id} className={`flex items-center space-x-2 min-h-[44px] ${group.label ? 'pl-5' : ''}`}>
+                    <Checkbox
+                      id={`participant-${participant.id}`}
+                      checked={selectedParticipants.includes(participant.id)}
+                      onCheckedChange={() => handleParticipantToggle(participant.id)}
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor={`participant-${participant.id}`}
+                      className="text-sm text-foreground cursor-pointer flex-1"
+                    >
+                      {participant.name} {participant.is_adult ? '' : '(child)'}
+                    </label>
+                    {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={participantSplitValues[participant.id] || ''}
+                        onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
+                        placeholder={splitMode === 'percentage' ? '%' : currency}
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        disabled={loading}
+                        className="w-24 h-9"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
 
