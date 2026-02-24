@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Edit, Trash2, Info, X, Plus, ArrowLeft } from 'lucide-react'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { format } from 'date-fns'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useTripContext } from '@/contexts/TripContext'
@@ -43,7 +45,7 @@ export function ManageTripPage() {
   const { updateTrip, deleteTrip } = useTripContext()
   const location = useLocation()
   const fromQuick = !!(location.state as any)?.fromQuick
-  const { participants, error: participantError, clearError: clearParticipantError } = useParticipantContext()
+  const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { meals } = useMealContext()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -51,14 +53,7 @@ export function ManageTripPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  // Surface participant errors as toasts
-  useEffect(() => {
-    if (participantError) {
-      toast({ title: 'Error', description: participantError, variant: 'destructive' })
-      clearParticipantError()
-    }
-  }, [participantError])
+  const [retrying, setRetrying] = useState(false)
 
   // Currency settings state
   const [currencyDefault, setCurrencyDefault] = useState(currentTrip?.default_currency || 'EUR')
@@ -260,23 +255,32 @@ export function ManageTripPage() {
         <h3 className="text-lg font-semibold text-foreground">
           Participants & Families
         </h3>
-        {participants.length === 0 && (
-          <Card className="border-dashed border-primary/40 bg-primary/5">
-            <CardContent className="pt-4 pb-4">
-              <p className="text-sm text-primary font-medium">
-                Add participants to get started
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Participants are required before you can add expenses.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-        {currentTrip.tracking_mode === 'individuals' ? (
-          <IndividualsSetup />
-        ) : (
-          <FamiliesSetup />
-        )}
+        {participantsLoading ? (
+          <PageLoadingState />
+        ) : participantError ? (
+          <PageErrorState error={participantError} onRetry={async () => {
+            setRetrying(true)
+            try { await refreshParticipants() } finally { setRetrying(false) }
+          }} retrying={retrying} />
+        ) : <>
+          {participants.length === 0 && (
+            <Card className="border-dashed border-primary/40 bg-primary/5">
+              <CardContent className="pt-4 pb-4">
+                <p className="text-sm text-primary font-medium">
+                  Add participants to get started
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Participants are required before you can add expenses.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          {currentTrip.tracking_mode === 'individuals' ? (
+            <IndividualsSetup />
+          ) : (
+            <FamiliesSetup />
+          )}
+        </>}
       </div>
 
       {/* Details Card */}

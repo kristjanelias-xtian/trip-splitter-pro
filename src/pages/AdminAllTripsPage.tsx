@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert, Loader2 } from 'lucide-react'
+import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert } from 'lucide-react'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Trip } from '@/types/trip'
@@ -31,6 +33,7 @@ export function AdminAllTripsPage() {
   const [allTrips, setAllTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent')
   const [ownerMap, setOwnerMap] = useState<Record<string, { name: string; email: string | null }>>({})
@@ -192,17 +195,35 @@ export function AdminAllTripsPage() {
 
         {/* Loading / Error */}
         {loading && (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 className="animate-spin text-muted-foreground" size={32} />
-          </div>
+          <PageLoadingState />
         )}
 
         {error && !loading && (
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <p className="text-destructive text-center">{error}</p>
-            </CardContent>
-          </Card>
+          <PageErrorState error={error} onRetry={async () => {
+            setRetrying(true)
+            setError(null)
+            setLoading(true)
+            try {
+              const signal = newSignal()
+              const { data, error: fetchError } = await withTimeout(
+                supabase
+                  .from('trips')
+                  .select('*')
+                  .order('created_at', { ascending: false })
+                  .abortSignal(signal),
+                15000,
+                'Loading all trips timed out.'
+              )
+              if (fetchError) {
+                setError(fetchError.message)
+              } else {
+                setAllTrips((data as unknown as Trip[]) ?? [])
+              }
+            } finally {
+              setLoading(false)
+              setRetrying(false)
+            }
+          }} retrying={retrying} />
         )}
 
         {!loading && !error && <>
