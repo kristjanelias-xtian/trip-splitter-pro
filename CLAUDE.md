@@ -255,6 +255,26 @@ Always `dvh`. **Never** `vh`. **Never** `100vh`. **Never** `h-screen`.
 
 **Full spec and audit log:** `SHEET_AUDIT.md`
 
+### Quick Actions Standard (QuickGroupDetailPage)
+
+All 4 quick action buttons open **overlays** — never navigate away from `QuickGroupDetailPage`. The pattern:
+
+- **Mobile (< 768px)**: Bottom sheet (`Sheet` + `SheetContent side="bottom"`)
+- **Desktop (>= 768px)**: Centered dialog (`Dialog` + `DialogContent`)
+
+Breakpoint detection: `useMediaQuery('(max-width: 767px)')`.
+
+| Button | Mobile | Desktop | Height | Keyboard |
+|--------|--------|---------|--------|----------|
+| Scan a receipt | Sheet | Dialog `max-w-lg` | `92dvh` | N/A (no inputs) |
+| Add an expense | Sheet (MobileWizard) | Dialog `max-w-2xl` | `92dvh` + keyboard | `viewportOffset` ✅ |
+| Settle up | Sheet | Dialog `max-w-lg` | `92dvh` + keyboard | `viewportOffset` ✅ |
+| View history | Sheet | Dialog `max-w-lg` | `75dvh` | N/A (read-only) |
+
+Desktop dialogs use `hideClose` (custom header close button) + `max-h-[85vh] p-0 gap-0`. Content is shared between Sheet and Dialog via extracted JSX variables.
+
+**Full audit log:** `QUICK_ACTIONS_AUDIT.md`
+
 ### iOS Keyboard / Viewport
 
 On iOS Safari the **layout viewport does not shrink** when the soft keyboard opens. A `position: fixed; bottom: 0` Sheet stays at the physical screen bottom — behind the keyboard.

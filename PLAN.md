@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; logo + favicon refresh)
+> Last updated: 2026-02-24 (Phases 1–7 ✅ all done; quick actions consistency audit)
 
 ---
 
@@ -739,6 +739,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Sheet/dialog audit | Full audit of all 11 bottom sheets + 20+ desktop dialogs. Defined single structural standard: `hideClose` + 3-slot header (back/spacer | title | close) + `flex flex-col` + `shrink-0` header + `flex-1 overflow-y-auto overscroll-contain` content + `dvh` heights. Created `AppSheet` reusable component (`src/components/ui/AppSheet.tsx`). Fixed all 11 sheets: 6 minor (close btn + hideClose + overscroll-contain), 3 moderate (header refactor), 2 full rebuilds (ReceiptCaptureSheet, DayDetailSheet). Added 3 sheet pitfalls to CLAUDE.md + new "Bottom Sheet Standard" section. Verified 5 sheets via Playwright MCP (localhost, 375×812). 140/140 tests pass, type-check clean. Full audit log in `SHEET_AUDIT.md`. |
 | 2026-02-24 | Logo + favicon refresh | Replaced old Trip-Splitter Pro circular clipart logo with new Spl1t split-S letter mark (coral + cream). Generated favicon at 32px + 16px (coral background for legibility) and apple-touch-icon at 180px. Updated index.html favicon tags, Layout.tsx + QuickLayout.tsx already had correct alt text. Updated marketing.html nav to show logo mark (32px) + wordmark side by side. Source assets archived in public/brand/. |
 | 2026-02-24 | Expense wizard numpad fix | PR #376: iOS Safari numpad keyboard (`inputMode="decimal"`) is taller than text keyboard — causes `visualViewport.offsetTop > 0`, pushing sheet header (✕ close button) above visible viewport on first open. Fix: added `viewportOffset` (`visualViewport.offsetTop`) to `useKeyboardHeight` hook; subtracted from sheet height in MobileWizard. When offset=0 (common case), behavior unchanged. Same vulnerability exists in 6 other sheets — logged in SHEET_AUDIT.md §8.1 for follow-up. |
+| 2026-02-24 | Quick actions consistency audit | Unified all 4 quick action buttons in QuickGroupDetailPage: mobile → bottom sheet, desktop → centered Dialog. (1) `dialog.tsx`: added `hideClose` prop to `DialogContent`. (2) `ReceiptCaptureSheet`: added Sheet/Dialog conditional (was always bottom sheet). (3) `QuickSettlementSheet`: added `viewportOffset` fix to keyboard style + Sheet/Dialog conditional. (4) Created `QuickHistorySheet` (was page navigation to `/quick/history`, now overlay). (5) `QuickGroupDetailPage`: history button switched from `navigate()` to `setHistoryOpen(true)`. Verified all 4 buttons via Playwright MCP on mobile (375×812) + desktop (1280×800). 140/140 tests, type-check clean. Full audit log in `QUICK_ACTIONS_AUDIT.md`. |
 
 ---
 
