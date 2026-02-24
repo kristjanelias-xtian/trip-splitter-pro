@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronRight, Users } from 'lucide-react'
+import { ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
@@ -155,12 +155,11 @@ export function WizardStep3({
                             className="flex items-center space-x-3 min-h-[44px] py-1 cursor-pointer"
                             onClick={() => onGroupToggle(memberIds)}
                           >
-                            <Checkbox
-                              checked={allGroupSelected}
-                              tabIndex={-1}
-                              disabled={disabled}
-                              className={`pointer-events-none ${someGroupSelected ? 'opacity-60' : ''}`}
-                            />
+                            <span
+                              className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
+                            >
+                              {allGroupSelected && <Check className="h-4 w-4" />}
+                            </span>
                             <span className="text-sm font-medium text-foreground flex-1 flex items-center gap-1.5">
                               <Users size={14} className="text-muted-foreground" />
                               {group.label}

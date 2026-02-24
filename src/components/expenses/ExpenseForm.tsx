@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lightbulb, ChevronDown, ChevronRight, Users } from 'lucide-react'
+import { Lightbulb, ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -545,12 +545,11 @@ export function ExpenseForm({
                     className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
                     onClick={() => handleGroupToggle(memberIds)}
                   >
-                    <Checkbox
-                      checked={allGroupSelected}
-                      tabIndex={-1}
-                      disabled={loading}
-                      className={`pointer-events-none ${someGroupSelected ? 'opacity-60' : ''}`}
-                    />
+                    <span
+                      className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
+                    >
+                      {allGroupSelected && <Check className="h-4 w-4" />}
+                    </span>
                     <span className="text-xs font-medium text-foreground flex-1 flex items-center gap-1">
                       <Users size={12} className="text-muted-foreground" />
                       {group.label}
