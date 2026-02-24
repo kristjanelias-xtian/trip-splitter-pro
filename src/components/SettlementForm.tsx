@@ -280,7 +280,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
             onValueChange={setCurrency}
             disabled={loading}
           >
-            <SelectTrigger className="w-24">
+            <SelectTrigger className="w-24 h-14 text-base">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
