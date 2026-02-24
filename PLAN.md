@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 🔧 In Progress (7a–7c, 7e ✅; 7d, 7f–7h remaining) | — |
+| E | UX/UI Unification | 🔧 In Progress (7a–7e ✅; 7f–7h remaining) | — |
 
 ---
 
@@ -574,7 +574,7 @@ Clean up the Quick trip detail page.
 
 **Acceptance:** Quick trip detail page ends after the action buttons. No way-finding regression (header provides both paths).
 
-#### Phase 7d — Full mode home page overhaul
+#### Phase 7d — Full mode home page overhaul ✅ Done (PR #342)
 Replace the marketing-style hero with Quick-style personal greeting. Unify trip cards.
 
 **Tasks:**
@@ -729,6 +729,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-23 | Production smoke test | Interactive Playwright MCP smoke test against https://split.xtian.me. 6/8 scenarios PASS, 2 SKIPPED (require OAuth). Verified: unauthenticated shared link access (RLS fix PR #310), double-tap submit guard (PR #307), ErrorBoundary (PR #308), admin access control (PR #309), trip state clearing (PR #308). Console baseline clean — only pre-existing Radix DialogTitle warnings and expected log-proxy 401s. **Bug found**: authenticated users cannot load shared trips they didn't create — `TripContext.fetchTrips()` applies client-side `created_by` filter that excludes shared-link trips. Database RLS is correct (`SELECT USING (true)`); issue is React-side only. Results in `SMOKE_TEST_RESULTS.md`. |
 | 2026-02-23 | UX/UI audit | Full UX/UI audit of the entire app — top bar inventory, navigation consistency, typography, color, components, mobile/desktop experience, empty/loading states, iconography, micro-interactions. 14 top findings documented. Playwright MCP screenshots (19 screens across both modes, desktop + mobile). Phase 3 design decisions captured via sequential questions. **Phase 7: UX/UI Unification** planned — 8 sub-phases (7a–7h), 7 PRs. Key decisions: adaptive UI direction, Scan as primary action, unified trip cards with balance+dates, shared loading/error components, admin page in Layout, Quick-style greeting on Full home, two-column Quick desktop layout. |
 | 2026-02-23 | Phase 7a | Shared UI primitives (PR #336). 4 new components: `PendingReceiptBanner` (extracted from QuickGroupDetailPage + ExpensesPage), `PageLoadingState` (spinner + slow message), `PageErrorState` (error card + retry), `TripCard` (unified card with balance + actions slot). Wired into QuickGroupDetailPage, ExpensesPage, QuickHomeScreen. Deleted dead `EventCard.tsx` + old `TripCard.tsx`. Net -196 lines. |
+| 2026-02-24 | Phase 7d | Full mode home page overhaul (PR #342). Replaced "Split costs with anyone" hero with Quick-style personal greeting (avatar + "Hi, {firstName}" for auth, "Events & Trips" for anon). `HomePage` now uses `useMyTripBalances` + unified `TripCard` with balance, dates, active badge, and `GroupActions` (hide/leave). Added hidden trips section. `TripCard` gained date range secondary line (both modes). Removed trip code from cards. `PageLoadingState` for auth loading. Anonymous view keeps localStorage cards with share/remove. |
 
 ---
 

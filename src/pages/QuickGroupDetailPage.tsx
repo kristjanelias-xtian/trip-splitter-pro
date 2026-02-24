@@ -177,16 +177,17 @@ export function QuickGroupDetailPage() {
       {/* Action buttons */}
       <div className="space-y-3 mb-6">
         <QuickActionButton
-          icon={DollarSign}
-          label="Add an expense"
-          description="Split a bill with the group"
-          onClick={() => setExpenseOpen(true)}
-        />
-        <QuickActionButton
           icon={ScanLine}
           label="Scan a receipt"
           description="Let AI read and split itemised bills"
           onClick={() => setReceiptCaptureOpen(true)}
+          emphasis
+        />
+        <QuickActionButton
+          icon={DollarSign}
+          label="Add an expense"
+          description="Split a bill with the group"
+          onClick={() => setExpenseOpen(true)}
         />
         <QuickActionButton
           icon={CreditCard}
