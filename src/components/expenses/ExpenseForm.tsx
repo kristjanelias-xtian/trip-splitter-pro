@@ -540,25 +540,24 @@ export function ExpenseForm({
               >
                 {group.label && (
                   <div
+                    role="checkbox"
+                    aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
                     className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
                     onClick={() => handleGroupToggle(memberIds)}
                   >
                     <Checkbox
-                      id={`group-${group.label}`}
-                      checked={someGroupSelected ? 'indeterminate' : allGroupSelected}
-                      onCheckedChange={() => handleGroupToggle(memberIds)}
+                      checked={allGroupSelected}
+                      tabIndex={-1}
                       disabled={loading}
+                      className={`pointer-events-none ${someGroupSelected ? 'opacity-60' : ''}`}
                     />
-                    <label
-                      htmlFor={`group-${group.label}`}
-                      className="text-xs font-medium text-foreground cursor-pointer flex-1 flex items-center gap-1"
-                    >
+                    <span className="text-xs font-medium text-foreground flex-1 flex items-center gap-1">
                       <Users size={12} className="text-muted-foreground" />
                       {group.label}
                       <span className="text-xs text-muted-foreground font-normal">
                         ({memberIds.length})
                       </span>
-                    </label>
+                    </span>
                   </div>
                 )}
                 {group.members.map(participant => (
