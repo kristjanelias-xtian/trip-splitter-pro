@@ -4,7 +4,8 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useStayContext } from '@/contexts/StayContext'
-import { useToast } from '@/hooks/use-toast'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import type { MealWithIngredients } from '@/types/meal'
 import type { Activity } from '@/types/activity'
 import { PlannerGrid } from '@/components/PlannerGrid'
@@ -17,36 +18,25 @@ const StayMap = lazy(() => import('@/components/StayMap'))
 
 export function PlannerPage() {
   const { currentTrip } = useCurrentTrip()
-  const { meals, loading: mealsLoading, error: mealError, clearError: clearMealError, getMealsWithIngredients } = useMealContext()
-  const { loading: activitiesLoading, error: activityError, clearError: clearActivityError, getActivitiesForDate } = useActivityContext()
-  const { stays, loading: staysLoading, error: stayError, clearError: clearStayError, getStayForDate, getStaysForDate } = useStayContext()
-  const { toast } = useToast()
+  const { meals, loading: mealsLoading, error: mealError, getMealsWithIngredients, refreshMeals } = useMealContext()
+  const { loading: activitiesLoading, error: activityError, getActivitiesForDate, refreshActivities } = useActivityContext()
+  const { stays, loading: staysLoading, error: stayError, getStayForDate, getStaysForDate, refreshStays } = useStayContext()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(true)
-
-  useEffect(() => {
-    if (mealError) {
-      toast({ title: 'Error', description: mealError, variant: 'destructive' })
-      clearMealError()
-    }
-  }, [mealError])
-
-  useEffect(() => {
-    if (activityError) {
-      toast({ title: 'Error', description: activityError, variant: 'destructive' })
-      clearActivityError()
-    }
-  }, [activityError])
-
-  useEffect(() => {
-    if (stayError) {
-      toast({ title: 'Error', description: stayError, variant: 'destructive' })
-      clearStayError()
-    }
-  }, [stayError])
+  const [retrying, setRetrying] = useState(false)
 
   const loading = mealsLoading || activitiesLoading || staysLoading
+  const contextError = mealError || activityError || stayError
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      await Promise.all([refreshMeals(), refreshActivities(), refreshStays()])
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   const enableMeals = currentTrip?.enable_meals ?? false
   const enableActivities = currentTrip?.enable_activities ?? false
@@ -112,17 +102,15 @@ export function PlannerPage() {
         </p>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center py-8">Loading planner...</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Loading / Error State */}
+      {loading ? (
+        <PageLoadingState />
+      ) : contextError ? (
+        <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
+      ) : <>
 
       {/* Grid Overview */}
-      {!loading && tripDates.length > 0 && (
+      {tripDates.length > 0 && (
         <PlannerGrid
           tripDates={tripDates}
           getMealsForDate={getMealsForDate}
@@ -134,7 +122,7 @@ export function PlannerPage() {
       )}
 
       {/* Stay Map */}
-      {!loading && hasStaysWithCoords && (
+      {hasStaysWithCoords && (
         <div className="space-y-2">
           <Button
             variant="outline"
@@ -174,7 +162,7 @@ export function PlannerPage() {
       />
 
       {/* Empty State */}
-      {!loading && tripDates.length === 0 && (
+      {tripDates.length === 0 && (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
@@ -189,6 +177,7 @@ export function PlannerPage() {
           </CardContent>
         </Card>
       )}
+      </>}
     </div>
   )
 }

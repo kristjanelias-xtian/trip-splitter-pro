@@ -6,18 +6,32 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { buildTransactionHistory } from '@/services/transactionHistoryBuilder'
 import { TransactionItem } from '@/components/quick/TransactionItem'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 
 type FilterType = 'all' | 'expenses' | 'payments'
 
 export function QuickHistoryPage() {
   const { currentTrip } = useCurrentTrip()
   const { myParticipant } = useMyParticipant()
-  const { participants, families, loading: participantsLoading } = useParticipantContext()
-  const { expenses, loading: expensesLoading } = useExpenseContext()
-  const { settlements, loading: settlementsLoading } = useSettlementContext()
+  const { participants, families, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
+  const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
+  const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
   const [filter, setFilter] = useState<FilterType>('all')
+  const [retrying, setRetrying] = useState(false)
+
+  const contextError = participantError || expenseError || settlementError
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      await Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()])
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   const loading = participantsLoading || expensesLoading || settlementsLoading
 
@@ -68,9 +82,9 @@ export function QuickHistoryPage() {
 
       {/* Transaction list */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <PageLoadingState />
+      ) : contextError ? (
+        <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
       ) : !myParticipant ? (
         <Card>
           <CardContent className="pt-6 text-center">

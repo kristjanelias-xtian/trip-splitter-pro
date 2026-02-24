@@ -10,8 +10,9 @@ import { QuickCreateSheet } from '@/components/quick/QuickCreateSheet'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { TripCard } from '@/components/TripCard'
+import { PageLoadingState } from '@/components/PageLoadingState'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, ChevronRight, Plus, Eye, ChevronDown, ExternalLink, ScanLine } from 'lucide-react'
+import { ChevronRight, Plus, Eye, ChevronDown, ExternalLink, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
@@ -112,9 +113,7 @@ export function QuickHomeScreen() {
 
         {/* Groups list */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <PageLoadingState />
         ) : visibleTrips.length === 0 ? (
           <Card>
             <CardContent className="pt-6">

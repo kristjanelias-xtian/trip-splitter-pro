@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
-import { useToast } from '@/hooks/use-toast'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import type { ShoppingItemWithMeals } from '@/types/shopping'
 import { CATEGORY_ORDER } from '@/types/shopping'
 import { ShoppingItemRow } from '@/components/ShoppingItemRow'
@@ -21,19 +22,12 @@ type SortDirection = 'asc' | 'desc'
 
 export function ShoppingPage() {
   const { currentTrip } = useCurrentTrip()
-  const { shoppingItems, loading, error: shoppingError, clearError: clearShoppingError, getShoppingItemsWithMeals } = useShoppingContext()
-  const { toast } = useToast()
+  const { shoppingItems, loading, error: shoppingError, getShoppingItemsWithMeals, refreshShoppingItems } = useShoppingContext()
   const [itemsWithMeals, setItemsWithMeals] = useState<ShoppingItemWithMeals[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [sortColumn, setSortColumn] = useState<SortColumn>('status')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
-
-  useEffect(() => {
-    if (shoppingError) {
-      toast({ title: 'Error', description: shoppingError, variant: 'destructive' })
-      clearShoppingError()
-    }
-  }, [shoppingError])
+  const [retrying, setRetrying] = useState(false)
 
   useEffect(() => {
     const loadItemsWithMeals = async () => {
@@ -140,17 +134,15 @@ export function ShoppingPage() {
           </Card>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center py-8">Loading shopping list...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Shopping List Content */}
-        {!loading && (
+        {/* Loading / Error State */}
+        {loading ? (
+          <PageLoadingState />
+        ) : shoppingError ? (
+          <PageErrorState error={shoppingError} onRetry={async () => {
+            setRetrying(true)
+            try { await refreshShoppingItems() } finally { setRetrying(false) }
+          }} retrying={retrying} />
+        ) : (
           <>
             {shoppingItems.length === 0 ? (
               <Card>

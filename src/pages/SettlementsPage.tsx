@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
@@ -21,9 +23,9 @@ import { logger } from '@/lib/logger'
 export function SettlementsPage() {
   const { currentTrip } = useCurrentTrip()
   const { user, userProfile } = useAuth()
-  const { participants, families } = useParticipantContext()
-  const { expenses } = useExpenseContext()
-  const { createSettlement, settlements } = useSettlementContext()
+  const { participants, families, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
+  const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
+  const { createSettlement, settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { receiptByExpenseId } = useReceiptContext()
   const [showCustomSettlement, setShowCustomSettlement] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
@@ -31,6 +33,19 @@ export function SettlementsPage() {
   const customSettlementRef = useRef<HTMLDivElement>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
+  const [retrying, setRetrying] = useState(false)
+
+  const loading = pLoading || eLoading || sLoading
+  const contextError = pError || eError || sError
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      await Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()])
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   // Build a map of entity ID (participant ID or family_id) → email for the "from" side of transactions
   const fromEmailMap = useMemo(() => {
@@ -246,6 +261,11 @@ export function SettlementsPage() {
           )}
         </div>
 
+        {loading ? (
+          <PageLoadingState />
+        ) : contextError ? (
+          <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
+        ) : <>
         {/* Settlement Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -416,6 +436,7 @@ export function SettlementsPage() {
             </CardContent>
           </Card>
         )}
+        </>}
       </div>
     </>
   )

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
@@ -38,7 +40,7 @@ import {
 
 export function ExpensesPage() {
   const { currentTrip } = useCurrentTrip()
-  const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenseContext()
+  const { expenses, loading, error, createExpense, updateExpense, deleteExpense, refreshExpenses } = useExpenseContext()
   const { participants, families } = useParticipantContext()
   const { settlements } = useSettlementContext()
   const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
@@ -53,6 +55,7 @@ export function ExpensesPage() {
   const [showReceiptCapture, setShowReceiptCapture] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [viewingReceiptTask, setViewingReceiptTask] = useState<ReceiptTask | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
   const handleCreateExpense = async (input: CreateExpenseInput) => {
     await createExpense(input)
@@ -163,9 +166,10 @@ export function ExpensesPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg">
-            {error}
-          </div>
+          <PageErrorState error={error} onRetry={async () => {
+            setRetrying(true)
+            try { await refreshExpenses() } finally { setRetrying(false) }
+          }} retrying={retrying} />
         )}
 
         {/* Pending receipts banner */}
@@ -245,7 +249,7 @@ export function ExpensesPage() {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <p className="text-muted-foreground text-center py-8">Loading expenses...</p>
+              <PageLoadingState />
             ) : filteredExpenses.length === 0 ? (
               <div className="text-center py-8">
                 <Receipt size={48} className="mx-auto text-muted-foreground/50 mb-4" />

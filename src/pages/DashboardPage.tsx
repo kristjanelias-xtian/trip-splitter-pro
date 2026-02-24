@@ -4,6 +4,8 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { PageLoadingState } from '@/components/PageLoadingState'
+import { PageErrorState } from '@/components/PageErrorState'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { exportTripSummaryToPDF } from '@/services/pdfExport'
 import { BalanceCard } from '@/components/BalanceCard'
@@ -21,10 +23,23 @@ const TopExpensesList = lazy(() => import('@/components/TopExpensesList').then(m
 
 export function DashboardPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
-  const { participants, families } = useParticipantContext()
-  const { expenses } = useExpenseContext()
-  const { settlements } = useSettlementContext()
+  const { participants, families, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
+  const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
+  const { settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
+  const [retrying, setRetrying] = useState(false)
+
+  const loading = pLoading || eLoading || sLoading
+  const contextError = pError || eError || sError
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      await Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()])
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   if (!currentTrip) {
     return (
@@ -87,6 +102,11 @@ export function DashboardPage() {
         </div>
       </div>
 
+      {loading ? (
+        <PageLoadingState />
+      ) : contextError ? (
+        <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
+      ) : <>
       {/* Trip Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -266,6 +286,8 @@ export function DashboardPage() {
           </div>
         </>
       )}
+
+      </>}
 
       {/* Cost Breakdown Dialog */}
       {selectedBalance && (
