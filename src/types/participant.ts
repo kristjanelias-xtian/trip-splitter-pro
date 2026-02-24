@@ -10,6 +10,7 @@ export interface Participant {
   id: string
   trip_id: string
   family_id: string | null
+  wallet_group?: string | null
   name: string
   is_adult: boolean
   user_id?: string | null
@@ -26,6 +27,7 @@ export interface CreateFamilyInput {
 export interface CreateParticipantInput {
   trip_id: string
   family_id?: string | null
+  wallet_group?: string | null
   name: string
   is_adult: boolean
   email?: string | null
@@ -41,5 +43,6 @@ export interface UpdateParticipantInput {
   name?: string
   is_adult?: boolean
   family_id?: string | null
+  wallet_group?: string | null
   email?: string | null
 }
