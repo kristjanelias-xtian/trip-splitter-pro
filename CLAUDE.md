@@ -130,17 +130,19 @@ control needed for reads.
 
 ### App Modes (Quick vs Full)
 
-The app has two distinct UI modes:
+The app has two UI modes that share a **unified home page** but differ inside trip views:
 
-- **Full mode** — original multi-page layout: Trips list → select trip → Expenses / Settlements / Planner / Shopping / Dashboard
-- **Quick mode** — streamlined single-trip view focused on balance summary and fast expense entry
+- **Full mode** — multi-page layout inside a trip: Expenses / Settlements / Planner / Shopping / Dashboard, with bottom tab bar (mobile) and side nav (desktop)
+- **Quick mode** — streamlined single-trip view focused on balance summary and fast expense entry, no bottom nav
 
-Mode is stored per-user in `user_preferences.preferred_mode` and synced from Supabase on sign-in. Local storage (`trip-splitter:user-preferences`) is the source of truth when not signed in.
+Mode is stored per-user in `user_preferences.preferred_mode` and synced from Supabase on sign-in. Local storage (`spl1t:user-preferences`) is the source of truth when not signed in.
 
 **Key behaviour:**
-- `ConditionalHomePage` (`src/pages/ConditionalHomePage.tsx`) renders at `/` and redirects based on mode
-- On **mobile viewports (< 768 px)**, always redirects to the active trip's quick page regardless of stored mode preference — prevents desktop "full" preference from stranding mobile users on the all-trips list
-- `ModeToggle` derives `effectiveMode` from the **current pathname** (contains `/quick`?), not solely from the stored pref — fixes the toggle showing wrong state after a mobile redirect
+- **Unified home**: `HomePage` (`src/pages/HomePage.tsx`) renders at `/` for all users. Both modes see the same greeting, scan CTA, and trip cards. There is no separate Quick home page.
+- `ConditionalHomePage` wraps `HomePage` — on **mobile viewports (< 768 px) with an active trip**, auto-redirects to `/t/:code/quick`. Otherwise always renders `HomePage`.
+- `/quick` redirects to `/` (backward compat).
+- Trip card clicks navigate to Quick or Full based on stored mode preference.
+- `ModeToggle` derives `effectiveMode` from the **current pathname** (contains `/quick`?), not solely from the stored pref. Only navigates when inside a trip; on the home page it just updates the preference.
 
 ### Context Organisation
 
@@ -169,22 +171,22 @@ Distribution type is stored as JSONB on the expense. `balanceCalculator.ts` hand
 ### Routes
 
 ```
-/                          → ConditionalHomePage (redirects)
-/quick                     → QuickHomeScreen (Quick mode home)
+/                          → ConditionalHomePage → HomePage (unified home)
+/quick                     → redirects to /
 /t/:tripCode               → TripModeRedirect (→ quick or dashboard)
-/t/:tripCode/quick         → QuickGroupDetailPage
-/t/:tripCode/quick/history → QuickHistoryPage
-/t/:tripCode/expenses      → ExpensesPage
-/t/:tripCode/settlements   → SettlementsPage
-/t/:tripCode/planner       → PlannerPage (meals + activities + stays)
-/t/:tripCode/shopping      → ShoppingPage
-/t/:tripCode/dashboard     → DashboardPage
-/t/:tripCode/manage        → ManageTripPage
-/create-trip               → TripsPage
-/admin/all-trips           → AdminAllTripsPage
+/t/:tripCode/quick         → QuickGroupDetailPage (QuickLayout)
+/t/:tripCode/quick/history → QuickHistoryPage (QuickLayout)
+/t/:tripCode/expenses      → ExpensesPage (Layout)
+/t/:tripCode/settlements   → SettlementsPage (Layout)
+/t/:tripCode/planner       → PlannerPage (Layout)
+/t/:tripCode/shopping      → ShoppingPage (Layout)
+/t/:tripCode/dashboard     → DashboardPage (Layout)
+/t/:tripCode/manage        → ManageTripPage (Layout)
+/create-trip               → TripsPage (Layout)
+/admin/all-trips           → AdminAllTripsPage (Layout)
 ```
 
-All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render inside `Layout`; quick routes inside `QuickLayout`.
+All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render inside `Layout`; quick routes inside `QuickLayout`. The home page (`/`) renders inside `Layout`.
 
 ---
 
@@ -248,7 +250,7 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 ### User–Participant Link
 
-`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used in Quick mode home).
+`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page).
 
 ---
 
