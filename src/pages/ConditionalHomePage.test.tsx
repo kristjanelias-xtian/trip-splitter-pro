@@ -6,11 +6,13 @@ import { buildTrip } from '@/test/factories'
 
 // Track navigation
 const mockNavigate = vi.fn()
+let mockLocationState: any = {}
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>()
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useLocation: () => ({ pathname: '/', search: '', hash: '', state: mockLocationState, key: 'default' }),
   }
 })
 
@@ -64,6 +66,7 @@ import { getActiveTripId } from '@/lib/activeTripDetection'
 describe('ConditionalHomePage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
+    mockLocationState = {}
     mockAuth.loading = false
     mockTrips.loading = false
     mockTrips.trips = []
@@ -119,6 +122,28 @@ describe('ConditionalHomePage', () => {
         { replace: true }
       )
     })
+  })
+
+  it('skips auto-redirect when navigated with fromTrip state', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    const trip = buildTrip({
+      id: 'trip-1',
+      trip_code: 'summer-trip-Ab1234',
+    })
+    mockTrips.trips = [trip]
+    vi.mocked(getActiveTripId).mockReturnValue('trip-1')
+    mockLocationState = { fromTrip: true }
+
+    render(
+      <MemoryRouter>
+        <ConditionalHomePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('home-page')).toBeInTheDocument()
+    })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('renders HomePage on mobile with no active trip', async () => {

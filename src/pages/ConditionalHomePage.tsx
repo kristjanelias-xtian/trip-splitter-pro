@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { getActiveTripId } from '@/lib/activeTripDetection'
@@ -10,16 +10,27 @@ import { Loader2 } from 'lucide-react'
 /**
  * Renders at `/` — on mobile with an active trip, auto-redirects to Quick view.
  * Otherwise renders the unified HomePage.
+ *
+ * When navigated here with `state.fromTrip`, the auto-redirect is skipped once
+ * so the user can actually reach the home page from within a trip.
  */
 export function ConditionalHomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const { trips, loading: tripsLoading } = useTripContext()
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const fromTrip = !!(location.state as any)?.fromTrip
 
   useEffect(() => {
     if (!isMobile || tripsLoading) return
+
+    // User explicitly navigated here from a trip — let them stay
+    if (fromTrip) {
+      window.history.replaceState({}, '')
+      return
+    }
 
     const myTrips = user
       ? trips
@@ -32,7 +43,7 @@ export function ConditionalHomePage() {
         navigate(`/t/${activeTrip.trip_code}/quick`, { replace: true })
       }
     }
-  }, [isMobile, tripsLoading, user, trips, navigate])
+  }, [isMobile, tripsLoading, user, trips, navigate, fromTrip])
 
   if (isMobile && tripsLoading) {
     return (
