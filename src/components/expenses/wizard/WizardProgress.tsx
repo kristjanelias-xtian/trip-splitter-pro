@@ -9,9 +9,9 @@ export function WizardProgress({ currentStep, totalSteps }: WizardProgressProps)
   const percentage = (currentStep / totalSteps) * 100
 
   return (
-    <div className="mb-6">
+    <div className="mt-2">
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-muted/30 rounded-full overflow-hidden mb-2">
+      <div className="w-full h-1.5 bg-muted/30 rounded-full overflow-hidden mb-1">
         <motion.div
           className="h-full bg-primary"
           initial={{ width: 0 }}
@@ -26,10 +26,10 @@ export function WizardProgress({ currentStep, totalSteps }: WizardProgressProps)
 
       {/* Step Indicator */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Step {currentStep} of {totalSteps}
         </p>
-        <p className="text-sm font-medium text-primary">
+        <p className="text-xs font-medium text-primary">
           {percentage.toFixed(0)}%
         </p>
       </div>

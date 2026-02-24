@@ -14,7 +14,7 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useScrollIntoView } from '@/hooks/useScrollIntoView'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ExpenseForm } from './ExpenseForm'
 import { WizardProgress } from './wizard/WizardProgress'
@@ -488,11 +488,11 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-6 gap-0 overflow-hidden"
+        className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible
             ? `${keyboard.availableHeight}px`
-            : '90vh',
+            : '92dvh',
           bottom: keyboard.isVisible
             ? `${keyboard.keyboardHeight}px`
             : undefined,
@@ -504,31 +504,36 @@ function MobileWizard({
           }
         }}
       >
-        <WizardProgress currentStep={currentStep} totalSteps={totalSteps} />
+        {/* Sticky header */}
+        <div className="px-6 py-4 border-b border-border shrink-0">
+          <SheetTitle>Add Expense</SheetTitle>
+          <WizardProgress currentStep={currentStep} totalSteps={totalSteps} />
+        </div>
 
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-            <div className="flex items-start justify-between gap-2">
-              <span>{error}</span>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="shrink-0 text-xs underline underline-offset-2 opacity-80 hover:opacity-100 disabled:opacity-40"
-              >
-                Try again
-              </button>
-            </div>
-            {errorDetail && (
-              <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
-            )}
-          </div>
-        )}
-
+        {/* Scrollable content */}
         <div
           ref={contentRef}
-          className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 pb-4"
+          className="flex-1 overflow-y-auto px-6 py-4"
         >
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="shrink-0 text-xs underline underline-offset-2 opacity-80 hover:opacity-100 disabled:opacity-40"
+                >
+                  Try again
+                </button>
+              </div>
+              {errorDetail && (
+                <pre className="mt-2 text-xs whitespace-pre-wrap break-all opacity-80">{errorDetail}</pre>
+              )}
+            </div>
+          )}
+
           {currentStep === 1 && (
             <WizardStep1
               description={description}
@@ -605,7 +610,8 @@ function MobileWizard({
           )}
         </div>
 
-        <div className="pt-4 border-t border-border" style={{ flexShrink: 0 }}>
+        {/* Sticky footer */}
+        <div className="px-6 py-4 border-t border-border shrink-0">
           <WizardNavigation
             currentStep={currentStep}
             totalSteps={totalSteps}
