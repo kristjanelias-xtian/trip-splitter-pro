@@ -139,7 +139,7 @@ Mode is stored per-user in `user_preferences.preferred_mode` and synced from Sup
 
 **Key behaviour:**
 - **Unified home**: `HomePage` (`src/pages/HomePage.tsx`) renders at `/` for all users. Both modes see the same greeting, scan CTA, and trip cards. There is no separate Quick home page.
-- `ConditionalHomePage` wraps `HomePage` — on **mobile viewports (< 768 px) with an active trip**, auto-redirects to `/t/:code/quick`. Otherwise always renders `HomePage`.
+- `ConditionalHomePage` wraps `HomePage` — on **mobile viewports (< 768 px) with an active trip**, auto-redirects to `/t/:code/quick`. Otherwise always renders `HomePage`. When navigated to with `location.state.fromTrip` (set by back arrows and home links), the redirect is skipped once so the user can reach the home page from within a trip.
 - `/quick` redirects to `/` (backward compat).
 - Trip card clicks navigate to Quick or Full based on stored mode preference.
 - `ModeToggle` derives `effectiveMode` from the **current pathname** (contains `/quick`?), not solely from the stored pref. Only navigates when inside a trip; on the home page it just updates the preference.
@@ -192,8 +192,8 @@ All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render 
 
 Both layouts use the same responsive header pattern:
 
-- **Mobile (in-trip, not sub-page):** Two-row header. Row 1: back arrow + trip name + avatar. Row 2: `grid-cols-3` action pills (Scan / Manage / mode toggle). Row 2 is `lg:hidden`.
-- **Desktop (in-trip):** Single-row header. Back arrow + trip name on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
+- **Mobile (in-trip, not sub-page):** Two-row header. Row 1: back arrow + trip name + avatar. Row 2: `grid-cols-3` action pills (Scan / Manage / mode toggle). Row 2 is `lg:hidden`. Back arrows and home links pass `state: { fromTrip: true }` to prevent `ConditionalHomePage` redirect loop.
+- **Desktop (in-trip):** Single-row header. Trip name (clickable `<Link>` to home with `fromTrip` state) on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
 - **Home page:** Single-row. Logo on left, avatar on right. No scan/toggle (the page has its own scan CTA).
 
 Header container: `max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8`. Main content padding: `pt-[108px] lg:pt-16` (two-row) or `pt-16` (single-row).
@@ -354,6 +354,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Duplicate items in shopping list | Real-time subscription fires on own inserts | Existence check before adding to state |
 | All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
 | 403 triggers token refresh | `sessionHealthBus` emitted `auth-error` on 403 | Only emit `auth-error` on 401; 403 is RLS/permissions |
+| Mobile redirect loop (back arrow → home → redirect back) | `ConditionalHomePage` auto-redirects to quick view on mobile with active trip | Pass `state: { fromTrip: true }` on back/home links; `ConditionalHomePage` skips redirect when present |
 
 ---
 
