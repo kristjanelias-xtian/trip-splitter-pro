@@ -218,8 +218,9 @@ On mobile (< 768 px), renders `MobileWizard` (bottom Sheet, 3–4 step wizard). 
 - `paidBy` is pre-filled with the auth user's linked adult participant (`participant.user_id === user.id && is_adult`) via a `useEffect` that fires when the form opens and the field is still empty
 - `suggestedPayer` banner still shows the balance-based suggestion; tapping it overrides `paidBy`
 - `useMediaQuery('(max-width: 768px)')` initialises as `false` on first render, then updates — this is expected behaviour
-- Sheet height: `keyboard.isVisible ? availableHeight - viewportOffset : 92dvh` — `viewportOffset` accounts for iOS visual viewport scroll when numpad opens
-- Sheet bottom: `keyboard.isVisible ? keyboardHeight : undefined` — **critical for iOS** (see iOS section)
+- Sheet height: `keyboard.isVisible ? availableHeight : 92dvh`
+- Sheet bottom: `keyboard.isVisible ? Math.max(0, keyboardHeight - viewportOffset) : undefined` — **critical for iOS** (see iOS section)
+- Sheet paddingBottom: `viewportOffset > 0 ? viewportOffset : undefined` — keeps content above keyboard overlap zone when iOS scrolls the visual viewport
 
 ### Bottom Sheet Standard (`AppSheet` — `src/components/ui/AppSheet.tsx`)
 
@@ -262,13 +263,18 @@ Fix pattern (in `MobileWizard`):
 ```tsx
 style={{
   height: keyboard.isVisible
-    ? `${keyboard.availableHeight - keyboard.viewportOffset}px`
+    ? `${keyboard.availableHeight}px`
     : '92dvh',
-  bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+  bottom: keyboard.isVisible
+    ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
+    : undefined,
+  paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
+    ? `${keyboard.viewportOffset}px`
+    : undefined,
 }}
 ```
 
-`useKeyboardHeight` (`src/hooks/useKeyboardHeight.ts`) uses `window.visualViewport` to detect keyboard visibility. Keyboard is considered open when `window.innerHeight - visualViewport.height > 150px`. Also tracks `viewportOffset` (`visualViewport.offsetTop`) — on iOS, the browser scrolls the visual viewport when a taller keyboard (numpad) opens, which can push the sheet header above the visible area. Subtracting `viewportOffset` from the height keeps the header in view.
+`useKeyboardHeight` (`src/hooks/useKeyboardHeight.ts`) uses `window.visualViewport` to detect keyboard visibility. Keyboard is considered open when `window.innerHeight - visualViewport.height > 150px`. Also tracks `viewportOffset` (`visualViewport.offsetTop`) — on iOS, the browser scrolls the visual viewport when a taller keyboard (numpad) opens, which can push the sheet header above the visible area. The fix adjusts `bottom` downward by `viewportOffset` (closing the gap with the keyboard) and adds `paddingBottom` to keep flex content above the keyboard overlap zone.
 
 **Do not** use `autoFocus` or `ref.focus()` on inputs inside sheets/modals — it triggers the keyboard immediately on open, before the user has tapped anything.
 
@@ -393,7 +399,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
-| Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Subtract `keyboard.viewportOffset` from sheet height: `availableHeight - viewportOffset` |
+| Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Reduce `bottom` by `viewportOffset` + add `paddingBottom: viewportOffset` (see iOS Keyboard section) |
 
 ---
 

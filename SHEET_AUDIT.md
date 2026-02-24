@@ -116,7 +116,12 @@ No variations. No plain X without circle. No oversized X. No Radix default absol
     className="flex flex-col p-0 rounded-t-2xl"
     style={{
       height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-      bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+      bottom: keyboard.isVisible
+        ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
+        : undefined,
+      paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
+        ? `${keyboard.viewportOffset}px`
+        : undefined,
     }}
   >
     {/* STICKY HEADER — never scrolls */}
@@ -288,7 +293,7 @@ interface AppSheetProps {
 
 | # | Component | Issue | Fix applied | Status |
 |---|-----------|-------|-------------|--------|
-| 12 | MobileWizard (ExpenseWizard.tsx) | iOS Safari: numpad keyboard causes `visualViewport.offsetTop > 0`, pushing sheet header above visible viewport — ✕ close button disappears on first numpad open | Added `viewportOffset` to `useKeyboardHeight` hook (tracks `visualViewport.offsetTop`); subtracted offset from sheet height so top aligns with visible viewport. When offset=0 (common case), behavior unchanged. | ✅ Done (PR #373) |
+| 12 | MobileWizard (ExpenseWizard.tsx) | iOS Safari: numpad keyboard causes `visualViewport.offsetTop > 0`, pushing sheet header above visible viewport — ✕ close button disappears on first numpad open | Added `viewportOffset` to `useKeyboardHeight` hook (tracks `visualViewport.offsetTop`). **v1 (PR #376):** subtracted offset from height — fixed header but left gap between sheet and keyboard. **v2 (PR #380):** keep `height: availableHeight` (no subtraction), reduce `bottom` by `viewportOffset` (closes gap), add `paddingBottom: viewportOffset` (keeps content above keyboard overlap). When offset=0, identical to pre-#376 behavior. | ✅ Done (PR #380) |
 
 ### Test results
 
@@ -374,5 +379,5 @@ The same `visualViewport.offsetTop` issue fixed in MobileWizard (PR #373) exists
 - `QuickParticipantSetupSheet` (`src/components/quick/QuickParticipantSetupSheet.tsx`)
 - `QuickScanCreateFlow` (`src/components/quick/QuickScanCreateFlow.tsx`)
 
-**Fix:** In each, change `keyboard.availableHeight` to `keyboard.availableHeight - keyboard.viewportOffset`.
+**Fix:** In each, apply the same pattern as MobileWizard: keep `height: availableHeight`, reduce `bottom` by `viewportOffset`, add `paddingBottom: viewportOffset`.
 Alternatively, fix `AppSheet` and migrate sheets that don't use it yet.
