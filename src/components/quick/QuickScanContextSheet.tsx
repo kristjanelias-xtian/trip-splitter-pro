@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Plus, ScanLine } from 'lucide-react'
+import { Plus, ScanLine, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import type { Event } from '@/types/trip'
@@ -33,20 +33,31 @@ export function QuickScanContextSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        hideClose
         className="flex flex-col p-0 rounded-t-2xl"
         style={{ height: '75dvh' }}
       >
-        {/* Sticky header */}
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <SheetTitle className="flex items-center gap-2">
-            <ScanLine size={20} />
-            Scan a Receipt
-          </SheetTitle>
-          <p className="text-sm text-muted-foreground mt-0.5">Which group is this for?</p>
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold flex items-center gap-2">
+              <ScanLine size={20} />
+              Scan a Receipt
+            </SheetTitle>
+            <button
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground px-4 pb-3">Which group is this for?</p>
         </div>
 
         {/* Scrollable group list */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-2">
           {trips.map(trip => (
             <button
               key={trip.id}

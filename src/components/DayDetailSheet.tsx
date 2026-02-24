@@ -1,12 +1,10 @@
-import { Building2 } from 'lucide-react'
+import { Building2, X } from 'lucide-react'
 import { getDayNumber, getDayContext } from '@/lib/dateUtils'
 import { Badge } from '@/components/ui/badge'
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from '@/components/ui/sheet'
 import { TimeSlotGrid } from './TimeSlotGrid'
 import type { MealWithIngredients } from '@/types/meal'
@@ -56,33 +54,50 @@ export function DayDetailSheet({
 
   return (
     <Sheet open={!!date} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
-        <SheetHeader className="mb-4">
-          <SheetTitle className="text-left">
-            {formatSheetDate(date)}
-          </SheetTitle>
-          <SheetDescription asChild>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-bold">
-                Day {dayNumber}
+      <SheetContent
+        side="bottom"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
+        style={{ height: '75dvh' }}
+      >
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold">
+              {formatSheetDate(date)}
+            </SheetTitle>
+            <button
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap px-4 pb-3">
+            <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-bold">
+              Day {dayNumber}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={`${CONTEXT_STYLES[context]} capitalize`}
+            >
+              {context}
+            </Badge>
+            {stayName && (
+              <Badge variant="outline" className="gap-1">
+                <Building2 size={12} />
+                {stayName}
               </Badge>
-              <Badge
-                variant="outline"
-                className={`${CONTEXT_STYLES[context]} capitalize`}
-              >
-                {context}
-              </Badge>
-              {stayName && (
-                <Badge variant="outline" className="gap-1">
-                  <Building2 size={12} />
-                  {stayName}
-                </Badge>
-              )}
-            </div>
-          </SheetDescription>
-        </SheetHeader>
+            )}
+          </div>
+        </div>
 
-        <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
+        {/* Scrollable content — only this scrolls */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+          <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
+        </div>
       </SheetContent>
     </Sheet>
   )

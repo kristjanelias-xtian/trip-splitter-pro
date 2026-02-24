@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { UserCheck } from 'lucide-react'
+import { UserCheck, X } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
 
@@ -34,16 +34,25 @@ export function QuickGroupMembersSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        hideClose
         className="flex flex-col p-0 rounded-t-2xl"
         style={{ height: '75dvh' }}
       >
-        {/* Sticky header */}
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <SheetTitle>Group ({balances.length} {balances.length === 1 ? 'member' : 'members'})</SheetTitle>
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <SheetTitle className="text-base font-semibold">Group ({balances.length} {balances.length === 1 ? 'member' : 'members'})</SheetTitle>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
         {/* Scrollable list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {balances.map((b, i) => {
             const isMe = b.id === myParticipantId
             const linked = isLinked(b.id)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { ScanLine, ChevronDown, ChevronUp, Image } from 'lucide-react'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { ScanLine, ChevronDown, ChevronUp, Image, X } from 'lucide-react'
 import { ReceiptTask } from '@/types/receipt'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
@@ -38,19 +38,30 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task }: ReceiptDetails
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[75vh] flex flex-col p-0">
-        <div className="px-4 pt-4 pb-2 border-b border-border">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 min-w-0">
-              <ScanLine size={18} className="shrink-0" />
-              <span className="truncate">
-                Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
-              </span>
-            </SheetTitle>
-          </SheetHeader>
+      <SheetContent
+        side="bottom"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
+        style={{ height: '75dvh' }}
+      >
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <SheetTitle className="text-base font-semibold flex items-center gap-2 min-w-0">
+            <ScanLine size={18} className="shrink-0" />
+            <span className="truncate">
+              Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
+            </span>
+          </SheetTitle>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="px-4 py-3 space-y-3">
             {/* Receipt image thumbnail (collapsible) */}
             {receiptImageUrl && (

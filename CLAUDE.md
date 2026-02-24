@@ -218,8 +218,41 @@ On mobile (< 768 px), renders `MobileWizard` (bottom Sheet, 3–4 step wizard). 
 - `paidBy` is pre-filled with the auth user's linked adult participant (`participant.user_id === user.id && is_adult`) via a `useEffect` that fires when the form opens and the field is still empty
 - `suggestedPayer` banner still shows the balance-based suggestion; tapping it overrides `paidBy`
 - `useMediaQuery('(max-width: 768px)')` initialises as `false` on first render, then updates — this is expected behaviour
-- Sheet height: `keyboard.isVisible ? availableHeight : 90vh`
+- Sheet height: `keyboard.isVisible ? availableHeight : 92dvh`
 - Sheet bottom: `keyboard.isVisible ? keyboardHeight : undefined` — **critical for iOS** (see iOS section)
+
+### Bottom Sheet Standard (`AppSheet` — `src/components/ui/AppSheet.tsx`)
+
+All 11 bottom sheets follow a single structural standard. Use `AppSheet` for new sheets; existing sheets have been manually aligned to the same pattern.
+
+**Required structure (every bottom sheet, no exceptions):**
+- `SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl"`
+- **Sticky header** (`shrink-0`): 3-slot flex row — back button OR spacer (w-8) | SheetTitle | close button ✕. Below: `border-b border-border`.
+- **Scrollable content** (`flex-1 overflow-y-auto overscroll-contain`): the ONLY scrollable region.
+- **Optional sticky footer** (`shrink-0`): for CTAs. Outside the scroll container.
+
+**Close button — identical on every sheet:**
+```tsx
+<button onClick={onClose} aria-label="Close"
+  className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
+  <X className="w-4 h-4 text-muted-foreground" />
+</button>
+```
+
+**Height values:**
+| Sheet type | Height |
+|-----------|--------|
+| Standard (forms, inputs, multi-step) | `92dvh` (keyboard: `availableHeight px`) |
+| Partial (read-only, pickers) | `75dvh` fixed |
+
+Always `dvh`. **Never** `vh`. **Never** `100vh`. **Never** `h-screen`.
+
+**Dismiss rules:**
+- Single-screen sheets: ✕ close only. Left slot = spacer.
+- Multi-step sheets: ← back (left) + ✕ close (right). Step 1: spacer instead of back.
+- Never show two buttons that both close the sheet.
+
+**Full spec and audit log:** `SHEET_AUDIT.md`
 
 ### iOS Keyboard / Viewport
 
@@ -228,7 +261,7 @@ On iOS Safari the **layout viewport does not shrink** when the soft keyboard ope
 Fix pattern (in `MobileWizard`):
 ```tsx
 style={{
-  height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '90vh',
+  height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
   bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
 }}
 ```
@@ -355,6 +388,9 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
 | 403 triggers token refresh | `sessionHealthBus` emitted `auth-error` on 403 | Only emit `auth-error` on 401; 403 is RLS/permissions |
 | Mobile redirect loop (back arrow → home → redirect back) | `ConditionalHomePage` auto-redirects to quick view on mobile with active trip | Pass `state: { fromTrip: true }` on back/home links; `ConditionalHomePage` skips redirect when present |
+| Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
+| Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
+| Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
 
 ---
 

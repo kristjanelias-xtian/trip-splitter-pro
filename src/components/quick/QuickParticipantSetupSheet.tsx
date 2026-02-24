@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { IndividualsSetup } from '@/components/setup/IndividualsSetup'
 import { FamiliesSetup } from '@/components/setup/FamiliesSetup'
@@ -20,6 +21,7 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        hideClose
         className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
@@ -27,18 +29,32 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
         }}
       >
         {/* Sticky header — never scrolls */}
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <SheetTitle>Set up your group</SheetTitle>
-          <SheetDescription className="mt-0.5">Add the people sharing costs on this trip</SheetDescription>
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold">Set up your group</SheetTitle>
+            <button
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <SheetDescription className="px-4 pb-3 mt-0">Add the people sharing costs on this trip</SheetDescription>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {/* Scrollable content — only this scrolls */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
           {currentTrip.tracking_mode === 'individuals' ? (
             <IndividualsSetup />
           ) : (
             <FamiliesSetup />
           )}
+        </div>
+
+        {/* Sticky footer */}
+        <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
           <Button className="w-full" onClick={() => onOpenChange(false)}>
             Done
           </Button>

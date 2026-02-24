@@ -14,6 +14,7 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
+import { X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ExpenseForm } from './ExpenseForm'
@@ -482,7 +483,8 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-0 rounded-t-2xl gap-0"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible
             ? `${keyboard.availableHeight}px`
@@ -498,15 +500,27 @@ function MobileWizard({
           }
         }}
       >
-        {/* Sticky header */}
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <SheetTitle>Add Expense</SheetTitle>
-          <WizardProgress currentStep={currentStep} totalSteps={totalSteps} />
+        {/* Sticky header — never scrolls */}
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold">Add Expense</SheetTitle>
+            <button
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="px-4 pb-3">
+            <WizardProgress currentStep={currentStep} totalSteps={totalSteps} />
+          </div>
         </div>
 
-        {/* Scrollable content */}
+        {/* Scrollable content — only this scrolls */}
         <div
-          className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
+          className="flex-1 overflow-y-auto overscroll-contain min-h-0 px-6 py-4"
         >
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
