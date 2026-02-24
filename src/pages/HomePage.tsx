@@ -1,33 +1,64 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Users, Trash2, ExternalLink, Share2 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Plus, Calendar, Trash2, Share2 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
+import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
+import { getActiveTripId } from '@/lib/activeTripDetection'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
+import { TripCard } from '@/components/TripCard'
+import { GroupActions } from '@/components/quick/GroupActions'
+import { PageLoadingState } from '@/components/PageLoadingState'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
-import { Event } from '@/types/trip'
+import { useMyTripBalances } from '@/hooks/useMyTripBalances'
+import { ChevronDown, Eye } from 'lucide-react'
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const { trips: serverTrips } = useTripContext()
+  const { user, userProfile } = useAuth()
+  const { loading: tripsLoading } = useTripContext()
+  const { tripBalances, loading: balancesLoading } = useMyTripBalances()
   const [localTrips, setLocalTrips] = useState<MyTripEntry[]>([])
-
-  useEffect(() => {
-    setLocalTrips(getMyTrips())
-  }, [])
+  const [hiddenCodes, setHiddenCodes] = useState(() => new Set(getHiddenTripCodes()))
+  const [showHidden, setShowHidden] = useState(false)
 
   const isAuthenticated = !!user
+  const loading = isAuthenticated && (balancesLoading || tripsLoading)
+  const firstName = userProfile?.display_name?.split(' ')[0] || 'there'
 
-  const handleRemoveLocalTrip = (tripCode: string, tripName: string) => {
-    if (confirm(`Remove "${tripName}" from My Trips?\n\nThis won't delete the trip, you can access it again via the share link.`)) {
-      removeFromMyTrips(tripCode)
+  useEffect(() => {
+    if (!isAuthenticated) {
       setLocalTrips(getMyTrips())
     }
-  }
+  }, [isAuthenticated])
+
+  const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
+  const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
+
+  const activeTripId = useMemo(
+    () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
+    [visibleTrips]
+  )
+
+  const handleHidden = useCallback((tripCode: string) => {
+    setHiddenCodes(prev => new Set([...prev, tripCode]))
+  }, [])
+
+  const handleShow = useCallback((tripCode: string) => {
+    showTrip(tripCode)
+    setHiddenCodes(prev => {
+      const next = new Set(prev)
+      next.delete(tripCode)
+      return next
+    })
+  }, [])
+
+  const handleLeft = useCallback((tripCode: string) => {
+    setHiddenCodes(prev => new Set([...prev, tripCode]))
+  }, [])
 
   const handleCreateTrip = () => {
     navigate('/create-trip')
@@ -37,124 +68,113 @@ export function HomePage() {
     navigate(`/t/${tripCode}/dashboard`)
   }
 
-  const formatDate = (isoDate: string) => {
-    return new Date(isoDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
+  const handleRemoveLocalTrip = (tripCode: string, tripName: string) => {
+    if (confirm(`Remove "${tripName}" from My Trips?\n\nThis won't delete the trip, you can access it again via the share link.`)) {
+      removeFromMyTrips(tripCode)
+      setLocalTrips(getMyTrips())
+    }
   }
 
-  // Authenticated view: server trips
-  const renderServerTrips = (trips: Event[]) => {
-    if (trips.length === 0) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Nothing yet
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Create a new trip or event, or access one via a shared link
-              </p>
-              <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
-                <Plus size={18} />
-                Create Your First
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )
+  // Empty state shared by both views
+  const renderEmptyState = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="text-center py-12">
+          <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Nothing yet
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            Create a new trip or event, or access one via a shared link
+          </p>
+          <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
+            <Plus size={18} />
+            Create Your First
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  // Authenticated view: TripCard with balances
+  const renderAuthenticatedTrips = () => {
+    if (loading) {
+      return <PageLoadingState />
+    }
+
+    if (visibleTrips.length === 0) {
+      return renderEmptyState()
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {trips.map(trip => (
-          <Card
-            key={trip.id}
-            className="hover:shadow-md transition-shadow cursor-pointer group"
-            onClick={() => handleOpenTrip(trip.trip_code)}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg group-hover:text-accent transition-colors">
-                    {trip.name}
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Code: {trip.trip_code}
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {(trip.start_date || trip.end_date) && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                  <Calendar size={14} />
-                  <span>
-                    {trip.start_date ? formatDate(trip.start_date) : ''}
-                    {trip.end_date && trip.end_date !== trip.start_date ? ` – ${formatDate(trip.end_date)}` : ''}
-                  </span>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleOpenTrip(trip.trip_code)
-                  }}
-                >
-                  <ExternalLink size={14} />
-                  Open
-                </Button>
-                <ShareTripDialog
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {visibleTrips.map(({ trip, myBalance }) => (
+            <TripCard
+              key={trip.id}
+              trip={trip}
+              balance={myBalance}
+              isActive={trip.id === activeTripId}
+              onClick={() => handleOpenTrip(trip.trip_code)}
+              actions={
+                <GroupActions
                   tripCode={trip.trip_code}
                   tripName={trip.name}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Share2 size={14} />
-                    </Button>
-                  }
+                  onHidden={() => handleHidden(trip.trip_code)}
+                  onLeft={() => handleLeft(trip.trip_code)}
                 />
+              }
+            />
+          ))}
+        </div>
+
+        {/* Hidden trips section */}
+        {hiddenTrips.length > 0 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowHidden(prev => !prev)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${showHidden ? 'rotate-180' : ''}`}
+              />
+              {hiddenTrips.length} hidden {hiddenTrips.length === 1 ? 'group' : 'groups'}
+            </button>
+
+            {showHidden && (
+              <div className="mt-3 space-y-2">
+                {hiddenTrips.map(({ trip }) => (
+                  <div
+                    key={trip.id}
+                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-muted/30"
+                  >
+                    <span className="text-sm text-muted-foreground truncate">
+                      {trip.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-muted-foreground flex-shrink-0"
+                      onClick={() => handleShow(trip.trip_code)}
+                    >
+                      <Eye size={14} />
+                      Show
+                    </Button>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            )}
+          </div>
+        )}
+      </>
     )
   }
 
   // Anonymous view: localStorage trips
   const renderLocalTrips = () => {
     if (localTrips.length === 0) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Nothing yet
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Create a new trip or event, or access one via a shared link
-              </p>
-              <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
-                <Plus size={18} />
-                Create Your First
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )
+      return renderEmptyState()
     }
 
     return (
@@ -162,72 +182,57 @@ export function HomePage() {
         {localTrips.map(trip => (
           <Card
             key={trip.tripCode}
-            className="hover:shadow-md transition-shadow cursor-pointer group"
-            onClick={() => handleOpenTrip(trip.tripCode)}
+            className="overflow-hidden"
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg group-hover:text-accent transition-colors">
-                    {trip.tripName}
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Code: {trip.tripCode}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-2"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemoveLocalTrip(trip.tripCode, trip.tripName)
-                  }}
-                >
-                  <Trash2 size={16} className="text-destructive" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Calendar size={14} />
-                  <span className="text-xs">
-                    Last: {new Date(trip.lastAccessed).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleOpenTrip(trip.tripCode)
-                  }}
-                >
-                  <ExternalLink size={14} />
-                  Open
-                </Button>
-                <ShareTripDialog
-                  tripCode={trip.tripCode}
-                  tripName={trip.tripName}
-                  trigger={
+            <div
+              className="cursor-pointer hover:bg-accent/30 transition-colors"
+              onClick={() => handleOpenTrip(trip.tripCode)}
+            >
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-foreground truncate">
+                      {trip.tripName}
+                    </h3>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Calendar size={12} />
+                      <span>
+                        Last opened {new Date(trip.lastAccessed).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                    <ShareTripDialog
+                      tripCode={trip.tripCode}
+                      tripName={trip.tripName}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Share2 size={14} className="text-muted-foreground" />
+                        </Button>
+                      }
+                    />
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={(e) => e.stopPropagation()}
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemoveLocalTrip(trip.tripCode, trip.tripName)
+                      }}
                     >
-                      <Share2 size={14} />
+                      <Trash2 size={14} className="text-destructive" />
                     </Button>
-                  }
-                />
-              </div>
-            </CardContent>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
           </Card>
         ))}
       </div>
@@ -237,14 +242,34 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header — personal greeting or generic */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Split costs with anyone
-          </h1>
-          <p className="text-muted-foreground">
-            Split costs fairly among groups with real-time collaboration
-          </p>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              {userProfile?.avatar_url ? (
+                <img
+                  src={userProfile.avatar_url}
+                  alt={userProfile.display_name}
+                  className="w-12 h-12 rounded-full"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-semibold text-primary">
+                  {firstName[0]?.toUpperCase()}
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  Hi, {firstName}
+                </h1>
+                <p className="text-sm text-muted-foreground">Your events & trips</p>
+              </div>
+            </div>
+          ) : (
+            <h1 className="text-2xl font-bold text-foreground">
+              Events & Trips
+            </h1>
+          )}
         </div>
 
         <OnboardingPrompts />
@@ -259,25 +284,8 @@ export function HomePage() {
 
         {/* Trips List */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">My Events & Trips</h2>
-          {isAuthenticated ? renderServerTrips(serverTrips) : renderLocalTrips()}
+          {isAuthenticated ? renderAuthenticatedTrips() : renderLocalTrips()}
         </div>
-
-        {/* Info Section — only for anonymous users with trips */}
-        {!isAuthenticated && localTrips.length > 0 && (
-          <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Users size={16} />
-              How It Works
-            </h3>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Trips are stored locally on your device</li>
-              <li>• Share trip links with your group for real-time collaboration</li>
-              <li>• Anyone with the link can view and contribute</li>
-              <li>• Remove trips from your list anytime without deleting them</li>
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   )

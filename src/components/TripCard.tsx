@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Event } from '@/types/trip'
 import { ParticipantBalance, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
@@ -11,7 +11,21 @@ interface TripCardProps {
   actions?: React.ReactNode
 }
 
+function formatCardDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 export function TripCard({ trip, balance, isActive, onClick, actions }: TripCardProps) {
+  const hasDate = trip.start_date || trip.end_date
+  const dateLabel = hasDate
+    ? trip.end_date && trip.end_date !== trip.start_date
+      ? `${formatCardDate(trip.start_date)} – ${formatCardDate(trip.end_date)}`
+      : formatCardDate(trip.start_date)
+    : null
+
   return (
     <Card className="overflow-hidden">
       <div
@@ -45,6 +59,12 @@ export function TripCard({ trip, balance, isActive, onClick, actions }: TripCard
                   Link yourself to see your balance
                 </p>
               ) : null}
+              {dateLabel && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                  <Calendar size={12} />
+                  <span>{dateLabel}</span>
+                </div>
+              )}
             </div>
             <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 ml-3" />
           </div>
