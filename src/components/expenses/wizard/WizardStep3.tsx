@@ -150,25 +150,24 @@ export function WizardStep3({
                       >
                         {group.label && (
                           <div
+                            role="checkbox"
+                            aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
                             className="flex items-center space-x-3 min-h-[44px] py-1 cursor-pointer"
                             onClick={() => onGroupToggle(memberIds)}
                           >
                             <Checkbox
-                              id={`group-${group.label}`}
-                              checked={someGroupSelected ? 'indeterminate' : allGroupSelected}
-                              onCheckedChange={() => onGroupToggle(memberIds)}
+                              checked={allGroupSelected}
+                              tabIndex={-1}
                               disabled={disabled}
+                              className={`pointer-events-none ${someGroupSelected ? 'opacity-60' : ''}`}
                             />
-                            <label
-                              htmlFor={`group-${group.label}`}
-                              className="text-sm font-medium text-foreground cursor-pointer flex-1 flex items-center gap-1.5"
-                            >
+                            <span className="text-sm font-medium text-foreground flex-1 flex items-center gap-1.5">
                               <Users size={14} className="text-muted-foreground" />
                               {group.label}
                               <span className="text-xs text-muted-foreground font-normal">
                                 ({memberIds.length})
                               </span>
-                            </label>
+                            </span>
                           </div>
                         )}
                         {group.members.map((participant) => (
