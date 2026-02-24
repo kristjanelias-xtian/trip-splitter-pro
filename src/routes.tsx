@@ -28,7 +28,6 @@ export function AppRoutes() {
   return (
     <Routes>
       {/* Special routes - outside Layout */}
-      <Route path="admin/all-trips" element={<ErrorBoundary><AdminAllTripsPage /></ErrorBoundary>} />
       <Route path="trip-not-found/:tripCode" element={<ErrorBoundary><TripNotFoundPage /></ErrorBoundary>} />
       <Route path="join/:token" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
 
@@ -47,6 +46,7 @@ export function AppRoutes() {
       {/* Full Mode routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<ErrorBoundary><ConditionalHomePage /></ErrorBoundary>} />
+        <Route path="admin/all-trips" element={<ErrorBoundary><AdminAllTripsPage /></ErrorBoundary>} />
         <Route path="create-trip" element={<ErrorBoundary><TripsPage /></ErrorBoundary>} />
         <Route path="t/:tripCode/manage" element={<TripRouteGuard><ErrorBoundary><ManageTripPage /></ErrorBoundary></TripRouteGuard>} />
         <Route path="t/:tripCode/expenses" element={<TripRouteGuard><ErrorBoundary><ExpensesPage /></ErrorBoundary></TripRouteGuard>} />
