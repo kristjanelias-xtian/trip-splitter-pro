@@ -284,6 +284,12 @@ interface AppSheetProps {
 | 10 | QuickScanContextSheet | No hideClose, no close btn, no overscroll-contain | Added hideClose, added standard ✕ close + spacer, subtitle moved below title row in header, added overscroll-contain | ✅ Done |
 | 11 | DayDetailSheet | 70vh (not dvh), overflow-y-auto on SheetContent, SheetHeader (not sticky), no flex structure, no p-0, no rounded-t-2xl, no hideClose | **FULL REBUILD**: 75dvh (read-only), hideClose, p-0 rounded-t-2xl, flex flex-col, standard 3-slot header with ✕, badges in header below title, content only scrolls, overscroll-contain, removed SheetHeader/SheetDescription | ✅ Done |
 
+### Post-audit fixes
+
+| # | Component | Issue | Fix applied | Status |
+|---|-----------|-------|-------------|--------|
+| 12 | MobileWizard (ExpenseWizard.tsx) | iOS Safari: numpad keyboard causes `visualViewport.offsetTop > 0`, pushing sheet header above visible viewport — ✕ close button disappears on first numpad open | Added `viewportOffset` to `useKeyboardHeight` hook (tracks `visualViewport.offsetTop`); subtracted offset from sheet height so top aligns with visible viewport. When offset=0 (common case), behavior unchanged. | ✅ Done (PR #373) |
+
 ### Test results
 
 - `npm run type-check`: ✅ Pass (zero errors)
@@ -336,6 +342,7 @@ All three close button close-ups are visually identical: rounded circle, thin bo
 - **0 failures** — all checked sheets match the standard
 - **6 sheets not verifiable** without auth — all minor/moderate fixes sharing patterns already verified
 - **Keyboard behavior** (useKeyboardHeight): not testable on desktop Chrome — iOS-specific; structural fixes (dvh, flex, shrink-0) verified
+- **viewportOffset fix (PR #373)**: MobileWizard tested with Playwright (375×812) — ✕ button visible in all 4 keyboard states (no keyboard, description focus, amount focus, second amount focus). True iOS numpad behavior not reproducible in desktop Chromium; structural correctness confirmed
 
 ---
 
@@ -356,4 +363,16 @@ All three close button close-ups are visually identical: rounded circle, thin bo
 
 ## 8. Open Issues (anything found but out of scope for this PR)
 
-*None yet.*
+### 8.1 — Other sheets missing `viewportOffset` adjustment
+
+The same `visualViewport.offsetTop` issue fixed in MobileWizard (PR #373) exists in all other sheets that use `keyboard.availableHeight` without subtracting `keyboard.viewportOffset`:
+
+- `AppSheet` (`src/components/ui/AppSheet.tsx`) — shared component; fixing here would cover most consumers
+- `ReceiptReviewSheet` (`src/components/receipts/ReceiptReviewSheet.tsx`)
+- `QuickSettlementSheet` (`src/components/quick/QuickSettlementSheet.tsx`)
+- `QuickCreateSheet` (`src/components/quick/QuickCreateSheet.tsx`)
+- `QuickParticipantSetupSheet` (`src/components/quick/QuickParticipantSetupSheet.tsx`)
+- `QuickScanCreateFlow` (`src/components/quick/QuickScanCreateFlow.tsx`)
+
+**Fix:** In each, change `keyboard.availableHeight` to `keyboard.availableHeight - keyboard.viewportOffset`.
+Alternatively, fix `AppSheet` and migrate sheets that don't use it yet.
