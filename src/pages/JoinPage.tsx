@@ -225,7 +225,7 @@ export function JoinPage() {
             className="text-3xl font-bold tracking-tight mb-1"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
           >
-            Spl1t
+            Spl<span style={{ color: '#E8714A', WebkitTextFillColor: '#E8714A' }}>1</span>t
           </h1>
           <p className="text-xs text-muted-foreground">Fair cost splitting for groups</p>
         </div>
