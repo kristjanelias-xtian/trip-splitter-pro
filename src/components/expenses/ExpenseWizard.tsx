@@ -487,10 +487,13 @@ function MobileWizard({
         className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible
-            ? `${keyboard.availableHeight - keyboard.viewportOffset}px`
+            ? `${keyboard.availableHeight}px`
             : '92dvh',
           bottom: keyboard.isVisible
-            ? `${keyboard.keyboardHeight}px`
+            ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
+            : undefined,
+          paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
+            ? `${keyboard.viewportOffset}px`
             : undefined,
         }}
         onInteractOutside={(e) => {
