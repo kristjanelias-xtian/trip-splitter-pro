@@ -122,7 +122,7 @@ shopping_items — id, trip_id, description, is_completed, category, quantity
 | B | Events (not just Trips) | ✅ Done (PR #141) | — |
 | C | Email & Invitations | ✅ Done (PRs #198–#200) | — |
 | D | AI Receipt Reader | ✅ Done (PR #149) | — |
-| E | UX/UI Unification | 🔧 In Progress (7a–7c ✅, 7d–7h remaining) | — |
+| E | UX/UI Unification | 🔧 In Progress (7a–7c, 7e ✅; 7d, 7f–7h remaining) | — |
 
 ---
 
@@ -594,7 +594,7 @@ Replace the marketing-style hero with Quick-style personal greeting. Unify trip 
 
 **Acceptance:** Full home page shows balance-forward trip cards with personal greeting. Matches Quick home in information density. Type-check + tests pass.
 
-#### Phase 7e — Admin page in Layout
+#### Phase 7e — Admin page in Layout ✅ Done (PR #340)
 Wrap the admin page in the standard Full mode Layout.
 
 **Tasks:**
