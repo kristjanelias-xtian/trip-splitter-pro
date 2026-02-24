@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
-import { useScrollIntoView } from '@/hooks/useScrollIntoView'
+
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ExpenseForm } from './ExpenseForm'
@@ -81,13 +81,7 @@ function MobileWizard({
   const { user } = useAuth()
 
   // Keyboard detection for mobile
-  const contentRef = useRef<HTMLDivElement>(null)
   const keyboard = useKeyboardHeight()
-
-  useScrollIntoView(contentRef, {
-    enabled: keyboard.isVisible,
-    offset: 20,
-  })
 
   const [currentStep, setCurrentStep] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -488,7 +482,7 @@ function MobileWizard({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col p-0 rounded-t-2xl"
+        className="flex flex-col p-0 rounded-t-2xl gap-0"
         style={{
           height: keyboard.isVisible
             ? `${keyboard.availableHeight}px`
@@ -512,8 +506,7 @@ function MobileWizard({
 
         {/* Scrollable content */}
         <div
-          ref={contentRef}
-          className="flex-1 overflow-y-auto px-6 py-4"
+          className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
         >
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
