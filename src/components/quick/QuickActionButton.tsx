@@ -6,13 +6,14 @@ interface QuickActionButtonProps {
   label: string
   description: string
   onClick: () => void
+  emphasis?: boolean
 }
 
-export function QuickActionButton({ icon: Icon, label, description, onClick }: QuickActionButtonProps) {
+export function QuickActionButton({ icon: Icon, label, description, onClick, emphasis }: QuickActionButtonProps) {
   return (
     <motion.button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 hover:border-accent transition-colors text-left"
+      className={`w-full flex items-center gap-4 p-4 rounded-xl border hover:bg-accent/50 hover:border-accent transition-colors text-left ${emphasis ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'}`}
       whileTap={{ scale: 0.98 }}
     >
       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

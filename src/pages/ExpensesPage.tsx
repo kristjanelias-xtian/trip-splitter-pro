@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt, FileDown, SlidersHorizontal } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -151,6 +151,9 @@ export function ExpensesPage() {
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary pointer-events-none" />
               )}
             </div>
+            <Button onClick={() => setShowReceiptCapture(true)} variant="ghost" size="icon" title="Scan receipt">
+              <ScanLine size={18} />
+            </Button>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
               {showForm ? 'Cancel' : 'Add Expense'}
