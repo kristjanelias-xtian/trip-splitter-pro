@@ -6,7 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalancesV2 } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
 import { SettlementForm } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -73,7 +73,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   // Compute optimal settlement plan
   const { myTransactions, allSettled, currency } = useMemo(() => {
-    const balanceCalc = calculateBalances(
+    const balanceCalc = calculateBalancesV2(
       expenses,
       participants,
       families,

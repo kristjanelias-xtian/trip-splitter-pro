@@ -125,8 +125,8 @@ describe('buildTransactionHistory', () => {
   })
 
   it('resolves entity to family in families tracking mode', () => {
-    const famAlice = buildParticipant({ id: 'fp1', name: 'Alice', family_id: 'f1' })
-    const famBob = buildParticipant({ id: 'fp2', name: 'Bob', family_id: 'f2' })
+    const famAlice = buildParticipant({ id: 'fp1', name: 'Alice', family_id: 'f1', wallet_group: 'AliceFamily' })
+    const famBob = buildParticipant({ id: 'fp2', name: 'Bob', family_id: 'f2', wallet_group: 'BobFamily' })
     const fam1 = buildFamily({ id: 'f1', family_name: 'AliceFamily', adults: 1, children: 0 })
     const fam2 = buildFamily({ id: 'f2', family_name: 'BobFamily', adults: 1, children: 0 })
 

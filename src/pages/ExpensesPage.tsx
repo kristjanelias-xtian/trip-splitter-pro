@@ -8,7 +8,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances, convertToBaseCurrency } from '@/services/balanceCalculator'
+import { calculateBalancesV2, convertToBaseCurrency } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
@@ -78,7 +78,7 @@ export function ExpensesPage() {
   const handleExportExcel = () => {
     if (!currentTrip) return
 
-    const balances = calculateBalances(
+    const balances = calculateBalancesV2(
       expenses,
       participants,
       families,

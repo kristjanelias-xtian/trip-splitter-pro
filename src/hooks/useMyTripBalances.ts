@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
-import { calculateBalances, ParticipantBalance } from '@/services/balanceCalculator'
+import { calculateBalancesV2, ParticipantBalance } from '@/services/balanceCalculator'
 import { Trip } from '@/types/trip'
 import { Participant, Family } from '@/types/participant'
 import { Expense } from '@/types/expense'
@@ -87,7 +87,7 @@ export function useMyTripBalances() {
             }
 
             // Calculate balances (with currency conversion)
-            const calc = calculateBalances(
+            const calc = calculateBalancesV2(
               expenses,
               participants,
               families,

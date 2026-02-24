@@ -1,7 +1,7 @@
 import { Expense } from '@/types/expense'
 import { Settlement } from '@/types/settlement'
 import { Participant, Family } from '@/types/participant'
-import { calculateExpenseShares } from '@/services/balanceCalculator'
+import { calculateExpenseSharesV2, buildEntityMapV2 } from '@/services/balanceCalculator'
 
 export interface TransactionItem {
   id: string
@@ -34,17 +34,16 @@ export function buildTransactionHistory(
   const getParticipantName = (id: string) =>
     participants.find(p => p.id === id)?.name || 'Unknown'
 
-  // Determine user's entity ID (family or individual)
-  const myEntityId = trackingMode === 'families' && myParticipant.family_id
-    ? myParticipant.family_id
-    : myParticipant.id
+  // Determine user's entity ID (wallet_group canonical or individual)
+  const entityMap = buildEntityMapV2(participants, trackingMode)
+  const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
 
   // Process expenses
   for (const expense of expenses) {
     const isPayer = expense.paid_by === myParticipant.id
 
     // Calculate user's share
-    const shares = calculateExpenseShares(expense, participants, families, trackingMode)
+    const shares = calculateExpenseSharesV2(expense, participants, families, trackingMode, entityMap)
     const myShare = shares.get(myEntityId) || 0
 
     // Only include if user paid or has a share

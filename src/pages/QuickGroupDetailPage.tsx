@@ -6,7 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalancesV2 } from '@/services/balanceCalculator'
 import { LinkParticipantDialog } from '@/components/LinkParticipantDialog'
 import { QuickBalanceHero } from '@/components/quick/QuickBalanceHero'
 import { QuickActionButton } from '@/components/quick/QuickActionButton'
@@ -98,7 +98,7 @@ export function QuickGroupDetailPage() {
   }
 
   // Calculate balance (with currency conversion)
-  const balanceCalc = calculateBalances(
+  const balanceCalc = calculateBalancesV2(
     expenses,
     participants,
     families,

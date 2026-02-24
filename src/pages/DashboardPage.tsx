@@ -6,7 +6,7 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalancesV2 } from '@/services/balanceCalculator'
 import { exportTripSummaryToPDF } from '@/services/pdfExport'
 import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
@@ -57,7 +57,7 @@ export function DashboardPage() {
   }
 
   // Calculate balances (including settlements, with currency conversion)
-  const balanceCalculation = calculateBalances(
+  const balanceCalculation = calculateBalancesV2(
     expenses,
     participants,
     families,

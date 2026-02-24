@@ -8,7 +8,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalancesV2 } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
@@ -77,7 +77,7 @@ export function SettlementsPage() {
   }
 
   // Calculate balances (including settlements, with currency conversion)
-  const balanceCalculation = useMemo(() => calculateBalances(
+  const balanceCalculation = useMemo(() => calculateBalancesV2(
     expenses,
     participants,
     families,

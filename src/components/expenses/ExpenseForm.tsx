@@ -6,7 +6,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
-import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { calculateBalancesV2, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -114,7 +114,7 @@ export function ExpenseForm({
 
   // Calculate balances to find suggested payer (including settlements)
   const balanceCalculation = currentTrip
-    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
+    ? calculateBalancesV2(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 

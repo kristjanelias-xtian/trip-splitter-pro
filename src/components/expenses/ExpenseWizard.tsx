@@ -10,7 +10,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalancesV2 } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
@@ -129,7 +129,7 @@ function MobileWizard({
 
   // Calculate balances for smart payer suggestion
   const balanceCalculation = currentTrip
-    ? calculateBalances(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
+    ? calculateBalancesV2(expenses, participants, families, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
 
