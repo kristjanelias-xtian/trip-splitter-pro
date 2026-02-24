@@ -8,7 +8,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
@@ -49,13 +49,16 @@ export function SettlementsPage() {
 
   // Build a map of entity ID → email for the "from" side of transactions
   const fromEmailMap = useMemo(() => {
+    if (!currentTrip) return {}
+    const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
     const map: Record<string, string> = {}
     for (const p of participants) {
       if (!p.email) continue
-      map[p.id] = p.email
+      const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
+      map[entityId] = p.email
     }
     return map
-  }, [participants])
+  }, [participants, currentTrip])
 
   if (!currentTrip) {
     return (
@@ -96,19 +99,24 @@ export function SettlementsPage() {
 
   // Fetch bank details for settlement recipients (only for signed-in users)
   useEffect(() => {
-    if (!user) return
+    if (!user || !currentTrip) return
 
     const fetchBankDetails = async () => {
-      // Collect recipient participant IDs from the settlement plan
+      // Collect recipient entity IDs from the settlement plan
       const recipientIds = optimalSettlement.transactions.map(t => t.toId)
       if (recipientIds.length === 0) return
 
-      // Look up user_ids for recipient participants
-      const recipientParticipants = participants.filter(p =>
-        p.user_id && recipientIds.includes(p.id)
-      )
+      // Use entity map to match participant IDs to entity IDs
+      const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
+
+      // Find participants whose entity ID matches a recipient
+      const recipientParticipants = participants.filter(p => {
+        if (!p.user_id) return false
+        const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
+        return recipientIds.includes(entityId)
+      })
       const linkedEntityIds = new Set<string>(
-        recipientParticipants.map(p => p.id)
+        recipientParticipants.map(p => entityMap.participantToEntityId.get(p.id) ?? p.id)
       )
       setLinkedParticipantIds(linkedEntityIds)
       if (recipientParticipants.length === 0) return
@@ -127,7 +135,8 @@ export function SettlementsPage() {
         if (profile.bank_account_holder || profile.bank_iban) {
           const matchingParticipants = recipientParticipants.filter(p => p.user_id === profile.id)
           for (const p of matchingParticipants) {
-            map[p.id] = {
+            const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
+            map[entityId] = {
               holder: profile.bank_account_holder || '',
               iban: profile.bank_iban || '',
             }
@@ -139,7 +148,7 @@ export function SettlementsPage() {
     }
 
     fetchBankDetails()
-  }, [user, recipientKey, participants])
+  }, [user, recipientKey, participants, currentTrip])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
     // Pre-populate the custom settlement form with amount and note
@@ -173,8 +182,16 @@ export function SettlementsPage() {
     const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
     // Collect structured receipt data for expenses paid by the creditor (toId)
-    const creditorParticipantIds = new Set([transaction.toId])
-    const debtorParticipantIds = [transaction.fromId]
+    // Entity IDs may represent wallet_groups — expand to all participant IDs in the group
+    const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
+    const creditorParticipantIds = new Set(
+      participants
+        .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === transaction.toId)
+        .map(p => p.id)
+    )
+    const debtorParticipantIds = participants
+      .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === transaction.fromId)
+      .map(p => p.id)
     const receipts: Array<{
       merchant: string | null
       items: Array<{ name: string; price: number; qty: number }> | null
