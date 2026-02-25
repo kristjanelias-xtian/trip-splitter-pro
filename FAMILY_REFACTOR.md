@@ -231,3 +231,19 @@ Saved to `balance_snapshot_pre.json` (project root). 6 trips, all balances captu
 - 032: Drop `families` table
 
 137/137 tests pass. Type-check clean.
+
+### Phase 3 Regression Fix — 2026-02-25
+
+PR #392: Fixed 2 regressions introduced by Phase 3.
+
+**Bug 1 (CRITICAL): Infinite re-render crash on Add Expense with wallet_groups**
+- Radix `Checkbox` in wallet_group group headers (controlled `checked`, no `onCheckedChange`, `pointer-events-none`) triggered internal `useControllableState` state cycles → "Maximum update depth exceeded"
+- Fix: replaced Radix Checkbox with plain `<span>` styled to match checkbox appearance
+- Files: `ExpenseForm.tsx`, `WizardStep3.tsx`
+
+**Bug 2 (HIGH): SettlementsPage entity ID mismatch**
+- `fromEmailMap`, `bankDetailsMap`, `handleRemind` were keyed by `p.id` but settlement optimizer emits entity IDs from `buildEntityMap`
+- Fix: used `buildEntityMap` throughout, matching the pattern already correct in `QuickSettlementSheet.tsx`
+- File: `SettlementsPage.tsx`
+
+Documented in `PHASE_3_BUGS.md`.
