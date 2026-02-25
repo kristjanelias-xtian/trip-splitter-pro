@@ -164,7 +164,7 @@ All contexts wrap Supabase calls in `withTimeout` (15 s, from `src/lib/fetchWith
 
 All expenses use a single distribution type: `individuals`. The `tracking_mode` column still exists in the DB but is always `'individuals'` for new trips (UI selector removed).
 
-Participants can be grouped via `wallet_group TEXT` on the `participants` table. The balance calculator (`buildEntityMap`) groups participants by `wallet_group` at display time — each group settles as a unit. Per-expense `accountForFamilySize` toggle (on `IndividualsDistribution`) controls whether groups split equally between entities (default OFF) or proportionally by member count (ON).
+Participants can be grouped via `wallet_group TEXT` on the `participants` table. The balance calculator (`buildEntityMap`) groups participants by `wallet_group` at display time — each group settles as a unit. Per-expense `accountForFamilySize` toggle (on `IndividualsDistribution`, labelled "Split equally between groups") controls splitting: OFF (default) = per-person split (group of 3 pays 3× a solo participant), ON = equal per group (each group pays the same share regardless of size).
 
 Within-group balances are shown on `SettlementsPage` (Full mode) via `calculateWithinGroupBalances()`. Children's balances are folded into adults within the group.
 
