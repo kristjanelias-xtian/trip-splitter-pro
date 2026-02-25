@@ -16,7 +16,7 @@ import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 
 import { X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { ExpenseForm } from './ExpenseForm'
 import { WizardProgress } from './wizard/WizardProgress'
 import { WizardNavigation } from './wizard/WizardNavigation'
@@ -46,7 +46,10 @@ export function ExpenseWizard({
   if (mode === 'edit' || !isMobile) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+          <DialogTitle className="sr-only">
+            {mode === 'edit' ? 'Edit Expense' : 'Add Expense'}
+          </DialogTitle>
           <ExpenseForm
             onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}

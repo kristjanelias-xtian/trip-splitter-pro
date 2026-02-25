@@ -77,10 +77,7 @@ export function CostBreakdownDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {balance.name}
-            {balance.isFamily && <Badge variant="soft">Group</Badge>}
-          </DialogTitle>
+          <DialogTitle>{balance.name}</DialogTitle>
           <DialogDescription>
             Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
           </DialogDescription>
