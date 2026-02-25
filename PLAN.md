@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (137 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (145 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -743,6 +743,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Family refactor Phases 1–3 | **Phase 1** (PR #386): migration 029 `wallet_group TEXT` on participants, backfill from families table. **Phase 2** (PR #387): V2 balance calculator with `buildEntityMap`, 152/152 tests, zero snapshot discrepancies. **Phase 3** (PR #388): removed families entity model — deleted `FamiliesSetup.tsx`, `FamiliesDistribution`/`MixedDistribution` types, simplified 40 files, -3013 net lines, 137/137 tests. Migrations 029–032 (wallet_group → account_for_family_size → drop family_id → drop families table). See `FAMILY_REFACTOR.md` for full details. |
 | 2026-02-25 | Phase 3 regression fix | PR #392: Fixed 2 regressions from family refactor Phase 3. **Bug 1 (CRITICAL)**: Radix `Checkbox` in wallet_group group headers caused infinite re-render crash ("Maximum update depth exceeded") on trips with wallet_groups — replaced with plain `<span>` visual elements in `ExpenseForm.tsx` + `WizardStep3.tsx`. **Bug 2 (HIGH)**: SettlementsPage `fromEmailMap`, `bankDetailsMap`, `handleRemind` keyed by `p.id` instead of entity IDs from `buildEntityMap` — bank details/emails undefined for wallet_group trips. Fixed to match `QuickSettlementSheet.tsx` pattern. 137/137 tests, type-check clean. Documented in `PHASE_3_BUGS.md`. |
 | 2026-02-25 | Family refactor Phase 4 | PR #395: Within-group balance view — the feature that motivated the entire refactor. New `calculateWithinGroupBalances()` function in `balanceCalculator.ts` (only tracks expenses paid by group members; credits payer with group share only, so balances net to zero). Toggle "Within-group balances" in `QuickGroupDetailPage.tsx` — per-group Card with member balances, "Evenly split" indicator, "No shared expenses yet" empty state. 6 new tests. 143/143 tests, type-check clean. **Family entity refactor COMPLETE (all 4 phases).** |
+| 2026-02-25 | Family refactor cleanup | PR #396: 7-issue post-refactor cleanup. (1) Removed tracking_mode selector from TripForm, EventForm, ManageTripPage, AdminAllTripsPage — hardcoded `'individuals'`. (2) Added wallet_group hint text in ParticipantsSetup. (3–4) Verified wallet_group is changeable mid-trip and datalist autocomplete works (no code needed). (5) Moved `accountForFamilySize` from trip-level toggle to per-expense field on `IndividualsDistribution` — toggle shown in ExpenseForm/WizardStep3 only when wallet_group participants selected; removed from ManageTripPage. (6) `calculateWithinGroupBalances` now folds children's balances into adults (2 new tests). (7) Within-group balances moved from QuickGroupDetailPage to SettlementsPage (Full mode). 145/145 tests, type-check clean. |
 
 ---
 
