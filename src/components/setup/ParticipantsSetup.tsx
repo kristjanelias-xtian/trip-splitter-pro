@@ -439,6 +439,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 disabled={adding}
                 list="wallet-groups"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                People in the same group settle as a unit — e.g. a couple or parents with kids.
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">

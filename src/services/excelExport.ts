@@ -120,7 +120,7 @@ export function exportExpensesToExcel(
     { Metric: 'Trip Name', Value: trip.name },
     { Metric: 'Start Date', Value: trip.start_date ? new Date(trip.start_date).toLocaleDateString() : 'N/A' },
     { Metric: 'End Date', Value: trip.end_date ? new Date(trip.end_date).toLocaleDateString() : 'N/A' },
-    { Metric: 'Tracking Mode', Value: trip.tracking_mode === 'families' ? 'Families' : 'Individuals' },
+    { Metric: 'Tracking Mode', Value: 'Individuals' },
     { Metric: '', Value: '' }, // Empty row
     { Metric: 'Total Expenses', Value: totalExpenses.toFixed(2) },
     { Metric: 'Number of Expenses', Value: expenses.length.toString() },
@@ -155,10 +155,11 @@ export function exportParticipantsToExcel(
   const workbook = XLSX.utils.book_new()
 
   // Participants sheet
+  const hasWalletGroups = participants.some(p => !!p.wallet_group)
   const participantsData = participants.map(participant => ({
     Name: participant.name,
     'Is Adult': participant.is_adult ? 'Yes' : 'No',
-    ...(trip.tracking_mode === 'families' && participant.wallet_group
+    ...(hasWalletGroups && participant.wallet_group
       ? { 'Wallet Group': participant.wallet_group }
       : {}),
   }))
@@ -167,7 +168,7 @@ export function exportParticipantsToExcel(
   participantsWorksheet['!cols'] = [
     { wch: 25 }, // Name
     { wch: 10 }, // Is Adult
-    ...(trip.tracking_mode === 'families' ? [{ wch: 25 }] : []) // Wallet Group
+    ...(hasWalletGroups ? [{ wch: 25 }] : []) // Wallet Group
   ]
 
   XLSX.utils.book_append_sheet(workbook, participantsWorksheet, 'Participants')

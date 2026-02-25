@@ -90,7 +90,6 @@ export function ManageTripPage() {
         start_date: values.start_date,
         end_date: values.end_date,
         event_type: values.event_type,
-        tracking_mode: values.tracking_mode,
         default_currency: values.default_currency,
       })
 
@@ -118,17 +117,14 @@ export function ManageTripPage() {
     }
   }
 
-  const hasWalletGroups = participants.some(p => !!p.wallet_group)
-
   const featureLabels: Record<string, string> = {
     enable_meals: 'Meal planning',
     enable_activities: 'Activity planning',
     enable_shopping: 'Shopping list',
     default_split_all: 'Split between everyone',
-    account_for_family_size: 'Proportional group splitting',
   }
 
-  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all' | 'account_for_family_size', value: boolean) => {
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all', value: boolean) => {
     setTogglingFeatures(prev => new Set(prev).add(feature))
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
@@ -320,10 +316,6 @@ export function ManageTripPage() {
                 </div>
               </>
             )}
-            <div>
-              <Label className="text-muted-foreground">Tracking Mode</Label>
-              <p className="text-sm font-medium capitalize">{currentTrip.tracking_mode}</p>
-            </div>
           </div>
           <Button onClick={() => setShowEditDialog(true)} className="mt-4">
             <Edit size={16} className="mr-2" />
@@ -383,19 +375,6 @@ export function ManageTripPage() {
               disabled={togglingFeatures.has('default_split_all')}
             />
           </div>
-          {hasWalletGroups && (
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Proportional Group Splitting</Label>
-                <p className="text-xs text-muted-foreground">Larger groups pay proportionally more based on group size</p>
-              </div>
-              <Switch
-                checked={currentTrip.account_for_family_size}
-                onCheckedChange={(checked) => handleToggleFeature('account_for_family_size', checked)}
-                disabled={togglingFeatures.has('account_for_family_size')}
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -533,7 +512,7 @@ export function ManageTripPage() {
           <DialogHeader>
             <DialogTitle>Edit {entityLabel} Details</DialogTitle>
             <DialogDescription>
-              Update the name, dates, or tracking mode
+              Update the name, dates, or currency
             </DialogDescription>
           </DialogHeader>
 
@@ -554,14 +533,12 @@ export function ManageTripPage() {
               start_date: currentTrip.start_date,
               end_date: currentTrip.end_date,
               event_type: currentTrip.event_type,
-              tracking_mode: currentTrip.tracking_mode,
               default_currency: currentTrip.default_currency,
             }}
             onSubmit={handleEditTrip}
             onCancel={() => setShowEditDialog(false)}
             submitLabel="Save Changes"
             isLoading={isUpdating}
-            disableTrackingMode={participants.length > 0}
             isEditMode
           />
         </DialogContent>

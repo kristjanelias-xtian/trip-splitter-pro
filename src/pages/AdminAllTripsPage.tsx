@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, ExternalLink, Calendar, Users, UserCircle, ShieldAlert } from 'lucide-react'
+import { Search, ExternalLink, Calendar, UserCircle, ShieldAlert } from 'lucide-react'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useAuth } from '@/contexts/AuthContext'
@@ -278,7 +278,6 @@ export function AdminAllTripsPage() {
                 <TableRow>
                   <TableHead>Trip Name</TableHead>
                   <TableHead>Trip Code</TableHead>
-                  <TableHead>Tracking Mode</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>Owner</TableHead>
                   <TableHead>Created</TableHead>
@@ -297,12 +296,6 @@ export function AdminAllTripsPage() {
                       <code className="text-xs bg-muted px-2 py-1 rounded">
                         {trip.trip_code}
                       </code>
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Users size={14} />
-                        {trip.tracking_mode === 'families' ? 'Families' : 'Individuals'}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">

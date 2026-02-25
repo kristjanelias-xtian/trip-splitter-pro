@@ -458,4 +458,47 @@ describe('calculateWithinGroupBalances', () => {
     const balances = calculateWithinGroupBalances([], allParticipants, 'NonExistent')
     expect(balances).toHaveLength(0)
   })
+
+  describe('children folded into adults', () => {
+    const adultA = buildParticipant({ id: 'fa1', name: 'Mom', wallet_group: 'Fam', is_adult: true })
+    const adultB = buildParticipant({ id: 'fa2', name: 'Dad', wallet_group: 'Fam', is_adult: true })
+    const child = buildParticipant({ id: 'fc1', name: 'Kid', wallet_group: 'Fam', is_adult: false })
+    const famParticipants = [adultA, adultB, child]
+
+    it('folds child balance into adults — only 2 rows returned', () => {
+      const expense = buildExpense({
+        amount: 90,
+        paid_by: 'fa1',
+        distribution: { type: 'individuals', participants: ['fa1', 'fa2', 'fc1'] },
+      })
+      const balances = calculateWithinGroupBalances([expense], famParticipants, 'Fam')
+
+      // Only adults should be returned
+      expect(balances).toHaveLength(2)
+      expect(balances.every(b => b.id !== 'fc1')).toBe(true)
+
+      // Mom paid 90, each person's share = 30
+      // Kid's balance = 0 - 30 = -30, split among 2 adults = -15 each
+      // Mom: paid 90, share 30 + 15 = 45, balance = 45
+      // Dad: paid 0, share 30 + 15 = 45, balance = -45
+      const mom = balances.find(b => b.id === 'fa1')!
+      const dad = balances.find(b => b.id === 'fa2')!
+      expect(mom.balance).toBeCloseTo(45, 2)
+      expect(dad.balance).toBeCloseTo(-45, 2)
+    })
+
+    it('returns all members when group has no adults', () => {
+      const childA = buildParticipant({ id: 'c1', name: 'ChildA', wallet_group: 'Kids', is_adult: false })
+      const childB = buildParticipant({ id: 'c2', name: 'ChildB', wallet_group: 'Kids', is_adult: false })
+      const expense = buildExpense({
+        amount: 60,
+        paid_by: 'c1',
+        distribution: { type: 'individuals', participants: ['c1', 'c2'] },
+      })
+      const balances = calculateWithinGroupBalances([expense], [childA, childB], 'Kids')
+
+      // Both children shown (no adults to fold into)
+      expect(balances).toHaveLength(2)
+    })
+  })
 })

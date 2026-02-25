@@ -121,12 +121,27 @@ export function calculateExpenseShares(
   if (distribution.type !== 'individuals') return shares
 
   const splitMode = distribution.splitMode || 'equal'
+  const accountForFamilySize = distribution.accountForFamilySize ?? false
 
   if (splitMode === 'equal') {
-    const shareAmount = expense.amount / distribution.participants.length
-    for (const pid of distribution.participants) {
-      const eid = participantToEntityId.get(pid) ?? pid
-      shares.set(eid, (shares.get(eid) || 0) + shareAmount)
+    if (!accountForFamilySize) {
+      // Equal split between entities (groups + standalone participants).
+      // Each entity pays the same regardless of group size.
+      const entityIds = new Set<string>()
+      for (const pid of distribution.participants) {
+        entityIds.add(participantToEntityId.get(pid) ?? pid)
+      }
+      const perEntity = expense.amount / entityIds.size
+      for (const eid of entityIds) {
+        shares.set(eid, perEntity)
+      }
+    } else {
+      // Proportional: per-person split — larger groups naturally pay more
+      const shareAmount = expense.amount / distribution.participants.length
+      for (const pid of distribution.participants) {
+        const eid = participantToEntityId.get(pid) ?? pid
+        shares.set(eid, (shares.get(eid) || 0) + shareAmount)
+      }
     }
   } else if (splitMode === 'percentage' && distribution.participantSplits) {
     for (const split of distribution.participantSplits) {
@@ -290,13 +305,32 @@ export function calculateWithinGroupBalances(
     // Calculate each group member's share in this expense
     const memberShares = new Map<string, number>()
     const splitMode = expense.distribution.splitMode || 'equal'
+    const accountForFamilySize = expense.distribution.accountForFamilySize ?? false
 
     if (splitMode === 'equal') {
       const memberParticipants = expense.distribution.participants.filter(pid => memberIds.has(pid))
       if (memberParticipants.length === 0) continue
-      const perPerson = expense.amount / expense.distribution.participants.length
-      for (const pid of memberParticipants) {
-        memberShares.set(pid, (memberShares.get(pid) || 0) + perPerson * conversionFactor)
+
+      if (!accountForFamilySize) {
+        // Equal between entities: group's share = total / numEntities
+        // Count unique entities in the distribution using wallet_group
+        const entitySet = new Set<string>()
+        for (const pid of expense.distribution.participants) {
+          const p = participants.find(pp => pp.id === pid)
+          entitySet.add(p?.wallet_group ?? pid)
+        }
+        const groupShare = expense.amount / entitySet.size
+        // Split group's share equally among group members in distribution
+        const perMember = groupShare / memberParticipants.length
+        for (const pid of memberParticipants) {
+          memberShares.set(pid, (memberShares.get(pid) || 0) + perMember * conversionFactor)
+        }
+      } else {
+        // Proportional: per-person split
+        const perPerson = expense.amount / expense.distribution.participants.length
+        for (const pid of memberParticipants) {
+          memberShares.set(pid, (memberShares.get(pid) || 0) + perPerson * conversionFactor)
+        }
       }
     } else if ((splitMode === 'percentage' || splitMode === 'amount') && expense.distribution.participantSplits) {
       for (const split of expense.distribution.participantSplits) {
@@ -322,20 +356,49 @@ export function calculateWithinGroupBalances(
     })
   }
 
-  // Only keep members who have any paid or share
-  // (but always return all members for completeness)
-  const balances: ParticipantBalance[] = groupMembers.map(m => {
-    const totalPaid = paid.get(m.id) || 0
-    const totalShare = share.get(m.id) || 0
-    return {
-      id: m.id,
-      name: m.name,
-      totalPaid,
-      totalShare,
-      balance: totalPaid - totalShare,
-      isFamily: false,
+  // Compute raw balances per member
+  const rawBalances = groupMembers.map(m => ({
+    id: m.id,
+    name: m.name,
+    is_adult: m.is_adult,
+    totalPaid: paid.get(m.id) || 0,
+    totalShare: share.get(m.id) || 0,
+    balance: (paid.get(m.id) || 0) - (share.get(m.id) || 0),
+  }))
+
+  // Fold children's balances into adults
+  const adults = rawBalances.filter(b => b.is_adult)
+  const children = rawBalances.filter(b => !b.is_adult)
+
+  if (adults.length > 0 && children.length > 0) {
+    // Distribute each child's balance equally among adults
+    for (const child of children) {
+      const perAdult = child.balance / adults.length
+      for (const adult of adults) {
+        adult.balance += perAdult
+        adult.totalShare += child.totalShare / adults.length
+      }
     }
-  })
+    // Return only adults
+    return adults.map(a => ({
+      id: a.id,
+      name: a.name,
+      totalPaid: a.totalPaid,
+      totalShare: a.totalShare,
+      balance: a.balance,
+      isFamily: false,
+    })).sort((a, b) => b.balance - a.balance)
+  }
+
+  // No adults or no children — return all members as-is
+  const balances: ParticipantBalance[] = rawBalances.map(m => ({
+    id: m.id,
+    name: m.name,
+    totalPaid: m.totalPaid,
+    totalShare: m.totalShare,
+    balance: m.balance,
+    isFamily: false,
+  }))
 
   return balances.sort((a, b) => b.balance - a.balance)
 }

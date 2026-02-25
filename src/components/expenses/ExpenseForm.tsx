@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { useState, useEffect, useRef, useMemo, FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
@@ -67,6 +67,15 @@ export function ExpenseForm({
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
 
+  // Proportional group splitting (per-expense toggle)
+  const [accountForFamilySize, setAccountForFamilySize] = useState(false)
+
+  // Show toggle only when any selected participant belongs to a wallet_group
+  const hasSelectedGroups = useMemo(() => {
+    const selectedSet = new Set(selectedParticipants)
+    return participants.some(p => selectedSet.has(p.id) && !!p.wallet_group)
+  }, [selectedParticipants, participants])
+
   // Auto-fill split value when exactly one party is selected in "By Amount" mode
   useEffect(() => {
     if (splitMode !== 'amount') return
@@ -121,6 +130,9 @@ export function ExpenseForm({
 
       if (dist.type === 'individuals') {
         setSelectedParticipants(dist.participants || [])
+        if (dist.accountForFamilySize) {
+          setAccountForFamilySize(true)
+        }
       }
 
       // Restore split mode
@@ -257,7 +269,8 @@ export function ExpenseForm({
             participantId: id,
             value: parseFloat(participantSplitValues[id] || '0')
           }))
-        : undefined
+        : undefined,
+      accountForFamilySize: hasSelectedGroups ? accountForFamilySize : undefined,
     }
 
     if (!currentTrip) {
@@ -591,6 +604,24 @@ export function ExpenseForm({
             )
           })}
         </div>
+
+        {/* Proportional group toggle — only when wallet_group participants are selected */}
+        {hasSelectedGroups && (
+          <div className="flex items-center space-x-2 mt-3">
+            <Checkbox
+              id="accountForFamilySize"
+              checked={accountForFamilySize}
+              onCheckedChange={(checked) => setAccountForFamilySize(checked as boolean)}
+              disabled={loading}
+            />
+            <div>
+              <label htmlFor="accountForFamilySize" className="text-sm text-foreground cursor-pointer">
+                Split proportionally by group size
+              </label>
+              <p className="text-xs text-muted-foreground">Larger groups pay more based on number of members</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Split Preview */}
