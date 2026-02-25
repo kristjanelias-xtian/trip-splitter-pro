@@ -387,6 +387,48 @@ Vitest + Testing Library. Run with `npm test`. 145 tests covering contexts, hook
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
 
+### Manual iOS Keyboard Tests
+
+Playwright cannot trigger the real iOS Safari keyboard. These tests must be run on a physical iPhone before merging any PR that touches:
+- Bottom sheets (`AppSheet`, `MobileWizard`, or any component using `useKeyboardHeight`)
+- Form inputs inside sheets (amount fields, text fields)
+- `useKeyboardHeight` hook itself
+- `MobileWizard.tsx`, `MobileWizardShell.tsx`
+- Any file in the "Same vulnerability" list in `docs/SHEET_AUDIT.md §8.1`
+
+**Device:** iPhone (any model with Face ID preferred — taller notch = less visible space = more likely to expose layout bugs)
+**Browser:** Safari (not Chrome on iOS — Chrome uses UIWebView which has different keyboard behaviour)
+
+**Test protocol — run for each affected sheet:**
+
+1. Open the sheet on a real iPhone in Safari
+2. Tap an amount or text input field
+3. Switch from the default keyboard to the **numpad** (tap the numpad/123 key)
+   → The numpad is taller than the text keyboard. This is when `visualViewport.offsetTop > 0` occurs.
+4. Confirm: the sheet **header and close button (✕)** are fully visible and tappable above the keyboard
+5. Confirm: input fields are visible above the keyboard, not hidden behind it
+6. Tap the close button — sheet closes cleanly
+7. Re-open the sheet and repeat with the text keyboard
+
+**Sheets to test (as of last sheet audit):**
+- ExpenseWizard (MobileWizard) — amount field, Step 1
+- ReceiptCaptureSheet — no amount field, skip numpad test
+- QuickSettlementSheet — amount field
+- DayDetailSheet — no amount field, skip numpad test
+- ParticipantEditSheet (if exists) — text fields only
+- Any new sheet added since the last audit
+
+**Pass criteria:**
+- ✅ Header visible with numpad open
+- ✅ Close button tappable with numpad open
+- ✅ No content hidden behind keyboard
+- ✅ Sheet closes cleanly after keyboard interaction
+- ✅ Re-opening sheet works (no stale keyboard height)
+
+**Known limitation:** `useKeyboardHeight` uses `window.visualViewport` which is not available in Playwright's simulated environment. Keyboard height is always 0 in automated tests. There is no way to automate these checks — physical device testing is the only option.
+
+**If a sheet fails:** The fix pattern is in `MobileWizard.tsx` (PR #376) — subtract `viewportOffset` from sheet height and add it as `paddingBottom`. See `useKeyboardHeight` hook for the `viewportOffset` value.
+
 ### Production Smoke Tests (Playwright MCP)
 Interactive browser testing against https://split.xtian.me using Playwright MCP. Results recorded in `docs/SMOKE_TEST_RESULTS.md`. Scenarios cover:
 1. Shared link access (unauthenticated) — verifies RLS SELECT policy
@@ -421,6 +463,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
 | Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Reduce `bottom` by `viewportOffset` + add `paddingBottom: viewportOffset` (see iOS Keyboard section) |
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
+| Sheet content hidden behind numpad (iOS) | numpad is taller than text keyboard → `visualViewport.offsetTop > 0` pushes sheet up | Subtract `viewportOffset` from sheet `bottom` style and add as `paddingBottom`. See PR #376 and `useKeyboardHeight`. Playwright cannot test this — manual iPhone required. |
 
 ---
 
