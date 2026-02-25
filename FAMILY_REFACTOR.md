@@ -115,9 +115,15 @@ IndividualsDistribution { type: 'individuals', participants: string[], splitMode
 ```
 All existing `families` and `mixed` distributions are migrated to `individuals` with expanded participant IDs.
 
-### `trips` table — **new column**
-```sql
-account_for_family_size BOOLEAN NOT NULL DEFAULT false  -- moved from per-expense
+### `expenses.distribution` JSONB — **per-expense field**
+```ts
+IndividualsDistribution {
+  type: 'individuals',
+  participants: string[],
+  splitMode?: SplitMode,
+  participantSplits?: ParticipantSplit[],
+  accountForFamilySize?: boolean  // per-expense toggle (cleanup PR #396)
+}
 ```
 
 ### Settlement optimizer output — simplified
@@ -150,6 +156,7 @@ SettlementTransaction { fromId, fromName, toId, toName, amount }
 | 2 — Engine | COMPLETE | #387 | type-check clean, 152/152 tests, zero snapshot discrepancies |
 | 3 — UI | COMPLETE | #388 | type-check clean, 137/137 tests, -3013 net lines |
 | 4 — Feature | COMPLETE | #395 | type-check clean, 143/143 tests |
+| Cleanup | COMPLETE | #396 | type-check clean, 145/145 tests |
 
 ## Balance Snapshot
 
@@ -274,4 +281,18 @@ Within-group balance view — the feature that motivated the entire refactor.
 
 143/143 tests pass. Type-check clean.
 
-**Family entity refactor is COMPLETE.** All 4 phases done.
+### Cleanup — 2026-02-25
+
+PR #396: 7-issue post-refactor cleanup session.
+
+1. **Tracking mode selector removed** — TripForm, EventForm, ManageTripPage, AdminAllTripsPage. Hardcoded `tracking_mode: 'individuals'` on creation. DB column still exists.
+2. **wallet_group hint text** — added to ParticipantsSetup: "People in the same group settle as a unit"
+3. **wallet_group changeable mid-trip** — verified already works (no lock existed)
+4. **Datalist autocomplete** — verified already implemented (existingGroups useMemo + datalist)
+5. **accountForFamilySize moved to per-expense** — removed trip-level `account_for_family_size` toggle from ManageTripPage. Added `accountForFamilySize?: boolean` to `IndividualsDistribution`. Toggle shown in ExpenseForm (desktop) and WizardStep3 (mobile) only when wallet_group participants are selected. Default OFF = equal split between entities; ON = proportional by member count.
+6. **Children folded into adults** — `calculateWithinGroupBalances` distributes child balances equally among adults in the same wallet_group. 2 new tests added.
+7. **Within-group balances moved to Full mode** — removed from QuickGroupDetailPage, added to SettlementsPage with toggle, group cards, and "Children's shares are split among adults" note.
+
+145/145 tests pass. Type-check clean.
+
+**Family entity refactor is COMPLETE.** All 4 phases + cleanup done.

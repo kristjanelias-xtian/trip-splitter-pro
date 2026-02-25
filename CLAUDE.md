@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (139 tests)
+- Tests: Vitest + Testing Library (145 tests)
 
 ---
 
@@ -57,10 +57,9 @@ git branch -d fix/description
 
 ## Database Schema
 
-### Core tables (migrations 001–006)
+### Core tables (migrations 001–006, updated by family refactor migrations 029–032)
 - `trips` — trip metadata, tracking_mode (`individuals` | `families`), trip_code (URL slug), created_by
-- `families` — family groups with adults/children counts
-- `participants` — individuals linked to a family or standalone; `user_id` links to auth user ("This is me")
+- `participants` — individuals with optional `wallet_group TEXT` for shared-wallet grouping; `user_id` links to auth user ("This is me")
 - `expenses` — expense records with JSONB `distribution` field
 - `settlements` — payment transfers between participants/families
 - `meals` — meal planning (breakfast/lunch/dinner per day)
@@ -151,7 +150,7 @@ Mode is stored per-user in `user_preferences.preferred_mode` and synced from Sup
 | `AuthContext` | Supabase auth session, user profile, bank details |
 | `TripContext` | Trip list, active trip, CRUD |
 | `UserPreferencesContext` | mode (`quick`/`full`), defaultTripId, Supabase sync |
-| `ParticipantContext` | Participants + families, user↔participant link |
+| `ParticipantContext` | Participants (with wallet_group), user↔participant link |
 | `ExpenseContext` | Expense CRUD, list |
 | `SettlementContext` | Settlement CRUD |
 | `MealContext` | Meal calendar, meal↔shopping links |
@@ -162,11 +161,12 @@ Mode is stored per-user in `user_preferences.preferred_mode` and synced from Sup
 All contexts wrap Supabase calls in `withTimeout` (15 s, from `src/lib/fetchWithTimeout.ts`) so a slow network never leaves the UI stuck.
 
 ### Tracking Modes (expense splitting)
-1. **individuals** — expenses split per person
-2. **families** — expenses split per family unit (with optional proportional-by-size weighting)
-3. **mixed** — families + standalone individuals in same expense
 
-Distribution type is stored as JSONB on the expense. `balanceCalculator.ts` handles all three modes.
+All expenses use a single distribution type: `individuals`. The `tracking_mode` column still exists in the DB but is always `'individuals'` for new trips (UI selector removed).
+
+Participants can be grouped via `wallet_group TEXT` on the `participants` table. The balance calculator (`buildEntityMap`) groups participants by `wallet_group` at display time — each group settles as a unit. Per-expense `accountForFamilySize` toggle (on `IndividualsDistribution`) controls whether groups split equally between entities (default OFF) or proportionally by member count (ON).
+
+Within-group balances are shown on `SettlementsPage` (Full mode) via `calculateWithinGroupBalances()`. Children's balances are folded into adults within the group.
 
 ### Routes
 
@@ -382,7 +382,7 @@ and the user-friendly error message will never be shown.
 ## Testing
 
 ### Unit Tests
-Vitest + Testing Library. Run with `npm test`. 139 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+Vitest + Testing Library. Run with `npm test`. 145 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
