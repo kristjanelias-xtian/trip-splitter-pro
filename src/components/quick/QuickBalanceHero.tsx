@@ -38,11 +38,6 @@ export function QuickBalanceHero({ balance }: QuickBalanceHeroProps) {
           : formatBalance(balance.balance).replace(/^[+-]/, '')
         }
       </p>
-      {balance.isFamily && (
-        <p className="text-xs text-muted-foreground mt-2">
-          Group: {balance.name}
-        </p>
-      )}
     </motion.div>
   )
 }

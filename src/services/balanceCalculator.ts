@@ -124,9 +124,9 @@ export function calculateExpenseShares(
   const accountForFamilySize = distribution.accountForFamilySize ?? false
 
   if (splitMode === 'equal') {
-    if (!accountForFamilySize) {
-      // Equal split between entities (groups + standalone participants).
-      // Each entity pays the same regardless of group size.
+    if (accountForFamilySize) {
+      // "Split equally between groups" — each entity pays the same
+      // regardless of group size.
       const entityIds = new Set<string>()
       for (const pid of distribution.participants) {
         entityIds.add(participantToEntityId.get(pid) ?? pid)
@@ -136,7 +136,7 @@ export function calculateExpenseShares(
         shares.set(eid, perEntity)
       }
     } else {
-      // Proportional: per-person split — larger groups naturally pay more
+      // Default: per-person split — larger groups naturally pay more
       const shareAmount = expense.amount / distribution.participants.length
       for (const pid of distribution.participants) {
         const eid = participantToEntityId.get(pid) ?? pid
@@ -311,8 +311,8 @@ export function calculateWithinGroupBalances(
       const memberParticipants = expense.distribution.participants.filter(pid => memberIds.has(pid))
       if (memberParticipants.length === 0) continue
 
-      if (!accountForFamilySize) {
-        // Equal between entities: group's share = total / numEntities
+      if (accountForFamilySize) {
+        // "Split equally between groups": group's share = total / numEntities
         // Count unique entities in the distribution using wallet_group
         const entitySet = new Set<string>()
         for (const pid of expense.distribution.participants) {
@@ -326,7 +326,7 @@ export function calculateWithinGroupBalances(
           memberShares.set(pid, (memberShares.get(pid) || 0) + perMember * conversionFactor)
         }
       } else {
-        // Proportional: per-person split
+        // Default: per-person split
         const perPerson = expense.amount / expense.distribution.participants.length
         for (const pid of memberParticipants) {
           memberShares.set(pid, (memberShares.get(pid) || 0) + perPerson * conversionFactor)

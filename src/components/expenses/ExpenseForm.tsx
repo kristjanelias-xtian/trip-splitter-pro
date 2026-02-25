@@ -616,9 +616,9 @@ export function ExpenseForm({
             />
             <div>
               <label htmlFor="accountForFamilySize" className="text-sm text-foreground cursor-pointer">
-                Split proportionally by group size
+                Split equally between groups
               </label>
-              <p className="text-xs text-muted-foreground">Larger groups pay more based on number of members</p>
+              <p className="text-xs text-muted-foreground">Each group pays the same share, regardless of how many members it has</p>
             </div>
           </div>
         )}

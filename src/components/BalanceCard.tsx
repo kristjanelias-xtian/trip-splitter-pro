@@ -3,7 +3,6 @@ import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from 'lucide-react'
 import { ParticipantBalance } from '@/services/balanceCalculator'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 
 interface BalanceCardProps {
   balance: ParticipantBalance
@@ -67,14 +66,9 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-foreground">
-                {balance.name}
-              </h3>
-              {balance.isFamily && (
-                <Badge variant="soft">Group</Badge>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold text-foreground">
+              {balance.name}
+            </h3>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-xs text-muted-foreground mb-1">{status.text}</span>
