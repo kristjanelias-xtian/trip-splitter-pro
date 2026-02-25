@@ -253,7 +253,7 @@ Always `dvh`. **Never** `vh`. **Never** `100vh`. **Never** `h-screen`.
 - Multi-step sheets: ← back (left) + ✕ close (right). Step 1: spacer instead of back.
 - Never show two buttons that both close the sheet.
 
-**Full spec and audit log:** `SHEET_AUDIT.md`
+**Full spec and audit log:** `docs/SHEET_AUDIT.md`
 
 ### Quick Actions Standard (QuickGroupDetailPage)
 
@@ -273,7 +273,7 @@ Breakpoint detection: `useMediaQuery('(max-width: 767px)')`.
 
 Desktop dialogs use `hideClose` (custom header close button) + `max-h-[85vh] p-0 gap-0`. Content is shared between Sheet and Dialog via extracted JSX variables.
 
-**Full audit log:** `QUICK_ACTIONS_AUDIT.md`
+**Full audit log:** `docs/QUICK_ACTIONS_AUDIT.md`
 
 ### iOS Keyboard / Viewport
 
@@ -388,7 +388,7 @@ Vitest + Testing Library. Run with `npm test`. 145 tests covering contexts, hook
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
 
 ### Production Smoke Tests (Playwright MCP)
-Interactive browser testing against https://split.xtian.me using Playwright MCP. Results recorded in `SMOKE_TEST_RESULTS.md`. Scenarios cover:
+Interactive browser testing against https://split.xtian.me using Playwright MCP. Results recorded in `docs/SMOKE_TEST_RESULTS.md`. Scenarios cover:
 1. Shared link access (unauthenticated) — verifies RLS SELECT policy
 2. Shared link access (authenticated non-creator) — requires manual OAuth
 3. Expense submit guard — double-tap prevention
@@ -444,4 +444,4 @@ supabase.auth.onAuthStateChange((event, session) => {
 })
 ```
 
-This rule applies to **ALL** auth subscribers in **ALL** files, not just `AuthContext.tsx`. See `DIAGNOSIS.md` for the full deadlock chain analysis.
+This rule applies to **ALL** auth subscribers in **ALL** files, not just `AuthContext.tsx`. See `docs/DIAGNOSIS.md` for the full deadlock chain analysis.
