@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { CreateTripInput, TrackingMode } from '@/types/trip'
+import { CreateTripInput } from '@/types/trip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +13,6 @@ interface TripFormProps {
   initialValues?: Partial<CreateTripInput>
   submitLabel?: string
   isLoading?: boolean
-  disableTrackingMode?: boolean
   isEditMode?: boolean
 }
 
@@ -23,13 +22,11 @@ export function TripForm({
   initialValues,
   submitLabel = 'Create Trip',
   isLoading: externalLoading,
-  disableTrackingMode = false,
   isEditMode = false,
 }: TripFormProps) {
   const [name, setName] = useState(initialValues?.name || '')
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
-  const [trackingMode, setTrackingMode] = useState<TrackingMode>(initialValues?.tracking_mode || 'individuals')
   const [defaultCurrency, setDefaultCurrency] = useState(initialValues?.default_currency || 'EUR')
   const [enableMeals, setEnableMeals] = useState(initialValues?.enable_meals ?? false)
   const [enableActivities, setEnableActivities] = useState(initialValues?.enable_activities ?? false)
@@ -59,7 +56,7 @@ export function TripForm({
         name: name.trim(),
         start_date: startDate,
         end_date: endDate,
-        tracking_mode: trackingMode,
+        tracking_mode: 'individuals',
         default_currency: defaultCurrency.trim().toUpperCase() || 'EUR',
         enable_meals: enableMeals,
         enable_activities: enableActivities,
@@ -184,52 +181,6 @@ export function TripForm({
           </div>
         </div>
       )}
-
-      <div className="space-y-3">
-        <Label>Tracking Mode</Label>
-        {disableTrackingMode && (
-          <p className="text-sm text-muted-foreground">
-            Cannot change tracking mode after adding participants
-          </p>
-        )}
-        <div className="space-y-3">
-          <label className="flex items-start p-4 rounded-lg border-2 border-border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-            <input
-              type="radio"
-              name="trackingMode"
-              value="individuals"
-              checked={trackingMode === 'individuals'}
-              onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
-              className="mt-0.5 mr-3 text-primary focus:ring-primary"
-              disabled={isSubmitting || disableTrackingMode}
-            />
-            <div>
-              <div className="font-medium text-foreground">Individuals only</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Track expenses per person
-              </div>
-            </div>
-          </label>
-
-          <label className="flex items-start p-4 rounded-lg border-2 border-border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-            <input
-              type="radio"
-              name="trackingMode"
-              value="families"
-              checked={trackingMode === 'families'}
-              onChange={(e) => setTrackingMode(e.target.value as TrackingMode)}
-              className="mt-0.5 mr-3 text-primary focus:ring-primary"
-              disabled={isSubmitting || disableTrackingMode}
-            />
-            <div>
-              <div className="font-medium text-foreground">Individuals + Families</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Track at family level with individual breakdowns
-              </div>
-            </div>
-          </label>
-        </div>
-      </div>
 
       <div className="flex gap-3 pt-2">
         <Button

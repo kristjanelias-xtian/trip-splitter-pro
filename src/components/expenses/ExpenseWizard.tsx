@@ -116,6 +116,9 @@ function MobileWizard({
   // Custom split values for percentage/amount modes
   const [participantSplitValues, setParticipantSplitValues] = useState<Record<string, string>>({})
 
+  // Proportional group splitting (per-expense toggle)
+  const [accountForFamilySize, setAccountForFamilySize] = useState(false)
+
   const adults = getAdultParticipants()
 
   // Compute available currencies from trip settings
@@ -165,6 +168,7 @@ function MobileWizard({
         setErrorDetail(null)
         setSplitMode('equal')
         setParticipantSplitValues({})
+        setAccountForFamilySize(false)
         // Don't reset category, currency, date - likely to be reused
       }, 300)
       return () => clearTimeout(timer)
@@ -296,6 +300,8 @@ function MobileWizard({
       }
 
       // Build distribution — always individuals
+      // Check if any selected participant has a wallet_group
+      const hasGroups = selectedParticipants.some(pid => participants.find(p => p.id === pid)?.wallet_group)
       const distribution: ExpenseDistribution = {
         type: 'individuals',
         participants: selectedParticipants,
@@ -306,6 +312,7 @@ function MobileWizard({
               value: parseFloat(participantSplitValues[id] || '0')
             }))
           : undefined,
+        accountForFamilySize: hasGroups ? accountForFamilySize : undefined,
       }
 
       const expenseInput: CreateExpenseInput = {
@@ -473,6 +480,8 @@ function MobileWizard({
               onSelectAll={handleSelectAll}
               onDeselectAll={handleDeselectAll}
               onAdvancedClick={handleAdvanced}
+              accountForFamilySize={accountForFamilySize}
+              onAccountForFamilySizeChange={setAccountForFamilySize}
               disabled={isSubmitting}
             />
           )}

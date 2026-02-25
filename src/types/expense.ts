@@ -19,6 +19,7 @@ export interface IndividualsDistribution {
   participants: string[]; // participant IDs
   splitMode?: SplitMode; // defaults to 'equal' if not specified
   participantSplits?: ParticipantSplit[]; // for percentage/amount modes
+  accountForFamilySize?: boolean; // when true, larger wallet_groups pay proportionally more
 }
 
 export type ExpenseDistribution = IndividualsDistribution;

@@ -6,7 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances, buildEntityMap, calculateWithinGroupBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { LinkParticipantDialog } from '@/components/LinkParticipantDialog'
 import { QuickBalanceHero } from '@/components/quick/QuickBalanceHero'
 import { QuickActionButton } from '@/components/quick/QuickActionButton'
@@ -23,11 +23,9 @@ import { PageErrorState } from '@/components/PageErrorState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  Loader2, Users, Check
+  Loader2, Users
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
@@ -50,8 +48,6 @@ export function QuickGroupDetailPage() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [retrying, setRetrying] = useState(false)
-  const [showWithinGroup, setShowWithinGroup] = useState(false)
-
   // Open receipt capture sheet when navigated here with openScan state
   useEffect(() => {
     if ((location.state as any)?.openScan) {
@@ -152,73 +148,6 @@ export function QuickGroupDetailPage() {
           )}
         </div>
       )}
-
-      {/* Within-group balances toggle */}
-      {!loading && !contextError && (() => {
-        const walletGroups = [...new Set(
-          participants.filter(p => p.wallet_group).map(p => p.wallet_group!)
-        )]
-        const hasGroups = walletGroups.length > 0
-
-        return (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Switch
-                id="within-group"
-                checked={showWithinGroup}
-                onCheckedChange={setShowWithinGroup}
-                disabled={!hasGroups}
-              />
-              <Label htmlFor="within-group" className="text-sm text-muted-foreground cursor-pointer">
-                Within-group balances
-              </Label>
-            </div>
-
-            {showWithinGroup && !hasGroups && (
-              <p className="text-sm text-muted-foreground">No shared wallets on this trip</p>
-            )}
-
-            {showWithinGroup && hasGroups && walletGroups.map(groupName => {
-              const groupBalances = calculateWithinGroupBalances(
-                expenses,
-                participants,
-                groupName,
-                currentTrip!.default_currency,
-                currentTrip!.exchange_rates
-              )
-              const allEven = groupBalances.every(b => Math.abs(b.balance) < 0.01)
-              const hasExpenses = groupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
-
-              return (
-                <Card key={groupName} className="mb-3">
-                  <CardContent className="pt-4 pb-4">
-                    <p className="font-medium text-sm mb-2">{groupName}</p>
-                    {!hasExpenses ? (
-                      <p className="text-xs text-muted-foreground">No shared expenses yet</p>
-                    ) : allEven ? (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                        <Check size={14} />
-                        <span className="text-sm">Evenly split</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {groupBalances.map(b => (
-                          <div key={b.id} className="flex justify-between items-center text-sm">
-                            <span>{b.name}</span>
-                            <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
-                              {formatBalance(b.balance, currentTrip!.default_currency)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )
-      })()}
 
       {/* Pending receipts banner */}
       <div className="mb-2">

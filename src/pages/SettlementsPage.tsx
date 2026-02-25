@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Receipt, FileDown, Users, Check } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -8,7 +8,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
-import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap, calculateWithinGroupBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
@@ -16,6 +16,8 @@ import type { CreateSettlementInput } from '@/types/settlement'
 import { SettlementPlan, BankDetails } from '@/components/SettlementPlan'
 import { SettlementForm } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
@@ -34,6 +36,7 @@ export function SettlementsPage() {
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
   const [retrying, setRetrying] = useState(false)
+  const [showWithinGroup, setShowWithinGroup] = useState(false)
 
   const loading = pLoading || eLoading || sLoading
   const contextError = pError || eError || sError
@@ -311,6 +314,74 @@ export function SettlementsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Within-group balances */}
+        {(() => {
+          const walletGroups = [...new Set(
+            participants.filter(p => p.wallet_group).map(p => p.wallet_group!)
+          )]
+          if (walletGroups.length === 0) return null
+
+          return (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Switch
+                    id="within-group"
+                    checked={showWithinGroup}
+                    onCheckedChange={setShowWithinGroup}
+                  />
+                  <Label htmlFor="within-group" className="text-sm cursor-pointer flex items-center gap-1.5">
+                    <Users size={14} className="text-muted-foreground" />
+                    Within-group balances
+                  </Label>
+                </div>
+
+                {showWithinGroup && walletGroups.map(groupName => {
+                  const groupBalances = calculateWithinGroupBalances(
+                    expenses,
+                    participants,
+                    groupName,
+                    currentTrip.default_currency,
+                    currentTrip.exchange_rates
+                  )
+                  const allEven = groupBalances.every(b => Math.abs(b.balance) < 0.01)
+                  const hasGroupExpenses = groupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
+                  const groupMembers = participants.filter(p => p.wallet_group === groupName)
+                  const hasChildren = groupMembers.some(p => !p.is_adult) && groupMembers.some(p => p.is_adult)
+
+                  return (
+                    <div key={groupName} className="p-3 rounded-lg bg-muted/30 mb-3 last:mb-0">
+                      <p className="font-medium text-sm mb-2">{groupName}</p>
+                      {!hasGroupExpenses ? (
+                        <p className="text-xs text-muted-foreground">No shared expenses yet</p>
+                      ) : allEven ? (
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <Check size={14} />
+                          <span className="text-sm">Evenly split</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {groupBalances.map(b => (
+                            <div key={b.id} className="flex justify-between items-center text-sm">
+                              <span>{b.name}</span>
+                              <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
+                                {formatBalance(b.balance, currentTrip.default_currency)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {hasChildren && (
+                        <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Optimal Settlement Plan */}
         {expenses.length > 0 && (

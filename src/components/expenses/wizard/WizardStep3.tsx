@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { Label } from '@/components/ui/label'
@@ -21,6 +21,8 @@ interface WizardStep3Props {
   onSelectAll: () => void
   onDeselectAll: () => void
   onAdvancedClick: () => void
+  accountForFamilySize: boolean
+  onAccountForFamilySizeChange: (value: boolean) => void
   disabled?: boolean
 }
 
@@ -32,9 +34,17 @@ export function WizardStep3({
   onSelectAll,
   onDeselectAll,
   onAdvancedClick,
+  accountForFamilySize,
+  onAccountForFamilySizeChange,
   disabled = false,
 }: WizardStep3Props) {
   const [showDetails, setShowDetails] = useState(false)
+
+  // Show toggle only when any selected participant belongs to a wallet_group
+  const hasSelectedGroups = useMemo(() => {
+    const selectedSet = new Set(selectedParticipants)
+    return participants.some(p => selectedSet.has(p.id) && !!p.wallet_group)
+  }, [selectedParticipants, participants])
 
   const allSelected = selectedParticipants.length === participants.length
 
@@ -202,6 +212,24 @@ export function WizardStep3({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Proportional group toggle — only when wallet_group participants are selected */}
+      {hasSelectedGroups && (
+        <div className="flex items-center space-x-3 min-h-[44px] py-1">
+          <Checkbox
+            id="accountForFamilySize-wizard"
+            checked={accountForFamilySize}
+            onCheckedChange={(checked) => onAccountForFamilySizeChange(checked as boolean)}
+            disabled={disabled}
+          />
+          <div>
+            <label htmlFor="accountForFamilySize-wizard" className="text-sm text-foreground cursor-pointer">
+              Split proportionally by group size
+            </label>
+            <p className="text-xs text-muted-foreground">Larger groups pay more based on number of members</p>
+          </div>
+        </div>
+      )}
 
       {/* Advanced Options */}
       <div className="pt-4 border-t border-border">
