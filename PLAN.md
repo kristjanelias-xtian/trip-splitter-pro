@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-25 (Phases 1–7 ✅; family refactor Phases 1–3 ✅ + regression fix PR #392)
+> Last updated: 2026-02-25 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE)
 
 ---
 
@@ -742,6 +742,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-24 | Quick actions consistency audit | Unified all 4 quick action buttons in QuickGroupDetailPage: mobile → bottom sheet, desktop → centered Dialog. (1) `dialog.tsx`: added `hideClose` prop to `DialogContent`. (2) `ReceiptCaptureSheet`: added Sheet/Dialog conditional (was always bottom sheet). (3) `QuickSettlementSheet`: added `viewportOffset` fix to keyboard style + Sheet/Dialog conditional. (4) Created `QuickHistorySheet` (was page navigation to `/quick/history`, now overlay). (5) `QuickGroupDetailPage`: history button switched from `navigate()` to `setHistoryOpen(true)`. Verified all 4 buttons via Playwright MCP on mobile (375×812) + desktop (1280×800). 140/140 tests, type-check clean. Full audit log in `QUICK_ACTIONS_AUDIT.md`. |
 | 2026-02-24 | Family refactor Phases 1–3 | **Phase 1** (PR #386): migration 029 `wallet_group TEXT` on participants, backfill from families table. **Phase 2** (PR #387): V2 balance calculator with `buildEntityMap`, 152/152 tests, zero snapshot discrepancies. **Phase 3** (PR #388): removed families entity model — deleted `FamiliesSetup.tsx`, `FamiliesDistribution`/`MixedDistribution` types, simplified 40 files, -3013 net lines, 137/137 tests. Migrations 029–032 (wallet_group → account_for_family_size → drop family_id → drop families table). See `FAMILY_REFACTOR.md` for full details. |
 | 2026-02-25 | Phase 3 regression fix | PR #392: Fixed 2 regressions from family refactor Phase 3. **Bug 1 (CRITICAL)**: Radix `Checkbox` in wallet_group group headers caused infinite re-render crash ("Maximum update depth exceeded") on trips with wallet_groups — replaced with plain `<span>` visual elements in `ExpenseForm.tsx` + `WizardStep3.tsx`. **Bug 2 (HIGH)**: SettlementsPage `fromEmailMap`, `bankDetailsMap`, `handleRemind` keyed by `p.id` instead of entity IDs from `buildEntityMap` — bank details/emails undefined for wallet_group trips. Fixed to match `QuickSettlementSheet.tsx` pattern. 137/137 tests, type-check clean. Documented in `PHASE_3_BUGS.md`. |
+| 2026-02-25 | Family refactor Phase 4 | PR #395: Within-group balance view — the feature that motivated the entire refactor. New `calculateWithinGroupBalances()` function in `balanceCalculator.ts` (only tracks expenses paid by group members; credits payer with group share only, so balances net to zero). Toggle "Within-group balances" in `QuickGroupDetailPage.tsx` — per-group Card with member balances, "Evenly split" indicator, "No shared expenses yet" empty state. 6 new tests. 143/143 tests, type-check clean. **Family entity refactor COMPLETE (all 4 phases).** |
 
 ---
 

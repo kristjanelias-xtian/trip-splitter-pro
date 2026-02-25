@@ -245,6 +245,102 @@ export function calculateBalances(
 }
 
 /**
+ * Calculate balances within a single wallet_group.
+ * Shows who overpaid / underpaid relative to other group members.
+ *
+ * Only considers expenses where a group member was the payer.
+ * Expenses paid by outsiders don't affect within-group fairness
+ * (that debt is tracked by the main balance calculator).
+ *
+ * Payer is credited with the group's share only (not the full expense),
+ * so within-group balances always net to zero.
+ */
+export function calculateWithinGroupBalances(
+  expenses: Expense[],
+  participants: Participant[],
+  walletGroup: string,
+  defaultCurrency: string = 'EUR',
+  exchangeRates: Record<string, number> = {}
+): ParticipantBalance[] {
+  const groupMembers = participants.filter(p => p.wallet_group === walletGroup)
+  if (groupMembers.length === 0) return []
+
+  const memberIds = new Set(groupMembers.map(p => p.id))
+
+  // Initialize per-member totals
+  const paid = new Map<string, number>()
+  const share = new Map<string, number>()
+  for (const m of groupMembers) {
+    paid.set(m.id, 0)
+    share.set(m.id, 0)
+  }
+
+  for (const expense of expenses) {
+    if (expense.distribution.type !== 'individuals') continue
+
+    // Skip expenses not paid by a group member — external payers don't
+    // affect within-group fairness
+    if (!memberIds.has(expense.paid_by)) continue
+
+    const convertedAmount = convertToBaseCurrency(
+      expense.amount, expense.currency, defaultCurrency, exchangeRates
+    )
+    const conversionFactor = expense.amount !== 0 ? convertedAmount / expense.amount : 1
+
+    // Calculate each group member's share in this expense
+    const memberShares = new Map<string, number>()
+    const splitMode = expense.distribution.splitMode || 'equal'
+
+    if (splitMode === 'equal') {
+      const memberParticipants = expense.distribution.participants.filter(pid => memberIds.has(pid))
+      if (memberParticipants.length === 0) continue
+      const perPerson = expense.amount / expense.distribution.participants.length
+      for (const pid of memberParticipants) {
+        memberShares.set(pid, (memberShares.get(pid) || 0) + perPerson * conversionFactor)
+      }
+    } else if ((splitMode === 'percentage' || splitMode === 'amount') && expense.distribution.participantSplits) {
+      for (const split of expense.distribution.participantSplits) {
+        if (!memberIds.has(split.participantId)) continue
+        const splitAmount = splitMode === 'percentage'
+          ? (expense.amount * split.value) / 100
+          : split.value
+        memberShares.set(split.participantId, (memberShares.get(split.participantId) || 0) + splitAmount * conversionFactor)
+      }
+    }
+
+    // Sum the group's total share of this expense
+    let groupTotal = 0
+    memberShares.forEach(v => { groupTotal += v })
+    if (groupTotal === 0) continue
+
+    // Credit payer with the group's share only (not the full expense)
+    paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
+
+    // Apply shares
+    memberShares.forEach((amount, pid) => {
+      share.set(pid, share.get(pid)! + amount)
+    })
+  }
+
+  // Only keep members who have any paid or share
+  // (but always return all members for completeness)
+  const balances: ParticipantBalance[] = groupMembers.map(m => {
+    const totalPaid = paid.get(m.id) || 0
+    const totalShare = share.get(m.id) || 0
+    return {
+      id: m.id,
+      name: m.name,
+      totalPaid,
+      totalShare,
+      balance: totalPaid - totalShare,
+      isFamily: false,
+    }
+  })
+
+  return balances.sort((a, b) => b.balance - a.balance)
+}
+
+/**
  * Get balance for a specific participant or family
  */
 export function getBalanceForEntity(
