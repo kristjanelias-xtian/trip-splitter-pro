@@ -420,6 +420,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
 | Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Reduce `bottom` by `viewportOffset` + add `paddingBottom: viewportOffset` (see iOS Keyboard section) |
+| Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
 
 ---
 
