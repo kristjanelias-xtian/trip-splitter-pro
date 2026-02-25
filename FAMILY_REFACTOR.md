@@ -149,7 +149,7 @@ SettlementTransaction { fromId, fromName, toId, toName, amount }
 | 1 — Migration | COMPLETE | #386 | type-check clean, 140/140 tests, backfill verified |
 | 2 — Engine | COMPLETE | #387 | type-check clean, 152/152 tests, zero snapshot discrepancies |
 | 3 — UI | COMPLETE | #388 | type-check clean, 137/137 tests, -3013 net lines |
-| 4 — Feature | NOT STARTED | — | — |
+| 4 — Feature | COMPLETE | #395 | type-check clean, 143/143 tests |
 
 ## Balance Snapshot
 
@@ -247,3 +247,31 @@ PR #392: Fixed 2 regressions introduced by Phase 3.
 - File: `SettlementsPage.tsx`
 
 Documented in `PHASE_3_BUGS.md`.
+
+### Phase 4 — 2026-02-25
+
+Within-group balance view — the feature that motivated the entire refactor.
+
+**New function:** `calculateWithinGroupBalances(expenses, participants, walletGroup, defaultCurrency, exchangeRates)` in `balanceCalculator.ts`
+- Only considers expenses paid by a group member (external payers don't affect within-group fairness)
+- Credits payer with the group's share only (not full expense), so balances net to zero
+- Returns `ParticipantBalance[]` sorted by balance descending
+
+**UI:** Toggle in `QuickGroupDetailPage.tsx` — "Within-group balances"
+- Session-only state (`useState<boolean>(false)`)
+- When ON: shows a Card per wallet_group with per-member balance breakdowns
+- Empty state: "No shared expenses yet" for groups with no group-paid expenses
+- Disabled when trip has no wallet_groups
+- Inline content (no bottom sheet), follows existing Card patterns
+
+**Tests:** 6 new tests for `calculateWithinGroupBalances`:
+- One member paid all → imbalanced
+- Proportional split → partial test
+- Each pays fair share → evenly split (all ~0)
+- Member not in any expense → zero balance
+- Outsider pays → evenly split (ignored)
+- Non-existent group → empty array
+
+143/143 tests pass. Type-check clean.
+
+**Family entity refactor is COMPLETE.** All 4 phases done.
