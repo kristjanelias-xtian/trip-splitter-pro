@@ -38,10 +38,13 @@ import { useToast } from '@/hooks/use-toast'
 import { CreateEventInput } from '@/types/trip'
 import { StaySection } from '@/components/StaySection'
 import { removeFromMyTrips } from '@/lib/myTripsStorage'
+import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/lib/adminAuth'
 
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
   const { updateTrip, deleteTrip } = useTripContext()
+  const { user } = useAuth()
   const location = useLocation()
   const fromQuick = !!(location.state as any)?.fromQuick
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
@@ -81,6 +84,10 @@ export function ManageTripPage() {
 
   const entityLabel = currentTrip.event_type === 'event' ? 'Event' : 'Trip'
   const isEvent = currentTrip.event_type === 'event'
+  const canDelete = !!user && (
+    (!!currentTrip.created_by && user.id === currentTrip.created_by) ||
+    isAdminUser(user.id)
+  )
 
   const handleEditTrip = async (values: CreateEventInput) => {
     setIsUpdating(true)
@@ -466,45 +473,47 @@ export function ManageTripPage() {
       {/* Accommodations Section */}
       <StaySection />
 
-      {/* Danger Zone */}
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>Irreversible actions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 size={16} className="mr-2" />
-                Delete {entityLabel}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete <strong>"{currentTrip.name}"</strong> and all
-                  associated data including expenses, settlements, and shopping items.
-                  <br />
-                  <br />
-                  <strong>This action cannot be undone.</strong>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteTrip}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? 'Deleting...' : `Delete ${entityLabel}`}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
+      {/* Danger Zone — only visible to trip creator or admin */}
+      {canDelete && (
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            <CardDescription>Irreversible actions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 size={16} className="mr-2" />
+                  Delete {entityLabel}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete <strong>"{currentTrip.name}"</strong> and all
+                    associated data including expenses, settlements, and shopping items.
+                    <br />
+                    <br />
+                    <strong>This action cannot be undone.</strong>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteTrip}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? 'Deleting...' : `Delete ${entityLabel}`}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
