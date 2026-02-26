@@ -116,7 +116,7 @@ export function HomePage() {
           </Button>
           <div className="mt-3">
             <button
-              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
+              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}`)}
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Sparkles size={14} />
@@ -346,7 +346,7 @@ export function HomePage() {
         {isAuthenticated && !loading && visibleTrips.length === 0 && (
           <div className="text-center -mt-3 mb-6">
             <button
-              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
+              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}`)}
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Sparkles size={14} />
