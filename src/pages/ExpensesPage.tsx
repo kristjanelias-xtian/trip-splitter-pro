@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine, User } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
@@ -50,6 +50,7 @@ export function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'all'>('all')
+  const [selectedPaidBy, setSelectedPaidBy] = useState<string | 'all'>('all')
   const [filtersVisible, setFiltersVisible] = useState(false)
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
   const [showReceiptCapture, setShowReceiptCapture] = useState(false)
@@ -90,13 +91,18 @@ export function ExpensesPage() {
     exportExpensesToExcel(currentTrip, expenses, participants, balances, settlements)
   }
 
-  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all'
+  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all' || selectedPaidBy !== 'all'
   const showFilters = filtersVisible || hasActiveFilters
 
   // Filter expenses
   const filteredExpenses = expenses.filter(expense => {
     // Filter by category
     if (selectedCategory !== 'all' && expense.category !== selectedCategory) {
+      return false
+    }
+
+    // Filter by paid by
+    if (selectedPaidBy !== 'all' && expense.paid_by !== selectedPaidBy) {
       return false
     }
 
@@ -206,7 +212,7 @@ export function ExpensesPage() {
         {/* Filters — shown only when toggled or when a filter is active */}
         {showFilters && <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Search */}
               <div className="space-y-2">
                 <Label htmlFor="search" className="flex items-center gap-2">
@@ -237,6 +243,28 @@ export function ExpensesPage() {
                     <SelectItem value="Activities">Activities</SelectItem>
                     <SelectItem value="Training">Training</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Paid By Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="paid-by" className="flex items-center gap-2">
+                  <User size={14} />
+                  Paid by
+                </Label>
+                <Select value={selectedPaidBy} onValueChange={setSelectedPaidBy}>
+                  <SelectTrigger id="paid-by">
+                    <SelectValue placeholder="Select person" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Everyone</SelectItem>
+                    {participants
+                      .filter(p => p.is_adult)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
