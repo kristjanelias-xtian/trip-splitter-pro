@@ -257,13 +257,9 @@ export function calculateBalances(
 
 /**
  * Calculate balances within a single wallet_group.
- * Shows each member's total share (consumption) vs what they actually paid
- * toward the group.
- *
- * ALL expenses that include group members are counted for shares, but only
- * group-member-paid expenses credit the payer. This means the balances
- * won't sum to zero — the deficit equals the portion covered by outsiders,
- * which is correct and transparent.
+ * Shows each member's paid vs share for group-member-paid expenses only.
+ * Outsider-paid expenses are skipped so balances always sum to zero —
+ * the view answers "who owes whom within the group".
  *
  * Within-group settlements (both from and to are group members) are applied
  * after computing raw balances.
@@ -291,8 +287,7 @@ export function calculateWithinGroupBalances(
 
   for (const expense of expenses) {
     if (expense.distribution.type !== 'individuals') continue
-
-    const isPaidByGroupMember = memberIds.has(expense.paid_by)
+    if (!memberIds.has(expense.paid_by)) continue
 
     const convertedAmount = convertToBaseCurrency(
       expense.amount, expense.currency, defaultCurrency, exchangeRates
@@ -344,10 +339,8 @@ export function calculateWithinGroupBalances(
     memberShares.forEach(v => { groupTotal += v })
     if (groupTotal === 0) continue
 
-    // Only credit payer if they're a group member
-    if (isPaidByGroupMember) {
-      paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
-    }
+    // Credit the payer (always a group member at this point)
+    paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
 
     // Apply shares
     memberShares.forEach((amount, pid) => {

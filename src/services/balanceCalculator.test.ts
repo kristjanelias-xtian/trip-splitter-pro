@@ -533,23 +533,16 @@ describe('calculateWithinGroupBalances', () => {
     expect(carolBal.balance).toBe(0)
   })
 
-  it('counts shares from outsider-paid expenses (members show negative balances)', () => {
+  it('skips outsider-paid expenses — all balances stay zero', () => {
     const expense = buildExpense({
       amount: 120,
       paid_by: 'o1', // outsider pays
       distribution: { type: 'individuals', participants: ['g1', 'g2', 'g3', 'o1'] },
     })
     const balances = calculateWithinGroupBalances([expense], allParticipants, 'Smith')
-    // Each of 4 people owes 30. Group members' shares = 30 each, paid = 0.
-    // Balances: all three at -30. They don't sum to zero — deficit = outsider-covered portion.
-    const aliceBal = balances.find(b => b.id === 'g1')!
-    const bobBal = balances.find(b => b.id === 'g2')!
-    const carolBal = balances.find(b => b.id === 'g3')!
-    expect(aliceBal.totalShare).toBe(30)
-    expect(aliceBal.totalPaid).toBe(0)
-    expect(aliceBal.balance).toBeCloseTo(-30, 2)
-    expect(bobBal.balance).toBeCloseTo(-30, 2)
-    expect(carolBal.balance).toBeCloseTo(-30, 2)
+    // Outsider-paid expense is skipped entirely — within-group balances unaffected
+    const allEven = balances.every(b => Math.abs(b.balance) < 0.01)
+    expect(allEven).toBe(true)
   })
 
   it('returns empty array for non-existent group', () => {
