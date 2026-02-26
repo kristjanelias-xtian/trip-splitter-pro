@@ -145,15 +145,15 @@ export function CostBreakdownDialog({
               return (
                 <div className="space-y-1.5">
                   {withinGroupBalances.map(b => (
-                    <div key={b.id} className="flex justify-between items-center text-sm">
+                    <div key={b.id} className="flex justify-between items-baseline text-sm">
                       <span>{b.name}</span>
-                      <div className="text-right">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          Covered {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
+                        </span>
                         <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
                           {formatBalance(b.balance, defaultCurrency)}
                         </span>
-                        <div className="text-xs text-muted-foreground tabular-nums">
-                          Paid {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -183,9 +183,15 @@ export function CostBreakdownDialog({
             {hasChildren && (
               <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
             )}
-            <div className="mt-2 pt-2 border-t border-border/50 flex justify-between text-sm">
-              <span className="text-muted-foreground">Group share</span>
-              <span className="tabular-nums font-medium">{fmt(balance.totalShare)}</span>
+            <div className="mt-2 pt-2 border-t border-border/50 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Group paid</span>
+                <span className="tabular-nums font-medium">{fmt(balance.totalPaid)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Group share</span>
+                <span className="tabular-nums font-medium">{fmt(balance.totalShare)}</span>
+              </div>
             </div>
           </div>
         )}
