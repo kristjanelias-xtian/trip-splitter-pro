@@ -20,7 +20,7 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
   const formattedPaid = fmt(balance.totalPaid)
   const formattedShare = fmt(balance.totalShare)
   const formattedSettled = balance.totalSettled !== 0
-    ? (balance.totalSettled > 0 ? '+' : '') + fmt(balance.totalSettled)
+    ? `${fmt(Math.abs(balance.totalSettled))} ${balance.totalSettled > 0 ? 'sent' : 'received'}`
     : null
 
   const getBalanceStatus = () => {
@@ -85,16 +85,16 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
             <span>Out of pocket:</span>
             <span className="font-medium text-foreground tabular-nums">{formattedPaid}</span>
           </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Share:</span>
+            <span className="font-medium text-foreground tabular-nums">{formattedShare}</span>
+          </div>
           {formattedSettled && (
             <div className="flex justify-between text-muted-foreground">
               <span>Settled:</span>
               <span className="font-medium text-foreground tabular-nums">{formattedSettled}</span>
             </div>
           )}
-          <div className="flex justify-between text-muted-foreground">
-            <span>Share:</span>
-            <span className="font-medium text-foreground tabular-nums">{formattedShare}</span>
-          </div>
         </div>
 
         {/* Status Badge */}
