@@ -20,8 +20,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { motion } from 'framer-motion'
 
-// TODO: Replace with actual demo trip code once seeded in production Supabase
-const DEMO_TRIP_CODE = 'demo-trip-2026-xD3mO1'
+const DEMO_TRIP_CODE = 'livigno-2025'
 
 export function HomePage() {
   const navigate = useNavigate()
