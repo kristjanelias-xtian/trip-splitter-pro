@@ -535,7 +535,7 @@ describe('calculateWithinGroupBalances', () => {
     expect(carolBal.balance).toBe(0)
   })
 
-  it('outsider-paid expenses contribute member shares (paid=0) but not within-group balance', () => {
+  it('outsider-paid expenses give members negative balance (paid=0, share=30)', () => {
     const expense = buildExpense({
       amount: 120,
       paid_by: 'o1', // outsider pays
@@ -543,20 +543,19 @@ describe('calculateWithinGroupBalances', () => {
     })
     const balances = calculateWithinGroupBalances([expense], allParticipants, 'Smith')
     // Each of the 4 participants owes 30. Group members have paid=0, share=30.
-    // But balance uses within-group-only flows — outsider-paid expenses don't
-    // create within-group debt, so balance is 0 for all members.
+    // balance = paid - share = 0 - 30 = -30 (external debt, offset when settlements arrive)
     const aliceBal = balances.find(b => b.id === 'g1')!
     const bobBal = balances.find(b => b.id === 'g2')!
     const carolBal = balances.find(b => b.id === 'g3')!
     expect(aliceBal.totalPaid).toBe(0)
     expect(aliceBal.totalShare).toBe(30)
-    expect(aliceBal.balance).toBeCloseTo(0, 2)
+    expect(aliceBal.balance).toBeCloseTo(-30, 2)
     expect(bobBal.totalPaid).toBe(0)
     expect(bobBal.totalShare).toBe(30)
-    expect(bobBal.balance).toBeCloseTo(0, 2)
+    expect(bobBal.balance).toBeCloseTo(-30, 2)
     expect(carolBal.totalPaid).toBe(0)
     expect(carolBal.totalShare).toBe(30)
-    expect(carolBal.balance).toBeCloseTo(0, 2)
+    expect(carolBal.balance).toBeCloseTo(-30, 2)
   })
 
   it('member totalPaid/totalShare sums match group-level calculateBalances output', () => {
@@ -590,8 +589,8 @@ describe('calculateWithinGroupBalances', () => {
 
     expect(sumPaid).toBeCloseTo(smithGroup.totalPaid, 2)
     expect(sumShare).toBeCloseTo(smithGroup.totalShare, 2)
-    // Within-group balances sum to zero (internal flows only)
-    expect(sumBalance).toBeCloseTo(0, 2)
+    // Balances do NOT sum to zero — remainder = family's external balance
+    expect(sumBalance).toBeCloseTo(smithGroup.totalPaid - smithGroup.totalShare, 2)
   })
 
   it('returns empty array for non-existent group', () => {
@@ -668,14 +667,14 @@ describe('calculateWithinGroupBalances', () => {
       expect(carolBal.balance).toBeCloseTo(-30, 2)
     })
 
-    it('ignores settlements where one party is outside the group', () => {
+    it('applies external settlements to group member balance', () => {
       const expense = buildExpense({
         amount: 90,
         paid_by: 'g1',
         distribution: { type: 'individuals', participants: ['g1', 'g2', 'g3'] },
       })
       const settlement = buildSettlement({
-        from_participant_id: 'o1', // outsider
+        from_participant_id: 'o1', // outsider pays Alice
         to_participant_id: 'g1',
         amount: 30,
         currency: 'EUR',
@@ -683,9 +682,37 @@ describe('calculateWithinGroupBalances', () => {
       const balances = calculateWithinGroupBalances(
         [expense], allParticipants, 'Smith', 'EUR', {}, [settlement]
       )
-      // Settlement ignored — balances unchanged
+      // Before settlement: Alice +60, Bob -30, Carol -30
+      // External settlement (outsider→Alice 30): Alice receives 30 → balance -30 = +30
       const aliceBal = balances.find(b => b.id === 'g1')!
-      expect(aliceBal.balance).toBeCloseTo(60, 2)
+      expect(aliceBal.balance).toBeCloseTo(30, 2)
+    })
+
+    it('external settlement received by member reduces their within-group balance', () => {
+      // Outsider pays for group, then settles externally with one member
+      const expense = buildExpense({
+        amount: 120,
+        paid_by: 'o1', // outsider pays
+        distribution: { type: 'individuals', participants: ['g1', 'g2', 'g3', 'o1'] },
+      })
+      const settlement = buildSettlement({
+        from_participant_id: 'g1', // Alice pays outsider back
+        to_participant_id: 'o1',
+        amount: 30,
+        currency: 'EUR',
+      })
+      const balances = calculateWithinGroupBalances(
+        [expense], allParticipants, 'Smith', 'EUR', {}, [settlement]
+      )
+      // Each member: paid=0, share=30, balance = -30
+      // Alice settles 30 to outsider → balance += 30 → 0
+      const aliceBal = balances.find(b => b.id === 'g1')!
+      expect(aliceBal.balance).toBeCloseTo(0, 2)
+      // Bob and Carol unchanged at -30
+      const bobBal = balances.find(b => b.id === 'g2')!
+      const carolBal = balances.find(b => b.id === 'g3')!
+      expect(bobBal.balance).toBeCloseTo(-30, 2)
+      expect(carolBal.balance).toBeCloseTo(-30, 2)
     })
   })
 })

@@ -267,11 +267,13 @@ export function calculateBalances(
  * Payer is credited with the full expense amount (not just the group's share).
  * Outsider-paid expenses contribute member shares (paid=0).
  *
- * `balance` uses within-group-only money flows (sums to zero before
- * settlements), so it represents what each member owes within the group —
- * external debt from outsider-paid expenses is excluded from balance.
+ * `balance = paid - share + all settlements involving at least one group member`.
+ * External settlements (outsider→member or member→outsider) change each
+ * member's net cash position within the family and are included.
+ * Balances do NOT sum to zero — the remainder equals the family's
+ * remaining external balance (already shown in the group-level BalanceCard).
  *
- * Within-group settlements are applied to balance only (not totalPaid/totalShare).
+ * Settlements are applied to balance only (not totalPaid/totalShare).
  */
 export function calculateWithinGroupBalances(
   expenses: Expense[],
@@ -286,17 +288,11 @@ export function calculateWithinGroupBalances(
 
   const memberIds = new Set(groupMembers.map(p => p.id))
 
-  // Display totals: full amounts matching group-level calculateBalances
   const paid = new Map<string, number>()
   const share = new Map<string, number>()
-  // Internal-only totals: only member-paid expenses (sums to zero)
-  const internalPaid = new Map<string, number>()
-  const internalShare = new Map<string, number>()
   for (const m of groupMembers) {
     paid.set(m.id, 0)
     share.set(m.id, 0)
-    internalPaid.set(m.id, 0)
-    internalShare.set(m.id, 0)
   }
 
   for (const expense of expenses) {
@@ -353,45 +349,38 @@ export function calculateWithinGroupBalances(
       }
     }
 
-    // Apply shares to display totals
+    // Apply shares
     memberShares.forEach((amount, pid) => {
       share.set(pid, share.get(pid)! + amount)
     })
-
-    // For member-paid expenses, also accumulate internal totals
-    if (payerIsMember) {
-      // groupTotal = sum of all group members' shares for this expense
-      let groupTotal = 0
-      memberShares.forEach(amount => { groupTotal += amount })
-      // Credit payer with groupTotal (not full expense amount)
-      internalPaid.set(expense.paid_by, internalPaid.get(expense.paid_by)! + groupTotal)
-      // Each member's share contributes to internalShare
-      memberShares.forEach((amount, pid) => {
-        internalShare.set(pid, internalShare.get(pid)! + amount)
-      })
-    }
   }
 
-  // Compute raw balances per member
-  // totalPaid/totalShare: full amounts (match group-level calculateBalances)
-  // balance: from internal-only flows (sums to zero, represents within-group debt)
+  // Compute raw balances per member: balance = paid - share
   const rawBalances = groupMembers.map(m => ({
     id: m.id,
     name: m.name,
     is_adult: m.is_adult,
     totalPaid: paid.get(m.id) || 0,
     totalShare: share.get(m.id) || 0,
-    balance: (internalPaid.get(m.id) || 0) - (internalShare.get(m.id) || 0),
+    balance: (paid.get(m.id) || 0) - (share.get(m.id) || 0),
   }))
 
-  // Apply within-group settlements to balance only (both parties must be group members)
+  // Apply ALL settlements involving at least one group member.
+  // External settlements change a member's net cash position within the family.
   for (const settlement of settlements) {
-    if (!memberIds.has(settlement.from_participant_id) || !memberIds.has(settlement.to_participant_id)) continue
+    const fromIsMember = memberIds.has(settlement.from_participant_id)
+    const toIsMember = memberIds.has(settlement.to_participant_id)
+    if (!fromIsMember && !toIsMember) continue // skip outsider↔outsider
+
     const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
-    const from = rawBalances.find(b => b.id === settlement.from_participant_id)
-    const to = rawBalances.find(b => b.id === settlement.to_participant_id)
-    if (from) from.balance += convertedAmount
-    if (to) to.balance -= convertedAmount
+    if (fromIsMember) {
+      const from = rawBalances.find(b => b.id === settlement.from_participant_id)
+      if (from) from.balance += convertedAmount
+    }
+    if (toIsMember) {
+      const to = rawBalances.find(b => b.id === settlement.to_participant_id)
+      if (to) to.balance -= convertedAmount
+    }
   }
 
   // Fold children's balances into adults
