@@ -133,14 +133,9 @@ export function CostBreakdownDialog({
                   {withinGroupBalances.map(b => (
                     <div key={b.id} className="flex justify-between items-center text-sm">
                       <span>{b.name}</span>
-                      <div className="text-right">
-                        <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
-                          {formatBalance(b.balance, defaultCurrency)}
-                        </span>
-                        <div className="text-xs text-muted-foreground tabular-nums">
-                          Paid {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
-                        </div>
-                      </div>
+                      <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
+                        {formatBalance(b.balance, defaultCurrency)}
+                      </span>
                     </div>
                   ))}
                 </div>
