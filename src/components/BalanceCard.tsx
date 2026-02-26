@@ -13,14 +13,15 @@ interface BalanceCardProps {
 export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardProps) {
   const balanceColorClass = getBalanceColorClass(balance.balance)
   const formattedBalance = formatBalance(balance.balance, currency)
-  const formattedPaid = new Intl.NumberFormat('en-US', {
+  const fmt = (value: number) => new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
-  }).format(balance.totalPaid)
-  const formattedShare = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-  }).format(balance.totalShare)
+  }).format(value)
+  const formattedPaid = fmt(balance.totalPaid)
+  const formattedShare = fmt(balance.totalShare)
+  const formattedSettled = balance.totalSettled !== 0
+    ? (balance.totalSettled > 0 ? '+' : '') + fmt(balance.totalSettled)
+    : null
 
   const getBalanceStatus = () => {
     if (balance.balance > 0.01) {
@@ -81,11 +82,17 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
         {/* Breakdown */}
         <div className="space-y-1 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Total paid:</span>
+            <span>Out of pocket:</span>
             <span className="font-medium text-foreground tabular-nums">{formattedPaid}</span>
           </div>
+          {formattedSettled && (
+            <div className="flex justify-between text-muted-foreground">
+              <span>Settled:</span>
+              <span className="font-medium text-foreground tabular-nums">{formattedSettled}</span>
+            </div>
+          )}
           <div className="flex justify-between text-muted-foreground">
-            <span>Total share:</span>
+            <span>Share:</span>
             <span className="font-medium text-foreground tabular-nums">{formattedShare}</span>
           </div>
         </div>
