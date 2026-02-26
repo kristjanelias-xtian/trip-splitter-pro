@@ -261,12 +261,13 @@ export function calculateBalances(
 
 /**
  * Calculate balances within a single wallet_group.
- * Shows each member's paid vs share for group-member-paid expenses only.
- * Outsider-paid expenses are skipped so balances always sum to zero —
- * the view answers "who owes whom within the group".
+ * Per-member totalPaid/totalShare sum to the group-level totals from
+ * calculateBalances, so the breakdown connects to the BalanceCard numbers.
  *
- * Within-group settlements (both from and to are group members) are applied
- * after computing raw balances.
+ * Payer is credited with the full expense amount (not just the group's share).
+ * Outsider-paid expenses contribute member shares (paid=0).
+ *
+ * Within-group settlements are applied to balance only (not totalPaid/totalShare).
  */
 export function calculateWithinGroupBalances(
   expenses: Expense[],
@@ -291,12 +292,16 @@ export function calculateWithinGroupBalances(
 
   for (const expense of expenses) {
     if (expense.distribution.type !== 'individuals') continue
-    if (!memberIds.has(expense.paid_by)) continue
 
     const convertedAmount = convertToBaseCurrency(
       expense.amount, expense.currency, defaultCurrency, exchangeRates
     )
     const conversionFactor = expense.amount !== 0 ? convertedAmount / expense.amount : 1
+
+    // Credit payer with the full expense amount (if they are a group member)
+    if (memberIds.has(expense.paid_by)) {
+      paid.set(expense.paid_by, paid.get(expense.paid_by)! + convertedAmount)
+    }
 
     // Calculate each group member's share in this expense
     const memberShares = new Map<string, number>()
@@ -338,26 +343,10 @@ export function calculateWithinGroupBalances(
       }
     }
 
-    // Sum the group's total share of this expense
-    let groupTotal = 0
-    memberShares.forEach(v => { groupTotal += v })
-    if (groupTotal === 0) continue
-
-    // Credit the payer (always a group member at this point)
-    paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
-
     // Apply shares
     memberShares.forEach((amount, pid) => {
       share.set(pid, share.get(pid)! + amount)
     })
-  }
-
-  // Apply within-group settlements (both parties must be group members)
-  for (const settlement of settlements) {
-    if (!memberIds.has(settlement.from_participant_id) || !memberIds.has(settlement.to_participant_id)) continue
-    const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
-    paid.set(settlement.from_participant_id, (paid.get(settlement.from_participant_id) || 0) + convertedAmount)
-    paid.set(settlement.to_participant_id, (paid.get(settlement.to_participant_id) || 0) - convertedAmount)
   }
 
   // Compute raw balances per member
@@ -369,6 +358,16 @@ export function calculateWithinGroupBalances(
     totalShare: share.get(m.id) || 0,
     balance: (paid.get(m.id) || 0) - (share.get(m.id) || 0),
   }))
+
+  // Apply within-group settlements to balance only (both parties must be group members)
+  for (const settlement of settlements) {
+    if (!memberIds.has(settlement.from_participant_id) || !memberIds.has(settlement.to_participant_id)) continue
+    const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
+    const from = rawBalances.find(b => b.id === settlement.from_participant_id)
+    const to = rawBalances.find(b => b.id === settlement.to_participant_id)
+    if (from) from.balance += convertedAmount
+    if (to) to.balance -= convertedAmount
+  }
 
   // Fold children's balances into adults
   const adults = rawBalances.filter(b => b.is_adult)

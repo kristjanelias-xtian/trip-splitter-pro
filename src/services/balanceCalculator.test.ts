@@ -535,16 +535,58 @@ describe('calculateWithinGroupBalances', () => {
     expect(carolBal.balance).toBe(0)
   })
 
-  it('skips outsider-paid expenses — all balances stay zero', () => {
+  it('outsider-paid expenses contribute member shares (paid=0)', () => {
     const expense = buildExpense({
       amount: 120,
       paid_by: 'o1', // outsider pays
       distribution: { type: 'individuals', participants: ['g1', 'g2', 'g3', 'o1'] },
     })
     const balances = calculateWithinGroupBalances([expense], allParticipants, 'Smith')
-    // Outsider-paid expense is skipped entirely — within-group balances unaffected
-    const allEven = balances.every(b => Math.abs(b.balance) < 0.01)
-    expect(allEven).toBe(true)
+    // Each of the 4 participants owes 30. Group members have paid=0, share=30.
+    const aliceBal = balances.find(b => b.id === 'g1')!
+    const bobBal = balances.find(b => b.id === 'g2')!
+    const carolBal = balances.find(b => b.id === 'g3')!
+    expect(aliceBal.totalPaid).toBe(0)
+    expect(aliceBal.totalShare).toBe(30)
+    expect(aliceBal.balance).toBeCloseTo(-30, 2)
+    expect(bobBal.totalPaid).toBe(0)
+    expect(bobBal.totalShare).toBe(30)
+    expect(bobBal.balance).toBeCloseTo(-30, 2)
+    expect(carolBal.totalPaid).toBe(0)
+    expect(carolBal.totalShare).toBe(30)
+    expect(carolBal.balance).toBeCloseTo(-30, 2)
+  })
+
+  it('member totalPaid/totalShare sums match group-level calculateBalances output', () => {
+    // Mix of member-paid and outsider-paid expenses
+    const expenses = [
+      buildExpense({
+        id: 'e1',
+        amount: 90,
+        paid_by: 'g1', // group member pays
+        distribution: { type: 'individuals', participants: ['g1', 'g2', 'g3', 'o1'] },
+      }),
+      buildExpense({
+        id: 'e2',
+        amount: 120,
+        paid_by: 'o1', // outsider pays
+        distribution: { type: 'individuals', participants: ['g1', 'g2', 'o1'] },
+      }),
+    ]
+
+    // Group-level balances
+    const groupLevel = calculateBalances(expenses, allParticipants, 'individuals')
+    // Entity for Smith group (canonical = g1 since Alice sorts first among adults)
+    const smithGroup = groupLevel.balances.find(b => b.name === 'Smith')!
+
+    // Within-group balances
+    const memberBalances = calculateWithinGroupBalances(expenses, allParticipants, 'Smith')
+
+    const sumPaid = memberBalances.reduce((s, b) => s + b.totalPaid, 0)
+    const sumShare = memberBalances.reduce((s, b) => s + b.totalShare, 0)
+
+    expect(sumPaid).toBeCloseTo(smithGroup.totalPaid, 2)
+    expect(sumShare).toBeCloseTo(smithGroup.totalShare, 2)
   })
 
   it('returns empty array for non-existent group', () => {

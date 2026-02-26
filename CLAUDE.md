@@ -166,7 +166,7 @@ All expenses use a single distribution type: `individuals`. The `tracking_mode` 
 
 Participants can be grouped via `wallet_group TEXT` on the `participants` table. The balance calculator (`buildEntityMap`) groups participants by `wallet_group` at display time — each group settles as a unit. Per-expense `accountForFamilySize` toggle (on `IndividualsDistribution`, labelled "Split equally between groups") controls splitting: OFF (default) = per-person split (group of 3 pays 3× a solo participant), ON = equal per group (each group pays the same share regardless of size).
 
-`calculateWithinGroupBalances()` computes per-member share/paid/balance within a wallet_group. Only group-member-paid expenses are counted — outsider-paid expenses are skipped — so balances always sum to zero, answering "who owes whom within the group". Accepts `settlements` param for within-group settlement tracking. Children's balances are folded into adults. UI: shown in `CostBreakdownDialog` (Dashboard click-through on group entity) and `QuickGroupMembersSheet` (Quick mode expand).
+`calculateWithinGroupBalances()` computes per-member share/paid/balance within a wallet_group. Per-member totalPaid/totalShare sum to the group-level totals from `calculateBalances`, so the breakdown connects to the BalanceCard numbers. Payer is credited with the full expense amount; outsider-paid expenses contribute member shares (paid=0). Settlements applied to balance only (not totalPaid/totalShare). Children's balances are folded into adults. UI: shown in `CostBreakdownDialog` (Dashboard click-through on group entity) and `QuickGroupMembersSheet` (Quick mode expand).
 
 ### Routes
 
