@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Receipt, Wallet, Users, Check } from 'lucide-react'
+import { Receipt, Wallet, Users, Check, ArrowRight } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances } from '@/services/balanceCalculator'
@@ -97,6 +97,20 @@ export function CostBreakdownDialog({
 
   const hasChildren = groupMembers.some(p => !p.is_adult) && groupMembers.some(p => p.is_adult)
 
+  const withinGroupSettlements = useMemo(() => {
+    if (!groupName) return []
+    const memberIds = new Set(groupMembers.map(p => p.id))
+    return settlements.filter(
+      s => memberIds.has(s.from_participant_id) && memberIds.has(s.to_participant_id)
+    )
+  }, [settlements, groupMembers, groupName])
+
+  const participantNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    participants.forEach(p => map.set(p.id, p.name))
+    return map
+  }, [participants])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
@@ -133,17 +147,46 @@ export function CostBreakdownDialog({
                   {withinGroupBalances.map(b => (
                     <div key={b.id} className="flex justify-between items-center text-sm">
                       <span>{b.name}</span>
-                      <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
-                        {formatBalance(b.balance, defaultCurrency)}
-                      </span>
+                      <div className="text-right">
+                        <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
+                          {formatBalance(b.balance, defaultCurrency)}
+                        </span>
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          Paid {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               )
             })()}
+            {withinGroupSettlements.length > 0 && (
+              <div className="mt-3 pt-2 border-t border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Settlements</p>
+                <div className="space-y-1">
+                  {withinGroupSettlements.map(s => {
+                    const converted = convertToBaseCurrency(s.amount, s.currency, defaultCurrency, exchangeRates)
+                    return (
+                      <div key={s.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <span>{participantNameMap.get(s.from_participant_id) ?? 'Unknown'}</span>
+                          <ArrowRight size={12} className="text-muted-foreground" />
+                          <span>{participantNameMap.get(s.to_participant_id) ?? 'Unknown'}</span>
+                        </div>
+                        <span className="tabular-nums">{fmt(converted)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             {hasChildren && (
               <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
             )}
+            <div className="mt-2 pt-2 border-t border-border/50 flex justify-between text-sm">
+              <span className="text-muted-foreground">Group share</span>
+              <span className="tabular-nums font-medium">{fmt(balance.totalShare)}</span>
+            </div>
           </div>
         )}
 
