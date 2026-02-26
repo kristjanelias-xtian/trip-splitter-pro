@@ -10,13 +10,26 @@ interface ExpenseByCategoryChartProps {
   exchangeRates?: Record<string, number>
 }
 
-const CATEGORY_COLORS = {
-  Accommodation: 'hsl(14, 77%, 62%)', // Coral (primary)
-  Food: 'hsl(95, 34%, 46%)', // Sage (secondary)
-  Activities: 'hsl(25, 92%, 67%)', // Gold (accent)
-  Training: 'hsl(200, 70%, 50%)', // Blue
-  Transport: 'hsl(280, 60%, 60%)', // Purple
-  Other: 'hsl(0, 0%, 60%)', // Gray
+const CATEGORY_COLORS: Record<string, string> = {
+  accommodation: 'hsl(14, 77%, 62%)', // Coral (primary)
+  food: 'hsl(95, 34%, 46%)',          // Sage (secondary)
+  activities: 'hsl(25, 92%, 67%)',    // Gold (accent)
+  training: 'hsl(200, 70%, 50%)',     // Blue
+  transport: 'hsl(280, 60%, 60%)',    // Purple
+  groceries: 'hsl(160, 50%, 45%)',    // Teal
+  drinks: 'hsl(330, 60%, 55%)',       // Pink
+  other: 'hsl(0, 0%, 60%)',           // Gray
+}
+
+const FALLBACK_COLORS = [
+  'hsl(45, 80%, 55%)',  // Amber
+  'hsl(190, 70%, 45%)', // Cyan
+  'hsl(260, 55%, 55%)', // Indigo
+  'hsl(350, 65%, 55%)', // Rose
+]
+
+function getCategoryColor(name: string, index: number): string {
+  return CATEGORY_COLORS[name.toLowerCase()] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]
 }
 
 export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRates = {} }: ExpenseByCategoryChartProps) {
@@ -100,10 +113,10 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
               fill="#8884d8"
               dataKey="value"
             >
-              {dataWithPercentages.map((entry) => (
+              {dataWithPercentages.map((entry, index) => (
                 <Cell
                   key={`cell-${entry.name}`}
-                  fill={CATEGORY_COLORS[entry.name as keyof typeof CATEGORY_COLORS]}
+                  fill={getCategoryColor(entry.name, index)}
                 />
               ))}
             </Pie>
@@ -111,11 +124,11 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
           </PieChart>
         </ResponsiveContainer>
         <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 justify-center">
-          {dataWithPercentages.map((entry) => (
+          {dataWithPercentages.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span
                 className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: CATEGORY_COLORS[entry.name as keyof typeof CATEGORY_COLORS] }}
+                style={{ backgroundColor: getCategoryColor(entry.name, index) }}
               />
               <span>{entry.name}</span>
               <span className="font-medium text-foreground tabular-nums">
