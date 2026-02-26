@@ -373,12 +373,12 @@ export function HomePage() {
         {isAuthenticated && (
           <div className="mt-8 text-center">
             <a
-              href="https://github.com/kristjanelias-xtian/trip-splitter-pro/blob/main/RELEASE_NOTES.md"
+              href="https://github.com/kristjanelias-xtian/trip-splitter-pro/blob/main/docs/RELEASE_NOTES.md"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              What's New · v0.9.4
+              What's New · v1.0.0
               <ExternalLink size={12} />
             </a>
           </div>
