@@ -279,22 +279,24 @@ Desktop dialogs use `hideClose` (custom header close button) + `max-h-[85vh] p-0
 
 On iOS Safari the **layout viewport does not shrink** when the soft keyboard opens. A `position: fixed; bottom: 0` Sheet stays at the physical screen bottom — behind the keyboard.
 
-Fix pattern (in `MobileWizard`):
+**Critical:** `window.innerHeight` is **unreliable on iOS Safari** — it varies with the URL bar state and does not match the layout viewport height used for fixed positioning. Never use it to compute `bottom` offsets for keyboard-aware sheets. Use `visualViewport.height` and `visualViewport.offsetTop` directly instead.
+
+Fix pattern (in `MobileWizard` — PR #409):
 ```tsx
 style={{
   height: keyboard.isVisible
     ? `${keyboard.availableHeight}px`
     : '92dvh',
-  bottom: keyboard.isVisible
-    ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
-    : undefined,
-  paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
-    ? `${keyboard.viewportOffset}px`
-    : undefined,
+  ...(keyboard.isVisible && {
+    top: `${keyboard.viewportOffset}px`,
+    bottom: 'auto',
+  }),
 }}
 ```
 
-`useKeyboardHeight` (`src/hooks/useKeyboardHeight.ts`) uses `window.visualViewport` to detect keyboard visibility. Keyboard is considered open when `window.innerHeight - visualViewport.height > 150px`. Also tracks `viewportOffset` (`visualViewport.offsetTop`) — on iOS, the browser scrolls the visual viewport when a taller keyboard (numpad) opens, which can push the sheet header above the visible area. The fix adjusts `bottom` downward by `viewportOffset` (closing the gap with the keyboard) and adds `paddingBottom` to keep flex content above the keyboard overlap zone.
+This uses **top-based positioning**: `top: visualViewport.offsetTop` anchors the sheet to the visible area's top edge, `height: visualViewport.height` fills exactly to the keyboard, and `bottom: 'auto'` overrides the CSS `bottom: 0`. No dependency on `window.innerHeight`.
+
+`useKeyboardHeight` (`src/hooks/useKeyboardHeight.ts`) uses `window.visualViewport` to detect keyboard visibility. Keyboard is considered open when `window.innerHeight - visualViewport.height > 150px`. Also tracks `viewportOffset` (`visualViewport.offsetTop`) — on iOS, the browser scrolls the visual viewport when a taller keyboard (numpad) opens, which can push the sheet header above the visible area. The `viewportOffset` is used as the `top` value to keep the sheet aligned with the visible area.
 
 **Do not** use `autoFocus` or `ref.focus()` on inputs inside sheets/modals — it triggers the keyboard immediately on open, before the user has tapped anything.
 
@@ -448,7 +450,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Sheet hidden behind iOS keyboard | `fixed; bottom:0` behind keyboard | Set `bottom: keyboardHeight` when `keyboard.isVisible` |
+| Sheet hidden behind iOS keyboard | `fixed; bottom:0` behind keyboard | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight` when `keyboard.isVisible`. **Never** compute `bottom` from `window.innerHeight` — it's unreliable on iOS Safari. |
 | Keyboard pops on sheet open | `autoFocus` / `ref.focus()` in useEffect | Remove auto-focus |
 | ModeToggle shows wrong state | Reads stored pref, not current route | Use `pathname.includes('/quick')` → `effectiveMode` |
 | Mobile lands on all-trips page | Stored pref is `full` from desktop | `ConditionalHomePage` checks `window.innerWidth < 768` |
@@ -461,9 +463,9 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
-| Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Reduce `bottom` by `viewportOffset` + add `paddingBottom: viewportOffset` (see iOS Keyboard section) |
+| Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Use `top: viewportOffset` positioning (see iOS Keyboard section). The `viewportOffset` value shifts the sheet down with the visual viewport. |
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
-| Sheet content hidden behind numpad (iOS) | numpad is taller than text keyboard → `visualViewport.offsetTop > 0` pushes sheet up | Subtract `viewportOffset` from sheet `bottom` style and add as `paddingBottom`. See PR #376 and `useKeyboardHeight`. Playwright cannot test this — manual iPhone required. |
+| Sheet content hidden behind numpad (iOS) | numpad is taller than text keyboard → `visualViewport.offsetTop > 0` pushes sheet up | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`. See PR #409 and `useKeyboardHeight`. Playwright cannot test this — manual iPhone required. |
 
 ---
 
