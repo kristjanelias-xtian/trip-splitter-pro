@@ -115,13 +115,15 @@ export function HomePage() {
             <Plus size={18} />
             Create Your First
           </Button>
-          <button
-            onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
-            className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Sparkles size={14} />
-            Try a demo
-          </button>
+          <div className="mt-3">
+            <button
+              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Sparkles size={14} />
+              Try a demo
+            </button>
+          </div>
         </div>
       </CardContent>
     </Card>
