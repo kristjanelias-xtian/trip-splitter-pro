@@ -255,6 +255,7 @@ export function QuickGroupDetailPage() {
         participants={participants}
         expenses={expenses}
         exchangeRates={currentTrip.exchange_rates}
+        settlements={settlements}
       />
 
       {/* History sheet */}

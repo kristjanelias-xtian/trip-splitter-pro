@@ -4,6 +4,7 @@ import { UserCheck, X, ChevronDown, Check } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
 import { Expense } from '@/types/expense'
+import { Settlement } from '@/types/settlement'
 
 interface QuickGroupMembersSheetProps {
   open: boolean
@@ -14,6 +15,7 @@ interface QuickGroupMembersSheetProps {
   participants: Participant[]
   expenses?: Expense[]
   exchangeRates?: Record<string, number>
+  settlements?: Settlement[]
 }
 
 export function QuickGroupMembersSheet({
@@ -25,6 +27,7 @@ export function QuickGroupMembersSheet({
   participants,
   expenses = [],
   exchangeRates = {},
+  settlements = [],
 }: QuickGroupMembersSheetProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
@@ -129,6 +132,7 @@ export function QuickGroupMembersSheet({
                     participants={participants}
                     currency={currency}
                     exchangeRates={exchangeRates}
+                    settlements={settlements}
                   />
                 )}
 
@@ -150,15 +154,17 @@ function WithinGroupBreakdown({
   participants,
   currency,
   exchangeRates,
+  settlements,
 }: {
   groupName: string
   expenses: Expense[]
   participants: Participant[]
   currency: string
   exchangeRates: Record<string, number>
+  settlements: Settlement[]
 }) {
   const groupBalances = calculateWithinGroupBalances(
-    expenses, participants, groupName, currency, exchangeRates
+    expenses, participants, groupName, currency, exchangeRates, settlements
   )
   const allEven = groupBalances.every(b => Math.abs(b.balance) < 0.01)
   const hasGroupExpenses = groupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)

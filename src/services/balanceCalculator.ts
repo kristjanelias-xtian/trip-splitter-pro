@@ -257,21 +257,24 @@ export function calculateBalances(
 
 /**
  * Calculate balances within a single wallet_group.
- * Shows who overpaid / underpaid relative to other group members.
+ * Shows each member's total share (consumption) vs what they actually paid
+ * toward the group.
  *
- * Only considers expenses where a group member was the payer.
- * Expenses paid by outsiders don't affect within-group fairness
- * (that debt is tracked by the main balance calculator).
+ * ALL expenses that include group members are counted for shares, but only
+ * group-member-paid expenses credit the payer. This means the balances
+ * won't sum to zero — the deficit equals the portion covered by outsiders,
+ * which is correct and transparent.
  *
- * Payer is credited with the group's share only (not the full expense),
- * so within-group balances always net to zero.
+ * Within-group settlements (both from and to are group members) are applied
+ * after computing raw balances.
  */
 export function calculateWithinGroupBalances(
   expenses: Expense[],
   participants: Participant[],
   walletGroup: string,
   defaultCurrency: string = 'EUR',
-  exchangeRates: Record<string, number> = {}
+  exchangeRates: Record<string, number> = {},
+  settlements: Settlement[] = []
 ): ParticipantBalance[] {
   const groupMembers = participants.filter(p => p.wallet_group === walletGroup)
   if (groupMembers.length === 0) return []
@@ -289,9 +292,7 @@ export function calculateWithinGroupBalances(
   for (const expense of expenses) {
     if (expense.distribution.type !== 'individuals') continue
 
-    // Skip expenses not paid by a group member — external payers don't
-    // affect within-group fairness
-    if (!memberIds.has(expense.paid_by)) continue
+    const isPaidByGroupMember = memberIds.has(expense.paid_by)
 
     const convertedAmount = convertToBaseCurrency(
       expense.amount, expense.currency, defaultCurrency, exchangeRates
@@ -343,13 +344,23 @@ export function calculateWithinGroupBalances(
     memberShares.forEach(v => { groupTotal += v })
     if (groupTotal === 0) continue
 
-    // Credit payer with the group's share only (not the full expense)
-    paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
+    // Only credit payer if they're a group member
+    if (isPaidByGroupMember) {
+      paid.set(expense.paid_by, paid.get(expense.paid_by)! + groupTotal)
+    }
 
     // Apply shares
     memberShares.forEach((amount, pid) => {
       share.set(pid, share.get(pid)! + amount)
     })
+  }
+
+  // Apply within-group settlements (both parties must be group members)
+  for (const settlement of settlements) {
+    if (!memberIds.has(settlement.from_participant_id) || !memberIds.has(settlement.to_participant_id)) continue
+    const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
+    paid.set(settlement.from_participant_id, (paid.get(settlement.from_participant_id) || 0) + convertedAmount)
+    paid.set(settlement.to_participant_id, (paid.get(settlement.to_participant_id) || 0) - convertedAmount)
   }
 
   // Compute raw balances per member

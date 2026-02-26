@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
-import { Receipt, Wallet } from 'lucide-react'
+import { Receipt, Wallet, Users, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
 import { Participant } from '@/types/participant'
+import { Settlement } from '@/types/settlement'
 
 interface CostBreakdownDialogProps {
   open: boolean
@@ -15,6 +16,7 @@ interface CostBreakdownDialogProps {
   trackingMode: 'individuals' | 'families'
   defaultCurrency: string
   exchangeRates: Record<string, number>
+  settlements?: Settlement[]
 }
 
 interface ExpenseShareItem {
@@ -31,6 +33,7 @@ export function CostBreakdownDialog({
   trackingMode,
   defaultCurrency,
   exchangeRates,
+  settlements = [],
 }: CostBreakdownDialogProps) {
   const entityMap = useMemo(() => buildEntityMap(participants, trackingMode), [participants, trackingMode])
 
@@ -73,6 +76,27 @@ export function CostBreakdownDialog({
 
   const balanceColorClass = getBalanceColorClass(balance.balance)
 
+  // Within-group breakdown (only for family/group entities)
+  const groupName = useMemo(() => {
+    if (!balance.isFamily) return null
+    const p = participants.find(pp => pp.id === balance.id)
+    return p?.wallet_group ?? null
+  }, [balance.id, balance.isFamily, participants])
+
+  const withinGroupBalances = useMemo(() => {
+    if (!groupName) return null
+    return calculateWithinGroupBalances(
+      expenses, participants, groupName, defaultCurrency, exchangeRates, settlements
+    )
+  }, [expenses, participants, groupName, defaultCurrency, exchangeRates, settlements])
+
+  const groupMembers = useMemo(() => {
+    if (!groupName) return []
+    return participants.filter(p => p.wallet_group === groupName)
+  }, [participants, groupName])
+
+  const hasChildren = groupMembers.some(p => !p.is_adult) && groupMembers.some(p => p.is_adult)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
@@ -82,6 +106,51 @@ export function CostBreakdownDialog({
             Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
           </DialogDescription>
         </DialogHeader>
+
+        {/* Within-group breakdown */}
+        {withinGroupBalances && withinGroupBalances.length > 0 && (
+          <div className="p-3 rounded-lg bg-muted/30">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+              <Users size={16} />
+              Within-group balances
+            </h4>
+            {(() => {
+              const allEven = withinGroupBalances.every(b => Math.abs(b.balance) < 0.01)
+              const hasActivity = withinGroupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
+              if (!hasActivity) {
+                return <p className="text-xs text-muted-foreground">No shared expenses yet</p>
+              }
+              if (allEven) {
+                return (
+                  <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                    <Check size={14} />
+                    <span className="text-sm">Evenly split</span>
+                  </div>
+                )
+              }
+              return (
+                <div className="space-y-1.5">
+                  {withinGroupBalances.map(b => (
+                    <div key={b.id} className="flex justify-between items-center text-sm">
+                      <span>{b.name}</span>
+                      <div className="text-right">
+                        <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
+                          {formatBalance(b.balance, defaultCurrency)}
+                        </span>
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          Paid {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+            {hasChildren && (
+              <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
+            )}
+          </div>
+        )}
 
         {/* Expenses Paid */}
         <div>

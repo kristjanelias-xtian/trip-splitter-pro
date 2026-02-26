@@ -290,6 +290,7 @@ export function DashboardPage() {
           trackingMode={currentTrip.tracking_mode}
           defaultCurrency={currentTrip.default_currency}
           exchangeRates={currentTrip.exchange_rates}
+          settlements={settlements}
         />
       )}
     </div>
