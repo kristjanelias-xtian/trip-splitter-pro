@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine, User } from 'lucide-react'
+import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine, User, Tag } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
@@ -230,7 +230,10 @@ export function ExpensesPage() {
 
               {/* Category Filter */}
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category" className="flex items-center gap-2">
+                  <Tag size={14} />
+                  Category
+                </Label>
                 <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ExpenseCategory | 'all')}>
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
