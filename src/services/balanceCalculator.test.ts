@@ -297,7 +297,9 @@ describe('calculateBalances', () => {
     const bobBalance = result.balances.find(b => b.id === 'p2')!
 
     expect(aliceBalance.balance).toBeCloseTo(0, 2)
+    expect(aliceBalance.totalSettled).toBe(-50) // received 50
     expect(bobBalance.balance).toBeCloseTo(0, 2)
+    expect(bobBalance.totalSettled).toBe(50) // sent 50
   })
 
   it('sorts by balance descending', () => {
@@ -394,7 +396,7 @@ describe('calculateBalances', () => {
 // ─── getBalanceForEntity ──────────────────────────────────────────
 describe('getBalanceForEntity', () => {
   const balances = [
-    { id: 'p1', name: 'Alice', totalPaid: 100, totalShare: 50, balance: 50, isFamily: false },
+    { id: 'p1', name: 'Alice', totalPaid: 100, totalShare: 50, totalSettled: 0, balance: 50, isFamily: false },
   ]
 
   it('returns balance when entity is found', () => {

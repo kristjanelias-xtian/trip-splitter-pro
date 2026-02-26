@@ -7,6 +7,7 @@ export interface ParticipantBalance {
   name: string
   totalPaid: number
   totalShare: number
+  totalSettled: number
   balance: number
   isFamily: boolean
 }
@@ -194,6 +195,7 @@ export function calculateBalances(
       name: entity.name,
       totalPaid: 0,
       totalShare: 0,
+      totalSettled: 0,
       balance: 0,
       isFamily: entity.isFamily,
     })
@@ -239,9 +241,11 @@ export function calculateBalances(
 
     if (fromEntityId && balances.has(fromEntityId)) {
       balances.get(fromEntityId)!.balance += convertedAmount
+      balances.get(fromEntityId)!.totalSettled += convertedAmount
     }
     if (toEntityId && balances.has(toEntityId)) {
       balances.get(toEntityId)!.balance -= convertedAmount
+      balances.get(toEntityId)!.totalSettled -= convertedAmount
     }
   }
 
@@ -385,6 +389,7 @@ export function calculateWithinGroupBalances(
       name: a.name,
       totalPaid: a.totalPaid,
       totalShare: a.totalShare,
+      totalSettled: 0,
       balance: a.balance,
       isFamily: false,
     })).sort((a, b) => b.balance - a.balance)
@@ -396,6 +401,7 @@ export function calculateWithinGroupBalances(
     name: m.name,
     totalPaid: m.totalPaid,
     totalShare: m.totalShare,
+    totalSettled: 0,
     balance: m.balance,
     isFamily: false,
   }))
