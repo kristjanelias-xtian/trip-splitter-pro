@@ -47,52 +47,48 @@ export interface EntityMapResult {
 
 /**
  * Build entity map from wallet_group on participants.
- * In families mode: groups participants by wallet_group, standalone if null.
- * In individuals mode: each participant is a standalone entity.
+ * Always groups participants by wallet_group when present;
+ * participants without wallet_group are standalone entities.
  *
  * Canonical ID for a wallet_group = first adult participant sorted by name.
+ *
+ * The trackingMode parameter is kept for API compatibility but no longer
+ * affects grouping — wallet_group is always respected.
  */
 export function buildEntityMap(
   participants: Participant[],
   trackingMode: 'individuals' | 'families'
 ): EntityMapResult {
+  void trackingMode // kept for call-site compat; grouping is always wallet_group-based
   const entities: EntityInfo[] = []
   const participantToEntityId = new Map<string, string>()
 
-  if (trackingMode === 'individuals') {
-    for (const p of participants) {
+  const walletGroups = new Map<string, Participant[]>()
+
+  for (const p of participants) {
+    if (p.wallet_group) {
+      const group = walletGroups.get(p.wallet_group) || []
+      group.push(p)
+      walletGroups.set(p.wallet_group, group)
+    } else {
+      // Standalone participant (no wallet_group)
       entities.push({ id: p.id, name: p.name, isFamily: false })
       participantToEntityId.set(p.id, p.id)
     }
-  } else {
-    // Group by wallet_group
-    const walletGroups = new Map<string, Participant[]>()
+  }
 
-    for (const p of participants) {
-      if (p.wallet_group) {
-        const group = walletGroups.get(p.wallet_group) || []
-        group.push(p)
-        walletGroups.set(p.wallet_group, group)
-      } else {
-        // Standalone participant (no wallet_group)
-        entities.push({ id: p.id, name: p.name, isFamily: false })
-        participantToEntityId.set(p.id, p.id)
-      }
-    }
+  for (const [groupName, members] of walletGroups) {
+    // Canonical ID: first adult member sorted alphabetically by name
+    const sortedAdults = members
+      .filter(m => m.is_adult)
+      .sort((a, b) => a.name.localeCompare(b.name))
+    const sortedAll = [...members].sort((a, b) => a.name.localeCompare(b.name))
+    const canonical = sortedAdults[0] ?? sortedAll[0]
 
-    for (const [groupName, members] of walletGroups) {
-      // Canonical ID: first adult member sorted alphabetically by name
-      const sortedAdults = members
-        .filter(m => m.is_adult)
-        .sort((a, b) => a.name.localeCompare(b.name))
-      const sortedAll = [...members].sort((a, b) => a.name.localeCompare(b.name))
-      const canonical = sortedAdults[0] ?? sortedAll[0]
+    entities.push({ id: canonical.id, name: groupName, isFamily: true })
 
-      entities.push({ id: canonical.id, name: groupName, isFamily: true })
-
-      for (const member of members) {
-        participantToEntityId.set(member.id, canonical.id)
-      }
+    for (const member of members) {
+      participantToEntityId.set(member.id, canonical.id)
     }
   }
 

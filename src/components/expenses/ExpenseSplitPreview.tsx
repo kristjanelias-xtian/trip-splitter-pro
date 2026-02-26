@@ -31,19 +31,47 @@ export function ExpenseSplitPreview({
     const splitMode = distribution.splitMode || 'equal'
 
     if (splitMode === 'equal') {
-      const shareCount = distribution.participants.length
-      const shareAmount = amount / shareCount
+      const accountForFamilySize = distribution.accountForFamilySize ?? false
 
-      distribution.participants.forEach(participantId => {
-        const participant = participants.find(p => p.id === participantId)
-        if (participant) {
-          entries.push({
-            id: participantId,
-            name: participant.name,
-            amount: shareAmount,
-          })
+      if (accountForFamilySize) {
+        // "Split equally between groups" — each group pays the same share
+        const entityMap = new Map<string, { name: string; memberIds: string[] }>()
+        for (const pid of distribution.participants) {
+          const p = participants.find(pp => pp.id === pid)
+          if (!p) continue
+          const key = p.wallet_group ?? pid
+          const existing = entityMap.get(key)
+          if (existing) {
+            existing.memberIds.push(pid)
+          } else {
+            entityMap.set(key, { name: p.wallet_group ?? p.name, memberIds: [pid] })
+          }
         }
-      })
+        const perEntity = amount / entityMap.size
+        for (const [, entity] of entityMap) {
+          const perMember = perEntity / entity.memberIds.length
+          for (const mid of entity.memberIds) {
+            const p = participants.find(pp => pp.id === mid)
+            if (p) {
+              entries.push({ id: mid, name: p.name, amount: perMember })
+            }
+          }
+        }
+      } else {
+        const shareCount = distribution.participants.length
+        const shareAmount = amount / shareCount
+
+        distribution.participants.forEach(participantId => {
+          const participant = participants.find(p => p.id === participantId)
+          if (participant) {
+            entries.push({
+              id: participantId,
+              name: participant.name,
+              amount: shareAmount,
+            })
+          }
+        })
+      }
     } else if (splitMode === 'percentage' && distribution.participantSplits) {
       distribution.participantSplits.forEach(split => {
         const participant = participants.find(p => p.id === split.participantId)
