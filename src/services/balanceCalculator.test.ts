@@ -535,7 +535,7 @@ describe('calculateWithinGroupBalances', () => {
     expect(carolBal.balance).toBe(0)
   })
 
-  it('outsider-paid expenses contribute member shares (paid=0)', () => {
+  it('outsider-paid expenses contribute member shares (paid=0) but not within-group balance', () => {
     const expense = buildExpense({
       amount: 120,
       paid_by: 'o1', // outsider pays
@@ -543,18 +543,20 @@ describe('calculateWithinGroupBalances', () => {
     })
     const balances = calculateWithinGroupBalances([expense], allParticipants, 'Smith')
     // Each of the 4 participants owes 30. Group members have paid=0, share=30.
+    // But balance uses within-group-only flows — outsider-paid expenses don't
+    // create within-group debt, so balance is 0 for all members.
     const aliceBal = balances.find(b => b.id === 'g1')!
     const bobBal = balances.find(b => b.id === 'g2')!
     const carolBal = balances.find(b => b.id === 'g3')!
     expect(aliceBal.totalPaid).toBe(0)
     expect(aliceBal.totalShare).toBe(30)
-    expect(aliceBal.balance).toBeCloseTo(-30, 2)
+    expect(aliceBal.balance).toBeCloseTo(0, 2)
     expect(bobBal.totalPaid).toBe(0)
     expect(bobBal.totalShare).toBe(30)
-    expect(bobBal.balance).toBeCloseTo(-30, 2)
+    expect(bobBal.balance).toBeCloseTo(0, 2)
     expect(carolBal.totalPaid).toBe(0)
     expect(carolBal.totalShare).toBe(30)
-    expect(carolBal.balance).toBeCloseTo(-30, 2)
+    expect(carolBal.balance).toBeCloseTo(0, 2)
   })
 
   it('member totalPaid/totalShare sums match group-level calculateBalances output', () => {
@@ -584,9 +586,12 @@ describe('calculateWithinGroupBalances', () => {
 
     const sumPaid = memberBalances.reduce((s, b) => s + b.totalPaid, 0)
     const sumShare = memberBalances.reduce((s, b) => s + b.totalShare, 0)
+    const sumBalance = memberBalances.reduce((s, b) => s + b.balance, 0)
 
     expect(sumPaid).toBeCloseTo(smithGroup.totalPaid, 2)
     expect(sumShare).toBeCloseTo(smithGroup.totalShare, 2)
+    // Within-group balances sum to zero (internal flows only)
+    expect(sumBalance).toBeCloseTo(0, 2)
   })
 
   it('returns empty array for non-existent group', () => {
