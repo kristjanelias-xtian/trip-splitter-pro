@@ -253,6 +253,8 @@ export function QuickGroupDetailPage() {
         myParticipantId={myBalance?.id ?? null}
         currency={currentTrip.default_currency}
         participants={participants}
+        expenses={expenses}
+        exchangeRates={currentTrip.exchange_rates}
       />
 
       {/* History sheet */}
