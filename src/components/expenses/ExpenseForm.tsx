@@ -630,6 +630,7 @@ export function ExpenseForm({
           type: 'individuals',
           participants: selectedParticipants,
           splitMode,
+          accountForFamilySize: hasSelectedGroups ? accountForFamilySize : undefined,
         }
         if (splitMode === 'percentage' || splitMode === 'amount') {
           previewDistribution.participantSplits = selectedParticipants.map(id => ({

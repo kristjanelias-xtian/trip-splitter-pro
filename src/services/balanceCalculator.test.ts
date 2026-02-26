@@ -34,13 +34,27 @@ describe('convertToBaseCurrency', () => {
 
 // ─── buildEntityMap ───────────────────────────────────────────────
 describe('buildEntityMap', () => {
-  it('maps each participant as standalone in individuals mode', () => {
-    const p1 = buildParticipant({ id: 'p1', name: 'Alice', wallet_group: 'Smith' })
+  it('groups by wallet_group even in individuals mode', () => {
+    const p1 = buildParticipant({ id: 'p1', name: 'Alice', wallet_group: 'Smith', is_adult: true })
+    const p2 = buildParticipant({ id: 'p2', name: 'Bob' })
+    const result = buildEntityMap([p1, p2], 'individuals')
+    // Alice is grouped as "Smith", Bob is standalone
+    expect(result.entities).toHaveLength(2)
+    const smith = result.entities.find(e => e.name === 'Smith')!
+    expect(smith.isFamily).toBe(true)
+    expect(smith.id).toBe('p1') // canonical = only adult in group
+    expect(result.participantToEntityId.get('p1')).toBe('p1')
+    expect(result.participantToEntityId.get('p2')).toBe('p2')
+  })
+
+  it('treats participants without wallet_group as standalone in individuals mode', () => {
+    const p1 = buildParticipant({ id: 'p1', name: 'Alice' })
     const p2 = buildParticipant({ id: 'p2', name: 'Bob' })
     const result = buildEntityMap([p1, p2], 'individuals')
     expect(result.entities).toHaveLength(2)
     expect(result.participantToEntityId.get('p1')).toBe('p1')
     expect(result.participantToEntityId.get('p2')).toBe('p2')
+    expect(result.entities.every(e => !e.isFamily)).toBe(true)
   })
 
   it('groups by wallet_group in families mode', () => {
@@ -102,6 +116,16 @@ describe('calculateExpenseShares', () => {
       // Both p3 and p4 belong to Smith group, canonical = p3
       expect(shares.get('p3')).toBe(100)
     })
+
+    it('aggregates to wallet_group entity in individuals tracking mode', () => {
+      const expense = buildExpense({
+        amount: 100,
+        distribution: { type: 'individuals', participants: ['p3', 'p4'] },
+      })
+      const shares = calculateExpenseShares(expense, participants, 'individuals')
+      // Both p3 and p4 belong to Smith group, canonical = p3
+      expect(shares.get('p3')).toBe(100)
+    })
   })
 
   describe('individuals + percentage', () => {
@@ -141,6 +165,41 @@ describe('calculateExpenseShares', () => {
       const shares = calculateExpenseShares(expense, participants, 'individuals')
       expect(shares.get('p1')).toBe(100)
       expect(shares.get('p2')).toBe(50)
+    })
+  })
+
+  describe('accountForFamilySize in individuals mode', () => {
+    it('splits equally per entity when accountForFamilySize is true', () => {
+      // Alice (standalone) + Carol+Dave (Smith group) + Eve (Jones group)
+      const expense = buildExpense({
+        amount: 300,
+        distribution: {
+          type: 'individuals',
+          participants: ['p1', 'p3', 'p4', 'p5'],
+          accountForFamilySize: true,
+        },
+      })
+      const shares = calculateExpenseShares(expense, participants, 'individuals')
+      // 3 entities: Alice, Smith, Jones → 100 each
+      expect(shares.get('p1')).toBe(100) // Alice
+      expect(shares.get('p3')).toBe(100) // Smith (Carol+Dave)
+      expect(shares.get('p5')).toBe(100) // Jones (Eve)
+    })
+
+    it('splits per person when accountForFamilySize is false', () => {
+      const expense = buildExpense({
+        amount: 400,
+        distribution: {
+          type: 'individuals',
+          participants: ['p1', 'p3', 'p4', 'p5'],
+          accountForFamilySize: false,
+        },
+      })
+      const shares = calculateExpenseShares(expense, participants, 'individuals')
+      // 4 people → 100 each, but Carol+Dave aggregate to Smith
+      expect(shares.get('p1')).toBe(100)  // Alice
+      expect(shares.get('p3')).toBe(200)  // Smith (Carol 100 + Dave 100)
+      expect(shares.get('p5')).toBe(100)  // Jones (Eve)
     })
   })
 
@@ -268,6 +327,37 @@ describe('calculateBalances', () => {
     })
     const result = calculateBalances([expense], participants, 'individuals')
     expect(result.suggestedNextPayer?.id).toBe('p2') // Bob owes the most
+  })
+
+  it('groups by wallet_group in individuals tracking mode', () => {
+    const famP1 = buildParticipant({ id: 'fp1', name: 'FamAlice', wallet_group: 'Smith', is_adult: true })
+    const famP2 = buildParticipant({ id: 'fp2', name: 'FamBob', wallet_group: 'Smith', is_adult: true })
+    const standalone = buildParticipant({ id: 'sp1', name: 'Standalone' })
+
+    const expense = buildExpense({
+      amount: 90,
+      paid_by: 'fp1',
+      distribution: { type: 'individuals', participants: ['fp1', 'fp2', 'sp1'] },
+    })
+
+    const result = calculateBalances(
+      [expense], [famP1, famP2, standalone], 'individuals'
+    )
+    // Should have 2 entities: Smith (canonical fp1) and Standalone (sp1)
+    expect(result.balances).toHaveLength(2)
+    const smith = result.balances.find(b => b.name === 'Smith')!
+    const stand = result.balances.find(b => b.name === 'Standalone')!
+
+    expect(smith.id).toBe('fp1')
+    expect(smith.isFamily).toBe(true)
+    // Smith paid 90, Smith's share = 60 (2 people × 30), balance = +30
+    expect(smith.totalPaid).toBe(90)
+    expect(smith.totalShare).toBe(60)
+    expect(smith.balance).toBeCloseTo(30, 2)
+
+    expect(stand.totalPaid).toBe(0)
+    expect(stand.totalShare).toBe(30)
+    expect(stand.balance).toBeCloseTo(-30, 2)
   })
 
   it('handles families tracking mode with wallet_group', () => {
