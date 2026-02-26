@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Trash2, Share2, ChevronRight, ScanLine, ChevronDown, Eye, ExternalLink } from 'lucide-react'
+import { Plus, Calendar, Trash2, Share2, ChevronRight, ScanLine, ChevronDown, Eye, ExternalLink, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
@@ -19,6 +19,9 @@ import { useTripContext } from '@/contexts/TripContext'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { motion } from 'framer-motion'
+
+// TODO: Replace with actual demo trip code once seeded in production Supabase
+const DEMO_TRIP_CODE = 'demo-trip-2026-xD3mO1'
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -112,6 +115,13 @@ export function HomePage() {
             <Plus size={18} />
             Create Your First
           </Button>
+          <button
+            onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Sparkles size={14} />
+            Try a demo
+          </button>
         </div>
       </CardContent>
     </Card>
@@ -329,6 +339,19 @@ export function HomePage() {
             </div>
             <ChevronRight size={18} className="opacity-70" />
           </button>
+        )}
+
+        {/* Demo link — authenticated users with no trips */}
+        {isAuthenticated && !loading && visibleTrips.length === 0 && (
+          <div className="text-center -mt-3 mb-6">
+            <button
+              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}/quick`)}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Sparkles size={14} />
+              Try a demo
+            </button>
+          </div>
         )}
 
         {/* Action Buttons — unauthenticated only (authenticated uses sheet + scan CTA) */}

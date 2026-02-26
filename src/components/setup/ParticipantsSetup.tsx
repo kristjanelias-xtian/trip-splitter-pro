@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { fadeInUp } from '@/lib/animations'
 import type { Participant } from '@/types/participant'
 import { logger } from '@/lib/logger'
+import { getGroupBorderColor } from '@/lib/groupColors'
 
 interface ParticipantsSetupProps {
   onComplete?: () => void
@@ -478,17 +479,26 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {participantGroups.map((group) => (
+              {participantGroups.map((group, groupIndex) => (
                 <div key={group.label ?? '__ungrouped'}>
-                  {group.label && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users size={14} className="text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground">{group.label}</span>
+                  {group.label ? (
+                    <div className={`rounded-lg border-l-4 ${getGroupBorderColor(groupIndex)} bg-muted/30 p-3`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Users size={14} className="text-foreground" />
+                        <span className="text-sm font-semibold text-foreground">{group.label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {group.participants.length} {group.participants.length === 1 ? 'member' : 'members'}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {group.participants.map(renderParticipantRow)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {group.participants.map(renderParticipantRow)}
                     </div>
                   )}
-                  <div className="space-y-2">
-                    {group.participants.map(renderParticipantRow)}
-                  </div>
                 </div>
               ))}
             </div>
