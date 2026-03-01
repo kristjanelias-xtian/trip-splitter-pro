@@ -19,7 +19,7 @@ interface ParticipantContextType {
   deleteParticipant: (id: string) => Promise<boolean>
   refreshParticipants: () => Promise<void>
   getAdultParticipants: () => Participant[]
-  linkUserToParticipant: (participantId: string, userId: string) => Promise<boolean>
+  linkUserToParticipant: (participantId: string, userId: string, userEmail?: string) => Promise<boolean>
   unlinkUserFromParticipant: (participantId: string) => Promise<boolean>
 }
 
@@ -169,15 +169,23 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   }
 
   // Link a user to a participant ("This is me")
-  const linkUserToParticipant = async (participantId: string, userId: string): Promise<boolean> => {
+  const linkUserToParticipant = async (participantId: string, userId: string, userEmail?: string): Promise<boolean> => {
     try {
       setError(null)
+
+      // Backfill email if participant doesn't have one
+      const existing = participants.find(p => p.id === participantId)
+      const backfillEmail = userEmail && !existing?.email
+
+      const updatePayload = backfillEmail
+        ? { user_id: userId, email: userEmail }
+        : { user_id: userId }
 
       const controller = new AbortController()
       const { error: linkError } = await withTimeout<any>(
         (supabase as any)
           .from('participants')
-          .update({ user_id: userId })
+          .update(updatePayload)
           .eq('id', participantId)
           .abortSignal(controller.signal),
         15000,
@@ -188,7 +196,9 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       if (linkError) throw linkError
 
       setParticipants(prev =>
-        prev.map(p => (p.id === participantId ? { ...p, user_id: userId } : p))
+        prev.map(p => (p.id === participantId
+          ? { ...p, user_id: userId, ...(backfillEmail ? { email: userEmail } : {}) }
+          : p))
       )
 
       return true
