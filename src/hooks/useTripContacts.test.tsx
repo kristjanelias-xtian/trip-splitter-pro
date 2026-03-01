@@ -35,6 +35,7 @@ vi.mock('@/contexts/TripContext', () => ({
 }))
 
 let mockQueryResult: { data: any[] | null; error: any } = { data: [], error: null }
+let mockProfilesResult: { data: any[] | null; error: any } = { data: [], error: null }
 
 const mockSupabase = vi.hoisted(() => ({
   from: vi.fn(),
@@ -42,14 +43,26 @@ const mockSupabase = vi.hoisted(() => ({
 vi.mock('@/lib/supabase', () => ({ supabase: mockSupabase }))
 
 function setupQueryChain() {
-  mockSupabase.from.mockReturnValue({
-    select: () => ({
-      in: () => ({
-        limit: () => ({
-          abortSignal: () => Promise.resolve(mockQueryResult),
+  mockSupabase.from.mockImplementation((table: string) => {
+    if (table === 'user_profiles') {
+      return {
+        select: () => ({
+          in: () => ({
+            abortSignal: () => Promise.resolve(mockProfilesResult),
+          }),
+        }),
+      }
+    }
+    // participants
+    return {
+      select: () => ({
+        in: () => ({
+          limit: () => ({
+            abortSignal: () => Promise.resolve(mockQueryResult),
+          }),
         }),
       }),
-    }),
+    }
   })
 }
 
@@ -64,6 +77,7 @@ describe('useTripContacts', () => {
     mockAuth.user = null
     mockTrips.trips = []
     mockQueryResult = { data: [], error: null }
+    mockProfilesResult = { data: [], error: null }
     mockSupabase.from.mockReset()
     setupQueryChain()
   })
@@ -115,8 +129,10 @@ describe('useTripContacts', () => {
 
     expect(result.current.contacts[0].name).toBe('Alice')
     expect(result.current.contacts[0].email).toBe('alice@test.com')
+    expect(result.current.contacts[0].display_name).toBeNull()
     expect(result.current.contacts[1].name).toBe('Bob')
     expect(result.current.contacts[1].user_id).toBe('user-bob')
+    expect(result.current.contacts[1].display_name).toBeNull()
   })
 
   it('excludes current user from results', async () => {
@@ -284,5 +300,93 @@ describe('useTripContacts', () => {
 
     expect(result.current.contacts[0].name).toBe('Recent Friend')
     expect(result.current.contacts[1].name).toBe('Old Friend')
+  })
+
+  it('populates display_name from user_profiles for linked users', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-old' }),
+    ]
+    mockQueryResult = {
+      data: [
+        { name: 'Kairi', email: 'kairi@test.com', user_id: 'user-kairi', trip_id: 'trip-old' },
+      ],
+      error: null,
+    }
+    mockProfilesResult = {
+      data: [
+        { id: 'user-kairi', display_name: 'Kairi Tamm' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(1)
+    })
+
+    expect(result.current.contacts[0].name).toBe('Kairi')
+    expect(result.current.contacts[0].display_name).toBe('Kairi Tamm')
+    expect(result.current.contacts[0].user_id).toBe('user-kairi')
+  })
+
+  it('returns display_name null for contacts without user_id', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-old' }),
+    ]
+    mockQueryResult = {
+      data: [
+        { name: 'No Account', email: 'noaccount@test.com', user_id: null, trip_id: 'trip-old' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(1)
+    })
+
+    expect(result.current.contacts[0].display_name).toBeNull()
+  })
+
+  it('prefers record with display_name when deduplicating by email', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-old', end_date: '2025-01-01' }),
+      buildEvent({ id: 'trip-recent', end_date: '2025-09-01' }),
+    ]
+    mockQueryResult = {
+      data: [
+        // More recent trip but no user_id (no display_name)
+        { name: 'Marta', email: 'marta@test.com', user_id: null, trip_id: 'trip-recent' },
+        // Older trip but has user_id with display_name
+        { name: 'Marta', email: 'marta@test.com', user_id: 'user-marta', trip_id: 'trip-old' },
+      ],
+      error: null,
+    }
+    mockProfilesResult = {
+      data: [
+        { id: 'user-marta', display_name: 'Marta Tamm' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(1)
+    })
+
+    // Should prefer the record with display_name even though the other is more recent
+    expect(result.current.contacts[0].display_name).toBe('Marta Tamm')
+    expect(result.current.contacts[0].user_id).toBe('user-marta')
+    // lastSeenAt should still be the most recent date
+    expect(result.current.contacts[0].lastSeenAt).toBe('2025-09-01')
   })
 })

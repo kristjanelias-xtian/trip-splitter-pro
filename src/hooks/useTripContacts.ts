@@ -9,6 +9,7 @@ export interface TripContact {
   name: string
   email: string | null
   user_id: string | null
+  display_name: string | null
   lastSeenAt: string
 }
 
@@ -83,8 +84,35 @@ export function useTripContacts(currentTripId: string | undefined) {
           (p: any) => p.user_id !== user.id
         )
 
+        // Fetch display_names for linked users (separate query — no direct FK)
+        const userIds = [...new Set(
+          filtered.filter((p: any) => p.user_id).map((p: any) => p.user_id as string)
+        )]
+        const displayNameMap = new Map<string, string>()
+        if (userIds.length > 0) {
+          try {
+            const { data: profiles } = await withTimeout<{ data: any[]; error: any }>(
+              (supabase as any)
+                .from('user_profiles')
+                .select('id, display_name')
+                .in('id', userIds)
+                .abortSignal(controller.signal),
+              15000,
+              'Loading profiles timed out.'
+            )
+            if (profiles) {
+              for (const p of profiles as any[]) {
+                if (p.display_name) displayNameMap.set(p.id, p.display_name)
+              }
+            }
+          } catch {
+            // Non-critical — proceed without display names
+          }
+        }
+
         // Deduplicate: by email (lowercase) if exists, else by exact name (lowercase).
         // Keep the record from the most recent trip (by end_date).
+        // Prefer records that have a display_name.
         const seen = new Map<string, TripContact>()
         for (const p of filtered as any[]) {
           const key = p.email
@@ -92,14 +120,18 @@ export function useTripContacts(currentTripId: string | undefined) {
             : `name:${p.name.toLowerCase()}`
 
           const lastSeenAt = tripDateMap.get(p.trip_id) || ''
+          const display_name = p.user_id ? displayNameMap.get(p.user_id) ?? null : null
 
           const existing = seen.get(key)
-          if (!existing || lastSeenAt > existing.lastSeenAt) {
+          const isNewer = !existing || lastSeenAt > existing.lastSeenAt
+          const hasNewDisplayName = display_name && !existing?.display_name
+          if (isNewer || hasNewDisplayName) {
             seen.set(key, {
               name: p.name,
               email: p.email ?? null,
               user_id: p.user_id ?? null,
-              lastSeenAt,
+              display_name,
+              lastSeenAt: isNewer ? lastSeenAt : existing!.lastSeenAt,
             })
           }
         }
