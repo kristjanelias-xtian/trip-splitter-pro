@@ -3,17 +3,12 @@ import { Plus, UserPlus, X, Users, Smartphone } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
+import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
-import { useAbortController } from '@/hooks/useAbortController'
-
-interface RecentPerson {
-  name: string
-  email: string | null
-}
 
 interface QuickParticipantPickerProps {
   tripId: string
@@ -24,9 +19,8 @@ interface QuickParticipantPickerProps {
 export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickParticipantPickerProps) {
   const { user, userProfile } = useAuth()
   const { participants, createParticipant } = useParticipantContext()
-  const { newSignal, cancel } = useAbortController()
+  const { contacts } = useTripContacts(tripId)
 
-  const [recentPeople, setRecentPeople] = useState<RecentPerson[]>([])
   const [addedNames, setAddedNames] = useState<string[]>([])
   const [supportsContacts, setSupportsContacts] = useState(false)
 
@@ -40,59 +34,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   useEffect(() => {
     setSupportsContacts('contacts' in navigator && typeof (navigator as any).contacts?.select === 'function')
   }, [])
-
-  // Fetch recent people from past trips by this user
-  useEffect(() => {
-    if (!user) return
-
-    const signal = newSignal()
-
-    const fetchRecent = async () => {
-      try {
-        // Fetch participants from trips created_by this user, excluding self
-        const { data, error: fetchError } = await withTimeout(
-          supabase
-            .from('participants')
-            .select('name, email, trips!inner(created_by)')
-            .eq('trips.created_by', user.id)
-            .is('user_id', null)  // exclude self (linked participants)
-            .neq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(50)
-            .abortSignal(signal),
-          15000,
-          'Loading recent people timed out.'
-        )
-
-        if (signal.aborted) return
-
-        if (fetchError) {
-          logger.warn('Failed to fetch recent people', { error: fetchError.message })
-          return
-        }
-
-        // Deduplicate by email (preferred) or name
-        const seen = new Set<string>()
-        const deduped: RecentPerson[] = []
-        for (const row of (data ?? []) as any[]) {
-          const key = row.email?.toLowerCase() ?? row.name.toLowerCase()
-          if (!seen.has(key)) {
-            seen.add(key)
-            deduped.push({ name: row.name, email: row.email ?? null })
-          }
-          if (deduped.length >= 20) break
-        }
-
-        setRecentPeople(deduped)
-      } catch (err) {
-        if (signal.aborted) return
-        logger.warn('Unhandled error fetching recent people', { error: String(err) })
-      }
-    }
-
-    fetchRecent()
-    return cancel
-  }, [user?.id])
 
   const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
 
@@ -132,19 +73,28 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     }
   }
 
-  const addPerson = async (personName: string, personEmail: string | null) => {
+  const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null) => {
     const emailLower = personEmail?.trim().toLowerCase() ?? null
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
       if (duplicate) return // silently skip duplicate
     }
 
-    const newParticipant = await createParticipant({
+    const input = {
       trip_id: tripId,
       name: personName.trim(),
       is_adult: true,
       email: emailLower || null,
-    })
+      ...(personUserId ? { user_id: personUserId } : {}),
+    }
+
+    let newParticipant = await createParticipant(input)
+
+    // If insert failed and we had a user_id, retry without it (unique constraint conflict)
+    if (!newParticipant && personUserId) {
+      const { user_id: _, ...inputWithoutUserId } = input
+      newParticipant = await createParticipant(inputWithoutUserId)
+    }
 
     if (newParticipant) {
       setAddedNames(prev => [...prev, personName.trim()])
@@ -154,8 +104,8 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     }
   }
 
-  const handleAddRecent = async (person: RecentPerson) => {
-    await addPerson(person.name, person.email)
+  const handleAddRecent = async (contact: TripContact) => {
+    await addPerson(contact.name, contact.email, contact.user_id)
   }
 
   const handleAddFromContacts = async () => {
@@ -199,10 +149,10 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     }
   }
 
-  const isAdded = (person: RecentPerson) =>
-    addedNames.includes(person.name) ||
-    participants.some(p => p.name === person.name && (
-      !person.email || p.email?.toLowerCase() === person.email?.toLowerCase()
+  const isAdded = (contact: TripContact) =>
+    addedNames.includes(contact.name) ||
+    participants.some(p => p.name === contact.name && (
+      !contact.email || p.email?.toLowerCase() === contact.email?.toLowerCase()
     ))
 
   const currentParticipants = participants.filter(p => p.trip_id === tripId)
@@ -223,20 +173,20 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
         </div>
       )}
 
-      {/* Section A: Recent people */}
-      {recentPeople.length > 0 && (
+      {/* Section A: People you've tripped with */}
+      {contacts.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users size={14} />
             Recent
           </div>
           <div className="flex flex-wrap gap-2">
-            {recentPeople.map((person, i) => {
-              const added = isAdded(person)
+            {contacts.slice(0, 20).map((contact, i) => {
+              const added = isAdded(contact)
               return (
                 <button
                   key={i}
-                  onClick={() => !added && handleAddRecent(person)}
+                  onClick={() => !added && handleAddRecent(contact)}
                   disabled={added}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-colors ${
                     added
@@ -245,7 +195,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
                   }`}
                 >
                   {added ? null : <Plus size={12} />}
-                  {person.name}
+                  {contact.name}
                 </button>
               )
             })}
@@ -302,6 +252,9 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               onChange={e => setEmail(e.target.value)}
               autoComplete="section-participant email"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Add now or let them link themselves via the trip link
+            </p>
           </div>
           {error && (
             <p className="text-xs text-destructive">{error}</p>

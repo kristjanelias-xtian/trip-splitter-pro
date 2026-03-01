@@ -14,6 +14,7 @@ export interface CreateParticipantInput {
   name: string
   is_adult: boolean
   email?: string | null
+  user_id?: string | null
 }
 
 export interface UpdateParticipantInput {
