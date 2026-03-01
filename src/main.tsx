@@ -29,8 +29,20 @@ window.addEventListener('unhandledrejection', (event) => {
   }))
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+// PWA home screen launch guard
+// Fallback for when the service worker does not intercept the initial
+// navigation (common on iOS). If launched in standalone mode into a
+// trip route, redirect to home page immediately before React renders.
+const isStandalone =
+  ('standalone' in navigator && (navigator as unknown as { standalone: boolean }).standalone === true) ||
+  window.matchMedia('(display-mode: standalone)').matches
+
+if (isStandalone && window.location.pathname.startsWith('/t/')) {
+  window.location.replace('/')
+} else {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  )
+}
