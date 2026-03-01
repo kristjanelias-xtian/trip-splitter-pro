@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Search, ExternalLink, Calendar, UserCircle, ShieldAlert } from 'lucide-react'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
@@ -30,6 +31,7 @@ import { useAbortController } from '@/hooks/useAbortController'
 
 export function AdminAllTripsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [allTrips, setAllTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,8 +113,16 @@ export function AdminAllTripsPage() {
     return cancel
   }, [isAdmin, allTrips])
 
+  const isStandalone =
+    ('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
+    window.matchMedia('(display-mode: standalone)').matches
+
   const handleOpenTrip = (tripCode: string) => {
-    window.open(`/t/${tripCode}/dashboard`, '_blank')
+    if (isStandalone) {
+      navigate(`/t/${tripCode}/dashboard`)
+    } else {
+      window.open(`/t/${tripCode}/dashboard`, '_blank')
+    }
   }
 
   const handleCopyUrl = (tripCode: string) => {
@@ -271,8 +281,55 @@ export function AdminAllTripsPage() {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <Card>
+        ) : (<>
+          {/* Mobile: card layout */}
+          <div className="lg:hidden space-y-3">
+            {filteredTrips.map((trip) => (
+              <Card
+                key={trip.id}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleOpenTrip(trip.trip_code)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{trip.name}</p>
+                      <code className="text-xs text-muted-foreground">{trip.trip_code}</code>
+                      <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          {formatDate(trip.start_date)}
+                        </span>
+                        <span>·</span>
+                        <span>Created {formatDate(trip.created_at)}</span>
+                      </div>
+                      {trip.created_by && ownerMap[trip.created_by] && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                          <UserCircle size={12} className="shrink-0" />
+                          <span className="truncate">{ownerMap[trip.created_by].name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 gap-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleOpenTrip(trip.trip_code)
+                      }}
+                    >
+                      <ExternalLink size={14} />
+                      Open
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <Card className="hidden lg:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -340,7 +397,7 @@ export function AdminAllTripsPage() {
               </TableBody>
             </Table>
           </Card>
-        )}
+        </>)}
 
         {/* Info */}
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">

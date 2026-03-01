@@ -114,9 +114,6 @@ export function QuickLayout() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {user && isAdminUser(user.id) && (
-                  ('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
-                  window.matchMedia('(display-mode: standalone)').matches
-                ) && (
                   <button
                     onClick={() => navigate('/admin/all-trips')}
                     className={`p-2 rounded-md transition-colors ${
