@@ -45,7 +45,7 @@ export function ExpensesPage() {
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense, refreshExpenses } = useExpenseContext()
   const { participants } = useParticipantContext()
   const { settlements } = useSettlementContext()
-  const { pendingReceipts, receiptByExpenseId, dismissReceiptTask, reopenReceiptTask } = useReceiptContext()
+  const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -97,12 +97,7 @@ export function ExpensesPage() {
     exportExpensesToExcel(currentTrip, expenses, participants, balances, settlements)
   }
 
-  const handleReprocessReceipt = async (task: ReceiptTask) => {
-    const success = await reopenReceiptTask(task.id)
-    if (!success) {
-      toast({ title: 'Failed to reopen receipt', variant: 'destructive' })
-      return
-    }
+  const handleReprocessReceipt = (task: ReceiptTask) => {
     setViewingReceiptTask(null)
     setReceiptReviewData({
       taskId: task.id,
