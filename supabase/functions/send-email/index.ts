@@ -15,6 +15,17 @@ const metrics = createMetrics('send-email')
 const APP_URL = 'https://split.xtian.me'
 const FROM_ADDRESS = 'Spl1t <noreply@xtian.me>'
 
+const BRAND = {
+  coral:       '#e8613a',
+  coralDark:   '#c94e28',
+  coralLight:  '#fdf1ed',
+  textPrimary: '#111827',
+  textMuted:   '#6b7280',
+  border:      '#e5e7eb',
+  background:  '#f9fafb',
+  white:       '#ffffff',
+} as const
+
 /**
  * Escape user-supplied strings before interpolation into HTML email templates.
  * Prevents HTML injection / stored XSS via malicious trip names, participant names, etc.
@@ -26,6 +37,55 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+}
+
+function baseEmailHtml(params: {
+  title: string
+  subtitle: string
+  bodyContent: string
+  footerOrganiser: string  // pre-escaped
+  tripUrl: string
+}): string {
+  const { title, subtitle, bodyContent, footerOrganiser, tripUrl } = params
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background-color:${BRAND.background};font-family:system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BRAND.background};padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${BRAND.white};border-radius:12px;border:1px solid ${BRAND.border};overflow:hidden;">
+          <!-- Header — coral brand -->
+          <tr>
+            <td style="background:${BRAND.coral};padding:28px 32px;text-align:center;">
+              <div style="font-size:24px;font-weight:700;color:${BRAND.white};letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coralLight};">1</span>t</div>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">${subtitle}</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              ${bodyContent}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:16px 32px;border-top:1px solid ${BRAND.border};text-align:center;">
+              <p style="margin:0;color:${BRAND.textMuted};font-size:12px;">
+                Sent by <strong>${footerOrganiser}</strong> via Spl<span style="color:${BRAND.coral};">1</span>t &middot; <a href="${tripUrl}" style="color:${BRAND.coral};text-decoration:none;">Open trip &rarr;</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 }
 
 type ReceiptEmailData = {
@@ -71,61 +131,32 @@ function invitationEmailHtml(params: {
   tripUrl: string
 }): string {
   const { participantName, organiserName, tripName, joinUrl, tripUrl } = params
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(organiserName)} added you to ${escapeHtml(tripName)}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
-          <!-- Minimal wordmark -->
-          <tr>
-            <td style="padding:28px 32px 0;text-align:center;">
-              <span style="font-size:18px;font-weight:700;color:#6366f1;letter-spacing:-0.5px;">Spl1t</span>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="padding:20px 32px 32px;">
-              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;font-weight:700;">Hey ${escapeHtml(participantName)}!</h2>
-              <p style="margin:0 0 28px;color:#475569;font-size:16px;line-height:1.7;">
-                <strong>${escapeHtml(organiserName)}</strong> added you to <strong>${escapeHtml(tripName)}</strong>.
-                Tap below to see your share of the costs — no account needed.
+  const bodyContent = `
+              <h2 style="margin:0 0 16px;color:${BRAND.textPrimary};font-size:20px;font-weight:700;">Hey ${escapeHtml(participantName)}!</h2>
+              <p style="margin:0 0 28px;color:${BRAND.textMuted};font-size:15px;line-height:1.6;">
+                <strong style="color:${BRAND.textPrimary};">${escapeHtml(organiserName)}</strong> added you to <strong style="color:${BRAND.textPrimary};">${escapeHtml(tripName)}</strong>.
+                Tap below to see your share of the costs &mdash; no account needed.
               </p>
               <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding:0 0 28px;">
-                    <a href="${joinUrl}" style="display:inline-block;background:#6366f1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:15px 36px;border-radius:8px;">
+                    <a href="${joinUrl}" style="display:inline-block;background:${BRAND.coral};color:${BRAND.white};font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
                       View my balance &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">
-                Want to track all your expenses in one place? <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Sign in with Google</a> to link your account.
-              </p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">
-                Sent by <strong>${escapeHtml(organiserName)}</strong> via Spl1t &middot; <a href="${tripUrl}" style="color:#6366f1;text-decoration:none;">Open trip</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+              <p style="margin:0;color:${BRAND.textMuted};font-size:13px;text-align:center;">
+                Want to track expenses in one place? <a href="${tripUrl}" style="color:${BRAND.coral};text-decoration:none;">Sign in with Google</a> to link your account.
+              </p>`
+  return baseEmailHtml({
+    title: `${escapeHtml(organiserName)} added you to ${escapeHtml(tripName)}`,
+    subtitle: 'Trip Invitation',
+    bodyContent,
+    footerOrganiser: escapeHtml(organiserName),
+    tripUrl,
+  })
 }
 
 function formatPrice(amount: number, currency: string | null): string {
@@ -145,8 +176,8 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
   const tip = receipt.tip_amount ?? 0
   const total = receipt.confirmed_total ?? (subtotal + tip)
 
-  const rowStyle = 'border-bottom:1px solid #E2E7EE;'
-  const cellStyle = 'padding:6px 8px;color:#657085;font-size:13px;'
+  const rowStyle = `border-bottom:1px solid ${BRAND.border};`
+  const cellStyle = `padding:6px 8px;color:${BRAND.textMuted};font-size:13px;`
 
   const isDebtorItem = (index: number): boolean => {
     if (!receipt.mapped_items || !receipt.debtor_participant_ids?.length) return false
@@ -155,10 +186,9 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
     return mapping.participant_ids.some(id => receipt.debtor_participant_ids!.includes(id))
   }
 
-  // 4b: Use coral highlight (#E76F51 tint) instead of purple for brand consistency
   const itemRows = items.map((item, index) => {
     const highlight = isDebtorItem(index)
-    const rowBg = highlight ? 'background:#FEF3EF;border-left:3px solid #E76F51;' : ''
+    const rowBg = highlight ? `background:${BRAND.coralLight};border-left:3px solid ${BRAND.coral};` : ''
     return `
     <tr style="${rowStyle}${rowBg}">
       <td style="${cellStyle}">${escapeHtml(item.name)}</td>
@@ -174,31 +204,30 @@ function receiptTableHtml(receipt: ReceiptEmailData): string {
     </tr>` : ''
 
   return `
-  <div style="margin-bottom:16px;border:1px solid #E2E7EE;border-radius:8px;overflow:hidden;">
-    <div style="background:#FAF8F5;padding:8px 12px;border-bottom:1px solid #E2E7EE;">
-      <strong style="color:#2D3142;font-size:13px;">${merchant}</strong>
+  <div style="margin-bottom:16px;border:1px solid ${BRAND.border};border-radius:8px;overflow:hidden;">
+    <div style="background:${BRAND.background};padding:8px 12px;border-bottom:1px solid ${BRAND.border};">
+      <strong style="color:${BRAND.textPrimary};font-size:13px;">${merchant}</strong>
     </div>
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <thead>
-        <tr style="background:#FAF8F5;border-bottom:1px solid #E2E7EE;">
-          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:left;">Item</th>
-          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:center;">Qty</th>
-          <th style="padding:6px 8px;color:#657085;font-size:12px;font-weight:600;text-align:right;">Price</th>
+        <tr style="background:${BRAND.background};border-bottom:1px solid ${BRAND.border};">
+          <th style="padding:6px 8px;color:${BRAND.textMuted};font-size:12px;font-weight:600;text-align:left;">Item</th>
+          <th style="padding:6px 8px;color:${BRAND.textMuted};font-size:12px;font-weight:600;text-align:center;">Qty</th>
+          <th style="padding:6px 8px;color:${BRAND.textMuted};font-size:12px;font-weight:600;text-align:right;">Price</th>
         </tr>
       </thead>
       <tbody>
         ${itemRows}
         ${tipRow}
         <tr>
-          <td colspan="2" style="padding:8px;color:#2D3142;font-size:13px;font-weight:700;">Total</td>
-          <td style="padding:8px;color:#2D3142;font-size:13px;font-weight:700;text-align:right;">${formatPrice(total, currency)}</td>
+          <td colspan="2" style="padding:8px;color:${BRAND.textPrimary};font-size:13px;font-weight:700;">Total</td>
+          <td style="padding:8px;color:${BRAND.textPrimary};font-size:13px;font-weight:700;text-align:right;">${formatPrice(total, currency)}</td>
         </tr>
       </tbody>
     </table>
   </div>`
 }
 
-// 4a/4c: Restyled payment reminder email using app design tokens (coral brand) + dual CTA
 function paymentReminderEmailHtml(params: {
   recipientName: string
   organiserName: string
@@ -214,82 +243,42 @@ function paymentReminderEmailHtml(params: {
   const receiptSection = hasReceipts ? `
               <!-- Receipt tables -->
               <div style="margin-bottom:24px;">
-                <p style="margin:0 0 12px;color:#657085;font-size:14px;font-weight:600;">What you're splitting:</p>
+                <p style="margin:0 0 12px;color:${BRAND.textMuted};font-size:14px;font-weight:600;">What you're splitting:</p>
                 ${receipts.map(r => receiptTableHtml(r)).join('')}
-                <p style="margin:8px 0 0;color:#657085;font-size:12px;text-align:center;font-style:italic;">
+                <p style="margin:8px 0 0;color:${BRAND.textMuted};font-size:12px;text-align:center;font-style:italic;">
                   Full receipt photo available in the Spl1t app.
                 </p>
               </div>` : ''
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment reminder for ${escapeHtml(tripName)}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#FAF8F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF8F5;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #E2E7EE;overflow:hidden;">
-          <!-- Header — coral brand -->
-          <tr>
-            <td style="background:#E76F51;padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Spl1t</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Payment Reminder</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="padding:32px;">
-              <h2 style="margin:0 0 8px;color:#2D3142;font-size:20px;font-weight:600;">Hi ${escapeHtml(recipientName)}!</h2>
-              <p style="margin:0 0 24px;color:#657085;font-size:15px;line-height:1.6;">
-                This is a friendly reminder from <strong style="color:#2D3142;">${escapeHtml(organiserName)}</strong> about an outstanding balance from <strong style="color:#2D3142;">${escapeHtml(tripName)}</strong>.
+  const bodyContent = `
+              <h2 style="margin:0 0 8px;color:${BRAND.textPrimary};font-size:20px;font-weight:600;">Hi ${escapeHtml(recipientName)}!</h2>
+              <p style="margin:0 0 24px;color:${BRAND.textMuted};font-size:15px;line-height:1.6;">
+                This is a friendly reminder from <strong style="color:${BRAND.textPrimary};">${escapeHtml(organiserName)}</strong> about an outstanding balance from <strong style="color:${BRAND.textPrimary};">${escapeHtml(tripName)}</strong>.
               </p>
               <!-- Amount Box — coral tint -->
-              <div style="background:#FEF3EF;border:2px solid #E76F51;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
-                <p style="margin:0 0 4px;color:#E76F51;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
-                <p style="margin:0 0 4px;color:#2D3142;font-size:36px;font-weight:700;">${escapeHtml(formattedAmount)}</p>
-                <p style="margin:0;color:#657085;font-size:14px;">to <strong style="color:#2D3142;">${escapeHtml(payToName)}</strong></p>
+              <div style="background:${BRAND.coralLight};border:2px solid ${BRAND.coral};border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+                <p style="margin:0 0 4px;color:${BRAND.coral};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
+                <p style="margin:0 0 4px;color:${BRAND.textPrimary};font-size:36px;font-weight:700;">${escapeHtml(formattedAmount)}</p>
+                <p style="margin:0;color:${BRAND.textMuted};font-size:14px;">to <strong style="color:${BRAND.textPrimary};">${escapeHtml(payToName)}</strong></p>
               </div>
               ${receiptSection}
-              <!-- CTA Buttons — primary: settlements page, secondary: app home -->
+              <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="center" style="padding:0 0 12px;">
-                    <a href="${settlementsUrl}" style="display:inline-block;background:#E76F51;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
-                      View settlement details &rarr;
-                    </a>
-                  </td>
-                </tr>
-                <tr>
                   <td align="center" style="padding:0 0 24px;">
-                    <a href="${tripUrl}" style="display:inline-block;background:transparent;color:#657085;font-size:13px;font-weight:500;text-decoration:underline;padding:4px 8px;">
-                      Open in app
+                    <a href="${settlementsUrl}" style="display:inline-block;background:${BRAND.coral};color:${BRAND.white};font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                      View balance &amp; settle up &rarr;
                     </a>
                   </td>
                 </tr>
-              </table>
-              <p style="margin:0;color:#657085;font-size:13px;text-align:center;">
-                Questions? Reply to this email or contact ${escapeHtml(organiserName)} directly.
-              </p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding:16px 32px;border-top:1px solid #E2E7EE;text-align:center;">
-              <p style="margin:0;color:#657085;font-size:12px;">
-                Sent by ${escapeHtml(organiserName)} via Spl1t &middot; <a href="${tripUrl}" style="color:#E76F51;text-decoration:none;">Open app</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+              </table>`
+  return baseEmailHtml({
+    title: `Payment reminder for ${escapeHtml(tripName)}`,
+    subtitle: 'Payment Reminder',
+    bodyContent,
+    footerOrganiser: escapeHtml(organiserName),
+    tripUrl,
+  })
 }
 
 Deno.serve(async (req) => {
