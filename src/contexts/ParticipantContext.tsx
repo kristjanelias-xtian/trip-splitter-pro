@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   Participant,
@@ -6,6 +6,7 @@ import {
   UpdateParticipantInput,
 } from '@/types/participant'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useAuth } from '@/contexts/AuthContext'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
 
@@ -19,7 +20,7 @@ interface ParticipantContextType {
   deleteParticipant: (id: string) => Promise<boolean>
   refreshParticipants: () => Promise<void>
   getAdultParticipants: () => Participant[]
-  linkUserToParticipant: (participantId: string, userId: string, userEmail?: string) => Promise<boolean>
+  linkUserToParticipant: (participantId: string, userId: string, userEmail?: string, displayName?: string) => Promise<boolean>
   unlinkUserFromParticipant: (participantId: string) => Promise<boolean>
 }
 
@@ -32,6 +33,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { user, userProfile } = useAuth()
   const { newSignal, cancel } = useAbortController()
 
   const clearError = () => setError(null)
@@ -169,17 +171,13 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
   }
 
   // Link a user to a participant ("This is me")
-  const linkUserToParticipant = async (participantId: string, userId: string, userEmail?: string): Promise<boolean> => {
+  const linkUserToParticipant = async (participantId: string, userId: string, userEmail?: string, displayName?: string): Promise<boolean> => {
     try {
       setError(null)
 
-      // Backfill email if participant doesn't have one
-      const existing = participants.find(p => p.id === participantId)
-      const backfillEmail = userEmail && !existing?.email
-
-      const updatePayload = backfillEmail
-        ? { user_id: userId, email: userEmail }
-        : { user_id: userId }
+      const updatePayload: Record<string, unknown> = { user_id: userId }
+      if (userEmail) updatePayload.email = userEmail
+      if (displayName) updatePayload.name = displayName
 
       const controller = new AbortController()
       const { error: linkError } = await withTimeout<any>(
@@ -197,8 +195,9 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       setParticipants(prev =>
         prev.map(p => (p.id === participantId
-          ? { ...p, user_id: userId, ...(backfillEmail ? { email: userEmail } : {}) }
+          ? { ...p, user_id: userId, ...(userEmail ? { email: userEmail } : {}), ...(displayName ? { name: displayName } : {}) }
           : p))
+          .sort((a, b) => a.name.localeCompare(b.name))
       )
 
       return true
@@ -261,6 +260,30 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     }
     return cancel
   }, [tripCode, currentTrip?.id])
+
+  // Background sync: keep linked participant's name/email in sync with Google profile
+  const bgSyncDoneRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!user || !userProfile?.display_name || participants.length === 0) return
+
+    const myParticipant = participants.find(p => p.user_id === user.id)
+    if (!myParticipant) return
+
+    const nameStale = myParticipant.name !== userProfile.display_name
+    const emailStale = user.email && myParticipant.email !== user.email
+
+    if (!nameStale && !emailStale) return
+
+    // Prevent re-firing for the same participant while update is in flight
+    const syncKey = `${myParticipant.id}:${userProfile.display_name}:${user.email}`
+    if (bgSyncDoneRef.current === syncKey) return
+    bgSyncDoneRef.current = syncKey
+
+    updateParticipant(myParticipant.id, {
+      ...(nameStale ? { name: userProfile.display_name } : {}),
+      ...(emailStale ? { email: user.email! } : {}),
+    })
+  }, [participants, userProfile?.display_name, user?.email])
 
   const value: ParticipantContextType = {
     participants,

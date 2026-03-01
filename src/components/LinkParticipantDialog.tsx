@@ -19,7 +19,7 @@ interface LinkParticipantDialogProps {
 }
 
 export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDialogProps) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const { participants, linkUserToParticipant } = useParticipantContext()
   const { isLinked } = useMyParticipant()
   const [open, setOpen] = useState(false)
@@ -32,7 +32,7 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
 
   const handleLink = async (participantId: string) => {
     setLinking(true)
-    const success = await linkUserToParticipant(participantId, user.id, user.email ?? undefined)
+    const success = await linkUserToParticipant(participantId, user.id, user.email ?? undefined, userProfile?.display_name ?? undefined)
     setLinking(false)
 
     if (success) {
