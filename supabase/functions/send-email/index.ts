@@ -132,6 +132,7 @@ type SendEmailBody =
       pay_to_name: string
       organiser_name: string
       receipts?: ReceiptEmailData[]
+      expense_count?: number
     }
   | {
       type: 'issue_report'
@@ -256,10 +257,13 @@ function paymentReminderEmailHtml(params: {
   tripUrl: string
   settlementsUrl: string
   receipts?: ReceiptEmailData[]
+  expenseCount?: number
 }): string {
-  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, settlementsUrl, receipts } = params
+  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, settlementsUrl, receipts, expenseCount } = params
   const hasReceipts = receipts && receipts.length > 0
-  const receiptSection = hasReceipts ? `
+  let receiptSection = ''
+  if (hasReceipts) {
+    receiptSection = `
               <!-- Receipt tables -->
               <div style="margin-bottom:24px;">
                 <p style="margin:0 0 12px;color:${BRAND.textMuted};font-size:14px;font-weight:600;">What you're splitting:</p>
@@ -267,7 +271,18 @@ function paymentReminderEmailHtml(params: {
                 <p style="margin:8px 0 0;color:${BRAND.textMuted};font-size:12px;text-align:center;font-style:italic;">
                   Full receipt photo available in the Spl1t app.
                 </p>
-              </div>` : ''
+              </div>`
+  } else if (expenseCount && expenseCount > 0) {
+    receiptSection = `
+              <!-- Expense count summary -->
+              <div style="margin-bottom:24px;border:1px solid ${BRAND.border};border-radius:8px;overflow:hidden;">
+                <div style="background:${BRAND.background};padding:12px 16px;">
+                  <p style="margin:0 0 4px;color:${BRAND.textMuted};font-size:14px;font-weight:600;">What you're splitting:</p>
+                  <p style="margin:0;color:${BRAND.textPrimary};font-size:14px;">Based on ${expenseCount} expenses from ${escapeHtml(tripName)}.</p>
+                  <p style="margin:6px 0 0;color:${BRAND.textMuted};font-size:13px;"><a href="${settlementsUrl}" style="color:${BRAND.coral};text-decoration:none;">Open the app</a> to see the full breakdown.</p>
+                </div>
+              </div>`
+  }
 
   const bodyContent = `
               <h2 style="margin:0 0 8px;color:${BRAND.textPrimary};font-size:20px;font-weight:600;">Hi ${escapeHtml(recipientName)}!</h2>
@@ -427,6 +442,7 @@ Deno.serve(async (req) => {
         tripUrl,
         settlementsUrl,
         receipts: body.receipts,
+        expenseCount: body.expense_count,
       })
       toEmail = body.recipient_email
       toName = body.recipient_name

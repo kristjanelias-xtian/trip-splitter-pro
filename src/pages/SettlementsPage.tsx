@@ -209,6 +209,10 @@ export function SettlementsPage() {
     const debtorParticipantIds = participants
       .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === transaction.fromId)
       .map(p => p.id)
+
+    // Count all expenses paid by the creditor to decide receipt vs summary
+    const creditorExpenseCount = expenses.filter(e => creditorParticipantIds.has(e.paid_by)).length
+
     const receipts: Array<{
       merchant: string | null
       items: Array<{ name: string; price: number; qty: number }> | null
@@ -218,20 +222,23 @@ export function SettlementsPage() {
       mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
       debtor_participant_ids: string[]
     }> = []
-    for (const expense of expenses) {
-      if (receipts.length >= 3) break
-      if (!creditorParticipantIds.has(expense.paid_by)) continue
-      const receipt = receiptByExpenseId[expense.id]
-      if (receipt) {
-        receipts.push({
-          merchant: receipt.extracted_merchant,
-          items: receipt.extracted_items,
-          confirmed_total: receipt.confirmed_total,
-          tip_amount: receipt.tip_amount,
-          currency: receipt.extracted_currency ?? currentTrip.default_currency,
-          mapped_items: receipt.mapped_items,
-          debtor_participant_ids: debtorParticipantIds,
-        })
+
+    // Only collect receipt details when creditor has 3 or fewer expenses
+    if (creditorExpenseCount <= 3) {
+      for (const expense of expenses) {
+        if (!creditorParticipantIds.has(expense.paid_by)) continue
+        const receipt = receiptByExpenseId[expense.id]
+        if (receipt) {
+          receipts.push({
+            merchant: receipt.extracted_merchant,
+            items: receipt.extracted_items,
+            confirmed_total: receipt.confirmed_total,
+            tip_amount: receipt.tip_amount,
+            currency: receipt.extracted_currency ?? currentTrip.default_currency,
+            mapped_items: receipt.mapped_items,
+            debtor_participant_ids: debtorParticipantIds,
+          })
+        }
       }
     }
 
@@ -251,6 +258,7 @@ export function SettlementsPage() {
             pay_to_name: transaction.toName,
             organiser_name: organiserName,
             ...(receipts.length > 0 && { receipts }),
+            ...(creditorExpenseCount > 3 && { expense_count: creditorExpenseCount }),
           },
         })
       )

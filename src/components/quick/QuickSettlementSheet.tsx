@@ -177,7 +177,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     try {
       const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
-      // Collect receipt data for expenses paid by the creditor (max 3)
+      // Collect receipt data for expenses paid by the creditor
       const entityMap = buildEntityMap(participants, trackingMode)
       const creditorParticipantIds = new Set(
         participants
@@ -188,6 +188,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         .filter(p => (entityMap.participantToEntityId.get(p.id) ?? p.id) === tx.fromId)
         .map(p => p.id)
 
+      // Count all expenses paid by the creditor to decide receipt vs summary
+      const creditorExpenseCount = expenses.filter(e => creditorParticipantIds.has(e.paid_by)).length
+
       const receipts: Array<{
         merchant: string | null
         items: Array<{ name: string; price: number; qty: number }> | null
@@ -197,20 +200,23 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
         debtor_participant_ids: string[]
       }> = []
-      for (const expense of expenses) {
-        if (receipts.length >= 3) break
-        if (!creditorParticipantIds.has(expense.paid_by)) continue
-        const receipt = receiptByExpenseId[expense.id]
-        if (receipt) {
-          receipts.push({
-            merchant: receipt.extracted_merchant,
-            items: receipt.extracted_items,
-            confirmed_total: receipt.confirmed_total,
-            tip_amount: receipt.tip_amount,
-            currency: receipt.extracted_currency ?? currentTrip.default_currency,
-            mapped_items: receipt.mapped_items,
-            debtor_participant_ids: debtorParticipantIds,
-          })
+
+      // Only collect receipt details when creditor has 3 or fewer expenses
+      if (creditorExpenseCount <= 3) {
+        for (const expense of expenses) {
+          if (!creditorParticipantIds.has(expense.paid_by)) continue
+          const receipt = receiptByExpenseId[expense.id]
+          if (receipt) {
+            receipts.push({
+              merchant: receipt.extracted_merchant,
+              items: receipt.extracted_items,
+              confirmed_total: receipt.confirmed_total,
+              tip_amount: receipt.tip_amount,
+              currency: receipt.extracted_currency ?? currentTrip.default_currency,
+              mapped_items: receipt.mapped_items,
+              debtor_participant_ids: debtorParticipantIds,
+            })
+          }
         }
       }
 
@@ -230,6 +236,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               pay_to_name: tx.toName,
               organiser_name: organiserName,
               ...(receipts.length > 0 && { receipts }),
+              ...(creditorExpenseCount > 3 && { expense_count: creditorExpenseCount }),
             },
           })
         )
