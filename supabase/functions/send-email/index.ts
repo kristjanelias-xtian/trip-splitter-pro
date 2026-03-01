@@ -43,10 +43,14 @@ function baseEmailHtml(params: {
   title: string
   subtitle: string
   bodyContent: string
-  footerOrganiser: string  // pre-escaped
-  tripUrl: string
+  footerOrganiser?: string  // pre-escaped
+  tripUrl?: string
+  footerHtml?: string
 }): string {
-  const { title, subtitle, bodyContent, footerOrganiser, tripUrl } = params
+  const { title, subtitle, bodyContent, footerOrganiser, tripUrl, footerHtml } = params
+  const footer = footerHtml
+    ? footerHtml
+    : `<p style="margin:0;color:${BRAND.textMuted};font-size:12px;">Sent by <strong>${footerOrganiser}</strong> via Spl<span style="color:${BRAND.coral};">1</span>t &middot; <a href="${tripUrl}" style="color:${BRAND.coral};text-decoration:none;">Open trip &rarr;</a></p>`
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,11 +66,17 @@ function baseEmailHtml(params: {
           <!-- Header — logo + wordmark -->
           <tr>
             <td style="background:${BRAND.white};padding:28px 32px;text-align:center;border-bottom:1px solid ${BRAND.border};">
-              <div style="margin-bottom:8px;">
-                <img src="https://split.xtian.me/logo.png" alt="Spl1t" width="40" height="40" style="border-radius:8px;display:inline-block;" />
-              </div>
-              <div style="font-size:22px;font-weight:700;color:#111827;letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coral};">1</span>t</div>
-              <p style="margin:6px 0 0;color:${BRAND.textMuted};font-size:13px;">${subtitle}</p>
+              <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <img src="https://split.xtian.me/logo.png" alt="Spl1t" width="36" height="36" style="border-radius:8px;display:block;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:22px;font-weight:700;color:${BRAND.textPrimary};letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coral};">1</span>t</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:8px 0 0;color:${BRAND.textMuted};font-size:13px;">${subtitle}</p>
             </td>
           </tr>
           <!-- Body -->
@@ -78,9 +88,7 @@ function baseEmailHtml(params: {
           <!-- Footer -->
           <tr>
             <td style="padding:16px 32px;border-top:1px solid ${BRAND.border};text-align:center;">
-              <p style="margin:0;color:${BRAND.textMuted};font-size:12px;">
-                Sent by <strong>${footerOrganiser}</strong> via Spl<span style="color:${BRAND.coral};">1</span>t &middot; <a href="${tripUrl}" style="color:${BRAND.coral};text-decoration:none;">Open trip &rarr;</a>
-              </p>
+              ${footer}
             </td>
           </tr>
         </table>
@@ -125,6 +133,14 @@ type SendEmailBody =
       organiser_name: string
       receipts?: ReceiptEmailData[]
     }
+  | {
+      type: 'issue_report'
+      issue_title: string
+      issue_body: string
+      issue_url: string
+      issue_number: number
+      reporter_email: string
+    }
 
 function invitationEmailHtml(params: {
   participantName: string
@@ -155,7 +171,7 @@ function invitationEmailHtml(params: {
               </p>`
   return baseEmailHtml({
     title: `${escapeHtml(organiserName)} added you to ${escapeHtml(tripName)}`,
-    subtitle: 'Trip Invitation',
+    subtitle: 'Invitation',
     bodyContent,
     footerOrganiser: escapeHtml(organiserName),
     tripUrl,
@@ -284,6 +300,41 @@ function paymentReminderEmailHtml(params: {
   })
 }
 
+function issueReportEmailHtml(params: {
+  issueNumber: number
+  issueTitle: string
+  issueBody: string
+  issueUrl: string
+  reporterEmail: string
+}): string {
+  const { issueNumber, issueTitle, issueBody, issueUrl, reporterEmail } = params
+  const truncatedBody = issueBody.length > 500 ? issueBody.slice(0, 500) + '...' : issueBody
+  const bodyContent = `
+              <h2 style="margin:0 0 8px;color:${BRAND.textPrimary};font-size:20px;font-weight:700;">#${issueNumber} ${escapeHtml(issueTitle)}</h2>
+              <p style="margin:0 0 20px;color:${BRAND.textMuted};font-size:14px;">
+                Reported by <strong style="color:${BRAND.textPrimary};">${escapeHtml(reporterEmail)}</strong>
+              </p>
+              <div style="background:${BRAND.background};border:1px solid ${BRAND.border};border-radius:8px;padding:16px;margin-bottom:24px;">
+                <p style="margin:0;color:${BRAND.textPrimary};font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(truncatedBody)}</p>
+              </div>
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${issueUrl}" style="display:inline-block;background:${BRAND.coral};color:${BRAND.white};font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                      View on GitHub &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>`
+  return baseEmailHtml({
+    title: `New issue report: #${issueNumber} ${escapeHtml(issueTitle)}`,
+    subtitle: 'New Issue Report',
+    bodyContent,
+    footerHtml: `<p style="margin:0;color:${BRAND.textMuted};font-size:12px;">Spl<span style="color:${BRAND.coral};">1</span>t &middot; Issue tracking</p>`,
+  })
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
@@ -374,6 +425,26 @@ Deno.serve(async (req) => {
       toName = body.recipient_name
       emailType = 'payment_reminder'
       tripId = body.trip_id
+    } else if (body.type === 'issue_report') {
+      const adminEmail = Deno.env.get('ADMIN_NOTIFICATION_EMAIL')
+      if (!adminEmail) {
+        logger.info('ADMIN_NOTIFICATION_EMAIL not set, skipping issue report notification')
+        return new Response(
+          JSON.stringify({ ok: true, skipped: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        )
+      }
+      subject = `[Spl1t] #${body.issue_number} ${body.issue_title}`
+      html = issueReportEmailHtml({
+        issueNumber: body.issue_number,
+        issueTitle: body.issue_title,
+        issueBody: body.issue_body,
+        issueUrl: body.issue_url,
+        reporterEmail: body.reporter_email,
+      })
+      toEmail = adminEmail
+      toName = 'Admin'
+      emailType = 'issue_report'
     } else {
       return new Response(
         JSON.stringify({ error: "Unknown email type" }),
