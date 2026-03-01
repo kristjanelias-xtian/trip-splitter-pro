@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
-import { Plus, UserPlus, X, Users, Smartphone } from 'lucide-react'
+import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
-import { useToast } from '@/hooks/use-toast'
-import { ToastAction } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,10 +20,11 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   const { user, userProfile } = useAuth()
   const { participants, createParticipant } = useParticipantContext()
   const { contacts } = useTripContacts(tripId)
-  const { toast } = useToast()
 
   const [addedNames, setAddedNames] = useState<string[]>([])
   const [supportsContacts, setSupportsContacts] = useState(false)
+  const [recentExpanded, setRecentExpanded] = useState(false)
+  const [sendInviteOnAdd, setSendInviteOnAdd] = useState(true)
 
   // Manual add form state
   const [name, setName] = useState('')
@@ -111,20 +110,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     }
   }, [showDropdown, filteredContacts, activeIndex, handleSelectContact])
 
-  // Detect ambiguous display names in contacts for chip disambiguation
-  const ambiguousNames = useMemo(() => {
-    const nameCounts = new Map<string, number>()
-    for (const c of contacts) {
-      const displayName = (c.display_name ?? c.name).toLowerCase()
-      nameCounts.set(displayName, (nameCounts.get(displayName) || 0) + 1)
-    }
-    const ambiguous = new Set<string>()
-    for (const [n, count] of nameCounts) {
-      if (count > 1) ambiguous.add(n)
-    }
-    return ambiguous
-  }, [contacts])
-
   // Check contacts API support on mount
   useEffect(() => {
     setSupportsContacts('contacts' in navigator && typeof (navigator as any).contacts?.select === 'function')
@@ -200,16 +185,8 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
   const handleAddRecent = async (contact: TripContact) => {
     const newParticipant = await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
-    if (newParticipant?.email && user) {
-      toast({
-        title: `${newParticipant.name} added`,
-        description: 'Send invite email?',
-        action: (
-          <ToastAction altText="Send invite" onClick={() => sendInvitation(newParticipant.id, newParticipant.email!, newParticipant.name)}>
-            Send
-          </ToastAction>
-        ),
-      })
+    if (newParticipant?.email && user && sendInviteOnAdd) {
+      sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
     }
   }
 
@@ -222,16 +199,8 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
         const personEmail = contact.email?.[0] ?? null
         if (personName.trim()) {
           const newParticipant = await addPerson(personName.trim(), personEmail)
-          if (newParticipant?.email && user) {
-            toast({
-              title: `${newParticipant.name} added`,
-              description: 'Send invite email?',
-              action: (
-                <ToastAction altText="Send invite" onClick={() => sendInvitation(newParticipant.id, newParticipant.email!, newParticipant.name)}>
-                  Send
-                </ToastAction>
-              ),
-            })
+          if (newParticipant?.email && user && sendInviteOnAdd) {
+            sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
           }
         }
       }
@@ -299,35 +268,65 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
       {/* Section A: People you've tripped with */}
       {contacts.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setRecentExpanded(prev => !prev)}
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
+          >
             <Users size={14} />
-            Recent
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {contacts.slice(0, 20).map((contact, i) => {
-              const added = isAdded(contact)
-              const displayName = contact.display_name ?? contact.name
-              const isAmbiguous = ambiguousNames.has(displayName.toLowerCase())
-              const chipLabel = isAmbiguous && contact.email
-                ? `${displayName} · ${contact.email.split('@')[0]}@…`
-                : displayName
-              return (
-                <button
-                  key={i}
-                  onClick={() => !added && handleAddRecent(contact)}
-                  disabled={added}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-colors ${
-                    added
-                      ? 'border-primary/30 bg-primary/10 text-primary cursor-default'
-                      : 'border-border hover:border-primary/50 hover:bg-accent/40 text-foreground'
-                  }`}
-                >
-                  {added ? null : <Plus size={12} />}
-                  {chipLabel}
-                </button>
-              )
-            })}
-          </div>
+            <span>Recent ({contacts.slice(0, 20).length})</span>
+            <ChevronRight
+              size={14}
+              className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+          {user && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendInviteOnAdd}
+                onChange={(e) => setSendInviteOnAdd(e.target.checked)}
+                className="rounded border-border"
+              />
+              Send invite emails when adding
+            </label>
+          )}
+          {recentExpanded && (
+            <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
+              {contacts.slice(0, 20).map((contact, i) => {
+                const added = isAdded(contact)
+                const displayName = contact.display_name ?? contact.name
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 px-3 py-2 text-sm ${
+                      added ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <span className="font-medium truncate">{displayName}</span>
+                    {contact.email && (
+                      <span className="text-xs text-muted-foreground truncate ml-auto mr-2">
+                        {contact.email}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => !added && handleAddRecent(contact)}
+                      disabled={added}
+                      className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                        added
+                          ? 'text-primary cursor-default'
+                          : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                      aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
+                    >
+                      {added ? <Check size={14} /> : <Plus size={14} />}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
