@@ -24,7 +24,7 @@ export function usePullToRefresh() {
   const pullingRef = useRef(false)
 
   const isSheetOpen = useCallback(() => {
-    return !!document.querySelector('[data-radix-dialog-overlay]')
+    return !!document.querySelector('[role="dialog"][data-state="open"]')
   }, [])
 
   useEffect(() => {
