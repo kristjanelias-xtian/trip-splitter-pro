@@ -3,7 +3,7 @@ import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
-  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap, Shield
+  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap, Shield, ArrowLeft
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -181,7 +181,8 @@ export function Layout() {
             {/* Row 1 */}
             <div className="flex items-center justify-between py-4">
               {currentTrip ? (
-                <Link to="/" state={{ fromTrip: true }} className="flex-1 min-w-0">
+                <Link to="/" state={{ fromTrip: true }} className="flex items-center gap-3 flex-1 min-w-0">
+                  <ArrowLeft size={20} className={`shrink-0 ${onGradient ? 'text-white/80' : 'text-muted-foreground'}`} />
                   <h1
                     className={`font-bold text-lg truncate ${onGradient ? 'text-white' : 'text-foreground'}`}
                     style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
