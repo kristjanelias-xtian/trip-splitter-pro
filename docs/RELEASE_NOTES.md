@@ -1,5 +1,56 @@
 # Release Notes
 
+## v1.1.0 — March 2026
+
+### PWA
+- Installable with smart install guide — banner on home page + settings variant (#442)
+- Service worker + client-side guard — always launches to home, not stale deep links (#444)
+- Safe-area padding for iPhone home indicator in standalone mode (#460)
+- Pull-to-refresh gesture in standalone PWA — rubber-band with per-page refresh callbacks (#474, #476)
+- Admin nav works in installed PWA — `navigate()` instead of `window.open` (#445, #453)
+
+### Contact Autocomplete
+- "People you've tripped with" — deduplicated contacts from past trips (#464)
+- Google display names for linked Spl1t accounts (#465)
+- Dedup fixes and dropdown UX improvements (#467, #470)
+- Collapsible "Recent" contacts list in both Quick and Full mode (#472)
+
+### Invite UX
+- Per-participant "Send invite" button on participant list, removed from add flow (#477)
+- Auto-populate participant email on "This is me" linking (#478)
+- Branded coral email templates with Spl1t wordmark header (#469)
+
+### Balance & Settlement
+- "Out of pocket" replaces "Total paid" on BalanceCard (#423, #424)
+- Always-visible "Settled" row for consistent card heights (#425)
+- Within-group balance fixes — correct per-member totals + all settlements applied (#427, #429, #438)
+
+### Expenses
+- "Paid by" participant filter on ExpensesPage (#432)
+- Category filter icon alignment (#435)
+- Pie chart category color fix (#437)
+
+### Demo Trip
+- Seeded `livigno-2025` — 6 participants (2 couples + 2 solo), 13 expenses, EUR 4,004.80 (#430)
+- "Try a demo" link on home page (#431, #433)
+- Balance audit script for production trip integrity checks (#439)
+
+### Admin & Security
+- Trip deletion gated to creator or admin UUID (#436)
+- Responsive admin page — card layout on mobile, table on desktop (#453)
+
+### Navigation & UX
+- Back arrow in Full mode header, matching Quick mode (#452)
+- Auto-redirect only for trips happening now (today within start/end dates) (#449)
+- Bottom nav hidden on home page (#441)
+- Quick history hint for discoverability (#461)
+- Bank details gated to payers only, duplicate demo link removed (#481)
+
+### Testing
+- 173 unit tests (up from 145 in v1.0.0), 26 E2E unchanged
+
+---
+
 ## v1.0.0 — February 26, 2026
 
 ### AI Receipt Scanning
@@ -82,7 +133,7 @@
 - **Quick mode: Smart settlement suggestions** — "Log your payment" now shows suggested payments (computed from the optimizer) before the form, so you know exactly who owes whom and how much.
 - **Quick mode: Payer auto-select** — When adding an expense, the payer is automatically set to the logged-in user.
 - **Quick mode: Dual-currency display** — Transaction history shows both the base currency amount and the original currency amount.
-- **Rebrand to Split** — The app has been renamed from "Trip Splitter Pro" to "Split".
+- **Rebrand to Spl1t** — The app has been renamed from "Trip Splitter Pro" to "Spl1t".
 - **Shared link fixes** — Shared trip links now open in the correct mode; mode toggle responds correctly after redirect.
 - **Feedback improvements** — Added screenshot attachment support in the feedback dialog; "Report issue" button is hidden for anonymous users.
 - **UI fixes** — Fixed Top Expenses alignment on narrow viewports.
