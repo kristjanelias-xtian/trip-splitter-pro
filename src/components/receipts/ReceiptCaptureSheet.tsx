@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { logger } from '@/lib/logger'
 
 interface ReceiptCaptureSheetProps {
@@ -72,6 +73,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const scrollRef = useIOSScrollFix()
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -214,7 +216,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
   )
 
   const scrollContent = (
-    <div className="flex-1 overflow-y-auto overscroll-contain">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
       {!previewUrl ? (
         /* File selection state */
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-4">

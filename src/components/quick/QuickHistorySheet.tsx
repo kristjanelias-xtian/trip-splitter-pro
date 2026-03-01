@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 type FilterType = 'all' | 'expenses' | 'payments'
 
@@ -27,6 +28,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
+  const scrollRef = useIOSScrollFix()
   const [filter, setFilter] = useState<FilterType>('all')
   const [retrying, setRetrying] = useState(false)
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -78,7 +80,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
   )
 
   const scrollContent = (
-    <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
       {/* Filters */}
       <div className="flex gap-2 mb-4">
         {filterButtons.map(({ key, label }) => (

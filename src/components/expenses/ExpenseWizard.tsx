@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 import { X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -86,6 +87,7 @@ function MobileWizard({
 
   // Keyboard detection for mobile
   const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -419,6 +421,7 @@ function MobileWizard({
 
         {/* Scrollable content — only this scrolls */}
         <div
+          ref={scrollRef}
           className="flex-1 overflow-y-auto overscroll-contain min-h-0 px-6 py-4"
         >
           {error && (

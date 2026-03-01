@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useScrollIntoView } from '@/hooks/useScrollIntoView'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -149,6 +150,7 @@ export function ReceiptReviewSheet({
   const isMobile = useMediaQuery('(max-width: 767px)')
   const keyboard = useKeyboardHeight()
   const contentRef = useRef<HTMLDivElement>(null)
+  useIOSScrollFix(contentRef)
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()

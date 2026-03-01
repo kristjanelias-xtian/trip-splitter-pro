@@ -7,6 +7,7 @@ import { ReceiptTask } from '@/types/receipt'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 interface ReceiptDetailsSheetProps {
   open: boolean
@@ -20,6 +21,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
   const items = task.extracted_items ?? []
   const currency = task.extracted_currency ?? '—'
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const scrollRef = useIOSScrollFix()
 
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
   const [showThumbnail, setShowThumbnail] = useState(false)
@@ -64,7 +66,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
   )
 
   const body = (
-    <div className="flex-1 overflow-y-auto overscroll-contain">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
       <div className="px-4 py-3 space-y-3">
         {/* Receipt image thumbnail (collapsible) */}
         {receiptImageUrl && (

@@ -4,6 +4,7 @@ import { ParticipantsSetup } from '@/components/setup/ParticipantsSetup'
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 interface QuickParticipantSetupSheetProps {
   open: boolean
@@ -13,6 +14,7 @@ interface QuickParticipantSetupSheetProps {
 export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticipantSetupSheetProps) {
   const { currentTrip } = useCurrentTrip()
   const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
 
   if (!currentTrip) return null
 
@@ -44,7 +46,7 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
         </div>
 
         {/* Scrollable content — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
           <ParticipantsSetup />
         </div>
 

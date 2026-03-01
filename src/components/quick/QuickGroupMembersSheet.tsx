@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { UserCheck, X, ChevronDown, Check } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
@@ -30,6 +31,7 @@ export function QuickGroupMembersSheet({
   exchangeRates = {},
   settlements = [],
 }: QuickGroupMembersSheetProps) {
+  const scrollRef = useIOSScrollFix()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   function isLinked(balanceId: string): boolean {
@@ -79,7 +81,7 @@ export function QuickGroupMembersSheet({
         </div>
 
         {/* Scrollable list */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
           {balances.map((b, i) => {
             const isMe = b.id === myParticipantId
             const linked = isLinked(b.id)
