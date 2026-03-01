@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅)
 
 ---
 
@@ -771,6 +771,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Contact email auto-fill | PR #470: `useTripContacts` now fetches `email` from `user_profiles` alongside `display_name` — profile email as fallback enables email auto-fill, disambiguation, and invite checkbox in both Full and Quick mode. `QuickParticipantPicker` gets same autocomplete dropdown as `ParticipantsSetup` (keyboard nav, contact selection, `suggestedUserId` passthrough) + ambiguous name disambiguation on Recent chips (`"Alex · alex@…"`). |
 | 2026-03-01 | Docs update | PR #471: Updated CLAUDE.md and PLAN.md with PRs #468–#470. |
 | 2026-03-01 | Quick participant picker UX | PR #472: `QuickParticipantPicker` Recent section redesigned — pill grid replaced with collapsible disclosure list (collapsed by default, "Recent (N)" header with chevron). Each row shows name + full email + `+`/`✓` button, naturally disambiguating same-name contacts. Toast-based invite prompt replaced with global "Send invite emails when adding" checkbox (default checked). Removed `useToast`/`ToastAction` imports and `ambiguousNames` memo. |
+| 2026-03-01 | Pull-to-refresh | PR #474: Custom pull-to-refresh gesture for PWA standalone mode (no address bar = no refresh button). `usePullToRefresh` hook handles touch gestures with rubber-band resistance (0.5x), 80px threshold, 120px cap. Pages register refresh callbacks via `useRegisterRefresh` + `PullToRefreshContext`. `PullToRefreshIndicator` shows rotating arrow / spinner. Skips when sheets open or scrolled down. `overscroll-behavior-y: none` disables Chrome Android native PTR. 4 new files, 10 modified. |
 
 ---
 

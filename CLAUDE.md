@@ -447,6 +447,33 @@ Shield icon button in both Layout and QuickLayout headers — visible to admin u
 
 In PWA standalone mode, the bottom tab bar needs safe-area padding so the iPhone home indicator doesn't overlap tap targets. `viewport-fit=cover` on the viewport meta enables `env(safe-area-inset-bottom)`. CSS utility `pwa-safe-bottom` in `index.css` is scoped to `@media (display-mode: standalone)` — regular browser is unaffected. Applied to bottom nav and main content margin in `Layout.tsx`.
 
+### Pull-to-Refresh (`usePullToRefresh`)
+
+In standalone PWA mode there's no address bar or refresh button. A custom pull-to-refresh gesture provides a native-feeling way to reload data.
+
+**Architecture:** `PullToRefreshProvider` (wraps each layout) stores the current page's refresh callback in a ref. Pages register their callback via `useRegisterRefresh(useCallback(...))`. The `usePullToRefresh` hook in each layout handles touch gestures and calls the registered callback.
+
+**Gesture behaviour:**
+- Only activates when `window.scrollY <= 0` (at scroll top)
+- Ignores horizontal swipes (direction locked on first significant movement)
+- Skips when any Radix sheet/dialog is open (`document.querySelector('[data-radix-dialog-overlay]')`)
+- Rubber-band resistance: `deltaY * 0.5`, capped at 120px. Threshold to trigger: 80px.
+- `touchmove` uses `passive: false` + `preventDefault()` during pull to suppress native iOS bounce and Chrome PTR
+- `overscroll-behavior-y: none` on body in `index.css` disables Chrome Android's native PTR
+
+**Indicator:** `PullToRefreshIndicator` at top of `<main>` — `ArrowDown` icon rotates 0-180deg proportional to progress; `Loader2` spinner during refresh. Transitions disabled during active drag for instant finger tracking.
+
+**Page refresh callbacks:**
+| Page | Callback |
+|------|----------|
+| HomePage | `refreshTrips()` |
+| QuickGroupDetailPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
+| ExpensesPage | `refreshExpenses()` |
+| SettlementsPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
+| DashboardPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
+| ShoppingPage | `refreshShoppingItems()` |
+| PlannerPage | `refreshMeals + refreshActivities + refreshStays` |
+
 ### iOS `start_url` Limitation
 
 iOS Safari ignores `manifest.start_url` and saves whatever URL was in the address bar at install time. All three layers (manifest, SW, client guard) are needed because iOS is inconsistent about which defense fires across versions.
