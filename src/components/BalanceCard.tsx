@@ -59,9 +59,9 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
   } : {}
 
   return (
-    <CardWrapper {...cardProps}>
+    <CardWrapper {...cardProps} className="h-full">
       <Card
-        className={`p-4 border ${status.borderClass} ${status.bgClass} ${
+        className={`h-full p-4 border ${status.borderClass} ${status.bgClass} ${
           onClick ? 'cursor-pointer hover:shadow-md' : ''
         } transition-all`}
         onClick={onClick}
