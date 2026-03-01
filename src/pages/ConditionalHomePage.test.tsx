@@ -104,9 +104,14 @@ describe('ConditionalHomePage', () => {
   it('navigates to /t/{code}/quick on mobile with active trip', async () => {
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
     mockAuth.user = { id: 'user-1' } as any
+    const today = new Date()
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1)
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
     const trip = buildTrip({
       id: 'trip-1',
       trip_code: 'summer-trip-Ab1234',
+      start_date: yesterday.toISOString().slice(0, 10),
+      end_date: tomorrow.toISOString().slice(0, 10),
     })
     mockTrips.trips = [trip]
     vi.mocked(getActiveTripId).mockReturnValue('trip-1')
@@ -123,6 +128,34 @@ describe('ConditionalHomePage', () => {
         { replace: true }
       )
     })
+  })
+
+  it('does not redirect for upcoming (future) trips', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    mockAuth.user = { id: 'user-1' } as any
+    const nextMonth = new Date()
+    nextMonth.setMonth(nextMonth.getMonth() + 1)
+    const endMonth = new Date(nextMonth)
+    endMonth.setDate(endMonth.getDate() + 7)
+    const trip = buildTrip({
+      id: 'trip-1',
+      trip_code: 'future-trip-Ab1234',
+      start_date: nextMonth.toISOString().slice(0, 10),
+      end_date: endMonth.toISOString().slice(0, 10),
+    })
+    mockTrips.trips = [trip]
+    vi.mocked(getActiveTripId).mockReturnValue('trip-1')
+
+    render(
+      <MemoryRouter>
+        <ConditionalHomePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('home-page')).toBeInTheDocument()
+    })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('skips auto-redirect for unauthenticated users', async () => {

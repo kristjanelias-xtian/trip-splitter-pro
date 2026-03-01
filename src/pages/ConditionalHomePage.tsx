@@ -42,7 +42,18 @@ export function ConditionalHomePage() {
     if (activeTripId) {
       const activeTrip = trips.find(t => t.id === activeTripId)
       if (activeTrip) {
-        navigate(`/t/${activeTrip.trip_code}/quick`, { replace: true })
+        // Only redirect for trips happening right now (today within date range).
+        // getActiveTripId also returns upcoming trips — don't redirect for those,
+        // it's confusing when the trip is months away.
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const start = new Date(activeTrip.start_date)
+        const end = new Date(activeTrip.end_date)
+        start.setHours(0, 0, 0, 0)
+        end.setHours(23, 59, 59, 999)
+        if (today >= start && today <= end) {
+          navigate(`/t/${activeTrip.trip_code}/quick`, { replace: true })
+        }
       }
     }
   }, [isMobile, tripsLoading, user, trips, navigate, fromTrip])
