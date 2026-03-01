@@ -776,6 +776,8 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | PTR standalone-only | PR #476: Gated `usePullToRefresh` touch listeners behind standalone PWA check (`display-mode: standalone` / `navigator.standalone`). Regular browsers have their own refresh + native PTR — custom gesture no longer activates there. |
 | 2026-03-01 | Invite email simplification | PR #477: Removed invite email logic from add-participant flow in QuickParticipantPicker, ParticipantsSetup, and IndividualsSetup (no more checkboxes, no auto-send on add). Added collapsible "Recent (N)" contacts list to ParticipantsSetup (same pattern as QuickParticipantPicker) for one-tap adding of past trip contacts. Added per-participant "Send invite" button on participant list (visible when participant has email + user authenticated) with 2s sent indicator. |
 | 2026-03-01 | Email backfill on link | PR #478: `linkUserToParticipant` now accepts optional `userEmail` param. When a user links themselves via "This is me", the participant's email is auto-populated from the auth session if the participant has no email set. Existing emails are never overwritten. |
+| 2026-03-01 | Docs update | PR #480: Updated CLAUDE.md and PLAN.md with PRs #476–#478. |
+| 2026-03-01 | Home page UX fixes | PR #481 (closes #479): removed duplicate "Try a demo" link for authenticated users with no trips (empty state card already has one). Bank details prompt (`OnboardingPrompts`) now only appears when user has paid for at least 1 expense across any trip — not immediately on sign-up. |
 
 ---
 
