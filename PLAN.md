@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅; nicknames + avatars ✅; receipt viewer ✅; scan-create fix ✅; dialog selector fix ✅)
 
 ---
 
@@ -781,6 +781,22 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Email header branding | PR #484: replaced coral background email header with white header + logo image (`logo.png` at 40×40) + dark wordmark, matching marketing page nav bar. |
 | 2026-03-01 | Docs + README | PRs #487, #488: Updated CLAUDE.md/PLAN.md with PR #484. Overhauled README.md and added v1.1.0 release notes. |
 | 2026-03-01 | Stale chunk detection | PR #489 (closes #483): ErrorBoundary detects stale chunk errors (`'text/html' is not a valid JavaScript MIME type'` and 3 other variants) from post-deploy cache mismatches. Auto-reloads once (sessionStorage guard); if still broken, shows friendly "New version available" card instead of generic error. |
+| 2026-03-01 | Email header iterations | PRs #491, #496, #500, #501: Iterated email header layout — side-by-side logo + wordmark, larger logo, cropped logo, left-aligned final design. Added issue report notification email type to `send-email` edge function. |
+| 2026-03-01 | Scan flow fix + child status | PR #498: Fixed scan flow sheet vanishing when creating trip with today's date (ConditionalHomePage redirect guard using `[data-radix-dialog-overlay]`). Also preserved `is_adult` child status from contacts when adding participants. |
+| 2026-03-01 | Google profile sync | PRs #502, #503: `linkUserToParticipant` ("This is me") now syncs participant name + email from Google profile. Migration 034: one-time backfill of all linked participants' names/emails from `auth.users` metadata. |
+| 2026-03-01 | Payment reminder landing | PR #504: New `/remind/:tripCode` route — branded standalone landing page for payment reminders (replaces direct settlements link in emails). Matches JoinPage pattern with trip gradient header + CTAs. |
+| 2026-03-01 | Nicknames + avatars | PRs #505, #506, #507: Migration 035 adds `nickname TEXT` to participants — preserves short name when "This is me" overwrites with full Google name. `ParticipantAvatar` component shows Google avatars. `getShortName()` utility for consistent short name display. Nickname carried over from previous trips via `useTripContacts`. "aka" label + pencil edit icon in participant lists. |
+| 2026-03-01 | Contact UI redesign | PRs #508–#515: Redesigned recent contacts as compact chip grid with full names, avatars, and email. Stacked group member avatars on Dashboard BalanceCard (moved to second row). Distinguished child pills with Baby icon + dashed border. Settlement step badges restyled with forced initials for wallet groups. Recent companions + manual add form toggled as mutually exclusive. |
+| 2026-03-01 | Receipt access + viewer | PRs #516, #518, #520, #522, #523: Migration 036 opens `receipt_tasks` SELECT to all users + storage policy for receipt images. Responsive receipt viewer with edit mapping support (Dialog on desktop, Sheet on mobile). Any authenticated trip member can edit receipt mapping (not creator-only). Payer + item assignments restored correctly when editing. |
+| 2026-03-01 | Payment reminder emails | PRs #517, #519: Multi-email choice dialog for wallet group payment reminders (picks from group members' emails). Smart receipt section — shows expense count summary instead of full receipt tables when >3 creditor expenses. |
+| 2026-03-01 | Recent companions UX | PR #521: Expandable recent companions list with "Show more" toggle. |
+| 2026-03-01 | BalanceCard improvements | PRs #524, #525, #526, #527, #529: Gross settlement amounts on BalanceCard (with intra-family exclusion). Removed overlapping group avatars. Short names in ReceiptReviewSheet payer dropdown/chips. Equal-height BalanceCard tiles in 2-column dashboard grid. |
+| 2026-03-01 | iOS scroll lock fix | PR #532 (closes #528): New `useIOSScrollFix` hook — nudges `scrollTop` 1px from boundaries on `touchstart` to prevent iOS Safari scroll-lock bug with `overscroll-behavior: contain`. Applied to all 13 sheet scroll containers. No-op on non-iOS. |
+| 2026-03-01 | Scan-create sheet fix | PR #534: Fixed `[data-radix-dialog-overlay]` selector — Radix Dialog v1.1.15 doesn't render that attribute. Replaced with `[role="dialog"][data-state="open"]` in ConditionalHomePage + usePullToRefresh. |
+| 2026-03-01 | Receipt edit fix | PR #535: Prevent receipt edit flow from detaching receipt on close. |
+| 2026-03-01 | PWA sheet safe-area | PR #539 (closes #531): Added `pwa-safe-bottom` class to all bottom sheet sticky footers for iPhone home indicator padding in standalone PWA mode. |
+| 2026-03-01 | Receipt race condition | PR #540 (closes #538): Await receipt image path update to prevent race condition between upload and task row update. |
+| 2026-03-01 | Scan participant removal | PR #541 (closes #537): X button to remove participant chips + toggle checkmarks on recent contacts in QuickScanCreateFlow. |
 
 ---
 
