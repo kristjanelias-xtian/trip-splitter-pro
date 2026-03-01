@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
 import { Plus, UserPlus, X, Users, Smartphone } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -33,6 +33,97 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sendInvite, setSendInvite] = useState(true)
+
+  // Autocomplete state
+  const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const emailInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const justSelectedRef = useRef(false)
+
+  // Filtered contacts for autocomplete dropdown
+  const filteredContacts = useMemo(() => {
+    if (name.trim().length < 2 || contacts.length === 0) return []
+    const query = name.toLowerCase()
+    return contacts
+      .filter(c =>
+        c.name.toLowerCase().includes(query) ||
+        c.display_name?.toLowerCase().includes(query)
+      )
+      .slice(0, 5)
+  }, [name, contacts])
+
+  // Show/hide dropdown based on filtered results
+  useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false
+      return
+    }
+    setShowDropdown(filteredContacts.length > 0)
+    setActiveIndex(-1)
+  }, [filteredContacts.length])
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    if (!showDropdown) return
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          nameInputRef.current && !nameInputRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showDropdown])
+
+  const handleSelectContact = useCallback((contact: TripContact) => {
+    justSelectedRef.current = true
+    setName(contact.display_name ?? contact.name)
+    setEmail(contact.email || '')
+    setSuggestedUserId(contact.user_id)
+    setShowDropdown(false)
+    setActiveIndex(-1)
+    setTimeout(() => emailInputRef.current?.focus(), 0)
+  }, [])
+
+  const handleNameChange = useCallback((value: string) => {
+    setName(value)
+    setSuggestedUserId(null)
+  }, [])
+
+  const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || filteredContacts.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex(prev => (prev < filteredContacts.length - 1 ? prev + 1 : 0))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : filteredContacts.length - 1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      handleSelectContact(filteredContacts[activeIndex])
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false)
+      setActiveIndex(-1)
+    }
+  }, [showDropdown, filteredContacts, activeIndex, handleSelectContact])
+
+  // Detect ambiguous display names in contacts for chip disambiguation
+  const ambiguousNames = useMemo(() => {
+    const nameCounts = new Map<string, number>()
+    for (const c of contacts) {
+      const displayName = (c.display_name ?? c.name).toLowerCase()
+      nameCounts.set(displayName, (nameCounts.get(displayName) || 0) + 1)
+    }
+    const ambiguous = new Set<string>()
+    for (const [n, count] of nameCounts) {
+      if (count > 1) ambiguous.add(n)
+    }
+    return ambiguous
+  }, [contacts])
 
   // Check contacts API support on mount
   useEffect(() => {
@@ -166,12 +257,13 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
     setAdding(true)
     try {
-      const newParticipant = await addPerson(name.trim(), email.trim() || null)
+      const newParticipant = await addPerson(name.trim(), email.trim() || null, suggestedUserId)
       if (newParticipant?.email && user && sendInvite) {
         sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
       }
       setName('')
       setEmail('')
+      setSuggestedUserId(null)
       setSendInvite(true)
     } finally {
       setAdding(false)
@@ -214,6 +306,11 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
           <div className="flex flex-wrap gap-2">
             {contacts.slice(0, 20).map((contact, i) => {
               const added = isAdded(contact)
+              const displayName = contact.display_name ?? contact.name
+              const isAmbiguous = ambiguousNames.has(displayName.toLowerCase())
+              const chipLabel = isAmbiguous && contact.email
+                ? `${displayName} · ${contact.email.split('@')[0]}@…`
+                : displayName
               return (
                 <button
                   key={i}
@@ -226,7 +323,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
                   }`}
                 >
                   {added ? null : <Plus size={12} />}
-                  {contact.display_name ?? contact.name}
+                  {chipLabel}
                 </button>
               )
             })}
@@ -261,13 +358,54 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
         </div>
         <form onSubmit={handleManualAdd} className="space-y-2">
           <div className="flex gap-2">
-            <Input
-              placeholder="Name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="flex-1"
-              autoComplete="section-participant name"
-            />
+            <div className="relative flex-1">
+              <Input
+                ref={nameInputRef}
+                placeholder="Name"
+                value={name}
+                onChange={e => handleNameChange(e.target.value)}
+                onKeyDown={handleNameKeyDown}
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-autocomplete="list"
+                aria-controls="quick-contact-suggestions"
+              />
+              {showDropdown && (
+                <div
+                  ref={dropdownRef}
+                  id="quick-contact-suggestions"
+                  role="listbox"
+                  className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
+                >
+                  {filteredContacts.map((contact, i) => (
+                    <button
+                      key={`${contact.email ?? contact.name}-${i}`}
+                      type="button"
+                      role="option"
+                      aria-selected={i === activeIndex}
+                      className={`w-full text-left px-3 py-2 transition-colors ${
+                        i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
+                      }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleSelectContact(contact)
+                      }}
+                    >
+                      <div className="font-medium text-sm">
+                        {contact.display_name ?? contact.name}
+                      </div>
+                      {contact.email && (
+                        <div className="text-xs text-muted-foreground">{contact.email}</div>
+                      )}
+                      {contact.user_id && (
+                        <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <Button type="submit" size="sm" disabled={adding || !name.trim()}>
               {adding ? '…' : 'Add'}
             </Button>
@@ -275,6 +413,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
           <div>
             <Label className="sr-only" htmlFor="picker-email">Email (optional)</Label>
             <Input
+              ref={emailInputRef}
               id="picker-email"
               type="email"
               inputMode="email"
