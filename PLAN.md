@@ -769,6 +769,8 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Docs update | PR #468: Updated CLAUDE.md and PLAN.md with PRs #466–#467. |
 | 2026-03-01 | Email template redesign | PR #469: Unified invitation + payment reminder emails under shared `baseEmailHtml()` wrapper with coral header, "Spl1t" wordmark (cream "1"), branded footer. Replaced all purple (`#6366f1`) with coral brand tokens. Normalized inconsistent hex values into single `BRAND` constant. Simplified payment reminder to single CTA. File: `supabase/functions/send-email/index.ts`. Deploy: `supabase functions deploy send-email`. |
 | 2026-03-01 | Contact email auto-fill | PR #470: `useTripContacts` now fetches `email` from `user_profiles` alongside `display_name` — profile email as fallback enables email auto-fill, disambiguation, and invite checkbox in both Full and Quick mode. `QuickParticipantPicker` gets same autocomplete dropdown as `ParticipantsSetup` (keyboard nav, contact selection, `suggestedUserId` passthrough) + ambiguous name disambiguation on Recent chips (`"Alex · alex@…"`). |
+| 2026-03-01 | Docs update | PR #471: Updated CLAUDE.md and PLAN.md with PRs #468–#470. |
+| 2026-03-01 | Quick participant picker UX | PR #472: `QuickParticipantPicker` Recent section redesigned — pill grid replaced with collapsible disclosure list (collapsed by default, "Recent (N)" header with chevron). Each row shows name + full email + `+`/`✓` button, naturally disambiguating same-name contacts. Toast-based invite prompt replaced with global "Send invite emails when adding" checkbox (default checked). Removed `useToast`/`ToastAction` imports and `ambiguousNames` memo. |
 
 ---
 
