@@ -779,6 +779,8 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Docs update | PR #480: Updated CLAUDE.md and PLAN.md with PRs #476–#478. |
 | 2026-03-01 | Home page UX fixes | PR #481 (closes #479): removed duplicate "Try a demo" link for authenticated users with no trips (empty state card already has one). Bank details prompt (`OnboardingPrompts`) now only appears when user has paid for at least 1 expense across any trip — not immediately on sign-up. |
 | 2026-03-01 | Email header branding | PR #484: replaced coral background email header with white header + logo image (`logo.png` at 40×40) + dark wordmark, matching marketing page nav bar. |
+| 2026-03-01 | Docs + README | PRs #487, #488: Updated CLAUDE.md/PLAN.md with PR #484. Overhauled README.md and added v1.1.0 release notes. |
+| 2026-03-01 | Stale chunk detection | PR #489 (closes #483): ErrorBoundary detects stale chunk errors (`'text/html' is not a valid JavaScript MIME type'` and 3 other variants) from post-deploy cache mismatches. Auto-reloads once (sessionStorage guard); if still broken, shows friendly "New version available" card instead of generic error. |
 
 ---
 
