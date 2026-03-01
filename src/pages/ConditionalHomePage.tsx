@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { getActiveTripId } from '@/lib/activeTripDetection'
-import { getMyTrips } from '@/lib/myTripsStorage'
+
 import { HomePage } from './HomePage'
 import { Loader2 } from 'lucide-react'
 
@@ -32,10 +32,12 @@ export function ConditionalHomePage() {
       return
     }
 
-    const myTrips = user
-      ? trips
-      : trips.filter(t => new Set(getMyTrips().map(e => e.tripCode)).has(t.trip_code))
-    const activeTripId = getActiveTripId(myTrips)
+    // Only auto-redirect for authenticated users. For unauthenticated users,
+    // TripContext fetches ALL trips and localStorage includes shared-link trips,
+    // so there's no reliable way to distinguish "my trip" from "visited via link".
+    if (!user) return
+
+    const activeTripId = getActiveTripId(trips)
 
     if (activeTripId) {
       const activeTrip = trips.find(t => t.id === activeTripId)
