@@ -109,6 +109,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
   // Recent contacts list
   const [recentExpanded, setRecentExpanded] = useState(false)
+  const [recentLimit, setRecentLimit] = useState(20)
   const [addedNames, setAddedNames] = useState<string[]>([])
 
   // Per-participant invite tracking
@@ -653,13 +654,24 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                   className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
                 />
               </button>
-              {recentExpanded && (
+              {recentExpanded && (() => {
+                const sortedContacts = [...contacts].sort((a, b) => {
+                  const aChild = a.is_adult === false ? 1 : 0
+                  const bChild = b.is_adult === false ? 1 : 0
+                  return aChild - bChild
+                })
+                const totalCount = sortedContacts.length
+                const visibleContacts = sortedContacts.slice(0, recentLimit)
+                const hasMore = totalCount > recentLimit
+                const handleShowMore = () => {
+                  if (recentLimit < 40) setRecentLimit(40)
+                  else if (recentLimit < 60) setRecentLimit(60)
+                  else setRecentLimit(totalCount)
+                }
+                return (
+                  <>
                 <div className="flex flex-wrap gap-2">
-                  {[...contacts].sort((a, b) => {
-                    const aChild = a.is_adult === false ? 1 : 0
-                    const bChild = b.is_adult === false ? 1 : 0
-                    return aChild - bChild
-                  }).slice(0, 20).map((contact, i) => {
+                  {visibleContacts.map((contact, i) => {
                     const added = isRecentAdded(contact)
                     const displayName = contact.display_name ?? contact.name
                     const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -707,7 +719,16 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     )
                   })}
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  {hasMore ? (
+                    <>Showing {visibleContacts.length} of {totalCount} · <button type="button" onClick={handleShowMore} className="underline hover:text-foreground transition-colors">Show more</button></>
+                  ) : (
+                    <>{totalCount} companions</>
+                  )}
+                </p>
+                  </>
+                )
+              })()}
             </div>
           )}
 
