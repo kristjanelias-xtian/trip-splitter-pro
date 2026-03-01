@@ -5,6 +5,13 @@ const THRESHOLD = 80
 const MAX_PULL = 120
 const RESISTANCE = 0.5
 
+function isStandalone() {
+  return (
+    ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true) ||
+    window.matchMedia('(display-mode: standalone)').matches
+  )
+}
+
 export function usePullToRefresh() {
   const { onRefreshRef, isRefreshing, setIsRefreshing } = usePullToRefreshContext()
   const [pullDistance, setPullDistance] = useState(0)
@@ -21,6 +28,9 @@ export function usePullToRefresh() {
   }, [])
 
   useEffect(() => {
+    // Only activate in PWA standalone mode — regular browsers have their own refresh
+    if (!isStandalone()) return
+
     const onTouchStart = (e: TouchEvent) => {
       if (isRefreshing) return
       if (window.scrollY > 0) return
