@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -61,6 +63,7 @@ const MAX_SCREENSHOTS = 5
 
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const keyboard = useKeyboardHeight()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
@@ -133,7 +136,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         ? `${description}${screenshotMarkdown}\n\n---\n${metadata}`
         : `${screenshotMarkdown ? screenshotMarkdown.trimStart() + '\n\n---\n' : ''}${metadata}`
 
-      const { error } = await withTimeout(
+      const { data, error } = await withTimeout(
         supabase.functions.invoke('create-github-issue', {
           body: { title: subject.trim(), body },
         }),
@@ -141,6 +144,22 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         'This took longer than expected — your feedback may still have been saved. If not, please try again.'
       )
       if (error) throw error
+
+      // Fire-and-forget admin notification email
+      if (data?.url && data?.number) {
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'issue_report',
+            issue_title: subject.trim(),
+            issue_body: body,
+            issue_url: data.url,
+            issue_number: data.number,
+            reporter_email: user?.email ?? 'unknown',
+          },
+        }).then(({ error: emailError }) => {
+          if (emailError) logger.warn('Issue report notification failed', { error: String(emailError) })
+        })
+      }
 
       toast({
         title: 'Feedback sent',
