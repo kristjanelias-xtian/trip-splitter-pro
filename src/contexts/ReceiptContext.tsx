@@ -16,6 +16,7 @@ interface ReceiptContextType {
   createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask>
   updateReceiptTask: (id: string, updates: ReceiptTaskUpdate) => Promise<boolean>
   completeReceiptTask: (id: string, expenseId: string) => Promise<boolean>
+  reopenReceiptTask: (id: string) => Promise<boolean>
   dismissReceiptTask: (id: string) => Promise<boolean>
   refreshPendingReceipts: () => Promise<void>
 }
@@ -33,6 +34,7 @@ export type ReceiptTaskUpdate = Partial<Pick<ReceiptTask,
   | 'mapped_items'
   | 'error_message'
   | 'receipt_image_path'
+  | 'expense_id'
 >>
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined)
@@ -215,6 +217,41 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const reopenReceiptTask = async (id: string): Promise<boolean> => {
+    try {
+      const controller = new AbortController()
+      const { error: updateError } = await withTimeout(
+        supabase
+          .from('receipt_tasks')
+          .update({
+            status: 'review',
+            expense_id: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .abortSignal(controller.signal),
+        15000,
+        'Reopening receipt task timed out.',
+        controller
+      )
+
+      if (updateError) {
+        const message = updateError.message || 'Failed to reopen receipt task'
+        setError(message)
+        logger.error('Failed to reopen receipt task', { error: updateError.message })
+        return false
+      }
+
+      fetchPendingReceipts()
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reopen receipt task'
+      setError(message)
+      logger.error('Unhandled error reopening receipt task', { error: String(err) })
+      return false
+    }
+  }
+
   const dismissReceiptTask = async (id: string): Promise<boolean> => {
     const imagePath = pendingReceipts.find(r => r.id === id)?.receipt_image_path ?? null
     try {
@@ -267,6 +304,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         createReceiptTask,
         updateReceiptTask,
         completeReceiptTask,
+        reopenReceiptTask,
         dismissReceiptTask,
         refreshPendingReceipts: fetchPendingReceipts,
       }}

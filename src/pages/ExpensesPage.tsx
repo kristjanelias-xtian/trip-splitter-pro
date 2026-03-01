@@ -9,6 +9,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances, convertToBaseCurrency } from '@/services/balanceCalculator'
 import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
@@ -44,7 +45,8 @@ export function ExpensesPage() {
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense, refreshExpenses } = useExpenseContext()
   const { participants } = useParticipantContext()
   const { settlements } = useSettlementContext()
-  const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
+  const { pendingReceipts, receiptByExpenseId, dismissReceiptTask, reopenReceiptTask } = useReceiptContext()
+  const { user } = useAuth()
   const { toast } = useToast()
 
   const handleRefresh = useCallback(() => refreshExpenses(), [refreshExpenses])
@@ -93,6 +95,25 @@ export function ExpensesPage() {
     ).balances
 
     exportExpensesToExcel(currentTrip, expenses, participants, balances, settlements)
+  }
+
+  const handleReprocessReceipt = async (task: ReceiptTask) => {
+    const success = await reopenReceiptTask(task.id)
+    if (!success) {
+      toast({ title: 'Failed to reopen receipt', variant: 'destructive' })
+      return
+    }
+    setViewingReceiptTask(null)
+    setReceiptReviewData({
+      taskId: task.id,
+      merchant: task.extracted_merchant,
+      items: task.extracted_items ?? [],
+      total: task.extracted_total,
+      currency: task.extracted_currency ?? currentTrip?.default_currency ?? 'EUR',
+      imagePath: task.receipt_image_path ?? null,
+      category: task.extracted_category ?? null,
+      existingExpenseId: task.expense_id ?? undefined,
+    })
   }
 
   const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all' || selectedPaidBy !== 'all'
@@ -352,6 +373,7 @@ export function ExpensesPage() {
           currency={receiptReviewData.currency}
           imagePath={receiptReviewData.imagePath}
           extractedCategory={receiptReviewData.category}
+          existingExpenseId={receiptReviewData.existingExpenseId}
           onDone={() => setReceiptReviewData(null)}
         />
       )}
@@ -362,6 +384,8 @@ export function ExpensesPage() {
           open={!!viewingReceiptTask}
           onOpenChange={open => { if (!open) setViewingReceiptTask(null) }}
           task={viewingReceiptTask}
+          canReprocess={!!user && viewingReceiptTask.created_by === user.id}
+          onReprocess={() => handleReprocessReceipt(viewingReceiptTask)}
         />
       )}
 
