@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast'
 import { ExtractedItem, MappedItem } from '@/types/receipt'
 import { IndividualsDistribution, ExpenseCategory } from '@/types/expense'
 import { Participant } from '@/types/participant'
+import { getShortName } from '@/lib/participantUtils'
 
 interface ReceiptReviewSheetProps {
   open: boolean
@@ -494,7 +495,7 @@ export function ReceiptReviewSheet({
           </SelectTrigger>
           <SelectContent>
             {adultParticipants.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              <SelectItem key={p.id} value={p.id}>{getShortName(p)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -750,7 +751,7 @@ function ItemRow({
               ].join(' ')}
               title={p.name}
             >
-              {p.name.split(' ')[0]}
+              {getShortName(p)}
             </button>
           )
         })}
