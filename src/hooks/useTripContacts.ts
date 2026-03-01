@@ -84,17 +84,17 @@ export function useTripContacts(currentTripId: string | undefined) {
           (p: any) => p.user_id !== user.id
         )
 
-        // Fetch display_names for linked users (separate query — no direct FK)
+        // Fetch display_names + emails for linked users (separate query — no direct FK)
         const userIds = [...new Set(
           filtered.filter((p: any) => p.user_id).map((p: any) => p.user_id as string)
         )]
-        const displayNameMap = new Map<string, string>()
+        const profileMap = new Map<string, { displayName: string | null; email: string | null }>()
         if (userIds.length > 0) {
           try {
             const { data: profiles } = await withTimeout<{ data: any[]; error: any }>(
               (supabase as any)
                 .from('user_profiles')
-                .select('id, display_name')
+                .select('id, display_name, email')
                 .in('id', userIds)
                 .abortSignal(controller.signal),
               15000,
@@ -102,11 +102,14 @@ export function useTripContacts(currentTripId: string | undefined) {
             )
             if (profiles) {
               for (const p of profiles as any[]) {
-                if (p.display_name) displayNameMap.set(p.id, p.display_name)
+                profileMap.set(p.id, {
+                  displayName: p.display_name ?? null,
+                  email: p.email ?? null,
+                })
               }
             }
           } catch {
-            // Non-critical — proceed without display names
+            // Non-critical — proceed without profile data
           }
         }
 
@@ -123,13 +126,14 @@ export function useTripContacts(currentTripId: string | undefined) {
               : `name:${p.name.toLowerCase()}`
 
           const lastSeenAt = tripDateMap.get(p.trip_id) || ''
-          const display_name = p.user_id ? displayNameMap.get(p.user_id) ?? null : null
+          const profile = p.user_id ? profileMap.get(p.user_id) : null
+          const display_name = profile?.displayName ?? null
 
           const existing = seen.get(key)
           const isNewer = !existing || lastSeenAt > existing.lastSeenAt
           const hasNewDisplayName = display_name && !existing?.display_name
           if (isNewer || hasNewDisplayName) {
-            const bestEmail = p.email ?? existing?.email ?? null
+            const bestEmail = p.email ?? profile?.email ?? existing?.email ?? null
             seen.set(key, {
               name: p.name,
               email: bestEmail,
