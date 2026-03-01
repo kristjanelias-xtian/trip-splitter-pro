@@ -110,14 +110,17 @@ export function useTripContacts(currentTripId: string | undefined) {
           }
         }
 
-        // Deduplicate: by email (lowercase) if exists, else by exact name (lowercase).
+        // Deduplicate: by user_id first (linked accounts), then email, then name.
         // Keep the record from the most recent trip (by end_date).
         // Prefer records that have a display_name.
+        // Merge rule: preserve the best email across records.
         const seen = new Map<string, TripContact>()
         for (const p of filtered as any[]) {
-          const key = p.email
-            ? `email:${p.email.toLowerCase()}`
-            : `name:${p.name.toLowerCase()}`
+          const key = p.user_id
+            ? `uid:${p.user_id}`
+            : p.email
+              ? `email:${p.email.toLowerCase()}`
+              : `name:${p.name.toLowerCase()}`
 
           const lastSeenAt = tripDateMap.get(p.trip_id) || ''
           const display_name = p.user_id ? displayNameMap.get(p.user_id) ?? null : null
@@ -126,13 +129,40 @@ export function useTripContacts(currentTripId: string | undefined) {
           const isNewer = !existing || lastSeenAt > existing.lastSeenAt
           const hasNewDisplayName = display_name && !existing?.display_name
           if (isNewer || hasNewDisplayName) {
+            const bestEmail = p.email ?? existing?.email ?? null
             seen.set(key, {
               name: p.name,
-              email: p.email ?? null,
+              email: bestEmail,
               user_id: p.user_id ?? null,
               display_name,
               lastSeenAt: isNewer ? lastSeenAt : existing!.lastSeenAt,
             })
+          }
+        }
+
+        // Post-pass: merge entries that share the same email but got different keys
+        // (e.g. uid:X from one trip + email:Y from another trip for the same person)
+        const emailToKey = new Map<string, string>()
+        for (const [key, contact] of seen) {
+          if (!contact.email) continue
+          const emailLower = contact.email.toLowerCase()
+          const existingKey = emailToKey.get(emailLower)
+          if (existingKey && existingKey !== key) {
+            const keepKey = key.startsWith('uid:') ? key : existingKey
+            const removeKey = key.startsWith('uid:') ? existingKey : key
+            const keepEntry = seen.get(keepKey)!
+            const removeEntry = seen.get(removeKey)!
+            keepEntry.email = keepEntry.email ?? removeEntry.email
+            if (removeEntry.lastSeenAt > keepEntry.lastSeenAt) {
+              keepEntry.lastSeenAt = removeEntry.lastSeenAt
+            }
+            if (removeEntry.display_name && !keepEntry.display_name) {
+              keepEntry.display_name = removeEntry.display_name
+            }
+            seen.delete(removeKey)
+            emailToKey.set(emailLower, keepKey)
+          } else {
+            emailToKey.set(emailLower, key)
           }
         }
 

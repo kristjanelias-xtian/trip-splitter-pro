@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
+import { useToast } from '@/hooks/use-toast'
+import { ToastAction } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +22,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   const { user, userProfile } = useAuth()
   const { participants, createParticipant } = useParticipantContext()
   const { contacts } = useTripContacts(tripId)
+  const { toast } = useToast()
 
   const [addedNames, setAddedNames] = useState<string[]>([])
   const [supportsContacts, setSupportsContacts] = useState(false)
@@ -29,6 +32,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   const [email, setEmail] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sendInvite, setSendInvite] = useState(true)
 
   // Check contacts API support on mount
   useEffect(() => {
@@ -77,7 +81,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     const emailLower = personEmail?.trim().toLowerCase() ?? null
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
-      if (duplicate) return // silently skip duplicate
+      if (duplicate) return null // silently skip duplicate
     }
 
     const input = {
@@ -98,14 +102,24 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
     if (newParticipant) {
       setAddedNames(prev => [...prev, personName.trim()])
-      if (newParticipant.email && user) {
-        sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
-      }
     }
+
+    return newParticipant
   }
 
   const handleAddRecent = async (contact: TripContact) => {
-    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
+    const newParticipant = await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
+    if (newParticipant?.email && user) {
+      toast({
+        title: `${newParticipant.name} added`,
+        description: 'Send invite email?',
+        action: (
+          <ToastAction altText="Send invite" onClick={() => sendInvitation(newParticipant.id, newParticipant.email!, newParticipant.name)}>
+            Send
+          </ToastAction>
+        ),
+      })
+    }
   }
 
   const handleAddFromContacts = async () => {
@@ -116,7 +130,18 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
         const personName = contact.name?.[0] ?? ''
         const personEmail = contact.email?.[0] ?? null
         if (personName.trim()) {
-          await addPerson(personName.trim(), personEmail)
+          const newParticipant = await addPerson(personName.trim(), personEmail)
+          if (newParticipant?.email && user) {
+            toast({
+              title: `${newParticipant.name} added`,
+              description: 'Send invite email?',
+              action: (
+                <ToastAction altText="Send invite" onClick={() => sendInvitation(newParticipant.id, newParticipant.email!, newParticipant.name)}>
+                  Send
+                </ToastAction>
+              ),
+            })
+          }
         }
       }
     } catch (err) {
@@ -141,9 +166,13 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
     setAdding(true)
     try {
-      await addPerson(name.trim(), email.trim() || null)
+      const newParticipant = await addPerson(name.trim(), email.trim() || null)
+      if (newParticipant?.email && user && sendInvite) {
+        sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
+      }
       setName('')
       setEmail('')
+      setSendInvite(true)
     } finally {
       setAdding(false)
     }
@@ -254,6 +283,17 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               onChange={e => setEmail(e.target.value)}
               autoComplete="section-participant email"
             />
+            {email.trim() && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  checked={sendInvite}
+                  onChange={(e) => setSendInvite(e.target.checked)}
+                  className="rounded border-border"
+                />
+                Send invite email
+              </label>
+            )}
             <p className="text-xs text-muted-foreground mt-1">
               Add now or let them link themselves via the trip link
             </p>

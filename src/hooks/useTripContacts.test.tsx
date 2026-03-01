@@ -354,6 +354,89 @@ describe('useTripContacts', () => {
     expect(result.current.contacts[0].display_name).toBeNull()
   })
 
+  it('deduplicates by user_id across trips and preserves email from the record that has it', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-old', end_date: '2025-01-01' }),
+      buildEvent({ id: 'trip-recent', end_date: '2025-09-01' }),
+    ]
+    mockQueryResult = {
+      data: [
+        // Older trip has email
+        { name: 'Kairi', email: 'kairi@test.com', user_id: 'user-kairi', trip_id: 'trip-old' },
+        // Newer trip has no email (participant record without email)
+        { name: 'Kairi T', email: null, user_id: 'user-kairi', trip_id: 'trip-recent' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(1)
+    })
+
+    // Should keep email from the older record (best email preserved)
+    expect(result.current.contacts[0].email).toBe('kairi@test.com')
+    // Name from newer record
+    expect(result.current.contacts[0].name).toBe('Kairi T')
+    expect(result.current.contacts[0].lastSeenAt).toBe('2025-09-01')
+  })
+
+  it('deduplicates by user_id when only older record has email', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-a', end_date: '2025-03-01' }),
+      buildEvent({ id: 'trip-b', end_date: '2025-06-01' }),
+    ]
+    mockQueryResult = {
+      data: [
+        // Older record has email
+        { name: 'Bob', email: 'bob@test.com', user_id: 'user-bob', trip_id: 'trip-a' },
+        // Newer record does not
+        { name: 'Bob', email: null, user_id: 'user-bob', trip_id: 'trip-b' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(1)
+    })
+
+    expect(result.current.contacts[0].email).toBe('bob@test.com')
+    expect(result.current.contacts[0].lastSeenAt).toBe('2025-06-01')
+  })
+
+  it('does NOT dedup contacts with same name but different user_ids', async () => {
+    mockAuth.user = { id: 'user-1' }
+    mockTrips.trips = [
+      buildEvent({ id: 'trip-current' }),
+      buildEvent({ id: 'trip-old', end_date: '2025-06-01' }),
+    ]
+    mockQueryResult = {
+      data: [
+        { name: 'Alex', email: null, user_id: 'user-alex-1', trip_id: 'trip-old' },
+        { name: 'Alex', email: null, user_id: 'user-alex-2', trip_id: 'trip-old' },
+      ],
+      error: null,
+    }
+
+    const { result } = renderHook(() => useTripContacts('trip-current'))
+
+    await waitFor(() => {
+      expect(result.current.contacts).toHaveLength(2)
+    })
+
+    // Both should be present — different user_ids means different people
+    const userIds = result.current.contacts.map(c => c.user_id)
+    expect(userIds).toContain('user-alex-1')
+    expect(userIds).toContain('user-alex-2')
+  })
+
   it('prefers record with display_name when deduplicating by email', async () => {
     mockAuth.user = { id: 'user-1' }
     mockTrips.trips = [

@@ -77,6 +77,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
   const [isAdult, setIsAdult] = useState(true)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sendInvite, setSendInvite] = useState(true)
 
   // Per-participant inline email editing
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
@@ -111,10 +112,11 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
       })
       setName('')
       setEmail('')
+      setSendInvite(true)
       setIsAdult(true)
 
-      // Send invitation if email provided
-      if (newParticipant && email.trim() && user) {
+      // Send invitation if email provided and user opted in
+      if (newParticipant && email.trim() && user && sendInvite) {
         sendInvitation({
           participantId: newParticipant.id,
           participantEmail: email.trim(),
@@ -207,7 +209,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional — sends invite)</span></Label>
+              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input
                 type="email"
                 inputMode="email"
@@ -217,6 +219,17 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                 placeholder="e.g., john@example.com"
                 disabled={adding}
               />
+              {email.trim() && (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendInvite}
+                    onChange={(e) => setSendInvite(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  Send invite email
+                </label>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
