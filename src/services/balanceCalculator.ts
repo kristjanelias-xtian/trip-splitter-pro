@@ -1,6 +1,7 @@
 import { Expense } from '@/types/expense'
 import { Participant } from '@/types/participant'
 import { Settlement } from '@/types/settlement'
+import { getShortName } from '@/lib/participantUtils'
 
 export interface ParticipantBalance {
   id: string
@@ -73,7 +74,7 @@ export function buildEntityMap(
       walletGroups.set(p.wallet_group, group)
     } else {
       // Standalone participant (no wallet_group)
-      entities.push({ id: p.id, name: p.name, isFamily: false })
+      entities.push({ id: p.id, name: getShortName(p), isFamily: false })
       participantToEntityId.set(p.id, p.id)
     }
   }
@@ -358,7 +359,7 @@ export function calculateWithinGroupBalances(
   // Compute raw balances per member: balance = paid - share
   const rawBalances = groupMembers.map(m => ({
     id: m.id,
-    name: m.name,
+    name: getShortName(m),
     is_adult: m.is_adult,
     totalPaid: paid.get(m.id) || 0,
     totalShare: share.get(m.id) || 0,

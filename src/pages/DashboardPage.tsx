@@ -199,7 +199,7 @@ export function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {displayBalances.map(balance => (
-              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} />
+              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} avatarUrl={participants.find(p => p.id === balance.id)?.avatar_url} />
             ))}
           </div>
         )}

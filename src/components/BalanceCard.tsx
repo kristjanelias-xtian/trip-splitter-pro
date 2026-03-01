@@ -3,14 +3,16 @@ import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from 'lucide-react'
 import { ParticipantBalance } from '@/services/balanceCalculator'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Card } from '@/components/ui/card'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface BalanceCardProps {
   balance: ParticipantBalance
   currency?: string
   onClick?: () => void
+  avatarUrl?: string | null
 }
 
-export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardProps) {
+export function BalanceCard({ balance, currency = 'EUR', onClick, avatarUrl }: BalanceCardProps) {
   const balanceColorClass = getBalanceColorClass(balance.balance)
   const formattedBalance = formatBalance(balance.balance, currency)
   const fmt = (value: number) => new Intl.NumberFormat('en-US', {
@@ -66,8 +68,9 @@ export function BalanceCard({ balance, currency = 'EUR', onClick }: BalanceCardP
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-foreground">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <ParticipantAvatar participant={{ name: balance.name, avatar_url: avatarUrl ?? null }} size="md" />
+            <h3 className="text-lg font-semibold text-foreground truncate">
               {balance.name}
             </h3>
           </div>

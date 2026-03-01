@@ -54,6 +54,15 @@ export function SettlementsPage() {
     }
   }
 
+  // Build a map of entity ID → avatar_url for settlement plan avatars
+  const avatarMap = useMemo(() => {
+    const map: Record<string, string | null> = {}
+    for (const p of participants) {
+      map[p.id] = p.avatar_url ?? null
+    }
+    return map
+  }, [participants])
+
   // Build a map of entity ID → email for the "from" side of transactions
   const fromEmailMap = useMemo(() => {
     if (!currentTrip) return {}
@@ -330,6 +339,7 @@ export function SettlementsPage() {
                 linkedParticipantIds={linkedParticipantIds}
                 fromEmailMap={fromEmailMap}
                 onRemind={user ? handleRemind : undefined}
+                avatarMap={avatarMap}
               />
             </CardContent>
           </Card>

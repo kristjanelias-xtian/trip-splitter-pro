@@ -5,12 +5,16 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { fadeInUp } from '@/lib/animations'
+import { getShortName } from '@/lib/participantUtils'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface Participant {
   id: string
   name: string
+  nickname?: string | null
   is_adult: boolean
   wallet_group?: string | null
+  avatar_url?: string | null
 }
 
 interface WizardStep3Props {
@@ -192,11 +196,12 @@ export function WizardStep3({
                             />
                             <label
                               htmlFor={`participant-${participant.id}`}
-                              className="text-base text-foreground cursor-pointer flex-1"
+                              className="text-base text-foreground cursor-pointer flex-1 flex items-center gap-2"
                             >
-                              {participant.name}
+                              <ParticipantAvatar participant={participant} size="sm" />
+                              {getShortName(participant)}
                               {!participant.is_adult && (
-                                <span className="text-sm text-muted-foreground ml-2">
+                                <span className="text-sm text-muted-foreground">
                                   (child)
                                 </span>
                               )}

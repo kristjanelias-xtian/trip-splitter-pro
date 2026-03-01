@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Type } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -85,6 +85,11 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
   const [editEmailValue, setEditEmailValue] = useState('')
   const [savingEmailId, setSavingEmailId] = useState<string | null>(null)
+
+  // Per-participant inline nickname editing
+  const [editingNicknameId, setEditingNicknameId] = useState<string | null>(null)
+  const [editNicknameValue, setEditNicknameValue] = useState('')
+  const [savingNicknameId, setSavingNicknameId] = useState<string | null>(null)
 
   // Per-participant inline wallet_group editing
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
@@ -296,6 +301,21 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     setEditEmailValue('')
   }
 
+  const handleStartEditNickname = (participant: Participant) => {
+    setEditingNicknameId(participant.id)
+    setEditNicknameValue(participant.nickname || '')
+  }
+
+  const handleSaveNickname = async (participant: Participant) => {
+    setSavingNicknameId(participant.id)
+    await updateParticipant(participant.id, {
+      nickname: editNicknameValue.trim() || null,
+    })
+    setSavingNicknameId(null)
+    setEditingNicknameId(null)
+    setEditNicknameValue('')
+  }
+
   const handleStartEditGroup = (participant: Participant) => {
     setEditingGroupId(participant.id)
     setEditGroupValue(participant.wallet_group || '')
@@ -402,6 +422,15 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button
+            onClick={() => handleStartEditNickname(participant)}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title={participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
+          >
+            <Type size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
+          </Button>
+          <Button
             onClick={() => handleStartEditGroup(participant)}
             variant="ghost"
             size="sm"
@@ -447,6 +476,37 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           </Button>
         </div>
       </div>
+
+      {/* Inline nickname editor */}
+      {editingNicknameId === participant.id && (
+        <div className="mt-2 flex gap-2">
+          <Input
+            type="text"
+            value={editNicknameValue}
+            onChange={(e) => setEditNicknameValue(e.target.value)}
+            placeholder="Nickname (optional)"
+            className="h-8 text-sm flex-1"
+            disabled={savingNicknameId === participant.id}
+          />
+          <Button
+            onClick={() => handleSaveNickname(participant)}
+            size="sm"
+            className="h-8 px-3"
+            disabled={savingNicknameId === participant.id}
+          >
+            <Check size={14} />
+          </Button>
+          <Button
+            onClick={() => { setEditingNicknameId(null); setEditNicknameValue('') }}
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            disabled={savingNicknameId === participant.id}
+          >
+            <X size={14} />
+          </Button>
+        </div>
+      )}
 
       {/* Inline wallet_group editor */}
       {editingGroupId === participant.id && (
@@ -510,6 +570,17 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             <X size={14} />
           </Button>
         </div>
+      )}
+
+      {/* Show nickname if set and not editing */}
+      {participant.nickname && editingNicknameId !== participant.id && (
+        <button
+          onClick={() => handleStartEditNickname(participant)}
+          className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Type size={11} />
+          {participant.nickname}
+        </button>
       )}
 
       {/* Show wallet_group if set and not editing */}

@@ -66,7 +66,23 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       if (participantsError) throw participantsError
 
-      setParticipants((participantsData as Participant[]) || [])
+      // Enrich linked participants with avatar_url from user_profiles
+      const enriched = (participantsData as Participant[]) || []
+      const linkedUserIds = enriched.filter(p => p.user_id).map(p => p.user_id!)
+      if (linkedUserIds.length > 0) {
+        const { data: profiles } = await withTimeout<any>(
+          (supabase as any).from('user_profiles').select('id, avatar_url').in('id', linkedUserIds).abortSignal(signal),
+          15000, 'Loading profiles timed out.'
+        )
+        if (!signal.aborted && profiles) {
+          const avatarMap = new Map((profiles as { id: string; avatar_url: string | null }[]).map(p => [p.id, p.avatar_url]))
+          enriched.forEach(p => {
+            if (p.user_id) p.avatar_url = avatarMap.get(p.user_id) ?? null
+          })
+        }
+      }
+
+      setParticipants(enriched)
     } catch (err) {
       if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
@@ -177,7 +193,14 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       const updatePayload: Record<string, unknown> = { user_id: userId }
       if (userEmail) updatePayload.email = userEmail
-      if (displayName) updatePayload.name = displayName
+      if (displayName) {
+        updatePayload.name = displayName
+        // Preserve original name as nickname when overwriting with Google name
+        const existing = participants.find(p => p.id === participantId)
+        if (existing && !existing.nickname && existing.name !== displayName) {
+          updatePayload.nickname = existing.name
+        }
+      }
 
       const controller = new AbortController()
       const { error: linkError } = await withTimeout<any>(
@@ -194,10 +217,18 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       if (linkError) throw linkError
 
       setParticipants(prev =>
-        prev.map(p => (p.id === participantId
-          ? { ...p, user_id: userId, ...(userEmail ? { email: userEmail } : {}), ...(displayName ? { name: displayName } : {}) }
-          : p))
-          .sort((a, b) => a.name.localeCompare(b.name))
+        prev.map(p => {
+          if (p.id !== participantId) return p
+          const updates: Partial<Participant> = { user_id: userId }
+          if (userEmail) updates.email = userEmail
+          if (displayName) {
+            updates.name = displayName
+            if (!p.nickname && p.name !== displayName) {
+              updates.nickname = p.name
+            }
+          }
+          return { ...p, ...updates }
+        }).sort((a, b) => a.name.localeCompare(b.name))
       )
 
       return true
@@ -281,6 +312,9 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
     updateParticipant(myParticipant.id, {
       ...(nameStale ? { name: userProfile.display_name } : {}),
+      // Preserve original name as nickname when background sync overwrites name
+      ...(nameStale && !myParticipant.nickname && myParticipant.name !== userProfile.display_name
+        ? { nickname: myParticipant.name } : {}),
       ...(emailStale ? { email: user.email! } : {}),
     })
   }, [participants, userProfile?.display_name, user?.email])

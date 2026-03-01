@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
+import { getShortName } from '@/lib/participantUtils'
 
 interface SettlementFormProps {
   onSubmit: (input: CreateSettlementInput) => Promise<void>
@@ -83,7 +84,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
     .filter(p => p.is_adult)
     .map(p => ({
       id: p.id,
-      name: p.name,
+      name: getShortName(p),
       groupName: p.wallet_group || null,
     }))
 

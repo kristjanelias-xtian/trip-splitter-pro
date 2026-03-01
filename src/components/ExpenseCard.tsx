@@ -19,6 +19,7 @@ import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { getShortName } from '@/lib/participantUtils'
 
 interface ExpenseCardProps {
   expense: Expense
@@ -52,14 +53,14 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
 
   const getPaidByName = () => {
     const participant = participants.find(p => p.id === expense.paid_by)
-    return participant?.name || 'Unknown'
+    return participant ? getShortName(participant) : 'Unknown'
   }
 
   const getDistributionText = () => {
     const dist = expense.distribution
     const ids = dist.type === 'individuals' ? dist.participants : []
     const names = ids
-      .map(id => participants.find(p => p.id === id)?.name)
+      .map(id => { const p = participants.find(pp => pp.id === id); return p ? getShortName(p) : null })
       .filter(Boolean)
     if (names.length === participants.length) {
       return 'Everyone'
