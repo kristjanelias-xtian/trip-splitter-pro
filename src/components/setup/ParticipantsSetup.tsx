@@ -1,9 +1,10 @@
-import { useState, useMemo, FormEvent } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,6 +91,77 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   const [editGroupValue, setEditGroupValue] = useState('')
   const [savingGroupId, setSavingGroupId] = useState<string | null>(null)
 
+  // Autocomplete: contacts from past trips
+  const { contacts } = useTripContacts(currentTrip?.id)
+  const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const emailInputRef = useRef<HTMLInputElement>(null)
+
+  // Filtered contacts based on current name input
+  const filteredContacts = useMemo(() => {
+    if (name.trim().length < 2 || contacts.length === 0) return []
+    const query = name.toLowerCase()
+    return contacts
+      .filter(c => c.name.toLowerCase().includes(query))
+      .slice(0, 5)
+  }, [name, contacts])
+
+  // Show/hide dropdown based on filtered results
+  useEffect(() => {
+    setShowDropdown(filteredContacts.length > 0)
+    setActiveIndex(-1)
+  }, [filteredContacts.length])
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    if (!showDropdown) return
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+          nameInputRef.current && !nameInputRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showDropdown])
+
+  const handleSelectContact = useCallback((contact: TripContact) => {
+    setName(contact.name)
+    setEmail(contact.email || '')
+    setSuggestedUserId(contact.user_id)
+    setShowDropdown(false)
+    setActiveIndex(-1)
+    // Focus email field so user can review/edit
+    setTimeout(() => emailInputRef.current?.focus(), 0)
+  }, [])
+
+  const handleNameChange = useCallback((value: string) => {
+    setName(value)
+    // Clear suggested user_id when user edits the name manually
+    setSuggestedUserId(null)
+  }, [])
+
+  const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || filteredContacts.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex(prev => (prev < filteredContacts.length - 1 ? prev + 1 : 0))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : filteredContacts.length - 1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      handleSelectContact(filteredContacts[activeIndex])
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false)
+      setActiveIndex(-1)
+    }
+  }, [showDropdown, filteredContacts, activeIndex, handleSelectContact])
+
   const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
 
   // Existing wallet_group names for autocomplete suggestions
@@ -150,15 +222,26 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
     setAdding(true)
     try {
-      const newParticipant = await createParticipant({
+      const input = {
         trip_id: currentTrip.id,
         name: name.trim(),
         is_adult: isAdult,
         wallet_group: walletGroup.trim() || null,
         email: email.trim() || null,
-      })
+        ...(suggestedUserId ? { user_id: suggestedUserId } : {}),
+      }
+
+      let newParticipant = await createParticipant(input)
+
+      // If insert failed and we had a user_id, retry without it (unique constraint conflict)
+      if (!newParticipant && suggestedUserId) {
+        const { user_id: _, ...inputWithoutUserId } = input
+        newParticipant = await createParticipant(inputWithoutUserId)
+      }
+
       setName('')
       setEmail('')
+      setSuggestedUserId(null)
       // Keep walletGroup — likely adding more people to the same group
       setIsAdult(true)
 
@@ -403,22 +486,62 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             <p className="mb-3 text-sm text-destructive">{error}</p>
           )}
           <form onSubmit={handleAdd} className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="name">Participant Name</Label>
               <Input
+                ref={nameInputRef}
                 type="text"
                 id="name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onKeyDown={handleNameKeyDown}
                 placeholder="e.g., John Doe"
                 required
                 disabled={adding}
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-autocomplete="list"
+                aria-controls="contact-suggestions"
               />
+              {showDropdown && (
+                <div
+                  ref={dropdownRef}
+                  id="contact-suggestions"
+                  role="listbox"
+                  className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
+                >
+                  {filteredContacts.map((contact, i) => (
+                    <button
+                      key={`${contact.email ?? contact.name}-${i}`}
+                      type="button"
+                      role="option"
+                      aria-selected={i === activeIndex}
+                      className={`w-full text-left px-3 py-2 transition-colors ${
+                        i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
+                      }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault() // Prevent input blur
+                        handleSelectContact(contact)
+                      }}
+                    >
+                      <div className="font-medium text-sm">{contact.name}</div>
+                      {contact.email && (
+                        <div className="text-xs text-muted-foreground">{contact.email}</div>
+                      )}
+                      {contact.user_id && (
+                        <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional — sends invite)</span></Label>
               <Input
+                ref={emailInputRef}
                 type="email"
                 inputMode="email"
                 id="email"
@@ -427,6 +550,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 placeholder="e.g., john@example.com"
                 disabled={adding}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Add now or let them link themselves via the trip link
+              </p>
             </div>
 
             <div className="space-y-2">
