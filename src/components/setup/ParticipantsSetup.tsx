@@ -410,15 +410,17 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           >
             <Users size={15} className={participant.wallet_group ? 'text-accent' : 'text-muted-foreground'} />
           </Button>
-          <Button
-            onClick={() => handleStartEditEmail(participant)}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            title={participant.email ? `Email: ${participant.email}` : 'Add email'}
-          >
-            <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
-          </Button>
+          {!participant.user_id && (
+            <Button
+              onClick={() => handleStartEditEmail(participant)}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title={participant.email ? `Email: ${participant.email}` : 'Add email'}
+            >
+              <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
+            </Button>
+          )}
           {participant.email && user && (
             <Button
               onClick={() => handleSendInvite(participant)}
@@ -479,7 +481,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       )}
 
       {/* Inline email editor */}
-      {editingEmailId === participant.id && (
+      {editingEmailId === participant.id && !participant.user_id && (
         <div className="mt-2 flex gap-2">
           <Input
             type="email"
@@ -523,13 +525,20 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
       {/* Show email if set and not editing */}
       {participant.email && editingEmailId !== participant.id && (
-        <button
-          onClick={() => handleStartEditEmail(participant)}
-          className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Pencil size={11} />
-          {participant.email}
-        </button>
+        participant.user_id ? (
+          <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <Mail size={11} />
+            {participant.email}
+          </span>
+        ) : (
+          <button
+            onClick={() => handleStartEditEmail(participant)}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil size={11} />
+            {participant.email}
+          </button>
+        )
       )}
     </motion.div>
   )

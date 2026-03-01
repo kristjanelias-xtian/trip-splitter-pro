@@ -130,11 +130,16 @@ export function JoinPage() {
       setLinkError(null)
 
       try {
-        // Link auth user to participant
+        // Link auth user to participant — sync name from Google profile
+        const displayName = user!.user_metadata?.full_name || user!.user_metadata?.name || null
         const { error: linkError } = await withTimeout<any>(
           (supabase as any)
             .from('participants')
-            .update({ user_id: user!.id, email: user!.email || null })
+            .update({
+              user_id: user!.id,
+              email: user!.email || null,
+              ...(displayName ? { name: displayName } : {}),
+            })
             .eq('id', invitation!.participant_id),
           15000,
           'Linking account timed out. Please check your connection and try again.'
