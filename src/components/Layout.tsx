@@ -265,7 +265,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
@@ -287,7 +287,7 @@ export function Layout() {
       </main>
 
       {/* Bottom navigation (mobile) — only shown inside a trip */}
-      {tripCode && <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40">
+      {tripCode && <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40 pwa-safe-bottom">
         <div className="flex justify-around items-center h-16">
           {mobileNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]

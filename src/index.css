@@ -182,4 +182,15 @@
       scroll-margin-bottom: 120px;
     }
   }
+
+  /* PWA standalone: add safe-area padding to bottom nav for iPhone home indicator */
+  @media (display-mode: standalone) {
+    .pwa-safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .pwa-safe-bottom-margin {
+      margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
 }
