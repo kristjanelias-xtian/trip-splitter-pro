@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
@@ -34,6 +35,12 @@ export function SettlementsPage() {
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
   const [retrying, setRetrying] = useState(false)
+
+  const handleRefresh = useCallback(
+    () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
+    [refreshParticipants, refreshExpenses, refreshSettlements]
+  )
+  useRegisterRefresh(handleRefresh)
 
   const loading = pLoading || eLoading || sLoading
   const contextError = pError || eError || sError

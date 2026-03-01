@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Lightbulb, Receipt, FileDown, Share2 } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -28,6 +29,12 @@ export function DashboardPage() {
   const { settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
   const [retrying, setRetrying] = useState(false)
+
+  const handleRefresh = useCallback(
+    () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
+    [refreshParticipants, refreshExpenses, refreshSettlements]
+  )
+  useRegisterRefresh(handleRefresh)
 
   const loading = pLoading || eLoading || sLoading
   const contextError = pError || eError || sError

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Calendar, Trash2, Share2, ChevronRight, ScanLine, ChevronDown, Eye, ExternalLink, Sparkles } from 'lucide-react'
 import { InstallGuide } from '@/components/InstallGuide'
@@ -27,7 +28,7 @@ const DEMO_TRIP_CODE = 'livigno-2025'
 export function HomePage() {
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
-  const { loading: tripsLoading } = useTripContext()
+  const { loading: tripsLoading, refreshTrips } = useTripContext()
   const { mode } = useUserPreferences()
   const { tripBalances, loading: balancesLoading } = useMyTripBalances()
   const [localTrips, setLocalTrips] = useState<MyTripEntry[]>([])
@@ -37,6 +38,9 @@ export function HomePage() {
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
   const { shouldShowPrompt, dismiss: dismissInstall, incrementVisit } = usePWAInstall()
+
+  const handleRefresh = useCallback(async () => { await refreshTrips() }, [refreshTrips])
+  useRegisterRefresh(handleRefresh)
 
   const isAuthenticated = !!user
   const loading = isAuthenticated && (balancesLoading || tripsLoading)

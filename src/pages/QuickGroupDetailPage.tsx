@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
@@ -39,6 +40,12 @@ export function QuickGroupDetailPage() {
 
   const { pendingReceipts, dismissReceiptTask } = useReceiptContext()
   const { toast } = useToast()
+
+  const handleRefresh = useCallback(
+    () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
+    [refreshParticipants, refreshExpenses, refreshSettlements]
+  )
+  useRegisterRefresh(handleRefresh)
 
   const [expenseOpen, setExpenseOpen] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
