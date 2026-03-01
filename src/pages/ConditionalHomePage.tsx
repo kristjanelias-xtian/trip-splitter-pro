@@ -35,7 +35,7 @@ export function ConditionalHomePage() {
     // Don't redirect while a sheet/dialog is open (e.g. QuickScanCreateFlow).
     // Creating a trip with today's date would otherwise trigger an immediate
     // redirect that unmounts the sheet mid-flow.
-    if (document.querySelector('[data-radix-dialog-overlay]')) return
+    if (document.querySelector('[role="dialog"][data-state="open"]')) return
 
     // Only auto-redirect for authenticated users. For unauthenticated users,
     // TripContext fetches ALL trips and localStorage includes shared-link trips,
