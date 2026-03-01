@@ -100,6 +100,8 @@ describe('formatSettlementTransaction', () => {
       toId: 'a',
       toName: 'Alice',
       amount: 50,
+      fromIsFamily: false,
+      toIsFamily: false,
     }
     const formatted = formatSettlementTransaction(tx, 'EUR')
     expect(formatted).toContain('Bob')
