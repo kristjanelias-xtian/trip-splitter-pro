@@ -419,6 +419,10 @@ Platform-specific instructions (iOS: Share → Add to Home Screen; Android: menu
 
 Shield icon button in both Layout and QuickLayout headers — visible to admin user in both browser and standalone PWA mode, navigates to `/admin/all-trips`. In standalone PWA mode, `AdminAllTripsPage` uses `navigate()` instead of `window.open(_blank)` to load trips (new browser contexts in standalone trigger the SW/client guard redirect). Mobile-responsive: card layout at < lg, table at >= lg.
 
+### Safe-Area Padding (iPhone home indicator)
+
+In PWA standalone mode, the bottom tab bar needs safe-area padding so the iPhone home indicator doesn't overlap tap targets. `viewport-fit=cover` on the viewport meta enables `env(safe-area-inset-bottom)`. CSS utility `pwa-safe-bottom` in `index.css` is scoped to `@media (display-mode: standalone)` — regular browser is unaffected. Applied to bottom nav and main content margin in `Layout.tsx`.
+
 ### iOS `start_url` Limitation
 
 iOS Safari ignores `manifest.start_url` and saves whatever URL was in the address bar at install time. All three layers (manifest, SW, client guard) are needed because iOS is inconsistent about which defense fires across versions.
