@@ -560,6 +560,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
 | 403 triggers token refresh | `sessionHealthBus` emitted `auth-error` on 403 | Only emit `auth-error` on 401; 403 is RLS/permissions |
 | Mobile redirect loop (back arrow → home → redirect back) | `ConditionalHomePage` auto-redirects to quick view on mobile with active trip | Pass `state: { fromTrip: true }` on back/home links; `ConditionalHomePage` skips redirect when present |
+| Sheet vanishes during scan flow | `QuickScanCreateFlow` creates trip with today's date → `ConditionalHomePage` detects active trip → redirects, unmounting sheet | `ConditionalHomePage` skips redirect when `document.querySelector('[data-radix-dialog-overlay]')` is truthy (PR #498) |
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
