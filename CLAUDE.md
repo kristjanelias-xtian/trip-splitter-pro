@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (173 tests)
+- Tests: Vitest + Testing Library (175 tests)
 
 ---
 
@@ -59,7 +59,7 @@ git branch -d fix/description
 
 ### Core tables (migrations 001–006, updated by family refactor migrations 029–032)
 - `trips` — trip metadata, tracking_mode (`individuals` | `families`), trip_code (URL slug), created_by
-- `participants` — individuals with optional `wallet_group TEXT` for shared-wallet grouping; `user_id` links to auth user ("This is me")
+- `participants` — individuals with optional `wallet_group TEXT` for shared-wallet grouping; `user_id` links to auth user ("This is me"); `nickname TEXT` preserves short name when "This is me" overwrites with full Google name
 - `expenses` — expense records with JSONB `distribution` field
 - `settlements` — payment transfers between participants/families
 - `meals` — meal planning (breakfast/lunch/dinner per day)
@@ -74,8 +74,9 @@ git branch -d fix/description
 - `enable_activities BOOLEAN` — feature toggle (migration 018)
 - `default_split_all BOOLEAN DEFAULT true` — auto-select all participants when adding expense
 
-### RLS policies (migration 026, updated 033)
+### RLS policies (migration 026, updated 033, 036)
 - `trips`: SELECT open, INSERT auth-only, UPDATE/DELETE creator-only. Migration 033 added admin UUID delete policy.
+- `receipt_tasks`: SELECT open to all users (migration 036, matches trips table access model)
 - Other tables: standard auth-based policies
 
 ### Newer tables
@@ -188,6 +189,9 @@ Participants can be grouped via `wallet_group TEXT` on the `participants` table.
 /t/:tripCode/manage        → ManageTripPage (Layout)
 /create-trip               → TripsPage (Layout)
 /admin/all-trips           → AdminAllTripsPage (Layout)
+/join/:token               → JoinPage (invitation acceptance)
+/remind/:tripCode          → RemindPage (payment reminder landing)
+/trip-not-found/:tripCode  → TripNotFoundPage
 ```
 
 All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render inside `Layout`; quick routes inside `QuickLayout`. The home page (`/`) renders inside `Layout`.
@@ -329,7 +333,7 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 ### User–Participant Link
 
-`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page). `linkUserToParticipant` also backfills the participant's `email` from the auth session if the participant has no email set (existing emails are never overwritten).
+`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page). `linkUserToParticipant` syncs `name` and `email` from the Google profile, saves the original short name as `nickname`, and backfills `email` if not set (existing emails are never overwritten).
 
 ### Contact Autocomplete (`useTripContacts`)
 
@@ -484,7 +488,7 @@ iOS Safari ignores `manifest.start_url` and saves whatever URL was in the addres
 ## Testing
 
 ### Unit Tests
-Vitest + Testing Library. Run with `npm test`. 173 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+Vitest + Testing Library. Run with `npm test`. 175 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
