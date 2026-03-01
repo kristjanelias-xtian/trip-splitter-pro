@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Calendar, Trash2, Share2, ChevronRight, ScanLine, ChevronDown, Eye, ExternalLink, Sparkles } from 'lucide-react'
+import { InstallGuide } from '@/components/InstallGuide'
+import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
@@ -34,6 +36,7 @@ export function HomePage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
+  const { shouldShowPrompt, dismiss: dismissInstall, incrementVisit } = usePWAInstall()
 
   const isAuthenticated = !!user
   const loading = isAuthenticated && (balancesLoading || tripsLoading)
@@ -44,6 +47,10 @@ export function HomePage() {
       setLocalTrips(getMyTrips())
     }
   }, [isAuthenticated])
+
+  useEffect(() => {
+    incrementVisit()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
   const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
@@ -317,6 +324,10 @@ export function HomePage() {
             </h1>
           )}
         </div>
+
+        {shouldShowPrompt && (
+          <InstallGuide variant="banner" onDismiss={dismissInstall} />
+        )}
 
         <OnboardingPrompts />
 

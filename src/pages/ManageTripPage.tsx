@@ -37,8 +37,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
 import { CreateEventInput } from '@/types/trip'
 import { StaySection } from '@/components/StaySection'
+import { InstallGuide } from '@/components/InstallGuide'
 import { removeFromMyTrips } from '@/lib/myTripsStorage'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { isAdminUser } from '@/lib/adminAuth'
 
 export function ManageTripPage() {
@@ -47,6 +49,7 @@ export function ManageTripPage() {
   const { user } = useAuth()
   const location = useLocation()
   const fromQuick = !!(location.state as any)?.fromQuick
+  const { shouldShowInSettings } = usePWAInstall()
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { meals } = useMealContext()
   const { toast } = useToast()
@@ -472,6 +475,11 @@ export function ManageTripPage() {
 
       {/* Accommodations Section */}
       <StaySection />
+
+      {/* PWA install guide — mobile only, hidden when already installed */}
+      {shouldShowInSettings && (
+        <InstallGuide variant="settings" />
+      )}
 
       {/* Danger Zone — only visible to trip creator or admin */}
       {canDelete && (
