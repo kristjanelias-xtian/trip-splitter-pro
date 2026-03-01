@@ -68,29 +68,35 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
         onClick={onClick}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {groupMembers && groupMembers.length > 1 ? (
-              <div className="flex items-center shrink-0">
-                {groupMembers.slice(0, 4).map((member, i) => (
-                  <div key={i} className={i > 0 ? '-ml-2' : ''} style={{ zIndex: groupMembers.length - i }}>
-                    <ParticipantAvatar participant={member} size="sm" className="ring-2 ring-background" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <ParticipantAvatar participant={{ name: balance.name, avatar_url: groupMembers?.[0]?.avatar_url ?? null }} size="md" />
-            )}
-            <h3 className="text-lg font-semibold text-foreground truncate">
-              {balance.name}
-            </h3>
+        <div className="mb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {!(groupMembers && groupMembers.length > 1) && (
+                <ParticipantAvatar
+                  participant={{ name: balance.name, avatar_url: groupMembers?.[0]?.avatar_url ?? null }}
+                  size="md"
+                />
+              )}
+              <h3 className="text-lg font-semibold text-foreground truncate">
+                {balance.name}
+              </h3>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-xs text-muted-foreground mb-1">{status.text}</span>
+              <span className={`text-2xl font-bold tabular-nums ${balanceColorClass}`}>
+                {formattedBalance}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-xs text-muted-foreground mb-1">{status.text}</span>
-            <span className={`text-2xl font-bold tabular-nums ${balanceColorClass}`}>
-              {formattedBalance}
-            </span>
-          </div>
+          {groupMembers && groupMembers.length > 1 && (
+            <div className="flex items-center mt-2">
+              {groupMembers.slice(0, 4).map((member, i) => (
+                <div key={i} className={i > 0 ? '-ml-2' : ''} style={{ zIndex: groupMembers.length - i }}>
+                  <ParticipantAvatar participant={member} size="sm" className="ring-2 ring-background" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Breakdown */}
