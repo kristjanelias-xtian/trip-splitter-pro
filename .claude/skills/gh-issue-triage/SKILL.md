@@ -150,12 +150,31 @@ For each NEW group, in priority order:
    ```
 9. Move to the next group — do NOT start the next group until the current PR is merged
 
-### 7. Final Summary
+### 7. Update CLAUDE.md and PLAN.md
+
+After all fixes are merged, review whether the changes warrant updates to project documentation:
+
+**CLAUDE.md** — update when a fix:
+- Introduces a new pattern, convention, or architectural decision that future work should follow
+- Adds a new common pitfall or "gotcha" that developers should know about
+- Changes existing behavior documented in CLAUDE.md (e.g., new timeout values, changed component patterns)
+- Adds or modifies a component standard (e.g., new sheet, new context, new hook)
+
+**PLAN.md** — update when a fix:
+- Resolves a known issue listed in the plan
+- Completes or advances a planned phase or feature
+- Reveals a new issue or follow-up task that should be tracked
+- Changes the scope or priority of planned work
+
+If updates are needed, make them in a separate commit on `main` (not a new PR — these are documentation-only changes). If no updates are needed, skip this step.
+
+### 8. Final Summary
 
 After all groups are processed, present:
 
 - Issues closed (with reasons)
 - PRs opened/merged
+- CLAUDE.md / PLAN.md updates made (if any)
 - Any issues left open and why
 
 ## Safety Rules
