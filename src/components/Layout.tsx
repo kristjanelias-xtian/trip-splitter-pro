@@ -3,7 +3,7 @@ import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
-  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap
+  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap, Shield
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -23,6 +23,7 @@ import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { ModeToggle } from '@/components/quick/ModeToggle'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { isAdminUser } from '@/lib/adminAuth'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
@@ -202,6 +203,22 @@ export function Layout() {
                 </motion.div>
               )}
               <div className="flex items-center gap-2 flex-shrink-0">
+                {user && isAdminUser(user.id) && (
+                  ('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
+                  window.matchMedia('(display-mode: standalone)').matches
+                ) && (
+                  <button
+                    onClick={() => navigate('/admin/all-trips')}
+                    className={`p-2 rounded-md transition-colors ${
+                      onGradient
+                        ? 'text-white/70 hover:text-white hover:bg-white/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                    title="Admin"
+                  >
+                    <Shield size={18} />
+                  </button>
+                )}
                 <ReportIssueButton onGradient={onGradient} />
                 {/* In trip: show scan + mode toggle (desktop only; Row 2 handles mobile). On home: hidden (page has its own scan CTA) */}
                 {tripCode && (
