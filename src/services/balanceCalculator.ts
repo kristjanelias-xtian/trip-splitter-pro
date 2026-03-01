@@ -242,6 +242,7 @@ export function calculateBalances(
   for (const settlement of settlements) {
     const fromEntityId = participantToEntityId.get(settlement.from_participant_id)
     const toEntityId = participantToEntityId.get(settlement.to_participant_id)
+    if (fromEntityId === toEntityId) continue
     const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
 
     if (fromEntityId && balances.has(fromEntityId)) {

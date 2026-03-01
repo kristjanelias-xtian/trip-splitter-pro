@@ -345,6 +345,33 @@ describe('calculateBalances', () => {
     expect(bobBalance.totalSettledReceived).toBe(20)
   })
 
+  it('excludes intra-family settlements from gross amounts', () => {
+    const famP1 = buildParticipant({ id: 'fp1', name: 'FamAlice', wallet_group: 'Smith', is_adult: true })
+    const famP2 = buildParticipant({ id: 'fp2', name: 'FamBob', wallet_group: 'Smith', is_adult: true })
+    const solo = buildParticipant({ id: 'sp1', name: 'Carol' })
+    const expense = buildExpense({
+      amount: 90,
+      paid_by: 'fp1',
+      distribution: { type: 'individuals', participants: ['fp1', 'fp2', 'sp1'] },
+    })
+    // Intra-family settlement: both map to same entity
+    const intraSettlement = buildSettlement({
+      id: 's-intra',
+      from_participant_id: 'fp2',
+      to_participant_id: 'fp1',
+      amount: 25,
+      currency: 'EUR',
+    })
+    const result = calculateBalances(
+      [expense], [famP1, famP2, solo], 'individuals', [intraSettlement]
+    )
+    // Entity ID for the Smith group is 'fp1' (FamAlice, first adult alphabetically)
+    const smithBalance = result.balances.find(b => b.id === 'fp1')!
+    expect(smithBalance.totalSettled).toBe(0)
+    expect(smithBalance.totalSettledSent).toBe(0)
+    expect(smithBalance.totalSettledReceived).toBe(0)
+  })
+
   it('sorts by balance descending', () => {
     const expense = buildExpense({
       amount: 100,
