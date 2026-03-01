@@ -457,7 +457,7 @@ In standalone PWA mode there's no address bar or refresh button. A custom pull-t
 - Only activates in standalone PWA mode (`display-mode: standalone` / `navigator.standalone`) — regular browsers have native refresh; touch listeners are not registered at all outside standalone mode
 - Only activates when `window.scrollY <= 0` (at scroll top)
 - Ignores horizontal swipes (direction locked on first significant movement)
-- Skips when any Radix sheet/dialog is open (`document.querySelector('[data-radix-dialog-overlay]')`)
+- Skips when any Radix sheet/dialog is open (`document.querySelector('[role="dialog"][data-state="open"]')`)
 - Rubber-band resistance: `deltaY * 0.5`, capped at 120px. Threshold to trigger: 80px.
 - `touchmove` uses `passive: false` + `preventDefault()` during pull to suppress native iOS bounce and Chrome PTR
 - `overscroll-behavior-y: none` on body in `index.css` disables Chrome Android's native PTR
@@ -560,7 +560,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | All queries freeze after token refresh | Auth lock deadlock — `onAuthStateChange` callback `await`ed DB queries | **Never** `await` Supabase queries inside `onAuthStateChange`. Defer with `setTimeout(fn, 0)`. See below. |
 | 403 triggers token refresh | `sessionHealthBus` emitted `auth-error` on 403 | Only emit `auth-error` on 401; 403 is RLS/permissions |
 | Mobile redirect loop (back arrow → home → redirect back) | `ConditionalHomePage` auto-redirects to quick view on mobile with active trip | Pass `state: { fromTrip: true }` on back/home links; `ConditionalHomePage` skips redirect when present |
-| Sheet vanishes during scan flow | `QuickScanCreateFlow` creates trip with today's date → `ConditionalHomePage` detects active trip → redirects, unmounting sheet | `ConditionalHomePage` skips redirect when `document.querySelector('[data-radix-dialog-overlay]')` is truthy (PR #498) |
+| Sheet vanishes during scan flow | `QuickScanCreateFlow` creates trip with today's date → `ConditionalHomePage` detects active trip → redirects, unmounting sheet | `ConditionalHomePage` skips redirect when `document.querySelector('[role="dialog"][data-state="open"]')` is truthy (PR #498, selector fixed PR #534) |
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
