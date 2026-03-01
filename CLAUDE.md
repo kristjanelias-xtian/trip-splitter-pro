@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (145 tests)
+- Tests: Vitest + Testing Library (155 tests)
 
 ---
 
@@ -73,6 +73,10 @@ git branch -d fix/description
 - `enable_shopping BOOLEAN` — feature toggle
 - `enable_activities BOOLEAN` — feature toggle (migration 018)
 - `default_split_all BOOLEAN DEFAULT true` — auto-select all participants when adding expense
+
+### RLS policies (migration 026, updated 033)
+- `trips`: SELECT open, INSERT auth-only, UPDATE/DELETE creator-only. Migration 033 added admin UUID delete policy.
+- Other tables: standard auth-based policies
 
 ### Newer tables
 - `user_profiles` — `bank_account_holder`, `bank_iban` (migration 008/012)
@@ -377,14 +381,50 @@ and the user-friendly error message will never be shown.
 
 **Supabase Edge Functions:** `log-proxy`, `create-github-issue`
 
+**Demo trip:** `livigno-2025` trip code, seeded via `scripts/seed-demo-trip.ts`. "Try a demo" link on home page navigates to `/t/livigno-2025` (uses `TripModeRedirect`).
+
+**Scripts:** `scripts/audit-trip-balances.ts` (8-check balance integrity audit for production trips), `scripts/seed-demo-trip.ts` (idempotent demo data seeder)
+
 **Running migrations:** Apply SQL files in `supabase/migrations/` in order against the Supabase project.
+
+---
+
+## PWA (Progressive Web App)
+
+The app can be installed as a PWA ("Add to Home Screen"). Three layers ensure it always launches to `/` (the home page), not whatever deep link was active at install time.
+
+### Manifest (`public/manifest.webmanifest`)
+
+Standard PWA manifest: `start_url: "/"`, `scope: "/"`, `display: "standalone"`, theme color `#e8613a`. Icons: 16px, 32px, 180px (apple-touch-icon), 512px. Referenced in `index.html` `<head>`.
+
+### Service Worker (`public/sw.js`)
+
+Minimal SW focused on one job: intercept home screen launches into `/t/...` deep links and redirect to `/`. Uses `sec-fetch-dest: document` + no-referrer heuristic to detect standalone launches. `skipWaiting()` + `clients.claim()` for immediate activation.
+
+Registered via inline `<script>` in `index.html` (not via Vite — must be at `/sw.js`).
+
+### Client-Side Guard (`src/main.tsx`)
+
+Fallback for when the SW doesn't fire (common on iOS). Before `ReactDOM.createRoot`, checks `navigator.standalone` (iOS) or `display-mode: standalone` media query. If standalone + pathname starts with `/t/`, calls `window.location.replace('/')` — React never renders the wrong route.
+
+### Smart Install Guide (`src/components/InstallGuide.tsx`)
+
+`usePWAInstall` hook (`src/hooks/usePWAInstall.ts`) detects mobile, standalone mode, and engagement (2+ visits via localStorage counter). Two variants:
+- **`variant="banner"`** — shown on `HomePage` for engaged mobile users who haven't installed yet; dismissible
+- **`variant="settings"`** — always available in `ManageTripPage`
+
+Platform-specific instructions (iOS: Share → Add to Home Screen; Android: menu → Add to Home screen).
+
+### iOS `start_url` Limitation
+
+iOS Safari ignores `manifest.start_url` and saves whatever URL was in the address bar at install time. All three layers (manifest, SW, client guard) are needed because iOS is inconsistent about which defense fires across versions.
 
 ---
 
 ## Testing
 
 ### Unit Tests
-Vitest + Testing Library. Run with `npm test`. 145 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+Vitest + Testing Library. Run with `npm test`. 155 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
