@@ -88,10 +88,10 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
             </div>
           </div>
           {groupMembers && groupMembers.length > 1 && (
-            <div className="flex items-center mt-2">
+            <div className="flex items-center gap-1 mt-2">
               {groupMembers.slice(0, 4).map((member, i) => (
-                <div key={i} className={i > 0 ? '-ml-2' : ''} style={{ zIndex: groupMembers.length - i }}>
-                  <ParticipantAvatar participant={member} size="sm" className="ring-2 ring-background" />
+                <div key={i}>
+                  <ParticipantAvatar participant={member} size="sm" />
                 </div>
               ))}
             </div>
