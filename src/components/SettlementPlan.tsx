@@ -15,8 +15,8 @@ interface SettlementPlanProps {
   onRecordSettlement?: (transaction: SettlementTransaction) => void
   bankDetailsMap?: Record<string, BankDetails>
   linkedParticipantIds?: Set<string>
-  fromEmailMap?: Record<string, string>
-  onRemind?: (transaction: SettlementTransaction, fromEmail: string) => Promise<void>
+  fromEmailMap?: Record<string, { name: string; email: string }[]>
+  onRemind?: (transaction: SettlementTransaction, emails: string[]) => Promise<void>
   avatarMap?: Record<string, string | null>
 }
 
@@ -66,8 +66,8 @@ export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linke
             onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
             bankDetails={bankDetailsMap?.[transaction.toId]}
             linkedParticipantIds={linkedParticipantIds}
-            fromEmail={fromEmailMap?.[transaction.fromId]}
-            onRemind={onRemind ? (email) => onRemind(transaction, email) : undefined}
+            fromEmails={fromEmailMap?.[transaction.fromId]}
+            onRemind={onRemind ? (emails) => onRemind(transaction, emails) : undefined}
             avatarMap={avatarMap}
           />
         ))}
@@ -83,8 +83,8 @@ interface SettlementTransactionCardProps {
   onRecord?: () => void
   bankDetails?: BankDetails
   linkedParticipantIds?: Set<string>
-  fromEmail?: string
-  onRemind?: (fromEmail: string) => Promise<void>
+  fromEmails?: { name: string; email: string }[]
+  onRemind?: (emails: string[]) => Promise<void>
   avatarMap?: Record<string, string | null>
 }
 
@@ -95,13 +95,14 @@ function SettlementTransactionCard({
   onRecord,
   bankDetails,
   linkedParticipantIds,
-  fromEmail,
+  fromEmails,
   onRemind,
   avatarMap,
 }: SettlementTransactionCardProps) {
   const [confirmingRemind, setConfirmingRemind] = useState(false)
   const [sending, setSending] = useState(false)
   const [remindResult, setRemindResult] = useState<'sent' | 'error' | null>(null)
+  const [checkedEmails, setCheckedEmails] = useState<Record<string, boolean>>({})
 
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -109,11 +110,15 @@ function SettlementTransactionCard({
   }).format(transaction.amount)
 
   const handleSendReminder = async () => {
-    if (!onRemind || !fromEmail) return
+    if (!onRemind || !fromEmails || fromEmails.length === 0) return
+    const selectedEmails = fromEmails.length === 1
+      ? [fromEmails[0].email]
+      : fromEmails.filter(e => checkedEmails[e.email] !== false).map(e => e.email)
+    if (selectedEmails.length === 0) return
     setSending(true)
     setRemindResult(null)
     try {
-      await onRemind(fromEmail)
+      await onRemind(selectedEmails)
       setRemindResult('sent')
       setConfirmingRemind(false)
     } catch {
@@ -170,18 +175,34 @@ function SettlementTransactionCard({
           )}
 
           {/* Remind confirmation inline */}
-          {confirmingRemind && fromEmail && (
+          {confirmingRemind && fromEmails && fromEmails.length > 0 && (
             <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
               <p className="text-sm text-foreground">
                 Send payment reminder to <strong>{transaction.fromName}</strong>?
               </p>
-              <p className="text-xs text-muted-foreground">{fromEmail}</p>
+              {fromEmails.length === 1 ? (
+                <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {fromEmails.map(({ name, email }) => (
+                    <label key={email} className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checkedEmails[email] !== false}
+                        onChange={(e) => setCheckedEmails(prev => ({ ...prev, [email]: e.target.checked }))}
+                        className="accent-primary"
+                      />
+                      <span>{name} — {email}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   className="h-7 text-xs"
                   onClick={handleSendReminder}
-                  disabled={sending}
+                  disabled={sending || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
                 >
                   {sending ? 'Sending…' : 'Send'}
                 </Button>
@@ -223,9 +244,18 @@ function SettlementTransactionCard({
               Record
             </Button>
           )}
-          {fromEmail && onRemind && !confirmingRemind && (
+          {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
             <Button
-              onClick={() => { setConfirmingRemind(true); setRemindResult(null) }}
+              onClick={() => {
+                setConfirmingRemind(true)
+                setRemindResult(null)
+                // Initialize all emails as checked
+                if (fromEmails.length > 1) {
+                  const init: Record<string, boolean> = {}
+                  for (const e of fromEmails) init[e.email] = true
+                  setCheckedEmails(init)
+                }
+              }}
               size="sm"
               variant="outline"
               title={`Send payment reminder to ${transaction.fromName}`}

@@ -63,15 +63,16 @@ export function SettlementsPage() {
     return map
   }, [participants])
 
-  // Build a map of entity ID → email for the "from" side of transactions
+  // Build a map of entity ID → emails for the "from" side of transactions
   const fromEmailMap = useMemo(() => {
     if (!currentTrip) return {}
     const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
-    const map: Record<string, string> = {}
+    const map: Record<string, { name: string; email: string }[]> = {}
     for (const p of participants) {
-      if (!p.email) continue
+      if (!p.email || p.is_adult === false) continue
       const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
-      map[entityId] = p.email
+      if (!map[entityId]) map[entityId] = []
+      map[entityId].push({ name: p.name, email: p.email })
     }
     return map
   }, [participants, currentTrip])
@@ -193,7 +194,7 @@ export function SettlementsPage() {
     setPrefilledNote(undefined)
   }
 
-  const handleRemind = async (transaction: SettlementTransaction, fromEmail: string): Promise<void> => {
+  const handleRemind = async (transaction: SettlementTransaction, emails: string[]): Promise<void> => {
     if (!currentTrip || !user) return
     const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
@@ -234,24 +235,33 @@ export function SettlementsPage() {
       }
     }
 
-    const { error } = await supabase.functions.invoke('send-email', {
-      body: {
-        type: 'payment_reminder',
-        trip_id: currentTrip.id,
-        trip_name: currentTrip.name,
-        trip_code: currentTrip.trip_code,
-        recipient_name: transaction.fromName,
-        recipient_email: fromEmail,
-        amount: transaction.amount,
-        currency: currentTrip.default_currency,
-        pay_to_name: transaction.toName,
-        organiser_name: organiserName,
-        ...(receipts.length > 0 && { receipts }),
-      },
-    })
-    if (error) {
-      logger.error('Failed to send payment reminder', { error: String(error) })
-      throw new Error('Failed to send reminder')
+    // Send one email per selected recipient
+    const results = await Promise.allSettled(
+      emails.map(email =>
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'payment_reminder',
+            trip_id: currentTrip.id,
+            trip_name: currentTrip.name,
+            trip_code: currentTrip.trip_code,
+            recipient_name: transaction.fromName,
+            recipient_email: email,
+            amount: transaction.amount,
+            currency: currentTrip.default_currency,
+            pay_to_name: transaction.toName,
+            organiser_name: organiserName,
+            ...(receipts.length > 0 && { receipts }),
+          },
+        })
+      )
+    )
+
+    const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error))
+    if (failures.length > 0) {
+      logger.error('Failed to send payment reminder(s)', { failureCount: failures.length, totalCount: emails.length })
+      if (failures.length === emails.length) {
+        throw new Error('Failed to send reminder')
+      }
     }
   }
 

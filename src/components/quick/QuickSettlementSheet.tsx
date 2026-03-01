@@ -50,19 +50,21 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [confirmingRemindIdx, setConfirmingRemindIdx] = useState<number | null>(null)
   const [sendingRemind, setSendingRemind] = useState(false)
   const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
+  const [checkedEmails, setCheckedEmails] = useState<Record<string, boolean>>({})
   const isSubmittingRef = useRef(false)
   const keyboard = useKeyboardHeight()
   const isMobile = useMediaQuery('(max-width: 767px)')
 
-  // Build email map: entity ID → email
+  // Build email map: entity ID → emails (multiple adults in wallet_group)
   const fromEmailMap = useMemo(() => {
     if (!currentTrip) return {}
     const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
-    const map: Record<string, string> = {}
+    const map: Record<string, { name: string; email: string }[]> = {}
     for (const p of participants) {
-      if (!p.email) continue
+      if (!p.email || p.is_adult === false) continue
       const entityId = entityMap.participantToEntityId.get(p.id) ?? p.id
-      map[entityId] = p.email
+      if (!map[entityId]) map[entityId] = []
+      map[entityId].push({ name: p.name, email: p.email })
     }
     return map
   }, [participants, currentTrip])
@@ -162,15 +164,20 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const handleRemind = async (tx: SettlementTransaction, idx: number) => {
     if (!currentTrip || !user) return
-    const fromEmail = fromEmailMap[tx.fromId]
-    if (!fromEmail) return
+    const fromEmails = fromEmailMap[tx.fromId]
+    if (!fromEmails || fromEmails.length === 0) return
+
+    // Determine which emails to send to
+    const selectedEmails = fromEmails.length === 1
+      ? [fromEmails[0].email]
+      : fromEmails.filter(e => checkedEmails[e.email] !== false).map(e => e.email)
+    if (selectedEmails.length === 0) return
 
     setSendingRemind(true)
     try {
       const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
 
       // Collect receipt data for expenses paid by the creditor (max 3)
-      // Entity IDs are participant IDs — find all members of the same wallet_group
       const entityMap = buildEntityMap(participants, trackingMode)
       const creditorParticipantIds = new Set(
         participants
@@ -207,22 +214,29 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         }
       }
 
-      const { error } = await supabase.functions.invoke('send-email', {
-        body: {
-          type: 'payment_reminder',
-          trip_id: currentTrip.id,
-          trip_name: currentTrip.name,
-          trip_code: currentTrip.trip_code,
-          recipient_name: tx.fromName,
-          recipient_email: fromEmail,
-          amount: tx.amount,
-          currency: currentTrip.default_currency,
-          pay_to_name: tx.toName,
-          organiser_name: organiserName,
-          ...(receipts.length > 0 && { receipts }),
-        },
-      })
-      if (error) throw new Error(String(error))
+      // Send one email per selected recipient
+      const results = await Promise.allSettled(
+        selectedEmails.map(email =>
+          supabase.functions.invoke('send-email', {
+            body: {
+              type: 'payment_reminder',
+              trip_id: currentTrip.id,
+              trip_name: currentTrip.name,
+              trip_code: currentTrip.trip_code,
+              recipient_name: tx.fromName,
+              recipient_email: email,
+              amount: tx.amount,
+              currency: currentTrip.default_currency,
+              pay_to_name: tx.toName,
+              organiser_name: organiserName,
+              ...(receipts.length > 0 && { receipts }),
+            },
+          })
+        )
+      )
+
+      const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error))
+      if (failures.length === selectedEmails.length) throw new Error('All reminders failed')
 
       setRemindResults(prev => ({ ...prev, [idx]: 'sent' }))
       setConfirmingRemindIdx(null)
@@ -282,6 +296,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       setPrefill(null)
       setConfirmingRemindIdx(null)
       setRemindResults({})
+      setCheckedEmails({})
     }
     onOpenChange(isOpen)
   }
@@ -355,8 +370,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               </p>
               {myTransactions.map((tx, i) => {
                 const iOwe = tx.fromId === myEntityId
-                const fromEmail = !iOwe ? fromEmailMap[tx.fromId] : undefined
-                const canRemind = !iOwe && !!fromEmail
+                const fromEmails = !iOwe ? fromEmailMap[tx.fromId] : undefined
+                const canRemind = !iOwe && !!fromEmails && fromEmails.length > 0
                 const isConfirmingRemind = confirmingRemindIdx === i
                 const remindResult = remindResults[i]
                 return (
@@ -423,18 +438,34 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                       })()}
 
                       {/* Inline remind confirm */}
-                      {isConfirmingRemind && fromEmail && (
+                      {isConfirmingRemind && fromEmails && fromEmails.length > 0 && (
                         <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
                           <p className="text-sm text-foreground">
                             Send payment reminder to <strong>{tx.fromName}</strong>?
                           </p>
-                          <p className="text-xs text-muted-foreground">{fromEmail}</p>
+                          {fromEmails.length === 1 ? (
+                            <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
+                          ) : (
+                            <div className="space-y-1.5">
+                              {fromEmails.map(({ name, email }) => (
+                                <label key={email} className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={checkedEmails[email] !== false}
+                                    onChange={(e) => setCheckedEmails(prev => ({ ...prev, [email]: e.target.checked }))}
+                                    className="accent-primary"
+                                  />
+                                  <span>{name} — {email}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               className="h-7 text-xs"
                               onClick={() => handleRemind(tx, i)}
-                              disabled={sendingRemind}
+                              disabled={sendingRemind || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
                             >
                               {sendingRemind ? 'Sending…' : 'Send'}
                             </Button>
@@ -475,7 +506,16 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => { setConfirmingRemindIdx(i); setRemindResults(prev => { const n = { ...prev }; delete n[i]; return n }) }}
+                          onClick={() => {
+                            setConfirmingRemindIdx(i)
+                            setRemindResults(prev => { const n = { ...prev }; delete n[i]; return n })
+                            // Initialize all emails as checked
+                            if (fromEmails && fromEmails.length > 1) {
+                              const init: Record<string, boolean> = {}
+                              for (const e of fromEmails) init[e.email] = true
+                              setCheckedEmails(init)
+                            }
+                          }}
                           title={`Send payment reminder to ${tx.fromName}`}
                         >
                           <Bell size={14} className="mr-1" />
