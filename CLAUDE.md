@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (155 tests)
+- Tests: Vitest + Testing Library (156 tests)
 
 ---
 
@@ -142,7 +142,7 @@ Mode is stored per-user in `user_preferences.preferred_mode` and synced from Sup
 
 **Key behaviour:**
 - **Unified home**: `HomePage` (`src/pages/HomePage.tsx`) renders at `/` for all users. Both modes see the same greeting, scan CTA, and trip cards. There is no separate Quick home page.
-- `ConditionalHomePage` wraps `HomePage` — on **mobile viewports (< 768 px) with an active trip**, auto-redirects to `/t/:code/quick`. Otherwise always renders `HomePage`. When navigated to with `location.state.fromTrip` (set by back arrows and home links), the redirect is skipped once so the user can reach the home page from within a trip.
+- `ConditionalHomePage` wraps `HomePage` — on **mobile viewports (< 768 px) for authenticated users with a trip happening now** (today within start_date..end_date), auto-redirects to `/t/:code/quick`. Otherwise always renders `HomePage`. When navigated to with `location.state.fromTrip` (set by back arrows and home links), the redirect is skipped once so the user can reach the home page from within a trip.
 - `/quick` redirects to `/` (backward compat).
 - Trip card clicks navigate to Quick or Full based on stored mode preference.
 - `ModeToggle` derives `effectiveMode` from the **current pathname** (contains `/quick`?), not solely from the stored pref. Only navigates when inside a trip; on the home page it just updates the preference.
@@ -196,8 +196,8 @@ All trip-scoped routes are wrapped in `TripRouteGuard`. Full-mode routes render 
 
 Both layouts use the same responsive header pattern:
 
-- **Mobile (in-trip, not sub-page):** Two-row header. Row 1: back arrow + trip name + avatar. Row 2: `grid-cols-3` action pills (Scan / Manage / mode toggle). Row 2 is `lg:hidden`. Back arrows and home links pass `state: { fromTrip: true }` to prevent `ConditionalHomePage` redirect loop.
-- **Desktop (in-trip):** Single-row header. Trip name (clickable `<Link>` to home with `fromTrip` state) on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
+- **Mobile (in-trip, not sub-page):** Two-row header. Row 1: back arrow + trip name + avatar. Row 2: `grid-cols-3` action pills (Scan / Manage / mode toggle). Row 2 is `lg:hidden`. Back arrows and home links pass `state: { fromTrip: true }` to prevent `ConditionalHomePage` redirect loop. Both Full and Quick mode headers show the back arrow (← `ArrowLeft` size 20) before the trip name.
+- **Desktop (in-trip):** Single-row header. Back arrow + trip name (clickable `<Link>` to home with `fromTrip` state) on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
 - **Home page:** Single-row. Logo on left, avatar on right. No scan/toggle (the page has its own scan CTA).
 
 Header container: `max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8`. Main content padding: `pt-[108px] lg:pt-16` (two-row) or `pt-16` (single-row).
@@ -414,6 +414,10 @@ Fallback for when the SW doesn't fire (common on iOS). Before `ReactDOM.createRo
 - **`variant="settings"`** — always available in `ManageTripPage`
 
 Platform-specific instructions (iOS: Share → Add to Home Screen; Android: menu → Add to Home screen).
+
+### Admin in PWA
+
+Shield icon button in both Layout and QuickLayout headers — visible to admin user in both browser and standalone PWA mode, navigates to `/admin/all-trips`. In standalone PWA mode, `AdminAllTripsPage` uses `navigate()` instead of `window.open(_blank)` to load trips (new browser contexts in standalone trigger the SW/client guard redirect). Mobile-responsive: card layout at < lg, table at >= lg.
 
 ### iOS `start_url` Limitation
 
