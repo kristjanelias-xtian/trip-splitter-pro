@@ -59,11 +59,14 @@ function baseEmailHtml(params: {
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${BRAND.white};border-radius:12px;border:1px solid ${BRAND.border};overflow:hidden;">
-          <!-- Header — coral brand -->
+          <!-- Header — logo + wordmark -->
           <tr>
-            <td style="background:${BRAND.coral};padding:28px 32px;text-align:center;">
-              <div style="font-size:24px;font-weight:700;color:${BRAND.white};letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coralLight};">1</span>t</div>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">${subtitle}</p>
+            <td style="background:${BRAND.white};padding:28px 32px;text-align:center;border-bottom:1px solid ${BRAND.border};">
+              <div style="margin-bottom:8px;">
+                <img src="https://split.xtian.me/logo.png" alt="Spl1t" width="40" height="40" style="border-radius:8px;display:inline-block;" />
+              </div>
+              <div style="font-size:22px;font-weight:700;color:#111827;letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coral};">1</span>t</div>
+              <p style="margin:6px 0 0;color:${BRAND.textMuted};font-size:13px;">${subtitle}</p>
             </td>
           </tr>
           <!-- Body -->
