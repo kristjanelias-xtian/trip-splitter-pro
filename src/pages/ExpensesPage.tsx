@@ -113,6 +113,7 @@ export function ExpensesPage() {
       imagePath: task.receipt_image_path ?? null,
       category: task.extracted_category ?? null,
       existingExpenseId: task.expense_id ?? undefined,
+      mappedItems: task.mapped_items,
     })
   }
 
@@ -374,6 +375,7 @@ export function ExpensesPage() {
           imagePath={receiptReviewData.imagePath}
           extractedCategory={receiptReviewData.category}
           existingExpenseId={receiptReviewData.existingExpenseId}
+          mappedItems={receiptReviewData.mappedItems}
           onDone={() => setReceiptReviewData(null)}
         />
       )}
