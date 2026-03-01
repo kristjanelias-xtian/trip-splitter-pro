@@ -9,6 +9,8 @@ export interface ParticipantBalance {
   totalPaid: number
   totalShare: number
   totalSettled: number
+  totalSettledSent: number
+  totalSettledReceived: number
   balance: number
   isFamily: boolean
 }
@@ -197,6 +199,8 @@ export function calculateBalances(
       totalPaid: 0,
       totalShare: 0,
       totalSettled: 0,
+      totalSettledSent: 0,
+      totalSettledReceived: 0,
       balance: 0,
       isFamily: entity.isFamily,
     })
@@ -241,12 +245,16 @@ export function calculateBalances(
     const convertedAmount = convertToBaseCurrency(settlement.amount, settlement.currency, defaultCurrency, exchangeRates)
 
     if (fromEntityId && balances.has(fromEntityId)) {
-      balances.get(fromEntityId)!.balance += convertedAmount
-      balances.get(fromEntityId)!.totalSettled += convertedAmount
+      const fromBalance = balances.get(fromEntityId)!
+      fromBalance.balance += convertedAmount
+      fromBalance.totalSettled += convertedAmount
+      fromBalance.totalSettledSent += convertedAmount
     }
     if (toEntityId && balances.has(toEntityId)) {
-      balances.get(toEntityId)!.balance -= convertedAmount
-      balances.get(toEntityId)!.totalSettled -= convertedAmount
+      const toBalance = balances.get(toEntityId)!
+      toBalance.balance -= convertedAmount
+      toBalance.totalSettled -= convertedAmount
+      toBalance.totalSettledReceived += convertedAmount
     }
   }
 
@@ -404,6 +412,8 @@ export function calculateWithinGroupBalances(
       totalPaid: a.totalPaid,
       totalShare: a.totalShare,
       totalSettled: 0,
+      totalSettledSent: 0,
+      totalSettledReceived: 0,
       balance: a.balance,
       isFamily: false,
     })).sort((a, b) => b.balance - a.balance)
@@ -416,6 +426,8 @@ export function calculateWithinGroupBalances(
     totalPaid: m.totalPaid,
     totalShare: m.totalShare,
     totalSettled: 0,
+    totalSettledSent: 0,
+    totalSettledReceived: 0,
     balance: m.balance,
     isFamily: false,
   }))
