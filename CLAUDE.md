@@ -347,7 +347,7 @@ Both components use identical patterns: `filteredContacts` memo (min 2 chars, li
 
 ### Email Templates (`send-email` Edge Function)
 
-`supabase/functions/send-email/index.ts` — Resend API integration. Shared `baseEmailHtml()` wrapper with coral header (`#e8613a`), "Spl1t" wordmark (cream "1"), and branded footer. `BRAND` constant object for all color tokens.
+`supabase/functions/send-email/index.ts` — Resend API integration. Shared `baseEmailHtml()` wrapper with white header, logo image (`https://split.xtian.me/logo.png`), dark "Spl1t" wordmark (coral "1"), and branded footer — matching the marketing page nav bar. `BRAND` constant object for all color tokens.
 
 Two email types:
 - **Invitation**: Sent via per-participant "Send invite" button on the participant list (not during add flow). Creates `invitations` row, generates `/join/:token` link.

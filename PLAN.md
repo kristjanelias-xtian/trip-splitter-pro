@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅)
 
 ---
 
@@ -778,6 +778,7 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Email backfill on link | PR #478: `linkUserToParticipant` now accepts optional `userEmail` param. When a user links themselves via "This is me", the participant's email is auto-populated from the auth session if the participant has no email set. Existing emails are never overwritten. |
 | 2026-03-01 | Docs update | PR #480: Updated CLAUDE.md and PLAN.md with PRs #476–#478. |
 | 2026-03-01 | Home page UX fixes | PR #481 (closes #479): removed duplicate "Try a demo" link for authenticated users with no trips (empty state card already has one). Bank details prompt (`OnboardingPrompts`) now only appears when user has paid for at least 1 expense across any trip — not immediately on sign-up. |
+| 2026-03-01 | Email header branding | PR #484: replaced coral background email header with white header + logo image (`logo.png` at 40×40) + dark wordmark, matching marketing page nav bar. |
 
 ---
 
