@@ -703,121 +703,125 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             </div>
           )}
 
-          {error && (
-            <p className="mb-3 text-sm text-destructive">{error}</p>
-          )}
-          <form onSubmit={handleAdd} className="space-y-4">
-            <div className="space-y-2 relative">
-              <Label htmlFor="name">Participant Name</Label>
-              <Input
-                ref={nameInputRef}
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onKeyDown={handleNameKeyDown}
-                placeholder="e.g., John Doe"
-                required
-                disabled={adding}
-                autoComplete="off"
-                role="combobox"
-                aria-expanded={showDropdown}
-                aria-autocomplete="list"
-                aria-controls="contact-suggestions"
-              />
-              {showDropdown && (
-                <div
-                  ref={dropdownRef}
-                  id="contact-suggestions"
-                  role="listbox"
-                  className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
-                >
-                  {filteredContacts.map((contact, i) => (
-                    <button
-                      key={`${contact.email ?? contact.name}-${i}`}
-                      type="button"
-                      role="option"
-                      aria-selected={i === activeIndex}
-                      className={`w-full text-left px-3 py-2 transition-colors ${
-                        i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
-                      }`}
-                      onMouseDown={(e) => {
-                        e.preventDefault() // Prevent input blur
-                        handleSelectContact(contact)
-                      }}
-                    >
-                      <div className="font-medium text-sm">
-                        {contact.display_name ?? contact.name}
-                      </div>
-                      {contact.email && (
-                        <div className="text-xs text-muted-foreground">{contact.email}</div>
-                      )}
-                      {contact.user_id && (
-                        <div className="text-xs text-primary">✓ Has Spl1t account</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+          {!recentExpanded && (
+            <>
+              {error && (
+                <p className="mb-3 text-sm text-destructive">{error}</p>
               )}
-            </div>
+              <form onSubmit={handleAdd} className="space-y-4">
+                <div className="space-y-2 relative">
+                  <Label htmlFor="name">Participant Name</Label>
+                  <Input
+                    ref={nameInputRef}
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    onKeyDown={handleNameKeyDown}
+                    placeholder="e.g., John Doe"
+                    required
+                    disabled={adding}
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={showDropdown}
+                    aria-autocomplete="list"
+                    aria-controls="contact-suggestions"
+                  />
+                  {showDropdown && (
+                    <div
+                      ref={dropdownRef}
+                      id="contact-suggestions"
+                      role="listbox"
+                      className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
+                    >
+                      {filteredContacts.map((contact, i) => (
+                        <button
+                          key={`${contact.email ?? contact.name}-${i}`}
+                          type="button"
+                          role="option"
+                          aria-selected={i === activeIndex}
+                          className={`w-full text-left px-3 py-2 transition-colors ${
+                            i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault() // Prevent input blur
+                            handleSelectContact(contact)
+                          }}
+                        >
+                          <div className="font-medium text-sm">
+                            {contact.display_name ?? contact.name}
+                          </div>
+                          {contact.email && (
+                            <div className="text-xs text-muted-foreground">{contact.email}</div>
+                          )}
+                          {contact.user_id && (
+                            <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
-                ref={emailInputRef}
-                type="email"
-                inputMode="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g., john@example.com"
-                disabled={adding}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Add now or let them link themselves via the trip link
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    ref={emailInputRef}
+                    type="email"
+                    inputMode="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g., john@example.com"
+                    disabled={adding}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add now or let them link themselves via the trip link
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="walletGroup">Shared Wallet <span className="text-muted-foreground font-normal">(optional — group people who share costs)</span></Label>
-              <Input
-                type="text"
-                id="walletGroup"
-                value={walletGroup}
-                onChange={(e) => setWalletGroup(e.target.value)}
-                placeholder="e.g., The Smiths"
-                disabled={adding}
-                list="wallet-groups"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                People in the same group settle as a unit — e.g. a couple or parents with kids.
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="walletGroup">Shared Wallet <span className="text-muted-foreground font-normal">(optional — group people who share costs)</span></Label>
+                  <Input
+                    type="text"
+                    id="walletGroup"
+                    value={walletGroup}
+                    onChange={(e) => setWalletGroup(e.target.value)}
+                    placeholder="e.g., The Smiths"
+                    disabled={adding}
+                    list="wallet-groups"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    People in the same group settle as a unit — e.g. a couple or parents with kids.
+                  </p>
+                </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isAdult"
-                checked={isAdult}
-                onCheckedChange={(checked) => setIsAdult(checked as boolean)}
-                disabled={adding}
-              />
-              <label
-                htmlFor="isAdult"
-                className="text-sm text-foreground cursor-pointer"
-              >
-                Adult (can pay for expenses)
-              </label>
-            </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isAdult"
+                    checked={isAdult}
+                    onCheckedChange={(checked) => setIsAdult(checked as boolean)}
+                    disabled={adding}
+                  />
+                  <label
+                    htmlFor="isAdult"
+                    className="text-sm text-foreground cursor-pointer"
+                  >
+                    Adult (can pay for expenses)
+                  </label>
+                </div>
 
-            <Button
-              type="submit"
-              disabled={adding || !name.trim()}
-              className="w-full"
-            >
-              <UserPlus size={16} className="mr-2" />
-              {adding ? 'Adding...' : 'Add Participant'}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  disabled={adding || !name.trim()}
+                  className="w-full"
+                >
+                  <UserPlus size={16} className="mr-2" />
+                  {adding ? 'Adding...' : 'Add Participant'}
+                </Button>
+              </form>
+            </>
+          )}
         </CardContent>
       </Card>
 

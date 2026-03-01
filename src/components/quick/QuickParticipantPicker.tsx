@@ -279,116 +279,120 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
         </div>
       )}
 
-      {/* Section B: Device contacts */}
-      {supportsContacts && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Smartphone size={14} />
-            Contacts
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={handleAddFromContacts}
-          >
-            <Smartphone size={14} />
-            Add from Contacts
-          </Button>
-        </div>
-      )}
-
-      {/* Section C: Add manually */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <UserPlus size={14} />
-          Add manually
-        </div>
-        <form onSubmit={handleManualAdd} className="space-y-2">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                ref={nameInputRef}
-                placeholder="Name"
-                value={name}
-                onChange={e => handleNameChange(e.target.value)}
-                onKeyDown={handleNameKeyDown}
-                autoComplete="off"
-                role="combobox"
-                aria-expanded={showDropdown}
-                aria-autocomplete="list"
-                aria-controls="quick-contact-suggestions"
-              />
-              {showDropdown && (
-                <div
-                  ref={dropdownRef}
-                  id="quick-contact-suggestions"
-                  role="listbox"
-                  className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
-                >
-                  {filteredContacts.map((contact, i) => (
-                    <button
-                      key={`${contact.email ?? contact.name}-${i}`}
-                      type="button"
-                      role="option"
-                      aria-selected={i === activeIndex}
-                      className={`w-full text-left px-3 py-2 transition-colors ${
-                        i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
-                      }`}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleSelectContact(contact)
-                      }}
-                    >
-                      <div className="font-medium text-sm">
-                        {contact.display_name ?? contact.name}
-                      </div>
-                      {contact.email && (
-                        <div className="text-xs text-muted-foreground">{contact.email}</div>
-                      )}
-                      {contact.user_id && (
-                        <div className="text-xs text-primary">✓ Has Spl1t account</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+      {!recentExpanded && (
+        <>
+          {/* Section B: Device contacts */}
+          {supportsContacts && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Smartphone size={14} />
+                Contacts
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleAddFromContacts}
+              >
+                <Smartphone size={14} />
+                Add from Contacts
+              </Button>
             </div>
-            <Button type="submit" size="sm" disabled={adding || !name.trim()}>
-              {adding ? '…' : 'Add'}
-            </Button>
-          </div>
-          <div>
-            <Label className="sr-only" htmlFor="picker-email">Email (optional)</Label>
-            <Input
-              ref={emailInputRef}
-              id="picker-email"
-              type="email"
-              inputMode="email"
-              placeholder="Email (optional)"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="section-participant email"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Add now or let them link themselves via the trip link
-            </p>
-          </div>
-          {error && (
-            <p className="text-xs text-destructive">{error}</p>
           )}
-        </form>
-      </div>
 
-      {/* Dismiss error */}
-      {error && (
-        <button
-          onClick={() => setError(null)}
-          className="text-xs text-muted-foreground flex items-center gap-1"
-        >
-          <X size={10} />
-          Dismiss
-        </button>
+          {/* Section C: Add manually */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <UserPlus size={14} />
+              Add manually
+            </div>
+            <form onSubmit={handleManualAdd} className="space-y-2">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    ref={nameInputRef}
+                    placeholder="Name"
+                    value={name}
+                    onChange={e => handleNameChange(e.target.value)}
+                    onKeyDown={handleNameKeyDown}
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={showDropdown}
+                    aria-autocomplete="list"
+                    aria-controls="quick-contact-suggestions"
+                  />
+                  {showDropdown && (
+                    <div
+                      ref={dropdownRef}
+                      id="quick-contact-suggestions"
+                      role="listbox"
+                      className="absolute top-full left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-md mt-1 max-h-[200px] overflow-y-auto"
+                    >
+                      {filteredContacts.map((contact, i) => (
+                        <button
+                          key={`${contact.email ?? contact.name}-${i}`}
+                          type="button"
+                          role="option"
+                          aria-selected={i === activeIndex}
+                          className={`w-full text-left px-3 py-2 transition-colors ${
+                            i === activeIndex ? 'bg-accent/50' : 'hover:bg-accent/30'
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            handleSelectContact(contact)
+                          }}
+                        >
+                          <div className="font-medium text-sm">
+                            {contact.display_name ?? contact.name}
+                          </div>
+                          {contact.email && (
+                            <div className="text-xs text-muted-foreground">{contact.email}</div>
+                          )}
+                          {contact.user_id && (
+                            <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Button type="submit" size="sm" disabled={adding || !name.trim()}>
+                  {adding ? '…' : 'Add'}
+                </Button>
+              </div>
+              <div>
+                <Label className="sr-only" htmlFor="picker-email">Email (optional)</Label>
+                <Input
+                  ref={emailInputRef}
+                  id="picker-email"
+                  type="email"
+                  inputMode="email"
+                  placeholder="Email (optional)"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoComplete="section-participant email"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add now or let them link themselves via the trip link
+                </p>
+              </div>
+              {error && (
+                <p className="text-xs text-destructive">{error}</p>
+              )}
+            </form>
+          </div>
+
+          {/* Dismiss error */}
+          {error && (
+            <button
+              onClick={() => setError(null)}
+              className="text-xs text-muted-foreground flex items-center gap-1"
+            >
+              <X size={10} />
+              Dismiss
+            </button>
+          )}
+        </>
       )}
     </div>
   )
