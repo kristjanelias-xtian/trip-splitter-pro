@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-02-25 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅)
 
 ---
 
@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (145 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (155 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -748,6 +748,13 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-25 | iOS keyboard test checklist | Added manual iOS keyboard test checklist to CLAUDE.md Testing section — physical iPhone test protocol for PRs touching bottom sheets or `useKeyboardHeight`. Added numpad pitfall row to Common Pitfalls table. (PR #401) |
 | 2026-02-26 | Wizard Step 1 keyboard fix | PR #409: MobileWizard sheet now uses top-based positioning (`top: viewportOffset`, `bottom: 'auto'`) instead of `bottom: keyboardHeight - viewportOffset`. `window.innerHeight` is unreliable on iOS Safari for computing fixed positioning offsets — caused the Next button to float in dead space above the keyboard. New approach uses `visualViewport.offsetTop` and `visualViewport.height` directly. Closes #393. |
 | 2026-02-26 | Within-group balances fix + relocation | PR #415: Fixed `calculateWithinGroupBalances` calculation bug — was skipping outsider-paid expenses entirely (members' shares not counted). Now includes ALL expenses for share calculation but only credits group-member payers; balances won't sum to zero (deficit = outsider-covered portion). Added `settlements` parameter for within-group settlement tracking. Relocated UI: within-group breakdown now shown in `CostBreakdownDialog` (Dashboard click-through on group entities, with paid/share per member) and `QuickGroupMembersSheet` (Quick mode expand). Removed toggle + card from `SettlementsPage`. 2 new tests (settlement between members, outsider settlement ignored), 1 updated test. 152/152 tests, type-check clean. PR #417: CLAUDE.md docs update. |
+| 2026-02-26 | Within-group balances iteration | 5 follow-up PRs refining within-group balance calculation and UI. **PR #419**: reverted outsider-paid expense inclusion so balances sum to zero; removed paid/share detail from CostBreakdownDialog. **PR #421**: re-added per-member paid/share detail, within-group settlement list with arrow notation, group total summary. **PR #422**: inlined paid/share on same line as balance, renamed "Paid" to "Covered", added "Group paid" row. **PR #427**: made per-member totalPaid/totalShare sum to group-level totals from `calculateBalances()` — payer credited with full expense amount; settlements applied to balance only. **PR #429**: changed within-group balance to use internal-only money flows while keeping totalPaid/totalShare as full amounts. |
+| 2026-02-26 | BalanceCard improvements | 3 PRs improving the balance summary cards. **PR #423**: renamed "Total paid" to "Out of pocket", added `totalSettled` field to `ParticipantBalance`, added "Settled" row showing net settlements. **PR #424**: reordered breakdown to "Out of pocket / Share / Settled", replaced signed values with natural language ("sent"/"received"). **PR #425**: always show "Settled" row (dash when zero) for consistent card heights in 2-column dashboard grid. |
+| 2026-02-26 | Demo trip + home page | **PR #420**: "Try a demo" button wrapped in block div to drop below main CTA. **PR #430**: `scripts/seed-demo-trip.ts` — idempotent seeder for "Livigno Ski Trip 2025" with 6 participants (2 couples with wallet_groups + 2 solo), 13 expenses totaling EUR 4,004.80. **PR #431**: updated `DEMO_TRIP_CODE` to `livigno-2025`. **PR #433**: demo link navigates to `/t/livigno-2025` (TripModeRedirect) instead of hard-coding `/quick`. |
+| 2026-02-27 | Expenses page UX | **PR #432**: "Paid by" participant dropdown filter on ExpensesPage (adults only), 3-column filter grid on desktop. **PR #435**: Tag icon added to Category filter label for consistent icon+text alignment across all filter labels. |
+| 2026-02-27 | Bug fixes + security | **PR #436**: gate trip deletion to creator or admin — hidden Danger Zone from unauthorized users; migration 033 adds admin UUID delete policy. **PR #437**: pie chart all-black fix — `CATEGORY_COLORS` key casing mismatch; added missing `groceries`/`drinks` colors + fallback palette. **PR #438**: final within-group balance fix — apply ALL settlements involving at least one group member (not just internal); balances no longer sum to zero; remainder = family's external balance. **PR #439**: `scripts/audit-trip-balances.ts` — 8-check balance integrity audit, validated against production data. |
+| 2026-03-01 | Home page UX | PR #441: bottom nav hidden on home page (`{tripCode && ...}`); auto-redirect restricted to authenticated users only — prevents shared-link trips from causing unwanted redirects for unauthenticated visitors. |
+| 2026-03-01 | PWA install experience | **PR #442**: smart install guide — `InstallGuide` component with `usePWAInstall` hook (detects mobile, standalone, engagement via 2+ visit counter). Banner variant on HomePage for engaged mobile users; settings variant in ManageTripPage. Platform-specific iOS/Android instructions. **PR #443**: moved custom skills (gh-issue-triage, pr-branch-maintenance) from user-level to project-level `.claude/skills/`. **PR #444**: PWA manifest + service worker + client guard — three-layer fix for iOS `start_url` ignore. `manifest.webmanifest` (`start_url: "/"`), `public/sw.js` (intercepts standalone deep links → redirect to `/`), `main.tsx` guard (standalone + trip route → `window.location.replace('/')`). **PR #445**: admin nav shield icon in header for admin user in standalone PWA mode. |
 
 ---
 
