@@ -341,7 +341,7 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 **UI integration:**
 - **`ParticipantsSetup`** (Full mode, `src/components/setup/ParticipantsSetup.tsx`): Autocomplete dropdown on Name field. Selecting a contact auto-fills name + email + `suggestedUserId`. "Send invite email" checkbox appears when email is populated.
-- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form + Recent chips for one-tap adds. Ambiguous names (same display name) show email suffix on chips for disambiguation (`"Alex · alex@…"`).
+- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form. Recent contacts shown in a **collapsible disclosure list** (collapsed by default) — each row shows name + full email for disambiguation, with `+` button (or `✓` if already added). Global "Send invite emails when adding" checkbox (default checked) controls whether adding a recent/device contact auto-sends an invitation (replaces previous toast-based prompt).
 
 Both components use identical patterns: `filteredContacts` memo (min 2 chars, limit 5), keyboard navigation (arrow keys + Enter/Escape), click-outside dismiss, `justSelectedRef` to prevent dropdown re-opening after selection.
 
