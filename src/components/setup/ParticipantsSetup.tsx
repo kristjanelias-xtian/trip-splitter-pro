@@ -647,47 +647,45 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
               >
                 <Users size={14} />
-                <span>Recent ({contacts.slice(0, 20).length})</span>
+                <span>People you've traveled with</span>
                 <ChevronRight
                   size={14}
                   className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
                 />
               </button>
               {recentExpanded && (
-                <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
+                <div className="flex flex-wrap gap-2">
                   {contacts.slice(0, 20).map((contact, i) => {
                     const added = isRecentAdded(contact)
                     const displayName = contact.display_name ?? contact.name
+                    const firstName = displayName.split(' ')[0]
+                    const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                    const isChild = contact.is_adult === false
+                    const tooltip = displayName + (contact.email ? ` (${contact.email})` : '')
                     return (
-                      <div
+                      <button
                         key={i}
-                        className={`flex items-center gap-3 px-3 py-2 text-sm ${
-                          added ? 'opacity-50' : ''
+                        type="button"
+                        onClick={() => !added && handleAddRecent(contact)}
+                        disabled={added}
+                        title={tooltip}
+                        aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
+                        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full border text-sm transition-colors ${
+                          added
+                            ? 'bg-primary/10 border-primary/20 text-primary/60 cursor-default'
+                            : 'border-border hover:bg-accent/50 text-foreground'
                         }`}
                       >
-                        <span className="font-medium truncate">{displayName}</span>
-                        {!contact.is_adult && (
-                          <span className="text-[10px] text-muted-foreground border border-border rounded px-1 py-0.5 shrink-0">Child</span>
-                        )}
-                        {contact.email && (
-                          <span className="text-xs text-muted-foreground truncate ml-auto mr-2">
-                            {contact.email}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => !added && handleAddRecent(contact)}
-                          disabled={added}
-                          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                            added
-                              ? 'text-primary cursor-default'
-                              : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
-                          }`}
-                          aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
-                        >
-                          {added ? <Check size={14} /> : <Plus size={14} />}
-                        </button>
-                      </div>
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 ${
+                          isChild ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'
+                        }`}>
+                          {initials}
+                        </span>
+                        <span className="truncate max-w-[100px]">
+                          {firstName}{isChild ? ' (child)' : ''}
+                        </span>
+                        {added ? <Check size={12} className="shrink-0" /> : <Plus size={12} className="shrink-0 text-muted-foreground" />}
+                      </button>
                     )
                   })}
                 </div>
