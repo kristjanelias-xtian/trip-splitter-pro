@@ -96,9 +96,11 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [sendInvite, setSendInvite] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
+  const justSelectedRef = useRef(false)
 
   // Filtered contacts based on current name input
   const filteredContacts = useMemo(() => {
@@ -114,6 +116,10 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
   // Show/hide dropdown based on filtered results
   useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false
+      return
+    }
     setShowDropdown(filteredContacts.length > 0)
     setActiveIndex(-1)
   }, [filteredContacts.length])
@@ -132,6 +138,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   }, [showDropdown])
 
   const handleSelectContact = useCallback((contact: TripContact) => {
+    justSelectedRef.current = true
     setName(contact.display_name ?? contact.name)
     setEmail(contact.email || '')
     setSuggestedUserId(contact.user_id)
@@ -245,11 +252,12 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       setName('')
       setEmail('')
       setSuggestedUserId(null)
+      setSendInvite(true)
       // Keep walletGroup — likely adding more people to the same group
       setIsAdult(true)
 
-      // Send invitation if email provided
-      if (newParticipant && email.trim() && user) {
+      // Send invitation if email provided and user opted in
+      if (newParticipant && email.trim() && user && sendInvite) {
         sendInvitation({
           participantId: newParticipant.id,
           participantEmail: email.trim(),
@@ -544,7 +552,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional — sends invite)</span></Label>
+              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input
                 ref={emailInputRef}
                 type="email"
@@ -555,6 +563,17 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 placeholder="e.g., john@example.com"
                 disabled={adding}
               />
+              {email.trim() && (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendInvite}
+                    onChange={(e) => setSendInvite(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  Send invite email
+                </label>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 Add now or let them link themselves via the trip link
               </p>
