@@ -65,18 +65,18 @@ function baseEmailHtml(params: {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${BRAND.white};border-radius:12px;border:1px solid ${BRAND.border};overflow:hidden;">
           <!-- Header — logo + wordmark -->
           <tr>
-            <td style="background:${BRAND.white};padding:28px 32px;text-align:center;border-bottom:1px solid ${BRAND.border};">
+            <td style="background:${BRAND.white};padding:16px 32px;text-align:center;border-bottom:1px solid ${BRAND.border};">
               <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
                 <tr>
-                  <td style="vertical-align:middle;padding-right:10px;">
-                    <img src="https://split.xtian.me/logo.png" alt="Spl1t" width="36" height="36" style="border-radius:8px;display:block;" />
+                  <td style="vertical-align:middle;padding-right:8px;">
+                    <img src="https://split.xtian.me/logo.png" alt="Spl1t" width="40" height="40" style="border-radius:8px;display:block;" />
                   </td>
                   <td style="vertical-align:middle;">
-                    <span style="font-size:22px;font-weight:700;color:${BRAND.textPrimary};letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coral};">1</span>t</span>
+                    <span style="font-size:24px;font-weight:700;color:${BRAND.textPrimary};letter-spacing:-0.5px;">Spl<span style="color:${BRAND.coral};">1</span>t</span>
+                    <div style="margin-top:2px;color:${BRAND.textMuted};font-size:12px;">${subtitle}</div>
                   </td>
                 </tr>
               </table>
-              <p style="margin:8px 0 0;color:${BRAND.textMuted};font-size:13px;">${subtitle}</p>
             </td>
           </tr>
           <!-- Body -->
