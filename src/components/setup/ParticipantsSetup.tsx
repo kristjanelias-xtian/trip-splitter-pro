@@ -99,6 +99,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   // Autocomplete: contacts from past trips
   const { contacts } = useTripContacts(currentTrip?.id)
   const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
+  const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -154,6 +155,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     setName(contact.display_name ?? contact.name)
     setEmail(contact.email || '')
     setSuggestedUserId(contact.user_id)
+    setSuggestedNickname(contact.nickname)
     setShowDropdown(false)
     setActiveIndex(-1)
     // Focus email field so user can review/edit
@@ -162,8 +164,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
   const handleNameChange = useCallback((value: string) => {
     setName(value)
-    // Clear suggested user_id when user edits the name manually
+    // Clear suggested values when user edits the name manually
     setSuggestedUserId(null)
+    setSuggestedNickname(null)
   }, [])
 
   const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -250,6 +253,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
         is_adult: isAdult,
         wallet_group: walletGroup.trim() || null,
         email: email.trim() || null,
+        nickname: suggestedNickname || null,
         ...(suggestedUserId ? { user_id: suggestedUserId } : {}),
       }
 
@@ -264,6 +268,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       setName('')
       setEmail('')
       setSuggestedUserId(null)
+      setSuggestedNickname(null)
       // Keep walletGroup — likely adding more people to the same group
       setIsAdult(true)
     } finally {
@@ -346,6 +351,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       name: personName,
       is_adult: contact.is_adult ?? true,
       email: emailLower || null,
+      nickname: contact.nickname || null,
       ...(contact.user_id ? { user_id: contact.user_id } : {}),
     }
 

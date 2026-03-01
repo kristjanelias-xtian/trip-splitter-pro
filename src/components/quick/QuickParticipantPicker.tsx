@@ -27,6 +27,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
 
   // Autocomplete state
   const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
+  const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -74,6 +75,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
     setName(contact.display_name ?? contact.name)
     setEmail(contact.email || '')
     setSuggestedUserId(contact.user_id)
+    setSuggestedNickname(contact.nickname)
     setShowDropdown(false)
     setActiveIndex(-1)
     setTimeout(() => emailInputRef.current?.focus(), 0)
@@ -82,6 +84,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
   const handleNameChange = useCallback((value: string) => {
     setName(value)
     setSuggestedUserId(null)
+    setSuggestedNickname(null)
   }, [])
 
   const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -107,7 +110,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
     setSupportsContacts('contacts' in navigator && typeof (navigator as any).contacts?.select === 'function')
   }, [])
 
-  const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null, isAdult?: boolean) => {
+  const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null, isAdult?: boolean, personNickname?: string | null) => {
     const emailLower = personEmail?.trim().toLowerCase() ?? null
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
@@ -119,6 +122,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
       name: personName.trim(),
       is_adult: isAdult ?? true,
       email: emailLower || null,
+      nickname: personNickname || null,
       ...(personUserId ? { user_id: personUserId } : {}),
     }
 
@@ -138,7 +142,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
   }
 
   const handleAddRecent = async (contact: TripContact) => {
-    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id, contact.is_adult)
+    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id, contact.is_adult, contact.nickname)
   }
 
   const handleAddFromContacts = async () => {
@@ -174,10 +178,11 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
 
     setAdding(true)
     try {
-      await addPerson(name.trim(), email.trim() || null, suggestedUserId)
+      await addPerson(name.trim(), email.trim() || null, suggestedUserId, undefined, suggestedNickname)
       setName('')
       setEmail('')
       setSuggestedUserId(null)
+      setSuggestedNickname(null)
     } finally {
       setAdding(false)
     }
