@@ -10,6 +10,7 @@ export interface ReceiptReviewData {
   currency: string
   imagePath: string | null
   category: string | null
+  existingExpenseId?: string
 }
 
 interface PendingReceiptBannerProps {

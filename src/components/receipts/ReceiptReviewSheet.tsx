@@ -36,6 +36,7 @@ interface ReceiptReviewSheetProps {
   currency: string
   imagePath?: string | null
   extractedCategory?: string | null
+  existingExpenseId?: string
   onDone: () => void
 }
 
@@ -137,6 +138,7 @@ export function ReceiptReviewSheet({
   currency,
   imagePath,
   extractedCategory,
+  existingExpenseId,
   onDone,
 }: ReceiptReviewSheetProps) {
   const keyboard = useKeyboardHeight()
@@ -144,7 +146,7 @@ export function ReceiptReviewSheet({
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
-  const { createExpense } = useExpenseContext()
+  const { createExpense, updateExpense } = useExpenseContext()
   const { completeReceiptTask, error: receiptError, clearError: clearReceiptError } = useReceiptContext()
   const { updateTrip } = useTripContext()
   const { user } = useAuth()
@@ -334,27 +336,41 @@ export function ReceiptReviewSheet({
         ? `Receipt: ${merchantName.trim()}`
         : 'Receipt'
 
-      const expense = await createExpense({
-        trip_id: currentTrip.id,
-        description,
-        amount: totalAmount,
-        currency: activeCurrency,
-        paid_by: paidBy,
-        distribution,
-        category,
-        expense_date: new Date().toISOString().split('T')[0],
-      })
+      let expenseId: string
 
-      if (!expense) {
-        toast({ title: 'Failed to create expense', variant: 'destructive' })
-        setSubmitting(false)
-        return
+      if (existingExpenseId) {
+        await updateExpense(existingExpenseId, {
+          description,
+          amount: totalAmount,
+          currency: activeCurrency,
+          paid_by: paidBy,
+          distribution,
+          category,
+        })
+        expenseId = existingExpenseId
+      } else {
+        const expense = await createExpense({
+          trip_id: currentTrip.id,
+          description,
+          amount: totalAmount,
+          currency: activeCurrency,
+          paid_by: paidBy,
+          distribution,
+          category,
+          expense_date: new Date().toISOString().split('T')[0],
+        })
+        if (!expense) {
+          toast({ title: 'Failed to create expense', variant: 'destructive' })
+          setSubmitting(false)
+          return
+        }
+        expenseId = expense.id
       }
 
-      await completeReceiptTask(taskId, expense.id)
+      await completeReceiptTask(taskId, expenseId)
 
       toast({
-        title: 'Receipt added',
+        title: existingExpenseId ? 'Receipt updated' : 'Receipt added',
         description: `${description} — ${activeCurrency} ${totalAmount.toFixed(2)}`,
       })
 
@@ -592,10 +608,10 @@ export function ReceiptReviewSheet({
             {submitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Adding expense...
+                {existingExpenseId ? 'Updating expense...' : 'Adding expense...'}
               </>
             ) : (
-              `Add Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
+              `${existingExpenseId ? 'Update' : 'Add'} Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
             )}
           </Button>
           {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
