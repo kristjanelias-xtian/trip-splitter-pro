@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button'
 const LOGIN_DISMISS_KEY = 'spl1t:dismiss-login-prompt'
 const BANK_DETAILS_DISMISS_KEY = 'spl1t:dismiss-bank-details'
 
-export function OnboardingPrompts() {
+interface OnboardingPromptsProps {
+  hasPaidExpense?: boolean
+}
+
+export function OnboardingPrompts({ hasPaidExpense = false }: OnboardingPromptsProps) {
   const { user, userProfile, loading } = useAuth()
   const [loginDismissed, setLoginDismissed] = useState(
     () => localStorage.getItem(LOGIN_DISMISS_KEY) === 'true'
@@ -51,7 +55,7 @@ export function OnboardingPrompts() {
 
   // Bank details prompt for authenticated users without bank details
   const hasBankDetails = userProfile?.bank_account_holder || userProfile?.bank_iban
-  if (user && !hasBankDetails && !bankDetailsDismissed) {
+  if (user && !hasBankDetails && !bankDetailsDismissed && hasPaidExpense) {
     return (
       <>
         <div className="mb-6 p-4 rounded-lg border border-border bg-accent/30 flex items-start justify-between gap-3">

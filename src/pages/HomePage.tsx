@@ -333,7 +333,7 @@ export function HomePage() {
           <InstallGuide variant="banner" onDismiss={dismissInstall} />
         )}
 
-        <OnboardingPrompts />
+        <OnboardingPrompts hasPaidExpense={tripBalances.some(tb => tb.myBalance && tb.myBalance.totalPaid > 0)} />
 
         {/* Scan CTA — authenticated users only */}
         {isAuthenticated && (
@@ -355,19 +355,6 @@ export function HomePage() {
             </div>
             <ChevronRight size={18} className="opacity-70" />
           </button>
-        )}
-
-        {/* Demo link — authenticated users with no trips */}
-        {isAuthenticated && !loading && visibleTrips.length === 0 && (
-          <div className="text-center -mt-3 mb-6">
-            <button
-              onClick={() => navigate(`/t/${DEMO_TRIP_CODE}`)}
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Sparkles size={14} />
-              Try a demo
-            </button>
-          </div>
         )}
 
         {/* Action Buttons — unauthenticated only (authenticated uses sheet + scan CTA) */}
