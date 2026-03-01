@@ -107,7 +107,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
     setSupportsContacts('contacts' in navigator && typeof (navigator as any).contacts?.select === 'function')
   }, [])
 
-  const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null) => {
+  const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null, isAdult?: boolean) => {
     const emailLower = personEmail?.trim().toLowerCase() ?? null
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
@@ -117,7 +117,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
     const input = {
       trip_id: tripId,
       name: personName.trim(),
-      is_adult: true,
+      is_adult: isAdult ?? true,
       email: emailLower || null,
       ...(personUserId ? { user_id: personUserId } : {}),
     }
@@ -138,7 +138,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
   }
 
   const handleAddRecent = async (contact: TripContact) => {
-    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
+    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id, contact.is_adult)
   }
 
   const handleAddFromContacts = async () => {
@@ -237,6 +237,9 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                     }`}
                   >
                     <span className="font-medium truncate">{displayName}</span>
+                    {!contact.is_adult && (
+                      <span className="text-[10px] text-muted-foreground border border-border rounded px-1 py-0.5 shrink-0">Child</span>
+                    )}
                     {contact.email && (
                       <span className="text-xs text-muted-foreground truncate ml-auto mr-2">
                         {contact.email}

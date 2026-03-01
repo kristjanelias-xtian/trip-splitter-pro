@@ -324,7 +324,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     const input = {
       trip_id: currentTrip.id,
       name: personName,
-      is_adult: true,
+      is_adult: contact.is_adult ?? true,
       email: emailLower || null,
       ...(contact.user_id ? { user_id: contact.user_id } : {}),
     }
@@ -385,9 +385,15 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           <span className="font-medium text-foreground truncate">
             {participant.name}
           </span>
-          <Badge variant={participant.is_adult ? 'soft' : 'outline'}>
-            {participant.is_adult ? 'Adult' : 'Child'}
-          </Badge>
+          <button
+            type="button"
+            onClick={() => updateParticipant(participant.id, { is_adult: !participant.is_adult })}
+            title={`Click to change to ${participant.is_adult ? 'Child' : 'Adult'}`}
+          >
+            <Badge variant={participant.is_adult ? 'soft' : 'outline'} className="cursor-pointer hover:opacity-80 transition-opacity">
+              {participant.is_adult ? 'Adult' : 'Child'}
+            </Badge>
+          </button>
           {participant.user_id && (
             <span title="Account linked" className="shrink-0">
               <UserCheck size={12} className="text-positive" />
@@ -575,6 +581,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                         }`}
                       >
                         <span className="font-medium truncate">{displayName}</span>
+                        {!contact.is_adult && (
+                          <span className="text-[10px] text-muted-foreground border border-border rounded px-1 py-0.5 shrink-0">Child</span>
+                        )}
                         {contact.email && (
                           <span className="text-xs text-muted-foreground truncate ml-auto mr-2">
                             {contact.email}
