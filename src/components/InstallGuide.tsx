@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { X, ChevronRight, Smartphone } from 'lucide-react'
+import { X, ChevronDown, Smartphone } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface InstallGuideProps {
   variant: 'banner' | 'settings'
@@ -107,30 +108,32 @@ export function InstallGuide({ variant, onDismiss }: InstallGuideProps) {
     )
   }
 
-  // Settings variant
+  // Settings variant — uses Card to match other ManageTripPage sections
   return (
-    <button
-      onClick={() => setExpanded(prev => !prev)}
-      className="w-full text-left bg-muted/50 rounded-lg border border-border/50 p-3"
-    >
-      <div className="flex items-center gap-3">
-        <Smartphone size={16} className="text-muted-foreground shrink-0" />
-        <span className="text-sm font-medium text-foreground flex-1">
-          Open Spl1t like an app
-        </span>
-        <ChevronRight
-          size={16}
-          className={`text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`}
-        />
-      </div>
+    <Card>
+      <button
+        onClick={() => setExpanded(prev => !prev)}
+        className="w-full text-left"
+      >
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone size={16} className="text-muted-foreground shrink-0" />
+              <CardTitle>Open Spl1t like an app</CardTitle>
+            </div>
+            <ChevronDown
+              size={16}
+              className={`text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
+            />
+          </div>
+          <CardDescription>Works like a regular app — no browser needed</CardDescription>
+        </CardHeader>
+      </button>
       {expanded && (
-        <div className="mt-2 pl-7" onClick={(e) => e.stopPropagation()}>
-          <p className="text-xs text-muted-foreground mb-1">
-            Works like a regular app — no browser needed
-          </p>
+        <CardContent>
           <PlatformInstructions isIOS={isIOS} isAndroid={isAndroid} />
-        </div>
+        </CardContent>
       )}
-    </button>
+    </Card>
   )
 }
