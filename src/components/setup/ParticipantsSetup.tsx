@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Type } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -428,7 +428,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             className="h-8 w-8 p-0"
             title={participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
           >
-            <Type size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
+            <Pencil size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
           </Button>
           <Button
             onClick={() => handleStartEditGroup(participant)}
@@ -484,7 +484,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             type="text"
             value={editNicknameValue}
             onChange={(e) => setEditNicknameValue(e.target.value)}
-            placeholder="Nickname (optional)"
+            placeholder="Short name / nickname"
             className="h-8 text-sm flex-1"
             disabled={savingNicknameId === participant.id}
           />
@@ -578,8 +578,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           onClick={() => handleStartEditNickname(participant)}
           className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Type size={11} />
-          {participant.nickname}
+          aka {participant.nickname}
         </button>
       )}
 
