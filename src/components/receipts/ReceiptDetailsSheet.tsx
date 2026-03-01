@@ -121,7 +121,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
   )
 
   const footer = canReprocess && onReprocess ? (
-    <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+    <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
       <Button
         onClick={onReprocess}
         variant="outline"

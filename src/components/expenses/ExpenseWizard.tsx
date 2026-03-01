@@ -512,7 +512,7 @@ function MobileWizard({
         </div>
 
         {/* Sticky footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0">
+        <div className="px-6 py-4 border-t border-border shrink-0 pwa-safe-bottom">
           <WizardNavigation
             currentStep={currentStep}
             totalSteps={totalSteps}

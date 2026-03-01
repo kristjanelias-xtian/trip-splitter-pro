@@ -51,7 +51,7 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
         </div>
 
         {/* Sticky footer */}
-        <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+        <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
           <Button className="w-full" onClick={() => onOpenChange(false)}>
             Done
           </Button>

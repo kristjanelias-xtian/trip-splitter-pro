@@ -397,7 +397,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
 
         {/* Sticky footer — participants step */}
         {step === 'participants' && (
-          <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+          <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
             <Button className="w-full gap-1" onClick={handleDone}>
               Done
               <ChevronRight size={14} />
