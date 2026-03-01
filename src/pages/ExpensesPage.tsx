@@ -384,7 +384,7 @@ export function ExpensesPage() {
           open={!!viewingReceiptTask}
           onOpenChange={open => { if (!open) setViewingReceiptTask(null) }}
           task={viewingReceiptTask}
-          canReprocess={!!user && viewingReceiptTask.created_by === user.id}
+          canReprocess={!!user}
           onReprocess={() => handleReprocessReceipt(viewingReceiptTask)}
         />
       )}
