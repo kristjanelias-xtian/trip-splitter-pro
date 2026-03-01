@@ -298,8 +298,51 @@ describe('calculateBalances', () => {
 
     expect(aliceBalance.balance).toBeCloseTo(0, 2)
     expect(aliceBalance.totalSettled).toBe(-50) // received 50
+    expect(aliceBalance.totalSettledSent).toBe(0)
+    expect(aliceBalance.totalSettledReceived).toBe(50)
     expect(bobBalance.balance).toBeCloseTo(0, 2)
     expect(bobBalance.totalSettled).toBe(50) // sent 50
+    expect(bobBalance.totalSettledSent).toBe(50)
+    expect(bobBalance.totalSettledReceived).toBe(0)
+  })
+
+  it('tracks gross settlement amounts when bidirectional', () => {
+    const expense = buildExpense({
+      amount: 100,
+      paid_by: 'p1',
+      distribution: { type: 'individuals', participants: ['p1', 'p2'] },
+    })
+    const settlements = [
+      buildSettlement({
+        id: 's1',
+        from_participant_id: 'p2',
+        to_participant_id: 'p1',
+        amount: 80,
+        currency: 'EUR',
+      }),
+      buildSettlement({
+        id: 's2',
+        from_participant_id: 'p1',
+        to_participant_id: 'p2',
+        amount: 20,
+        currency: 'EUR',
+      }),
+    ]
+    const result = calculateBalances(
+      [expense], participants, 'individuals', settlements
+    )
+    const aliceBalance = result.balances.find(b => b.id === 'p1')!
+    const bobBalance = result.balances.find(b => b.id === 'p2')!
+
+    // Alice: net settled = -80 (received) + 20 (sent) = -60
+    expect(aliceBalance.totalSettled).toBe(-60)
+    expect(aliceBalance.totalSettledSent).toBe(20)
+    expect(aliceBalance.totalSettledReceived).toBe(80)
+
+    // Bob: net settled = 80 (sent) - 20 (received) = 60
+    expect(bobBalance.totalSettled).toBe(60)
+    expect(bobBalance.totalSettledSent).toBe(80)
+    expect(bobBalance.totalSettledReceived).toBe(20)
   })
 
   it('sorts by balance descending', () => {
@@ -396,7 +439,7 @@ describe('calculateBalances', () => {
 // ─── getBalanceForEntity ──────────────────────────────────────────
 describe('getBalanceForEntity', () => {
   const balances = [
-    { id: 'p1', name: 'Alice', totalPaid: 100, totalShare: 50, totalSettled: 0, balance: 50, isFamily: false },
+    { id: 'p1', name: 'Alice', totalPaid: 100, totalShare: 50, totalSettled: 0, totalSettledSent: 0, totalSettledReceived: 0, balance: 50, isFamily: false },
   ]
 
   it('returns balance when entity is found', () => {

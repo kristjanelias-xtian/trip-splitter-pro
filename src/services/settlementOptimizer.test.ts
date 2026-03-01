@@ -10,7 +10,7 @@ import {
 import type { ParticipantBalance } from './balanceCalculator'
 
 function balance(id: string, name: string, bal: number): ParticipantBalance {
-  return { id, name, totalPaid: 0, totalShare: 0, totalSettled: 0, balance: bal, isFamily: false }
+  return { id, name, totalPaid: 0, totalShare: 0, totalSettled: 0, totalSettledSent: 0, totalSettledReceived: 0, balance: bal, isFamily: false }
 }
 
 // ─── calculateOptimalSettlement ───────────────────────────────────

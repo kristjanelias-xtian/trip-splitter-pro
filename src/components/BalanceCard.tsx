@@ -22,9 +22,8 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
   }).format(value)
   const formattedPaid = fmt(balance.totalPaid)
   const formattedShare = fmt(balance.totalShare)
-  const formattedSettled = balance.totalSettled !== 0
-    ? `${fmt(Math.abs(balance.totalSettled))} ${balance.totalSettled > 0 ? 'sent' : 'received'}`
-    : '—'
+  const hasSent = balance.totalSettledSent > 0
+  const hasReceived = balance.totalSettledReceived > 0
 
   const getBalanceStatus = () => {
     if (balance.balance > 0.01) {
@@ -111,7 +110,14 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Settled:</span>
-            <span className="font-medium text-foreground tabular-nums">{formattedSettled}</span>
+            <span className="font-medium text-foreground tabular-nums text-right">
+              {!hasSent && !hasReceived ? '—' : (
+                <>
+                  {hasReceived && <span className="block">{fmt(balance.totalSettledReceived)} received</span>}
+                  {hasSent && <span className="block">{fmt(balance.totalSettledSent)} sent</span>}
+                </>
+              )}
+            </span>
           </div>
         </div>
 
