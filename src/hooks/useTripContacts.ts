@@ -11,6 +11,7 @@ export interface TripContact {
   user_id: string | null
   display_name: string | null
   nickname: string | null
+  avatar_url: string | null
   is_adult: boolean
   lastSeenAt: string
 }
@@ -90,13 +91,13 @@ export function useTripContacts(currentTripId: string | undefined) {
         const userIds = [...new Set(
           filtered.filter((p: any) => p.user_id).map((p: any) => p.user_id as string)
         )]
-        const profileMap = new Map<string, { displayName: string | null; email: string | null }>()
+        const profileMap = new Map<string, { displayName: string | null; email: string | null; avatarUrl: string | null }>()
         if (userIds.length > 0) {
           try {
             const { data: profiles } = await withTimeout<{ data: any[]; error: any }>(
               (supabase as any)
                 .from('user_profiles')
-                .select('id, display_name, email')
+                .select('id, display_name, email, avatar_url')
                 .in('id', userIds)
                 .abortSignal(controller.signal),
               15000,
@@ -107,6 +108,7 @@ export function useTripContacts(currentTripId: string | undefined) {
                 profileMap.set(p.id, {
                   displayName: p.display_name ?? null,
                   email: p.email ?? null,
+                  avatarUrl: p.avatar_url ?? null,
                 })
               }
             }
@@ -136,12 +138,14 @@ export function useTripContacts(currentTripId: string | undefined) {
           const hasNewDisplayName = display_name && !existing?.display_name
           if (isNewer || hasNewDisplayName) {
             const bestEmail = p.email ?? profile?.email ?? existing?.email ?? null
+            const bestAvatar = profile?.avatarUrl ?? existing?.avatar_url ?? null
             seen.set(key, {
               name: p.name,
               email: bestEmail,
               user_id: p.user_id ?? null,
               display_name,
               nickname: p.nickname ?? existing?.nickname ?? null,
+              avatar_url: bestAvatar,
               is_adult: isNewer ? (p.is_adult ?? true) : (existing?.is_adult ?? true),
               lastSeenAt: isNewer ? lastSeenAt : existing!.lastSeenAt,
             })
@@ -166,6 +170,9 @@ export function useTripContacts(currentTripId: string | undefined) {
             }
             if (removeEntry.display_name && !keepEntry.display_name) {
               keepEntry.display_name = removeEntry.display_name
+            }
+            if (removeEntry.avatar_url && !keepEntry.avatar_url) {
+              keepEntry.avatar_url = removeEntry.avatar_url
             }
             seen.delete(removeKey)
             emailToKey.set(emailLower, keepKey)
