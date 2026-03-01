@@ -8,6 +8,7 @@ import { useTripContext } from '@/contexts/TripContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { QuickParticipantPicker } from './QuickParticipantPicker'
 import { logger } from '@/lib/logger'
 
@@ -84,6 +85,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
   const { refreshParticipants } = useParticipantContext()
   const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -118,6 +120,9 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   }
 
   const handleClose = () => {
+    // Don't allow closing during scanning — the sheet must stay open
+    // until the receipt is processed and the participant step is reached.
+    if (step === 'scanning') return
     onOpenChange(false)
     // Reset state after close animation
     setTimeout(() => {
@@ -285,7 +290,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
         </div>
 
         {/* Scrollable content — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
           {/* Step 1: Camera */}
           {step === 'camera' && (
             <div className="flex flex-col gap-4 h-full">

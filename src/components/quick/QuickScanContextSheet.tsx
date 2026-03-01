@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, ScanLine, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import type { Event } from '@/types/trip'
 
 interface QuickScanContextSheetProps {
@@ -17,6 +18,7 @@ export function QuickScanContextSheet({
   trips,
   onNewGroup,
 }: QuickScanContextSheetProps) {
+  const scrollRef = useIOSScrollFix()
   const navigate = useNavigate()
 
   const handleSelectTrip = (tripCode: string) => {
@@ -57,7 +59,7 @@ export function QuickScanContextSheet({
         </div>
 
         {/* Scrollable group list */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-2">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-2">
           {trips.map(trip => (
             <button
               key={trip.id}

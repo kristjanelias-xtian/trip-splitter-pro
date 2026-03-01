@@ -6,6 +6,7 @@ import {
   SheetContent,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { TimeSlotGrid } from './TimeSlotGrid'
 import type { MealWithIngredients } from '@/types/meal'
 import type { Activity } from '@/types/activity'
@@ -47,6 +48,8 @@ export function DayDetailSheet({
   enableMeals = true,
   enableActivities = true,
 }: DayDetailSheetProps) {
+  const scrollRef = useIOSScrollFix()
+
   if (!date) return null
 
   const dayNumber = getDayNumber(date, tripStartDate)
@@ -95,7 +98,7 @@ export function DayDetailSheet({
         </div>
 
         {/* Scrollable content — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
           <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
         </div>
       </SheetContent>

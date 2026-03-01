@@ -25,6 +25,7 @@ import { ReactNode } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 interface AppSheetProps {
   open: boolean
@@ -66,6 +67,7 @@ export function AppSheet({
   preventOutsideClose = false,
 }: AppSheetProps) {
   const keyboard = hasInputs ? useKeyboardHeight() : null
+  const scrollRef = useIOSScrollFix()
 
   const sheetHeight = keyboard?.isVisible
     ? `${keyboard.availableHeight}px`
@@ -103,7 +105,7 @@ export function AppSheet({
         )}
 
         {/* SCROLLABLE CONTENT — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
           {children}
         </div>
 

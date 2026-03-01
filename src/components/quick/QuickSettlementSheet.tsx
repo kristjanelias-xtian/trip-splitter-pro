@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,6 +44,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const { toast } = useToast()
   const { user, userProfile } = useAuth()
 
+  const scrollRef = useIOSScrollFix()
   const [view, setView] = useState<'suggestions' | 'form'>('suggestions')
   const [prefill, setPrefill] = useState<Prefill | null>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
@@ -341,7 +343,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const titleText = view === 'suggestions' ? 'Settle up' : 'Record payment'
 
   const scrollContent = (
-    <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
       {view === 'suggestions' ? (
         <div className="space-y-4">
           {allSettled ? (

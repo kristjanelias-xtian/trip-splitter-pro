@@ -5,6 +5,7 @@ import { EventForm } from '@/components/EventForm'
 import { CreateEventInput } from '@/types/trip'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 interface QuickCreateSheetProps {
   open: boolean
@@ -15,6 +16,7 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
   const navigate = useNavigate()
   const { createTrip } = useTripContext()
   const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
 
   const handleCreate = async (input: CreateEventInput) => {
     const newEvent = await createTrip(input)
@@ -49,7 +51,7 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
         </div>
 
         {/* Scrollable content — only this scrolls */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
           <EventForm
             onSubmit={handleCreate}
             onCancel={() => onOpenChange(false)}
