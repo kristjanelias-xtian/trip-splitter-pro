@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useScrollIntoView } from '@/hooks/useScrollIntoView'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -141,6 +143,7 @@ export function ReceiptReviewSheet({
   existingExpenseId,
   onDone,
 }: ReceiptReviewSheetProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const keyboard = useKeyboardHeight()
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
@@ -384,244 +387,272 @@ export function ReceiptReviewSheet({
     }
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        hideClose
-        className="flex flex-col p-0 rounded-t-2xl"
-        style={{
-          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
-        }}
+  const onClose = () => onOpenChange(false)
+
+  const header = (
+    <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="w-8" />
+      <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
       >
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="w-8" />
-          <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
+        <X className="w-4 h-4 text-muted-foreground" />
+      </button>
+    </div>
+  )
+
+  const body = (
+    <div ref={contentRef} className="flex-1 overflow-y-auto overscroll-contain">
+    <div className="px-4 py-3 space-y-4">
+      {/* Receipt image thumbnail (collapsible) */}
+      {receiptImageUrl && (
+        <div className="border border-border rounded-lg overflow-hidden">
           <button
-            onClick={() => onOpenChange(false)}
-            aria-label="Close"
-            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-foreground"
+            onClick={() => setShowThumbnail(v => !v)}
           >
-            <X className="w-4 h-4 text-muted-foreground" />
+            <span className="flex items-center gap-1.5">
+              <Image size={14} />
+              Receipt photo
+            </span>
+            {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
+          {showThumbnail && (
+            <img
+              src={receiptImageUrl}
+              alt="Receipt"
+              className="w-full max-h-64 object-contain bg-muted"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Merchant + Category */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="merchant" className="text-xs">Merchant</Label>
+          <Input
+            id="merchant"
+            value={merchantName}
+            onChange={e => setMerchantName(e.target.value)}
+            placeholder="Restaurant, store..."
+            className="h-9 text-sm"
+            style={{ fontSize: '1rem' }}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="category" className="text-xs">Category</Label>
+          <Select value={category} onValueChange={val => setCategory(val as ExpenseCategory)}>
+            <SelectTrigger id="category" className="h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Food">Food</SelectItem>
+              <SelectItem value="Accommodation">Accommodation</SelectItem>
+              <SelectItem value="Transport">Transport</SelectItem>
+              <SelectItem value="Activities">Activities</SelectItem>
+              <SelectItem value="Training">Training</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Paid by */}
+      <div className="space-y-1">
+        <Label htmlFor="paidby" className="text-xs">Paid by</Label>
+        <Select value={paidBy} onValueChange={setPaidBy}>
+          <SelectTrigger id="paidby" className="h-9 text-sm">
+            <SelectValue placeholder="Who paid?" />
+          </SelectTrigger>
+          <SelectContent>
+            {adultParticipants.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Items */}
+      <div className="space-y-2">
+        <button
+          className="flex items-center justify-between w-full text-sm font-medium text-foreground"
+          onClick={() => setShowAllItems(v => !v)}
+        >
+          <span>Items ({editableItems.length})</span>
+          {showAllItems ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {showAllItems && (
+          <div className="space-y-3">
+            {editableItems.map((item, i) => (
+              <ItemRow
+                key={i}
+                index={i}
+                item={item}
+                participants={participants}
+                onNameChange={name => updateItemName(i, name)}
+                onPriceChange={price => updateItemPrice(i, price)}
+                onToggleParticipant={pid => toggleParticipant(i, pid)}
+                onToggleAll={() => toggleAll(i)}
+                onExpand={item.qty > 1 ? () => expandItem(i) : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Unassigned warning */}
+      {unassignedItems.length > 0 && (
+        <div className="flex items-start gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            {unassignedItems.length} item{unassignedItems.length > 1 ? 's' : ''} not assigned to anyone
+          </span>
+        </div>
+      )}
+
+      {/* Totals */}
+      <div className="border border-border rounded-lg p-3 space-y-3">
+        {/* Currency selector */}
+        <div className="space-y-1">
+          <Label htmlFor="receipt-currency" className="text-xs">Currency</Label>
+          <Select value={activeCurrency} onValueChange={setActiveCurrency}>
+            <SelectTrigger id="receipt-currency" className="h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {currencyOptions.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div ref={contentRef} className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="px-4 py-3 space-y-4">
-          {/* Receipt image thumbnail (collapsible) */}
-          {receiptImageUrl && (
-            <div className="border border-border rounded-lg overflow-hidden">
-              <button
-                className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-foreground"
-                onClick={() => setShowThumbnail(v => !v)}
-              >
-                <span className="flex items-center gap-1.5">
-                  <Image size={14} />
-                  Receipt photo
-                </span>
-                {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {showThumbnail && (
-                <img
-                  src={receiptImageUrl}
-                  alt="Receipt"
-                  className="w-full max-h-64 object-contain bg-muted"
-                />
-              )}
+        {/* Exchange rate prompt for unknown currencies */}
+        {currencyIsUnknown && (
+          <div className="space-y-2">
+            <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span>{activeCurrency} is not in your trip's currencies. Enter the exchange rate to convert balances correctly.</span>
             </div>
-          )}
-
-          {/* Merchant + Category */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="merchant" className="text-xs">Merchant</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">1 {baseCurrency} =</span>
               <Input
-                id="merchant"
-                value={merchantName}
-                onChange={e => setMerchantName(e.target.value)}
-                placeholder="Restaurant, store..."
+                inputMode="decimal"
+                value={exchangeRate}
+                onChange={e => setExchangeRate(e.target.value.replace(',', '.'))}
+                placeholder="0.00"
                 className="h-9 text-sm"
                 style={{ fontSize: '1rem' }}
               />
+              <span className="text-sm font-medium">{activeCurrency}</span>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="category" className="text-xs">Category</Label>
-              <Select value={category} onValueChange={val => setCategory(val as ExpenseCategory)}>
-                <SelectTrigger id="category" className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Food">Food</SelectItem>
-                  <SelectItem value="Accommodation">Accommodation</SelectItem>
-                  <SelectItem value="Transport">Transport</SelectItem>
-                  <SelectItem value="Activities">Activities</SelectItem>
-                  <SelectItem value="Training">Training</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-xs text-muted-foreground">This rate will be saved to your trip.</p>
           </div>
+        )}
 
-          {/* Paid by */}
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Items total</span>
+          <span>{activeCurrency} {itemsTotal.toFixed(2)}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label htmlFor="paidby" className="text-xs">Paid by</Label>
-            <Select value={paidBy} onValueChange={setPaidBy}>
-              <SelectTrigger id="paidby" className="h-9 text-sm">
-                <SelectValue placeholder="Who paid?" />
-              </SelectTrigger>
-              <SelectContent>
-                {adultParticipants.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="confirmed-total" className="text-xs">Total charged ({activeCurrency})</Label>
+            <Input
+              id="confirmed-total"
+              inputMode="decimal"
+              value={confirmedTotal}
+              onChange={e => setConfirmedTotal(e.target.value.replace(',', '.'))}
+              placeholder="0.00"
+              className="h-9 text-sm"
+              style={{ fontSize: '1rem' }}
+            />
           </div>
-
-          {/* Items */}
-          <div className="space-y-2">
-            <button
-              className="flex items-center justify-between w-full text-sm font-medium text-foreground"
-              onClick={() => setShowAllItems(v => !v)}
-            >
-              <span>Items ({editableItems.length})</span>
-              {showAllItems ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {showAllItems && (
-              <div className="space-y-3">
-                {editableItems.map((item, i) => (
-                  <ItemRow
-                    key={i}
-                    index={i}
-                    item={item}
-                    participants={participants}
-                    onNameChange={name => updateItemName(i, name)}
-                    onPriceChange={price => updateItemPrice(i, price)}
-                    onToggleParticipant={pid => toggleParticipant(i, pid)}
-                    onToggleAll={() => toggleAll(i)}
-                    onExpand={item.qty > 1 ? () => expandItem(i) : undefined}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Unassigned warning */}
-          {unassignedItems.length > 0 && (
-            <div className="flex items-start gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <span>
-                {unassignedItems.length} item{unassignedItems.length > 1 ? 's' : ''} not assigned to anyone
-              </span>
-            </div>
-          )}
-
-          {/* Totals */}
-          <div className="border border-border rounded-lg p-3 space-y-3">
-            {/* Currency selector */}
-            <div className="space-y-1">
-              <Label htmlFor="receipt-currency" className="text-xs">Currency</Label>
-              <Select value={activeCurrency} onValueChange={setActiveCurrency}>
-                <SelectTrigger id="receipt-currency" className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencyOptions.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Exchange rate prompt for unknown currencies */}
-            {currencyIsUnknown && (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  <span>{activeCurrency} is not in your trip's currencies. Enter the exchange rate to convert balances correctly.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">1 {baseCurrency} =</span>
-                  <Input
-                    inputMode="decimal"
-                    value={exchangeRate}
-                    onChange={e => setExchangeRate(e.target.value.replace(',', '.'))}
-                    placeholder="0.00"
-                    className="h-9 text-sm"
-                    style={{ fontSize: '1rem' }}
-                  />
-                  <span className="text-sm font-medium">{activeCurrency}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">This rate will be saved to your trip.</p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Items total</span>
-              <span>{activeCurrency} {itemsTotal.toFixed(2)}</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="confirmed-total" className="text-xs">Total charged ({activeCurrency})</Label>
-                <Input
-                  id="confirmed-total"
-                  inputMode="decimal"
-                  value={confirmedTotal}
-                  onChange={e => setConfirmedTotal(e.target.value.replace(',', '.'))}
-                  placeholder="0.00"
-                  className="h-9 text-sm"
-                  style={{ fontSize: '1rem' }}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="tip" className="text-xs">Tip ({activeCurrency})</Label>
-                <Input
-                  id="tip"
-                  inputMode="decimal"
-                  value={tipAmount}
-                  onChange={e => setTipAmount(e.target.value.replace(',', '.'))}
-                  placeholder="0.00"
-                  className="h-9 text-sm"
-                  style={{ fontSize: '1rem' }}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between font-semibold text-sm border-t border-border pt-2">
-              <span>Total expense</span>
-              <span>{activeCurrency} {totalExpense.toFixed(2)}</span>
-            </div>
+          <div className="space-y-1">
+            <Label htmlFor="tip" className="text-xs">Tip ({activeCurrency})</Label>
+            <Input
+              id="tip"
+              inputMode="decimal"
+              value={tipAmount}
+              onChange={e => setTipAmount(e.target.value.replace(',', '.'))}
+              placeholder="0.00"
+              className="h-9 text-sm"
+              style={{ fontSize: '1rem' }}
+            />
           </div>
         </div>
-        </div>
 
-        {/* Submit */}
-        <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit || submitting}
-            className="w-full gap-2"
-            size="lg"
-          >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                {existingExpenseId ? 'Updating expense...' : 'Adding expense...'}
-              </>
-            ) : (
-              `${existingExpenseId ? 'Update' : 'Add'} Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
-            )}
-          </Button>
-          {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Assign all items to submit
-            </p>
-          )}
+        <div className="flex items-center justify-between font-semibold text-sm border-t border-border pt-2">
+          <span>Total expense</span>
+          <span>{activeCurrency} {totalExpense.toFixed(2)}</span>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
+    </div>
+  )
+
+  const footer = (
+    <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+      <Button
+        onClick={handleSubmit}
+        disabled={!canSubmit || submitting}
+        className="w-full gap-2"
+        size="lg"
+      >
+        {submitting ? (
+          <>
+            <Loader2 size={16} className="animate-spin" />
+            {existingExpenseId ? 'Updating expense...' : 'Adding expense...'}
+          </>
+        ) : (
+          `${existingExpenseId ? 'Update' : 'Add'} Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
+        )}
+      </Button>
+      {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center mt-2">
+          Assign all items to submit
+        </p>
+      )}
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{
+            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+            bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+          }}
+        >
+          {header}
+          {body}
+          {footer}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        hideClose
+        className="flex flex-col max-w-2xl max-h-[85vh] p-0 gap-0"
+        aria-describedby={undefined}
+      >
+        <DialogTitle className="sr-only">Review Receipt</DialogTitle>
+        {header}
+        {body}
+        {footer}
+      </DialogContent>
+    </Dialog>
   )
 }
 
