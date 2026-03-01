@@ -188,9 +188,9 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
         }),
       ])
 
-      // Write image path to task row (non-blocking)
+      // Write image path to task row — must complete before refreshPendingReceipts
       if (uploadResult.status === 'fulfilled' && !uploadResult.value.error) {
-        supabase.from('receipt_tasks').update({ receipt_image_path: uploadPath }).eq('id', task.id)
+        await supabase.from('receipt_tasks').update({ receipt_image_path: uploadPath }).eq('id', task.id)
       } else {
         const errMsg =
           uploadResult.status === 'rejected'
