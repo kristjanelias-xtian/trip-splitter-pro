@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (155 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (156 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -755,6 +755,8 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-02-27 | Bug fixes + security | **PR #436**: gate trip deletion to creator or admin — hidden Danger Zone from unauthorized users; migration 033 adds admin UUID delete policy. **PR #437**: pie chart all-black fix — `CATEGORY_COLORS` key casing mismatch; added missing `groceries`/`drinks` colors + fallback palette. **PR #438**: final within-group balance fix — apply ALL settlements involving at least one group member (not just internal); balances no longer sum to zero; remainder = family's external balance. **PR #439**: `scripts/audit-trip-balances.ts` — 8-check balance integrity audit, validated against production data. |
 | 2026-03-01 | Home page UX | PR #441: bottom nav hidden on home page (`{tripCode && ...}`); auto-redirect restricted to authenticated users only — prevents shared-link trips from causing unwanted redirects for unauthenticated visitors. |
 | 2026-03-01 | PWA install experience | **PR #442**: smart install guide — `InstallGuide` component with `usePWAInstall` hook (detects mobile, standalone, engagement via 2+ visit counter). Banner variant on HomePage for engaged mobile users; settings variant in ManageTripPage. Platform-specific iOS/Android instructions. **PR #443**: moved custom skills (gh-issue-triage, pr-branch-maintenance) from user-level to project-level `.claude/skills/`. **PR #444**: PWA manifest + service worker + client guard — three-layer fix for iOS `start_url` ignore. `manifest.webmanifest` (`start_url: "/"`), `public/sw.js` (intercepts standalone deep links → redirect to `/`), `main.tsx` guard (standalone + trip route → `window.location.replace('/')`). **PR #445**: admin nav shield icon in header for admin user in standalone PWA mode. |
+| 2026-03-01 | Redirect + header fixes | **PR #449**: `ConditionalHomePage` auto-redirect now requires trip to be happening today (start_date ≤ today ≤ end_date) — no more redirecting to future trips months away. New test added (156 total). **PR #451**: added doc update step (step 7) to `gh-issue-triage` skill. **PR #452**: Full mode header now shows ← back arrow before trip name, matching Quick mode; both navigate home with `fromTrip` state. |
+| 2026-03-01 | Admin page fixes | PR #453: 3 fixes. (1) Admin Shield button visible in both browser and PWA (removed standalone-only check). (2) `AdminAllTripsPage` uses `navigate()` in standalone mode instead of `window.open(_blank)` — new browser contexts in PWA trigger SW/client guard redirect to `/`. (3) Admin page mobile-responsive: card layout at < lg, table at >= lg — no horizontal scrolling at 375px. |
 
 ---
 
