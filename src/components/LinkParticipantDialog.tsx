@@ -32,7 +32,7 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
 
   const handleLink = async (participantId: string) => {
     setLinking(true)
-    const success = await linkUserToParticipant(participantId, user.id)
+    const success = await linkUserToParticipant(participantId, user.id, user.email ?? undefined)
     setLinking(false)
 
     if (success) {
