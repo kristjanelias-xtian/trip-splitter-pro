@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from 'react'
+import { lazy, Suspense, useState, useCallback, useMemo } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Lightbulb, Receipt, FileDown, Share2 } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
 import { ParticipantBalance } from '@/services/balanceCalculator'
+import type { Participant } from '@/types/participant'
 
 // Lazy load chart components for better performance
 const ExpenseByCategoryChart = lazy(() => import('@/components/ExpenseByCategoryChart').then(m => ({ default: m.ExpenseByCategoryChart })))
@@ -78,6 +79,26 @@ export function DashboardPage() {
     ...b,
     balance: Math.round(b.balance * 100) / 100,
   }))
+
+  const groupMembersMap = useMemo(() => {
+    const map: Record<string, Array<Pick<Participant, 'name' | 'avatar_url'>>> = {}
+    for (const b of displayBalances) {
+      if (b.isFamily) {
+        const canonical = participants.find(p => p.id === b.id)
+        const groupName = canonical?.wallet_group
+        if (groupName) {
+          map[b.id] = participants
+            .filter(p => p.wallet_group === groupName)
+            .map(p => ({ name: p.name, avatar_url: p.avatar_url ?? null }))
+        }
+      }
+      if (!map[b.id]) {
+        const p = participants.find(pp => pp.id === b.id)
+        map[b.id] = [{ name: p?.name ?? b.name, avatar_url: p?.avatar_url ?? null }]
+      }
+    }
+    return map
+  }, [displayBalances, participants])
 
   const handleExportPDF = () => {
     exportTripSummaryToPDF(currentTrip, expenses, participants, balanceCalculation.balances)
@@ -199,7 +220,7 @@ export function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {displayBalances.map(balance => (
-              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} avatarUrl={participants.find(p => p.id === balance.id)?.avatar_url} />
+              <BalanceCard key={balance.id} balance={balance} currency={currentTrip.default_currency} onClick={() => setSelectedBalance(balance)} groupMembers={groupMembersMap[balance.id]} />
             ))}
           </div>
         )}

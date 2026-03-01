@@ -4,6 +4,7 @@ interface ParticipantAvatarProps {
   participant: Pick<Participant, 'name' | 'avatar_url'>
   size?: 'sm' | 'md'
   forceInitials?: boolean
+  className?: string
 }
 
 const sizes = {
@@ -11,7 +12,7 @@ const sizes = {
   md: 'w-8 h-8 text-xs',
 }
 
-export function ParticipantAvatar({ participant, size = 'md', forceInitials }: ParticipantAvatarProps) {
+export function ParticipantAvatar({ participant, size = 'md', forceInitials, className }: ParticipantAvatarProps) {
   const sizeClass = sizes[size]
 
   const initials = participant.name
@@ -26,14 +27,14 @@ export function ParticipantAvatar({ participant, size = 'md', forceInitials }: P
       <img
         src={participant.avatar_url}
         alt={participant.name}
-        className={`${sizeClass} rounded-full shrink-0 object-cover`}
+        className={`${sizeClass} rounded-full shrink-0 object-cover ${className ?? ''}`}
         referrerPolicy="no-referrer"
       />
     )
   }
 
   return (
-    <div className={`${sizeClass} rounded-full shrink-0 flex items-center justify-center font-medium bg-primary/10 text-primary`}>
+    <div className={`${sizeClass} rounded-full shrink-0 flex items-center justify-center font-medium bg-primary/10 text-primary ${className ?? ''}`}>
       {initials}
     </div>
   )

@@ -4,15 +4,16 @@ import { ParticipantBalance } from '@/services/balanceCalculator'
 import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Card } from '@/components/ui/card'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
+import type { Participant } from '@/types/participant'
 
 interface BalanceCardProps {
   balance: ParticipantBalance
   currency?: string
   onClick?: () => void
-  avatarUrl?: string | null
+  groupMembers?: Array<Pick<Participant, 'name' | 'avatar_url'>>
 }
 
-export function BalanceCard({ balance, currency = 'EUR', onClick, avatarUrl }: BalanceCardProps) {
+export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }: BalanceCardProps) {
   const balanceColorClass = getBalanceColorClass(balance.balance)
   const formattedBalance = formatBalance(balance.balance, currency)
   const fmt = (value: number) => new Intl.NumberFormat('en-US', {
@@ -69,7 +70,17 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, avatarUrl }: B
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <ParticipantAvatar participant={{ name: balance.name, avatar_url: avatarUrl ?? null }} size="md" />
+            {groupMembers && groupMembers.length > 1 ? (
+              <div className="flex items-center shrink-0">
+                {groupMembers.slice(0, 4).map((member, i) => (
+                  <div key={i} className={i > 0 ? '-ml-2' : ''} style={{ zIndex: groupMembers.length - i }}>
+                    <ParticipantAvatar participant={member} size="sm" className="ring-2 ring-background" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ParticipantAvatar participant={{ name: balance.name, avatar_url: groupMembers?.[0]?.avatar_url ?? null }} size="md" />
+            )}
             <h3 className="text-lg font-semibold text-foreground truncate">
               {balance.name}
             </h3>
