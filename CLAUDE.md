@@ -567,6 +567,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Use `top: viewportOffset` positioning (see iOS Keyboard section). The `viewportOffset` value shifts the sheet down with the visual viewport. |
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
 | Sheet content hidden behind numpad (iOS) | numpad is taller than text keyboard → `visualViewport.offsetTop > 0` pushes sheet up | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`. See PR #409 and `useKeyboardHeight`. Playwright cannot test this — manual iPhone required. |
+| iOS scroll lock in bottom sheets | `overscroll-behavior: contain` on scroll containers causes iOS Safari to stop routing scroll events after user reaches a boundary | `useIOSScrollFix` hook — nudges `scrollTop` 1px from boundaries on `touchstart`. Applied to all sheet scroll containers via `ref={scrollRef}`. No-op on non-iOS. |
 | "text/html is not a valid JavaScript MIME type" | New deploy changed JS chunk hashes; browser's cached HTML references old chunks; CDN returns SPA fallback HTML | `ErrorBoundary` auto-detects and reloads once (`sessionStorage` guard). If still broken, shows "New version available" card. No code fix needed — just a deploy artifact. |
 
 ---
