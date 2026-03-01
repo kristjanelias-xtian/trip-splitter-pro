@@ -95,6 +95,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
           </button>
         ))}
       </div>
+      <p className="text-xs text-muted-foreground mb-4">Showing only expenses you're included in.</p>
 
       {/* Transaction list */}
       {loading ? (
