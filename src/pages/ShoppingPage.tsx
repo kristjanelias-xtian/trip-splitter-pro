@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
@@ -28,6 +29,9 @@ export function ShoppingPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('status')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [retrying, setRetrying] = useState(false)
+
+  const handleRefresh = useCallback(() => refreshShoppingItems(), [refreshShoppingItems])
+  useRegisterRefresh(handleRefresh)
 
   useEffect(() => {
     const loadItemsWithMeals = async () => {

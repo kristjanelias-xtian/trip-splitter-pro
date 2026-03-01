@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine, User, Tag } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -45,6 +46,9 @@ export function ExpensesPage() {
   const { settlements } = useSettlementContext()
   const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
   const { toast } = useToast()
+
+  const handleRefresh = useCallback(() => refreshExpenses(), [refreshExpenses])
+  useRegisterRefresh(handleRefresh)
 
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)

@@ -27,6 +27,9 @@ import { isAdminUser } from '@/lib/adminAuth'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
+import { PullToRefreshProvider } from '@/contexts/PullToRefreshContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
 import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import {
   Sheet,
@@ -149,6 +152,7 @@ export function Layout() {
   const onGradient = !!pattern
 
   return (
+    <PullToRefreshProvider>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
@@ -266,6 +270,7 @@ export function Layout() {
 
       {/* Main content */}
       <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
+        <LayoutPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
@@ -452,5 +457,11 @@ export function Layout() {
       {/* Toast notifications */}
       <Toaster />
     </div>
+    </PullToRefreshProvider>
   )
+}
+
+function LayoutPullIndicator() {
+  const { pullDistance, isPulling, isRefreshing } = usePullToRefresh()
+  return <PullToRefreshIndicator pullDistance={pullDistance} isPulling={isPulling} isRefreshing={isRefreshing} />
 }

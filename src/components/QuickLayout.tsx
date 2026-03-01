@@ -21,6 +21,9 @@ import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { isAdminUser } from '@/lib/adminAuth'
+import { PullToRefreshProvider } from '@/contexts/PullToRefreshContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
 
 export function QuickLayout() {
   const { tripCode } = useParams<{ tripCode: string }>()
@@ -51,6 +54,7 @@ export function QuickLayout() {
   const onGradient = !!pattern
 
   return (
+    <PullToRefreshProvider>
     <div className="min-h-screen bg-background">
       {/* Simplified header */}
       <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
@@ -187,6 +191,7 @@ export function QuickLayout() {
 
       {/* Main content — extra top padding when two-row header is active */}
       <main className={isInTrip && !isSubPage ? 'pt-[108px] lg:pt-16' : 'pt-16'}>
+        <QuickPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
             <SettlementProvider>
@@ -212,5 +217,11 @@ export function QuickLayout() {
 
       <Toaster />
     </div>
+    </PullToRefreshProvider>
   )
+}
+
+function QuickPullIndicator() {
+  const { pullDistance, isPulling, isRefreshing } = usePullToRefresh()
+  return <PullToRefreshIndicator pullDistance={pullDistance} isPulling={isPulling} isRefreshing={isRefreshing} />
 }

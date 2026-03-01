@@ -1,4 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense, useCallback } from 'react'
+import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { CalendarDays, Map } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMealContext } from '@/contexts/MealContext'
@@ -25,6 +26,12 @@ export function PlannerPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(true)
   const [retrying, setRetrying] = useState(false)
+
+  const handleRefresh = useCallback(
+    () => Promise.all([refreshMeals(), refreshActivities(), refreshStays()]).then(() => {}),
+    [refreshMeals, refreshActivities, refreshStays]
+  )
+  useRegisterRefresh(handleRefresh)
 
   const loading = mealsLoading || activitiesLoading || staysLoading
   const contextError = mealError || activityError || stayError
