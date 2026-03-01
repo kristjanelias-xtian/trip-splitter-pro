@@ -12,7 +12,7 @@ interface QuickParticipantPickerProps {
 }
 
 export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) {
-  const { participants, createParticipant } = useParticipantContext()
+  const { participants, createParticipant, deleteParticipant } = useParticipantContext()
   const { contacts } = useTripContacts(tripId)
 
   const [addedNames, setAddedNames] = useState<string[]>([])
@@ -207,9 +207,20 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
           {currentParticipants.map(p => (
             <span
               key={p.id}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium"
             >
               {p.name}
+              <button
+                type="button"
+                onClick={() => {
+                  deleteParticipant(p.id)
+                  setAddedNames(prev => prev.filter(n => n !== p.name))
+                }}
+                aria-label={`Remove ${p.name}`}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20 transition-colors"
+              >
+                <X size={12} />
+              </button>
             </span>
           ))}
         </div>
@@ -257,13 +268,24 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                   <button
                     key={i}
                     type="button"
-                    onClick={() => !added && handleAddRecent(contact)}
-                    disabled={added}
+                    onClick={() => {
+                      if (added) {
+                        const match = currentParticipants.find(p =>
+                          p.name === contact.name || p.name === (contact.display_name ?? contact.name)
+                        )
+                        if (match) {
+                          deleteParticipant(match.id)
+                          setAddedNames(prev => prev.filter(n => n !== match.name))
+                        }
+                      } else {
+                        handleAddRecent(contact)
+                      }
+                    }}
                     title={tooltip}
-                    aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
+                    aria-label={added ? `Remove ${displayName}` : `Add ${displayName}`}
                     className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1.5 rounded-full border text-sm transition-colors ${
                       added
-                        ? 'bg-primary/10 border-primary/20 text-primary/60 cursor-default'
+                        ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20'
                         : isChild
                           ? 'border-dashed border-amber-300 hover:bg-amber-50 text-foreground'
                           : 'border-border hover:bg-accent/50 text-foreground'
