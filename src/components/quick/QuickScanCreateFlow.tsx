@@ -382,8 +382,6 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
               </p>
               <QuickParticipantPicker
                 tripId={createdTripId}
-                tripCode={createdTripCode}
-                tripName={createdTripName}
               />
               <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDone}>
                 Skip for now

@@ -1,37 +1,29 @@
 import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
 import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { logger } from '@/lib/logger'
-import { withTimeout } from '@/lib/fetchWithTimeout'
 
 interface QuickParticipantPickerProps {
   tripId: string
-  tripCode: string
-  tripName: string
 }
 
-export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickParticipantPickerProps) {
-  const { user, userProfile } = useAuth()
+export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) {
   const { participants, createParticipant } = useParticipantContext()
   const { contacts } = useTripContacts(tripId)
 
   const [addedNames, setAddedNames] = useState<string[]>([])
   const [supportsContacts, setSupportsContacts] = useState(false)
   const [recentExpanded, setRecentExpanded] = useState(false)
-  const [sendInviteOnAdd, setSendInviteOnAdd] = useState(true)
 
   // Manual add form state
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sendInvite, setSendInvite] = useState(true)
 
   // Autocomplete state
   const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
@@ -115,44 +107,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     setSupportsContacts('contacts' in navigator && typeof (navigator as any).contacts?.select === 'function')
   }, [])
 
-  const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
-
-  const sendInvitation = async (participantId: string, participantEmail: string, participantName: string) => {
-    try {
-      const { data: inv, error: invError } = await withTimeout<any>(
-        (supabase as any)
-          .from('invitations')
-          .insert([{ trip_id: tripId, participant_id: participantId, inviter_id: user!.id }])
-          .select('id, token')
-          .single(),
-        15000,
-        'Creating invitation timed out.'
-      )
-
-      if (invError || !inv) {
-        logger.warn('Failed to create invitation row', { error: String(invError) })
-        return
-      }
-
-      supabase.functions.invoke('send-email', {
-        body: {
-          type: 'invitation',
-          invitation_id: inv.id,
-          trip_name: tripName,
-          trip_code: tripCode,
-          participant_name: participantName,
-          participant_email: participantEmail,
-          organiser_name: organiserName,
-          token: (inv as any).token,
-        },
-      }).then(({ error }) => {
-        if (error) logger.warn('send-email returned error', { error: String(error) })
-      })
-    } catch (err) {
-      logger.warn('sendInvitation: unhandled error', { error: String(err) })
-    }
-  }
-
   const addPerson = async (personName: string, personEmail: string | null, personUserId?: string | null) => {
     const emailLower = personEmail?.trim().toLowerCase() ?? null
     if (emailLower) {
@@ -184,10 +138,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   }
 
   const handleAddRecent = async (contact: TripContact) => {
-    const newParticipant = await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
-    if (newParticipant?.email && user && sendInviteOnAdd) {
-      sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
-    }
+    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
   }
 
   const handleAddFromContacts = async () => {
@@ -198,10 +149,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
         const personName = contact.name?.[0] ?? ''
         const personEmail = contact.email?.[0] ?? null
         if (personName.trim()) {
-          const newParticipant = await addPerson(personName.trim(), personEmail)
-          if (newParticipant?.email && user && sendInviteOnAdd) {
-            sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
-          }
+          await addPerson(personName.trim(), personEmail)
         }
       }
     } catch (err) {
@@ -226,14 +174,10 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
 
     setAdding(true)
     try {
-      const newParticipant = await addPerson(name.trim(), email.trim() || null, suggestedUserId)
-      if (newParticipant?.email && user && sendInvite) {
-        sendInvitation(newParticipant.id, newParticipant.email, newParticipant.name)
-      }
+      await addPerson(name.trim(), email.trim() || null, suggestedUserId)
       setName('')
       setEmail('')
       setSuggestedUserId(null)
-      setSendInvite(true)
     } finally {
       setAdding(false)
     }
@@ -280,17 +224,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
             />
           </button>
-          {user && (
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <input
-                type="checkbox"
-                checked={sendInviteOnAdd}
-                onChange={(e) => setSendInviteOnAdd(e.target.checked)}
-                className="rounded border-border"
-              />
-              Send invite emails when adding
-            </label>
-          )}
           {recentExpanded && (
             <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
               {contacts.slice(0, 20).map((contact, i) => {
@@ -421,17 +354,6 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
               onChange={e => setEmail(e.target.value)}
               autoComplete="section-participant email"
             />
-            {email.trim() && (
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  checked={sendInvite}
-                  onChange={(e) => setSendInvite(e.target.checked)}
-                  className="rounded border-border"
-                />
-                Send invite email
-              </label>
-            )}
             <p className="text-xs text-muted-foreground mt-1">
               Add now or let them link themselves via the trip link
             </p>
