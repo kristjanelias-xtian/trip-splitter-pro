@@ -44,7 +44,7 @@ function BirthdayGreeting() {
     const m = today.getMonth()
     const d = today.getDate()
     const inWindow = y === 2026 && m === 2 && (d === 1 || d === 2)
-    if (inWindow && (user.id === '8f60570a-720f-417d-b093-e13a2c260001' || user.id === '4d07e4a8-9630-4692-93c8-c97896e6fc4d')) {
+    if (inWindow && user.id === '8f60570a-720f-417d-b093-e13a2c260001') {
       setVisible(true)
       const timer = setTimeout(() => setVisible(false), 6000)
       return () => clearTimeout(timer)
