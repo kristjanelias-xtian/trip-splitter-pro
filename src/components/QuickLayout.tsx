@@ -1,5 +1,5 @@
 import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ScanLine, Settings, LayoutGrid } from 'lucide-react'
+import { ArrowLeft, ScanLine, Settings, LayoutGrid, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -20,6 +20,7 @@ import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
+import { isAdminUser } from '@/lib/adminAuth'
 
 export function QuickLayout() {
   const { tripCode } = useParams<{ tripCode: string }>()
@@ -112,6 +113,22 @@ export function QuickLayout() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {user && isAdminUser(user.id) && (
+                  ('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
+                  window.matchMedia('(display-mode: standalone)').matches
+                ) && (
+                  <button
+                    onClick={() => navigate('/admin/all-trips')}
+                    className={`p-2 rounded-md transition-colors ${
+                      onGradient
+                        ? 'text-white/70 hover:text-white hover:bg-white/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                    title="Admin"
+                  >
+                    <Shield size={18} />
+                  </button>
+                )}
                 <ReportIssueButton onGradient={onGradient} />
                 {isInTrip && (
                   <div className="hidden lg:flex items-center gap-2">
