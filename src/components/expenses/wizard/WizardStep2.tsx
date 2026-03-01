@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
+import { getShortName } from '@/lib/participantUtils'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface SuggestedPayer {
   id: string
@@ -19,7 +21,9 @@ interface SuggestedPayer {
 interface Participant {
   id: string
   name: string
+  nickname?: string | null
   is_adult: boolean
+  avatar_url?: string | null
 }
 
 interface WizardStep2Props {
@@ -78,7 +82,7 @@ export function WizardStep2({
             <Lightbulb size={20} className="text-accent flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground">
-                <strong>{suggestedPayer.name}</strong> should pay next
+                <strong>{suggestedPayer.name.split(' ')[0]}</strong> should pay next
               </p>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Balance: {formatBalance(suggestedPayer.balance, currency)}
@@ -104,7 +108,10 @@ export function WizardStep2({
           <SelectContent>
             {adults.map((adult) => (
               <SelectItem key={adult.id} value={adult.id}>
-                {adult.name}
+                <span className="flex items-center gap-2">
+                  <ParticipantAvatar participant={adult} size="sm" />
+                  {getShortName(adult)}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>

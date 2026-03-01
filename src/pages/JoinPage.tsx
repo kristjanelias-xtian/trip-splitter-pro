@@ -132,14 +132,21 @@ export function JoinPage() {
       try {
         // Link auth user to participant — sync name from Google profile
         const displayName = user!.user_metadata?.full_name || user!.user_metadata?.name || null
+        const updatePayload: Record<string, unknown> = {
+          user_id: user!.id,
+          email: user!.email || null,
+        }
+        if (displayName) {
+          updatePayload.name = displayName
+          // Preserve original name as nickname when overwriting with Google name
+          if (invitation!.participant_name !== displayName) {
+            updatePayload.nickname = invitation!.participant_name
+          }
+        }
         const { error: linkError } = await withTimeout<any>(
           (supabase as any)
             .from('participants')
-            .update({
-              user_id: user!.id,
-              email: user!.email || null,
-              ...(displayName ? { name: displayName } : {}),
-            })
+            .update(updatePayload)
             .eq('id', invitation!.participant_id),
           15000,
           'Linking account timed out. Please check your connection and try again.'

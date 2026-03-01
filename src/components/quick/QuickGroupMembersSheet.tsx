@@ -5,6 +5,7 @@ import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithi
 import { Participant } from '@/types/participant'
 import { Expense } from '@/types/expense'
 import { Settlement } from '@/types/settlement'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface QuickGroupMembersSheetProps {
   open: boolean
@@ -92,8 +93,9 @@ export function QuickGroupMembersSheet({
                   className={`flex items-center justify-between px-6 py-3.5 gap-3 ${b.isFamily ? 'cursor-pointer hover:bg-muted/30 transition-colors' : ''}`}
                   onClick={b.isFamily ? () => toggleGroup(b.id) : undefined}
                 >
-                  {/* Left: name + badges */}
+                  {/* Left: avatar + name + badges */}
                   <div className="flex items-center gap-2 min-w-0">
+                    <ParticipantAvatar participant={{ name: b.name, avatar_url: participants.find(p => p.id === b.id)?.avatar_url ?? null }} size="sm" />
                     <span className="font-medium truncate">{b.name}</span>
                     {linked && (
                       <span title="Account linked">

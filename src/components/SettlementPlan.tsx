@@ -3,6 +3,7 @@ import { PartyPopper, Lightbulb, Check, Bell, X } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 export interface BankDetails {
   holder: string
@@ -16,9 +17,10 @@ interface SettlementPlanProps {
   linkedParticipantIds?: Set<string>
   fromEmailMap?: Record<string, string>
   onRemind?: (transaction: SettlementTransaction, fromEmail: string) => Promise<void>
+  avatarMap?: Record<string, string | null>
 }
 
-export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind }: SettlementPlanProps) {
+export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
   if (plan.transactions.length === 0) {
     return (
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
@@ -66,6 +68,7 @@ export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linke
             linkedParticipantIds={linkedParticipantIds}
             fromEmail={fromEmailMap?.[transaction.fromId]}
             onRemind={onRemind ? (email) => onRemind(transaction, email) : undefined}
+            avatarMap={avatarMap}
           />
         ))}
       </div>
@@ -82,6 +85,7 @@ interface SettlementTransactionCardProps {
   linkedParticipantIds?: Set<string>
   fromEmail?: string
   onRemind?: (fromEmail: string) => Promise<void>
+  avatarMap?: Record<string, string | null>
 }
 
 function SettlementTransactionCard({
@@ -93,6 +97,7 @@ function SettlementTransactionCard({
   linkedParticipantIds,
   fromEmail,
   onRemind,
+  avatarMap,
 }: SettlementTransactionCardProps) {
   const [confirmingRemind, setConfirmingRemind] = useState(false)
   const [sending, setSending] = useState(false)
@@ -132,7 +137,8 @@ function SettlementTransactionCard({
 
           {/* Transaction Details */}
           <div className="flex items-center gap-2 text-sm flex-wrap">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <ParticipantAvatar participant={{ name: transaction.fromName, avatar_url: avatarMap?.[transaction.fromId] ?? null }} size="sm" />
               <span className="font-medium text-foreground">
                 {transaction.fromName}
               </span>
@@ -140,7 +146,8 @@ function SettlementTransactionCard({
 
             <span className="text-muted-foreground flex-shrink-0">→</span>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <ParticipantAvatar participant={{ name: transaction.toName, avatar_url: avatarMap?.[transaction.toId] ?? null }} size="sm" />
               <span className="font-medium text-foreground">
                 {transaction.toName}
               </span>

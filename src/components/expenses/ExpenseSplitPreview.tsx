@@ -4,6 +4,7 @@ import { Participant } from '@/types/participant'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { User } from 'lucide-react'
+import { getShortName } from '@/lib/participantUtils'
 
 interface ExpenseSplitPreviewProps {
   amount: number
@@ -44,7 +45,7 @@ export function ExpenseSplitPreview({
           if (existing) {
             existing.memberIds.push(pid)
           } else {
-            entityMap.set(key, { name: p.wallet_group ?? p.name, memberIds: [pid] })
+            entityMap.set(key, { name: p.wallet_group ?? getShortName(p), memberIds: [pid] })
           }
         }
         const perEntity = amount / entityMap.size
@@ -53,7 +54,7 @@ export function ExpenseSplitPreview({
           for (const mid of entity.memberIds) {
             const p = participants.find(pp => pp.id === mid)
             if (p) {
-              entries.push({ id: mid, name: p.name, amount: perMember })
+              entries.push({ id: mid, name: getShortName(p), amount: perMember })
             }
           }
         }
@@ -66,7 +67,7 @@ export function ExpenseSplitPreview({
           if (participant) {
             entries.push({
               id: participantId,
-              name: participant.name,
+              name: getShortName(participant),
               amount: shareAmount,
             })
           }
@@ -79,7 +80,7 @@ export function ExpenseSplitPreview({
           const shareAmount = (amount * split.value) / 100
           entries.push({
             id: split.participantId,
-            name: participant.name,
+            name: getShortName(participant),
             amount: shareAmount,
           })
         }
@@ -90,7 +91,7 @@ export function ExpenseSplitPreview({
         if (participant) {
           entries.push({
             id: split.participantId,
-            name: participant.name,
+            name: getShortName(participant),
             amount: split.value,
           })
         }
