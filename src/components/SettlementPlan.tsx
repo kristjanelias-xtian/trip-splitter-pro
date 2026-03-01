@@ -129,16 +129,13 @@ function SettlementTransactionCard({
         <div className="flex-1 min-w-0">
           {/* Step Number */}
           <div className="flex items-center mb-2">
-            <span className="flex items-center justify-center w-6 h-6 bg-accent text-accent-foreground text-xs font-bold rounded-full mr-2">
-              {index}
-            </span>
-            <span className="text-xs text-muted-foreground">Step {index}</span>
+            <span className="text-xs font-medium text-muted-foreground">Step {index}</span>
           </div>
 
           {/* Transaction Details */}
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <div className="flex items-center gap-1.5">
-              <ParticipantAvatar participant={{ name: transaction.fromName, avatar_url: avatarMap?.[transaction.fromId] ?? null }} size="sm" />
+              <ParticipantAvatar participant={{ name: transaction.fromName, avatar_url: avatarMap?.[transaction.fromId] ?? null }} size="sm" forceInitials={transaction.fromIsFamily} />
               <span className="font-medium text-foreground">
                 {transaction.fromName}
               </span>
@@ -147,7 +144,7 @@ function SettlementTransactionCard({
             <span className="text-muted-foreground flex-shrink-0">→</span>
 
             <div className="flex items-center gap-1.5">
-              <ParticipantAvatar participant={{ name: transaction.toName, avatar_url: avatarMap?.[transaction.toId] ?? null }} size="sm" />
+              <ParticipantAvatar participant={{ name: transaction.toName, avatar_url: avatarMap?.[transaction.toId] ?? null }} size="sm" forceInitials={transaction.toIsFamily} />
               <span className="font-medium text-foreground">
                 {transaction.toName}
               </span>
