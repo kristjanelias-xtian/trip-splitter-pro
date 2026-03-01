@@ -647,7 +647,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
               >
                 <Users size={14} />
-                <span>People you've traveled with</span>
+                <span>Recent companions</span>
                 <ChevronRight
                   size={14}
                   className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
@@ -658,7 +658,6 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                   {contacts.slice(0, 20).map((contact, i) => {
                     const added = isRecentAdded(contact)
                     const displayName = contact.display_name ?? contact.name
-                    const firstName = displayName.split(' ')[0]
                     const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
                     const isChild = contact.is_adult === false
                     const tooltip = displayName + (contact.email ? ` (${contact.email})` : '')
@@ -670,19 +669,28 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                         disabled={added}
                         title={tooltip}
                         aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
-                        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full border text-sm transition-colors ${
+                        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1.5 rounded-full border text-sm transition-colors ${
                           added
                             ? 'bg-primary/10 border-primary/20 text-primary/60 cursor-default'
                             : 'border-border hover:bg-accent/50 text-foreground'
                         }`}
                       >
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 ${
-                          isChild ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {initials}
-                        </span>
-                        <span className="truncate max-w-[100px]">
-                          {firstName}{isChild ? ' (child)' : ''}
+                        {contact.avatar_url ? (
+                          <img src={contact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 ${
+                            isChild ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'
+                          }`}>
+                            {initials}
+                          </span>
+                        )}
+                        <span className="flex flex-col items-start min-w-0">
+                          <span className="truncate max-w-[140px] leading-tight">
+                            {displayName}{isChild ? ' (child)' : ''}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground truncate max-w-[140px] min-h-[14px] leading-tight">
+                            {contact.email ?? ''}
+                          </span>
                         </span>
                         {added ? <Check size={12} className="shrink-0" /> : <Plus size={12} className="shrink-0 text-muted-foreground" />}
                       </button>
