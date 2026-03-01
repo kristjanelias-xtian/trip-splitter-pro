@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅)
 
 ---
 
