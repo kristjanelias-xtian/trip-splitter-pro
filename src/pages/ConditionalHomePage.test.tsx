@@ -103,6 +103,7 @@ describe('ConditionalHomePage', () => {
 
   it('navigates to /t/{code}/quick on mobile with active trip', async () => {
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    mockAuth.user = { id: 'user-1' } as any
     const trip = buildTrip({
       id: 'trip-1',
       trip_code: 'summer-trip-Ab1234',
@@ -124,8 +125,31 @@ describe('ConditionalHomePage', () => {
     })
   })
 
+  it('skips auto-redirect for unauthenticated users', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    mockAuth.user = null
+    const trip = buildTrip({
+      id: 'trip-1',
+      trip_code: 'summer-trip-Ab1234',
+    })
+    mockTrips.trips = [trip]
+    vi.mocked(getActiveTripId).mockReturnValue('trip-1')
+
+    render(
+      <MemoryRouter>
+        <ConditionalHomePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('home-page')).toBeInTheDocument()
+    })
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
   it('skips auto-redirect when navigated with fromTrip state', async () => {
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
+    mockAuth.user = { id: 'user-1' } as any
     const trip = buildTrip({
       id: 'trip-1',
       trip_code: 'summer-trip-Ab1234',

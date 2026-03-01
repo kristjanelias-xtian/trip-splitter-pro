@@ -271,8 +271,8 @@ export function Layout() {
         </ParticipantProvider>
       </main>
 
-      {/* Bottom navigation (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40">
+      {/* Bottom navigation (mobile) — only shown inside a trip */}
+      {tripCode && <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40">
         <div className="flex justify-around items-center h-16">
           {mobileNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
@@ -386,7 +386,7 @@ export function Layout() {
             </SheetContent>
           </Sheet>
         </div>
-      </nav>
+      </nav>}
 
       {/* Side navigation (desktop) */}
       {tripCode && <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
