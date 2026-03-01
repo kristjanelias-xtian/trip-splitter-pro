@@ -408,7 +408,14 @@ Deno.serve(async (req) => {
         currency: body.currency,
       }).format(body.amount)
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
-      const settlementsUrl = `${APP_URL}/t/${body.trip_code}/settlements`
+      const remindParams = new URLSearchParams({
+        name: body.recipient_name,
+        amount: String(body.amount),
+        currency: body.currency,
+        to: body.pay_to_name,
+        trip: body.trip_name,
+      })
+      const settlementsUrl = `${APP_URL}/remind/${body.trip_code}?${remindParams.toString()}`
 
       subject = `Payment reminder for "${body.trip_name}"`
       html = paymentReminderEmailHtml({

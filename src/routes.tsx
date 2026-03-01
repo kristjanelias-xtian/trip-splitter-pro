@@ -5,6 +5,7 @@ import { TripRouteGuard } from './components/TripRouteGuard'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ConditionalHomePage } from './pages/ConditionalHomePage'
 import { JoinPage } from './pages/JoinPage'
+import { RemindPage } from './pages/RemindPage'
 import { TripsPage } from './pages/TripsPage'
 import { ManageTripPage } from './pages/ManageTripPage'
 import { ExpensesPage } from './pages/ExpensesPage'
@@ -29,6 +30,7 @@ export function AppRoutes() {
       {/* Special routes - outside Layout */}
       <Route path="trip-not-found/:tripCode" element={<ErrorBoundary><TripNotFoundPage /></ErrorBoundary>} />
       <Route path="join/:token" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
+      <Route path="remind/:tripCode" element={<ErrorBoundary><RemindPage /></ErrorBoundary>} />
 
       {/* Mode-aware redirect for shared trip links */}
       <Route path="t/:tripCode" element={<TripModeRedirect />} />
