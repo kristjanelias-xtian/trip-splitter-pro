@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
-import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check } from 'lucide-react'
+import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check, Baby } from 'lucide-react'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
 import { Button } from '@/components/ui/button'
@@ -231,7 +231,11 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
           </button>
           {recentExpanded && (
             <div className="flex flex-wrap gap-2">
-              {contacts.slice(0, 20).map((contact, i) => {
+              {[...contacts].sort((a, b) => {
+                const aChild = a.is_adult === false ? 1 : 0
+                const bChild = b.is_adult === false ? 1 : 0
+                return aChild - bChild
+              }).slice(0, 20).map((contact, i) => {
                 const added = isAdded(contact)
                 const displayName = contact.display_name ?? contact.name
                 const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -248,21 +252,25 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                     className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1.5 rounded-full border text-sm transition-colors ${
                       added
                         ? 'bg-primary/10 border-primary/20 text-primary/60 cursor-default'
-                        : 'border-border hover:bg-accent/50 text-foreground'
+                        : isChild
+                          ? 'border-dashed border-amber-300 hover:bg-amber-50 text-foreground'
+                          : 'border-border hover:bg-accent/50 text-foreground'
                     }`}
                   >
                     {contact.avatar_url ? (
                       <img src={contact.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    ) : isChild ? (
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-100 text-amber-600 shrink-0">
+                        <Baby size={14} />
+                      </span>
                     ) : (
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 ${
-                        isChild ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'
-                      }`}>
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 bg-primary/10 text-primary">
                         {initials}
                       </span>
                     )}
                     <span className="flex flex-col items-start min-w-0">
                       <span className="truncate max-w-[140px] leading-tight">
-                        {displayName}{isChild ? ' (child)' : ''}
+                        {displayName}
                       </span>
                       {contact.email && (
                         <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
