@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const DEMO_TRIP_CODE = 'livigno-2025'
 
@@ -37,6 +37,7 @@ export function HomePage() {
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
   const { shouldShowPrompt, dismiss: dismissInstall, incrementVisit } = usePWAInstall()
+  const [birthdayVisible, setBirthdayVisible] = useState(false)
 
   const isAuthenticated = !!user
   const loading = isAuthenticated && (balancesLoading || tripsLoading)
@@ -51,6 +52,21 @@ export function HomePage() {
   useEffect(() => {
     incrementVisit()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Birthday easter egg — self-removing after 2026-03-02
+  useEffect(() => {
+    if (!user) return
+    const today = new Date()
+    const m = today.getMonth() // 0-indexed
+    const d = today.getDate()
+    const y = today.getFullYear()
+    const inWindow = y === 2026 && m === 2 && (d === 1 || d === 2)
+    if (inWindow && user.id === '8f60570a-720f-417d-b093-e13a2c260001') {
+      setBirthdayVisible(true)
+      const timer = setTimeout(() => setBirthdayVisible(false), 6000)
+      return () => clearTimeout(timer)
+    }
+  }, [user])
 
   const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
   const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
@@ -396,6 +412,26 @@ export function HomePage() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {birthdayVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            onClick={() => setBirthdayVisible(false)}
+            className="fixed bottom-6 left-4 right-4 z-50 mx-auto max-w-sm cursor-pointer rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-5 shadow-lg"
+          >
+            <p className="text-2xl mb-1">🎂</p>
+            <p className="font-semibold text-amber-900 text-base">Palju õnne, Raido!</p>
+            <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+              Sünnipäeva puhul paneme kõik tänased kulud teistele :D
+            </p>
+            <p className="text-amber-600 text-xs mt-2 text-right italic">— Kristjan</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <QuickCreateSheet open={createOpen} onOpenChange={setCreateOpen} />
       <QuickScanContextSheet
