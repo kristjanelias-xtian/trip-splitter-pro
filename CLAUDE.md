@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (170 tests)
+- Tests: Vitest + Testing Library (173 tests)
 
 ---
 
@@ -432,7 +432,7 @@ iOS Safari ignores `manifest.start_url` and saves whatever URL was in the addres
 ## Testing
 
 ### Unit Tests
-Vitest + Testing Library. Run with `npm test`. 155 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+Vitest + Testing Library. Run with `npm test`. 173 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.

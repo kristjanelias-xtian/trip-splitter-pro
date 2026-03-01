@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (170 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (173 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -764,6 +764,8 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Docs update | PR #463: Updated CLAUDE.md and PLAN.md with PRs #456–#462. |
 | 2026-03-01 | Contact autocomplete | PR #464: Email field marked optional with hint. New `useTripContacts` hook fetches deduplicated contacts from user's other trips for "people you've tripped with" autocomplete in ParticipantsSetup (dropdown) and QuickParticipantPicker (chips). Dedup by email then name, sorted by recency. 14 new tests (170 total). |
 | 2026-03-01 | Contact display names | PR #465: `useTripContacts` now fetches `display_name` from `user_profiles` for linked Spl1t accounts. Autocomplete dropdown and quick-mode chips show full Google name (e.g. "Kairi Tamm") instead of short participant name. Dedup prefers records with display_name. 3 new tests. |
+| 2026-03-01 | Docs update | PR #466: Updated CLAUDE.md and PLAN.md with PRs #463–#465. |
+| 2026-03-01 | Contact autocomplete fixes | PR #467: Fixed contact dedup to prioritise `user_id` (linked accounts), then email, then name — with post-merge pass for cross-key email matches. Fixed dropdown reopening after selection (`justSelectedRef`). Added "Send invite email" checkbox (default checked) to ParticipantsSetup, IndividualsSetup, and QuickParticipantPicker manual form. Quick-mode chip adds show toast with Send action instead of auto-sending. 3 new tests (173 total). |
 
 ---
 
