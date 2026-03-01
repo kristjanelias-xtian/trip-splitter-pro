@@ -1,6 +1,6 @@
 import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ReceiptTask, ExtractedItem } from '@/types/receipt'
+import { ReceiptTask, ExtractedItem, MappedItem } from '@/types/receipt'
 
 export interface ReceiptReviewData {
   taskId: string
@@ -11,6 +11,7 @@ export interface ReceiptReviewData {
   imagePath: string | null
   category: string | null
   existingExpenseId?: string
+  mappedItems?: MappedItem[] | null
 }
 
 interface PendingReceiptBannerProps {

@@ -24,7 +24,7 @@ import { useTripContext } from '@/contexts/TripContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { ExtractedItem } from '@/types/receipt'
+import { ExtractedItem, MappedItem } from '@/types/receipt'
 import { IndividualsDistribution, ExpenseCategory } from '@/types/expense'
 import { Participant } from '@/types/participant'
 
@@ -39,6 +39,7 @@ interface ReceiptReviewSheetProps {
   imagePath?: string | null
   extractedCategory?: string | null
   existingExpenseId?: string
+  mappedItems?: MappedItem[] | null
   onDone: () => void
 }
 
@@ -141,6 +142,7 @@ export function ReceiptReviewSheet({
   imagePath,
   extractedCategory,
   existingExpenseId,
+  mappedItems,
   onDone,
 }: ReceiptReviewSheetProps) {
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -149,7 +151,7 @@ export function ReceiptReviewSheet({
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
-  const { createExpense, updateExpense } = useExpenseContext()
+  const { createExpense, updateExpense, getExpenseById } = useExpenseContext()
   const { completeReceiptTask, error: receiptError, clearError: clearReceiptError } = useReceiptContext()
   const { updateTrip } = useTripContext()
   const { user } = useAuth()
@@ -206,19 +208,34 @@ export function ReceiptReviewSheet({
 
     const defaultPayerId = adultParticipants.find(p => p.user_id === user?.id)?.id ?? adultParticipants[0]?.id ?? ''
 
+    // When editing an existing expense, restore payer and category from it
+    const existingExpense = existingExpenseId ? getExpenseById(existingExpenseId) : undefined
+
+    // Build a map of item_index → participant_ids from saved mapped_items
+    const mappedItemsByIndex = new Map<number, Set<string>>()
+    if (mappedItems) {
+      for (const mi of mappedItems) {
+        mappedItemsByIndex.set(mi.item_index, new Set(mi.participant_ids))
+      }
+    }
+
     setEditableItems(
-      initialItems.map(item => ({
+      initialItems.map((item, index) => ({
         name: item.name,
         price: item.price.toFixed(2),
         qty: item.qty,
-        assignedIds: new Set<string>(),
+        assignedIds: mappedItemsByIndex.get(index) ?? new Set<string>(),
       }))
     )
     setConfirmedTotal(extractedTotal != null ? extractedTotal.toFixed(2) : '')
     setTipAmount('0')
-    setPaidBy(defaultPayerId)
+    setPaidBy(existingExpense?.paid_by ?? defaultPayerId)
     setMerchantName(merchant ?? '')
-    setCategory(validCategories.includes(extractedCategory as ExpenseCategory) ? extractedCategory as ExpenseCategory : 'Food')
+    setCategory(
+      existingExpense?.category && validCategories.includes(existingExpense.category)
+        ? existingExpense.category
+        : validCategories.includes(extractedCategory as ExpenseCategory) ? extractedCategory as ExpenseCategory : 'Food'
+    )
     setActiveCurrency(currency)
     setExchangeRate('')
     setShowAllItems(true)
@@ -370,7 +387,15 @@ export function ReceiptReviewSheet({
         expenseId = expense.id
       }
 
-      await completeReceiptTask(taskId, expenseId)
+      // Save item-to-participant mappings so they can be restored on "Edit mapping"
+      const mappedItemsToSave: MappedItem[] = editableItems
+        .map((item, index) => ({
+          item_index: index,
+          participant_ids: Array.from(item.assignedIds),
+        }))
+        .filter(mi => mi.participant_ids.length > 0)
+
+      await completeReceiptTask(taskId, expenseId, mappedItemsToSave)
 
       toast({
         title: existingExpenseId ? 'Receipt updated' : 'Receipt added',
