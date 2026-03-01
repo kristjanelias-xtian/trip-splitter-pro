@@ -3,8 +3,6 @@ import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
-import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,78 +11,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { fadeInUp } from '@/lib/animations'
 import type { Participant } from '@/types/participant'
-import { logger } from '@/lib/logger'
 
 interface IndividualsSetupProps {
   onComplete?: () => void
   hasSetup?: boolean
 }
 
-async function sendInvitation(params: {
-  participantId: string
-  participantEmail: string
-  participantName: string
-  tripId: string
-  tripCode: string
-  tripName: string
-  organiserName: string
-  inviterId: string
-}) {
-  try {
-    // Create invitation row
-    const { data: inv, error: invError } = await supabase
-      .from('invitations')
-      .insert([{
-        trip_id: params.tripId,
-        participant_id: params.participantId,
-        inviter_id: params.inviterId,
-      }])
-      .select('id, token')
-      .single()
-
-    if (invError || !inv) {
-      logger.warn('Failed to create invitation row', { error: String(invError) })
-      return
-    }
-
-    // Fire-and-forget: send email
-    supabase.functions.invoke('send-email', {
-      body: {
-        type: 'invitation',
-        invitation_id: inv.id,
-        trip_name: params.tripName,
-        trip_code: params.tripCode,
-        participant_name: params.participantName,
-        participant_email: params.participantEmail,
-        organiser_name: params.organiserName,
-        token: inv.token,
-      },
-    }).then(({ error }) => {
-      if (error) logger.warn('send-email edge fn returned error', { error: String(error) })
-    })
-  } catch (err) {
-    logger.warn('sendInvitation: unhandled error', { error: String(err) })
-  }
-}
-
 export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: IndividualsSetupProps = {}) {
   const { currentTrip } = useCurrentTrip()
   const { participants, createParticipant, updateParticipant, deleteParticipant } = useParticipantContext()
-  const { user, userProfile } = useAuth()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [isAdult, setIsAdult] = useState(true)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sendInvite, setSendInvite] = useState(true)
 
   // Per-participant inline email editing
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
   const [editEmailValue, setEditEmailValue] = useState('')
   const [savingEmailId, setSavingEmailId] = useState<string | null>(null)
-
-  const organiserName = userProfile?.display_name || user?.email?.split('@')[0] || 'Organiser'
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault()
@@ -104,7 +50,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
 
     setAdding(true)
     try {
-      const newParticipant = await createParticipant({
+      await createParticipant({
         trip_id: currentTrip.id,
         name: name.trim(),
         is_adult: isAdult,
@@ -112,22 +58,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
       })
       setName('')
       setEmail('')
-      setSendInvite(true)
       setIsAdult(true)
-
-      // Send invitation if email provided and user opted in
-      if (newParticipant && email.trim() && user && sendInvite) {
-        sendInvitation({
-          participantId: newParticipant.id,
-          participantEmail: email.trim(),
-          participantName: newParticipant.name,
-          tripId: currentTrip.id,
-          tripCode: currentTrip.trip_code,
-          tripName: currentTrip.name,
-          organiserName,
-          inviterId: user.id,
-        })
-      }
     } finally {
       setAdding(false)
     }
@@ -157,23 +88,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
     }
     setError(null)
     setSavingEmailId(participant.id)
-    const hadEmail = !!participant.email
     await updateParticipant(participant.id, { email: newEmail })
-
-    // Send invitation if email is newly set
-    if (newEmail && !hadEmail && currentTrip && user) {
-      sendInvitation({
-        participantId: participant.id,
-        participantEmail: newEmail,
-        participantName: participant.name,
-        tripId: currentTrip.id,
-        tripCode: currentTrip.trip_code,
-        tripName: currentTrip.name,
-        organiserName,
-        inviterId: user.id,
-      })
-    }
-
     setSavingEmailId(null)
     setEditingEmailId(null)
     setEditEmailValue('')
@@ -219,17 +134,6 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                 placeholder="e.g., john@example.com"
                 disabled={adding}
               />
-              {email.trim() && (
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendInvite}
-                    onChange={(e) => setSendInvite(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  Send invite email
-                </label>
-              )}
             </div>
 
             <div className="flex items-center space-x-2">

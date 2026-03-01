@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -96,11 +96,18 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   const [suggestedUserId, setSuggestedUserId] = useState<string | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
-  const [sendInvite, setSendInvite] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
   const justSelectedRef = useRef(false)
+
+  // Recent contacts list
+  const [recentExpanded, setRecentExpanded] = useState(false)
+  const [addedNames, setAddedNames] = useState<string[]>([])
+
+  // Per-participant invite tracking
+  const [sentInviteIds, setSentInviteIds] = useState<Set<string>>(new Set())
+  const [sendingInviteId, setSendingInviteId] = useState<string | null>(null)
 
   // Filtered contacts based on current name input
   const filteredContacts = useMemo(() => {
@@ -252,23 +259,8 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       setName('')
       setEmail('')
       setSuggestedUserId(null)
-      setSendInvite(true)
       // Keep walletGroup — likely adding more people to the same group
       setIsAdult(true)
-
-      // Send invitation if email provided and user opted in
-      if (newParticipant && email.trim() && user && sendInvite) {
-        sendInvitation({
-          participantId: newParticipant.id,
-          participantEmail: email.trim(),
-          participantName: newParticipant.name,
-          tripId: currentTrip.id,
-          tripCode: currentTrip.trip_code,
-          tripName: currentTrip.name,
-          organiserName,
-          inviterId: user.id,
-        })
-      }
     } finally {
       setAdding(false)
     }
@@ -298,23 +290,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     }
     setError(null)
     setSavingEmailId(participant.id)
-    const hadEmail = !!participant.email
     await updateParticipant(participant.id, { email: newEmail })
-
-    // Send invitation if email is newly set
-    if (newEmail && !hadEmail && currentTrip && user) {
-      sendInvitation({
-        participantId: participant.id,
-        participantEmail: newEmail,
-        participantName: participant.name,
-        tripId: currentTrip.id,
-        tripCode: currentTrip.trip_code,
-        tripName: currentTrip.name,
-        organiserName,
-        inviterId: user.id,
-      })
-    }
-
     setSavingEmailId(null)
     setEditingEmailId(null)
     setEditEmailValue('')
@@ -333,6 +309,68 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     setSavingGroupId(null)
     setEditingGroupId(null)
     setEditGroupValue('')
+  }
+
+  const handleAddRecent = async (contact: TripContact) => {
+    if (!currentTrip) return
+    const personName = contact.display_name ?? contact.name
+    const emailLower = contact.email?.trim().toLowerCase() ?? null
+
+    if (emailLower) {
+      const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
+      if (duplicate) return
+    }
+
+    const input = {
+      trip_id: currentTrip.id,
+      name: personName,
+      is_adult: true,
+      email: emailLower || null,
+      ...(contact.user_id ? { user_id: contact.user_id } : {}),
+    }
+
+    let newParticipant = await createParticipant(input)
+
+    if (!newParticipant && contact.user_id) {
+      const { user_id: _, ...inputWithoutUserId } = input
+      newParticipant = await createParticipant(inputWithoutUserId)
+    }
+
+    if (newParticipant) {
+      setAddedNames(prev => [...prev, personName])
+    }
+  }
+
+  const isRecentAdded = (contact: TripContact) => {
+    const contactDisplayName = contact.display_name ?? contact.name
+    return addedNames.includes(contactDisplayName) ||
+      participants.some(p => (p.name === contact.name || p.name === contactDisplayName) && (
+        !contact.email || p.email?.toLowerCase() === contact.email?.toLowerCase()
+      ))
+  }
+
+  const handleSendInvite = async (participant: Participant) => {
+    if (!participant.email || !currentTrip || !user) return
+    setSendingInviteId(participant.id)
+    await sendInvitation({
+      participantId: participant.id,
+      participantEmail: participant.email,
+      participantName: participant.name,
+      tripId: currentTrip.id,
+      tripCode: currentTrip.trip_code,
+      tripName: currentTrip.name,
+      organiserName,
+      inviterId: user.id,
+    })
+    setSendingInviteId(null)
+    setSentInviteIds(prev => new Set(prev).add(participant.id))
+    setTimeout(() => {
+      setSentInviteIds(prev => {
+        const next = new Set(prev)
+        next.delete(participant.id)
+        return next
+      })
+    }, 2000)
   }
 
   const renderParticipantRow = (participant: Participant) => (
@@ -375,6 +413,22 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           >
             <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
           </Button>
+          {participant.email && user && (
+            <Button
+              onClick={() => handleSendInvite(participant)}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="Send invite email"
+              disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
+            >
+              {sentInviteIds.has(participant.id) ? (
+                <Check size={15} className="text-positive" />
+              ) : (
+                <Send size={15} className="text-muted-foreground" />
+              )}
+            </Button>
+          )}
           <Button
             onClick={() => handleDelete(participant.id)}
             variant="ghost"
@@ -493,6 +547,60 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           <CardTitle>Add Participants</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Recent contacts from past trips */}
+          {contacts.length > 0 && (
+            <div className="mb-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => setRecentExpanded(prev => !prev)}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
+              >
+                <Users size={14} />
+                <span>Recent ({contacts.slice(0, 20).length})</span>
+                <ChevronRight
+                  size={14}
+                  className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
+                />
+              </button>
+              {recentExpanded && (
+                <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
+                  {contacts.slice(0, 20).map((contact, i) => {
+                    const added = isRecentAdded(contact)
+                    const displayName = contact.display_name ?? contact.name
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm ${
+                          added ? 'opacity-50' : ''
+                        }`}
+                      >
+                        <span className="font-medium truncate">{displayName}</span>
+                        {contact.email && (
+                          <span className="text-xs text-muted-foreground truncate ml-auto mr-2">
+                            {contact.email}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => !added && handleAddRecent(contact)}
+                          disabled={added}
+                          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                            added
+                              ? 'text-primary cursor-default'
+                              : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
+                          }`}
+                          aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
+                        >
+                          {added ? <Check size={14} /> : <Plus size={14} />}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {error && (
             <p className="mb-3 text-sm text-destructive">{error}</p>
           )}
@@ -563,17 +671,6 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 placeholder="e.g., john@example.com"
                 disabled={adding}
               />
-              {email.trim() && (
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendInvite}
-                    onChange={(e) => setSendInvite(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  Send invite email
-                </label>
-              )}
               <p className="text-xs text-muted-foreground mt-1">
                 Add now or let them link themselves via the trip link
               </p>
