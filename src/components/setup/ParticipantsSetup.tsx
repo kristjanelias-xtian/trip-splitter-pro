@@ -688,9 +688,11 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                           <span className="truncate max-w-[140px] leading-tight">
                             {displayName}{isChild ? ' (child)' : ''}
                           </span>
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[140px] min-h-[14px] leading-tight">
-                            {contact.email ?? ''}
-                          </span>
+                          {contact.email && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
+                              {contact.email}
+                            </span>
+                          )}
                         </span>
                         {added ? <Check size={12} className="shrink-0" /> : <Plus size={12} className="shrink-0 text-muted-foreground" />}
                       </button>
