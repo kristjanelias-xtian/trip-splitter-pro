@@ -10,6 +10,7 @@ export interface TripContact {
   email: string | null
   user_id: string | null
   display_name: string | null
+  nickname: string | null
   is_adult: boolean
   lastSeenAt: string
 }
@@ -58,7 +59,7 @@ export function useTripContacts(currentTripId: string | undefined) {
         const { data, error } = await withTimeout(
           supabase
             .from('participants')
-            .select('name, email, user_id, trip_id, is_adult')
+            .select('name, email, user_id, trip_id, is_adult, nickname')
             .in('trip_id', otherTripIds)
             .limit(200)
             .abortSignal(controller.signal),
@@ -140,6 +141,7 @@ export function useTripContacts(currentTripId: string | undefined) {
               email: bestEmail,
               user_id: p.user_id ?? null,
               display_name,
+              nickname: p.nickname ?? existing?.nickname ?? null,
               is_adult: isNewer ? (p.is_adult ?? true) : (existing?.is_adult ?? true),
               lastSeenAt: isNewer ? lastSeenAt : existing!.lastSeenAt,
             })
