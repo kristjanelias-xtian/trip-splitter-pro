@@ -105,7 +105,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
   }
 
   const handleAddRecent = async (contact: TripContact) => {
-    await addPerson(contact.name, contact.email, contact.user_id)
+    await addPerson(contact.display_name ?? contact.name, contact.email, contact.user_id)
   }
 
   const handleAddFromContacts = async () => {
@@ -149,11 +149,13 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
     }
   }
 
-  const isAdded = (contact: TripContact) =>
-    addedNames.includes(contact.name) ||
-    participants.some(p => p.name === contact.name && (
-      !contact.email || p.email?.toLowerCase() === contact.email?.toLowerCase()
-    ))
+  const isAdded = (contact: TripContact) => {
+    const contactDisplayName = contact.display_name ?? contact.name
+    return addedNames.includes(contactDisplayName) ||
+      participants.some(p => (p.name === contact.name || p.name === contactDisplayName) && (
+        !contact.email || p.email?.toLowerCase() === contact.email?.toLowerCase()
+      ))
+  }
 
   const currentParticipants = participants.filter(p => p.trip_id === tripId)
 
@@ -195,7 +197,7 @@ export function QuickParticipantPicker({ tripId, tripCode, tripName }: QuickPart
                   }`}
                 >
                   {added ? null : <Plus size={12} />}
-                  {contact.name}
+                  {contact.display_name ?? contact.name}
                 </button>
               )
             })}

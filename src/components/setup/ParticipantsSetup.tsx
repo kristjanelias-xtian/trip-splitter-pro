@@ -105,7 +105,10 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     if (name.trim().length < 2 || contacts.length === 0) return []
     const query = name.toLowerCase()
     return contacts
-      .filter(c => c.name.toLowerCase().includes(query))
+      .filter(c =>
+        c.name.toLowerCase().includes(query) ||
+        c.display_name?.toLowerCase().includes(query)
+      )
       .slice(0, 5)
   }, [name, contacts])
 
@@ -129,7 +132,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   }, [showDropdown])
 
   const handleSelectContact = useCallback((contact: TripContact) => {
-    setName(contact.name)
+    setName(contact.display_name ?? contact.name)
     setEmail(contact.email || '')
     setSuggestedUserId(contact.user_id)
     setShowDropdown(false)
@@ -525,7 +528,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                         handleSelectContact(contact)
                       }}
                     >
-                      <div className="font-medium text-sm">{contact.name}</div>
+                      <div className="font-medium text-sm">
+                        {contact.display_name ?? contact.name}
+                      </div>
                       {contact.email && (
                         <div className="text-xs text-muted-foreground">{contact.email}</div>
                       )}
