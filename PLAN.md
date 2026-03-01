@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅)
+> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅)
 
 ---
 
@@ -772,6 +772,10 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Docs update | PR #471: Updated CLAUDE.md and PLAN.md with PRs #468–#470. |
 | 2026-03-01 | Quick participant picker UX | PR #472: `QuickParticipantPicker` Recent section redesigned — pill grid replaced with collapsible disclosure list (collapsed by default, "Recent (N)" header with chevron). Each row shows name + full email + `+`/`✓` button, naturally disambiguating same-name contacts. Toast-based invite prompt replaced with global "Send invite emails when adding" checkbox (default checked). Removed `useToast`/`ToastAction` imports and `ambiguousNames` memo. |
 | 2026-03-01 | Pull-to-refresh | PR #474: Custom pull-to-refresh gesture for PWA standalone mode (no address bar = no refresh button). `usePullToRefresh` hook handles touch gestures with rubber-band resistance (0.5x), 80px threshold, 120px cap. Pages register refresh callbacks via `useRegisterRefresh` + `PullToRefreshContext`. `PullToRefreshIndicator` shows rotating arrow / spinner. Skips when sheets open or scrolled down. `overscroll-behavior-y: none` disables Chrome Android native PTR. 4 new files, 10 modified. |
+| 2026-03-01 | Docs update | PR #475: Updated CLAUDE.md and PLAN.md with PR #474. |
+| 2026-03-01 | PTR standalone-only | PR #476: Gated `usePullToRefresh` touch listeners behind standalone PWA check (`display-mode: standalone` / `navigator.standalone`). Regular browsers have their own refresh + native PTR — custom gesture no longer activates there. |
+| 2026-03-01 | Invite email simplification | PR #477: Removed invite email logic from add-participant flow in QuickParticipantPicker, ParticipantsSetup, and IndividualsSetup (no more checkboxes, no auto-send on add). Added collapsible "Recent (N)" contacts list to ParticipantsSetup (same pattern as QuickParticipantPicker) for one-tap adding of past trip contacts. Added per-participant "Send invite" button on participant list (visible when participant has email + user authenticated) with 2s sent indicator. |
+| 2026-03-01 | Email backfill on link | PR #478: `linkUserToParticipant` now accepts optional `userEmail` param. When a user links themselves via "This is me", the participant's email is auto-populated from the auth session if the participant has no email set. Existing emails are never overwritten. |
 
 ---
 

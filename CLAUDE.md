@@ -329,7 +329,7 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 ### User–Participant Link
 
-`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page).
+`participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page). `linkUserToParticipant` also backfills the participant's `email` from the auth session if the participant has no email set (existing emails are never overwritten).
 
 ### Contact Autocomplete (`useTripContacts`)
 
@@ -340,8 +340,8 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 **Dedup strategy:** Primary key = `user_id` (linked accounts) > `email` > `name`. Post-merge pass catches cross-key email matches. Prefers records with `display_name`. Sorted by recency (most recent trip first).
 
 **UI integration:**
-- **`ParticipantsSetup`** (Full mode, `src/components/setup/ParticipantsSetup.tsx`): Autocomplete dropdown on Name field. Selecting a contact auto-fills name + email + `suggestedUserId`. "Send invite email" checkbox appears when email is populated.
-- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form. Recent contacts shown in a **collapsible disclosure list** (collapsed by default) — each row shows name + full email for disambiguation, with `+` button (or `✓` if already added). Global "Send invite emails when adding" checkbox (default checked) controls whether adding a recent/device contact auto-sends an invitation (replaces previous toast-based prompt).
+- **`ParticipantsSetup`** (Full mode, `src/components/setup/ParticipantsSetup.tsx`): Autocomplete dropdown on Name field. Selecting a contact auto-fills name + email + `suggestedUserId`. Collapsible **"Recent (N)"** disclosure list (same pattern as QuickParticipantPicker) for one-tap adding of past trip contacts. Per-participant **"Send invite"** button on the participant list (visible when participant has email + user authenticated) with 2s sent indicator. No invite logic in the add flow itself.
+- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form. Recent contacts shown in a **collapsible disclosure list** (collapsed by default) — each row shows name + full email for disambiguation, with `+` button (or `✓` if already added). No invite logic in the add flow.
 
 Both components use identical patterns: `filteredContacts` memo (min 2 chars, limit 5), keyboard navigation (arrow keys + Enter/Escape), click-outside dismiss, `justSelectedRef` to prevent dropdown re-opening after selection.
 
@@ -350,7 +350,7 @@ Both components use identical patterns: `filteredContacts` memo (min 2 chars, li
 `supabase/functions/send-email/index.ts` — Resend API integration. Shared `baseEmailHtml()` wrapper with coral header (`#e8613a`), "Spl1t" wordmark (cream "1"), and branded footer. `BRAND` constant object for all color tokens.
 
 Two email types:
-- **Invitation**: Sent when adding a participant with email (opt-in via "Send invite email" checkbox). Creates `invitations` row, generates `/join/:token` link.
+- **Invitation**: Sent via per-participant "Send invite" button on the participant list (not during add flow). Creates `invitations` row, generates `/join/:token` link.
 - **Payment reminder**: Sent from SettlementsPage "Remind" button. Includes amount owed, optional receipt line-item tables (up to 3), single CTA.
 
 Deploy after changes: `supabase functions deploy send-email`
@@ -454,6 +454,7 @@ In standalone PWA mode there's no address bar or refresh button. A custom pull-t
 **Architecture:** `PullToRefreshProvider` (wraps each layout) stores the current page's refresh callback in a ref. Pages register their callback via `useRegisterRefresh(useCallback(...))`. The `usePullToRefresh` hook in each layout handles touch gestures and calls the registered callback.
 
 **Gesture behaviour:**
+- Only activates in standalone PWA mode (`display-mode: standalone` / `navigator.standalone`) — regular browsers have native refresh; touch listeners are not registered at all outside standalone mode
 - Only activates when `window.scrollY <= 0` (at scroll top)
 - Ignores horizontal swipes (direction locked on first significant movement)
 - Skips when any Radix sheet/dialog is open (`document.querySelector('[data-radix-dialog-overlay]')`)
