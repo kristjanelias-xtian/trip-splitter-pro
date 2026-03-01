@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (156 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (170 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
@@ -761,6 +761,9 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | PWA safe-area fix | PR #460 (closes #457): iPhone home indicator overlaps bottom tab bar in PWA standalone mode. Fix: `viewport-fit=cover` on viewport meta, `pwa-safe-bottom` CSS utility scoped to `@media (display-mode: standalone)` with `env(safe-area-inset-bottom)` padding. Regular browser unchanged. Applied to bottom nav + main content margin in Layout.tsx. |
 | 2026-03-01 | Quick history hint | PR #461: Added muted hint "Showing only expenses you're included in" below filter pills in `QuickHistorySheet` and `QuickHistoryPage`. |
 | 2026-03-01 | Issue triage | 2 open issues triaged. #455 (test feedback) closed as invalid. #457 (PWA bottom nav) fixed in PR #460. 0 open issues remaining. |
+| 2026-03-01 | Docs update | PR #463: Updated CLAUDE.md and PLAN.md with PRs #456–#462. |
+| 2026-03-01 | Contact autocomplete | PR #464: Email field marked optional with hint. New `useTripContacts` hook fetches deduplicated contacts from user's other trips for "people you've tripped with" autocomplete in ParticipantsSetup (dropdown) and QuickParticipantPicker (chips). Dedup by email then name, sorted by recency. 14 new tests (170 total). |
+| 2026-03-01 | Contact display names | PR #465: `useTripContacts` now fetches `display_name` from `user_profiles` for linked Spl1t accounts. Autocomplete dropdown and quick-mode chips show full Google name (e.g. "Kairi Tamm") instead of short participant name. Dedup prefers records with display_name. 3 new tests. |
 
 ---
 
