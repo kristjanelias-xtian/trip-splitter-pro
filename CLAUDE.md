@@ -331,6 +331,30 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 `participants.user_id` links a Supabase auth user to their participant record ("This is me"). One user per trip (enforced by unique index). Use `useMyParticipant()` hook to get the current user's participant. Use `useMyTripBalances()` to get the user's balance across all their trips (used on the unified home page).
 
+### Contact Autocomplete (`useTripContacts`)
+
+`useTripContacts(currentTripId)` hook (`src/hooks/useTripContacts.ts`) fetches deduplicated contacts from the current user's other trips — "people you've tripped with". Returns `TripContact[]` with `name`, `email`, `user_id`, `display_name`, `lastSeenAt`. Only runs for authenticated users.
+
+**Data sources:** Participant records from other trips + `user_profiles` table (for `display_name` and `email` of linked Spl1t accounts). Profile email serves as fallback when participant records lack email.
+
+**Dedup strategy:** Primary key = `user_id` (linked accounts) > `email` > `name`. Post-merge pass catches cross-key email matches. Prefers records with `display_name`. Sorted by recency (most recent trip first).
+
+**UI integration:**
+- **`ParticipantsSetup`** (Full mode, `src/components/setup/ParticipantsSetup.tsx`): Autocomplete dropdown on Name field. Selecting a contact auto-fills name + email + `suggestedUserId`. "Send invite email" checkbox appears when email is populated.
+- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form + Recent chips for one-tap adds. Ambiguous names (same display name) show email suffix on chips for disambiguation (`"Alex · alex@…"`).
+
+Both components use identical patterns: `filteredContacts` memo (min 2 chars, limit 5), keyboard navigation (arrow keys + Enter/Escape), click-outside dismiss, `justSelectedRef` to prevent dropdown re-opening after selection.
+
+### Email Templates (`send-email` Edge Function)
+
+`supabase/functions/send-email/index.ts` — Resend API integration. Shared `baseEmailHtml()` wrapper with coral header (`#e8613a`), "Spl1t" wordmark (cream "1"), and branded footer. `BRAND` constant object for all color tokens.
+
+Two email types:
+- **Invitation**: Sent when adding a participant with email (opt-in via "Send invite email" checkbox). Creates `invitations` row, generates `/join/:token` link.
+- **Payment reminder**: Sent from SettlementsPage "Remind" button. Includes amount owed, optional receipt line-item tables (up to 3), single CTA.
+
+Deploy after changes: `supabase functions deploy send-email`
+
 ---
 
 ## Observability
@@ -379,7 +403,7 @@ and the user-friendly error message will never be shown.
 - `VITE_GOOGLE_CLIENT_ID` (Google OAuth)
 - `VITE_GRAFANA_*` (observability — set in Cloudflare dashboard)
 
-**Supabase Edge Functions:** `log-proxy`, `create-github-issue`
+**Supabase Edge Functions:** `log-proxy`, `create-github-issue`, `send-email`
 
 **Demo trip:** `livigno-2025` trip code, seeded via `scripts/seed-demo-trip.ts`. "Try a demo" link on home page navigates to `/t/livigno-2025` (uses `TripModeRedirect`).
 

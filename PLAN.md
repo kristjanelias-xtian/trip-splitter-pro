@@ -15,7 +15,7 @@
 | State | React Context API (one provider per domain) |
 | Database | Supabase (PostgreSQL + RLS) |
 | Storage | Supabase Storage (`feedback-screenshots` bucket, public) |
-| Edge Functions | Supabase Edge Functions (Deno) — `log-proxy`, `create-github-issue` |
+| Edge Functions | Supabase Edge Functions (Deno) — `log-proxy`, `create-github-issue`, `send-email` |
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
@@ -766,6 +766,9 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | Contact display names | PR #465: `useTripContacts` now fetches `display_name` from `user_profiles` for linked Spl1t accounts. Autocomplete dropdown and quick-mode chips show full Google name (e.g. "Kairi Tamm") instead of short participant name. Dedup prefers records with display_name. 3 new tests. |
 | 2026-03-01 | Docs update | PR #466: Updated CLAUDE.md and PLAN.md with PRs #463–#465. |
 | 2026-03-01 | Contact autocomplete fixes | PR #467: Fixed contact dedup to prioritise `user_id` (linked accounts), then email, then name — with post-merge pass for cross-key email matches. Fixed dropdown reopening after selection (`justSelectedRef`). Added "Send invite email" checkbox (default checked) to ParticipantsSetup, IndividualsSetup, and QuickParticipantPicker manual form. Quick-mode chip adds show toast with Send action instead of auto-sending. 3 new tests (173 total). |
+| 2026-03-01 | Docs update | PR #468: Updated CLAUDE.md and PLAN.md with PRs #466–#467. |
+| 2026-03-01 | Email template redesign | PR #469: Unified invitation + payment reminder emails under shared `baseEmailHtml()` wrapper with coral header, "Spl1t" wordmark (cream "1"), branded footer. Replaced all purple (`#6366f1`) with coral brand tokens. Normalized inconsistent hex values into single `BRAND` constant. Simplified payment reminder to single CTA. File: `supabase/functions/send-email/index.ts`. Deploy: `supabase functions deploy send-email`. |
+| 2026-03-01 | Contact email auto-fill | PR #470: `useTripContacts` now fetches `email` from `user_profiles` alongside `display_name` — profile email as fallback enables email auto-fill, disambiguation, and invite checkbox in both Full and Quick mode. `QuickParticipantPicker` gets same autocomplete dropdown as `ParticipantsSetup` (keyboard nav, contact selection, `suggestedUserId` passthrough) + ambiguous name disambiguation on Recent chips (`"Alex · alex@…"`). |
 
 ---
 
