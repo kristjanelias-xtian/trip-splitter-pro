@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby, MoreHorizontal } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,6 +16,13 @@ import { fadeInUp } from '@/lib/animations'
 import type { Participant } from '@/types/participant'
 import { logger } from '@/lib/logger'
 import { getGroupBorderColor } from '@/lib/groupColors'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ParticipantsSetupProps {
   onComplete?: () => void
@@ -428,59 +435,106 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            onClick={() => handleStartEditNickname(participant)}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            title={participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
-          >
-            <Pencil size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
-          </Button>
-          <Button
-            onClick={() => handleStartEditGroup(participant)}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            title={participant.wallet_group ? `Group: ${participant.wallet_group}` : 'Set shared wallet group'}
-          >
-            <Users size={15} className={participant.wallet_group ? 'text-accent' : 'text-muted-foreground'} />
-          </Button>
-          {!participant.user_id && (
+          {/* Mobile: dropdown menu with labeled actions */}
+          <div className="sm:hidden flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal size={16} className="text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleStartEditNickname(participant)}>
+                  <Pencil size={14} className="mr-2" />
+                  {participant.nickname ? `Nickname: ${participant.nickname}` : 'Edit nickname'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStartEditGroup(participant)}>
+                  <Users size={14} className="mr-2" />
+                  {participant.wallet_group ? `Group: ${participant.wallet_group}` : 'Set group'}
+                </DropdownMenuItem>
+                {!participant.user_id && (
+                  <DropdownMenuItem onClick={() => handleStartEditEmail(participant)}>
+                    <Mail size={14} className="mr-2" />
+                    {participant.email ? `Email: ${participant.email}` : 'Add email'}
+                  </DropdownMenuItem>
+                )}
+                {participant.email && user && (
+                  <DropdownMenuItem
+                    onClick={() => handleSendInvite(participant)}
+                    disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
+                  >
+                    <Send size={14} className="mr-2" />
+                    {sentInviteIds.has(participant.id) ? 'Invite sent' : 'Send invite'}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleDelete(participant.id)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <X size={14} className="mr-2" />
+                  Remove
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Desktop: icon buttons with hover tooltips */}
+          <div className="hidden sm:flex items-center gap-1">
             <Button
-              onClick={() => handleStartEditEmail(participant)}
+              onClick={() => handleStartEditNickname(participant)}
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              title={participant.email ? `Email: ${participant.email}` : 'Add email'}
+              title={participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
             >
-              <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
+              <Pencil size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
             </Button>
-          )}
-          {participant.email && user && (
             <Button
-              onClick={() => handleSendInvite(participant)}
+              onClick={() => handleStartEditGroup(participant)}
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              title="Send invite email"
-              disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
+              title={participant.wallet_group ? `Group: ${participant.wallet_group}` : 'Set shared wallet group'}
             >
-              {sentInviteIds.has(participant.id) ? (
-                <Check size={15} className="text-positive" />
-              ) : (
-                <Send size={15} className="text-muted-foreground" />
-              )}
+              <Users size={15} className={participant.wallet_group ? 'text-accent' : 'text-muted-foreground'} />
             </Button>
-          )}
-          <Button
-            onClick={() => handleDelete(participant.id)}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <X size={16} />
-          </Button>
+            {!participant.user_id && (
+              <Button
+                onClick={() => handleStartEditEmail(participant)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title={participant.email ? `Email: ${participant.email}` : 'Add email'}
+              >
+                <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
+              </Button>
+            )}
+            {participant.email && user && (
+              <Button
+                onClick={() => handleSendInvite(participant)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title="Send invite email"
+                disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
+              >
+                {sentInviteIds.has(participant.id) ? (
+                  <Check size={15} className="text-positive" />
+                ) : (
+                  <Send size={15} className="text-muted-foreground" />
+                )}
+              </Button>
+            )}
+            <Button
+              onClick={() => handleDelete(participant.id)}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <X size={16} />
+            </Button>
+          </div>
         </div>
       </div>
 
