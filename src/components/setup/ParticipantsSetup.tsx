@@ -20,6 +20,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -444,9 +445,10 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Edit</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleStartEditNickname(participant)}>
                   <Pencil size={14} className="mr-2" />
-                  {participant.nickname ? `Nickname: ${participant.nickname}` : 'Edit nickname'}
+                  {participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleStartEditGroup(participant)}>
                   <Users size={14} className="mr-2" />
@@ -455,9 +457,11 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 {!participant.user_id && (
                   <DropdownMenuItem onClick={() => handleStartEditEmail(participant)}>
                     <Mail size={14} className="mr-2" />
-                    {participant.email ? `Email: ${participant.email}` : 'Add email'}
+                    {participant.email ? `Email: ${participant.email}` : 'Set email'}
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Actions</DropdownMenuLabel>
                 {participant.email && user && (
                   <DropdownMenuItem
                     onClick={() => handleSendInvite(participant)}
@@ -467,7 +471,6 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     {sentInviteIds.has(participant.id) ? 'Invite sent' : 'Send invite'}
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => handleDelete(participant.id)}
                   className="text-destructive focus:text-destructive"
