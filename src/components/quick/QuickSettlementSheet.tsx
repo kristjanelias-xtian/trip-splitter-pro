@@ -46,6 +46,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const scrollRef = useIOSScrollFix()
   const [view, setView] = useState<'suggestions' | 'form'>('suggestions')
+  const [settlementMode, setSettlementMode] = useState<'optimal' | 'greedy'>('optimal')
   const [prefill, setPrefill] = useState<Prefill | null>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
@@ -77,8 +78,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const defaultCurrency = currentTrip.default_currency || 'EUR'
   const exchangeRates = currentTrip.exchange_rates || {}
 
-  // Compute optimal settlement plan
-  const { myTransactions, allSettled, currency } = useMemo(() => {
+  // Compute both optimal and greedy settlement plans
+  const { myTransactions, myGreedyTransactions, allSettled, currency, showModeToggle } = useMemo(() => {
     const balanceCalc = calculateBalances(
       expenses,
       participants,
@@ -87,10 +88,11 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       defaultCurrency,
       exchangeRates,
     )
-    const plan = calculateOptimalSettlement(balanceCalc.balances, defaultCurrency)
+    const optimalPlan = calculateOptimalSettlement(balanceCalc.balances, defaultCurrency, 'optimal')
+    const greedyPlan = calculateOptimalSettlement(balanceCalc.balances, defaultCurrency, 'greedy')
 
     if (!myParticipant) {
-      return { myTransactions: [], allSettled: plan.transactions.length === 0, currency: plan.currency }
+      return { myTransactions: [], myGreedyTransactions: [], allSettled: optimalPlan.transactions.length === 0, currency: optimalPlan.currency, showModeToggle: false }
     }
 
     // Determine which entity ID represents "me" via entity map
@@ -98,16 +100,23 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
 
     // Filter transactions involving me
-    const mine = plan.transactions.filter(
+    const myOptimal = optimalPlan.transactions.filter(
+      t => t.fromId === myEntityId || t.toId === myEntityId,
+    )
+    const myGreedy = greedyPlan.transactions.filter(
       t => t.fromId === myEntityId || t.toId === myEntityId,
     )
 
     return {
-      myTransactions: mine,
-      allSettled: plan.transactions.length === 0,
-      currency: plan.currency,
+      myTransactions: myOptimal,
+      myGreedyTransactions: myGreedy,
+      allSettled: optimalPlan.transactions.length === 0,
+      currency: optimalPlan.currency,
+      showModeToggle: myOptimal.length !== myGreedy.length,
     }
   }, [expenses, participants, settlements, trackingMode, defaultCurrency, exchangeRates, myParticipant])
+
+  const activeTransactions = settlementMode === 'greedy' ? myGreedyTransactions : myTransactions
 
   const myEntityId = useMemo(() => {
     if (!myParticipant) return null
@@ -117,11 +126,11 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const recipientKey = useMemo(() => {
     if (!myEntityId) return ''
-    return myTransactions
-      .filter(t => t.fromId === myEntityId)
-      .map(t => t.toId)
-      .join(',')
-  }, [myTransactions, myEntityId])
+    // Include recipients from both modes so bank details are fetched for either
+    const optimalRecipients = myTransactions.filter(t => t.fromId === myEntityId).map(t => t.toId)
+    const greedyRecipients = myGreedyTransactions.filter(t => t.fromId === myEntityId).map(t => t.toId)
+    return [...new Set([...optimalRecipients, ...greedyRecipients])].join(',')
+  }, [myTransactions, myGreedyTransactions, myEntityId])
 
   useEffect(() => {
     if (!user || !recipientKey) return
@@ -302,6 +311,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     if (!isOpen) {
       // Reset state when closing
       setView('suggestions')
+      setSettlementMode('optimal')
       setPrefill(null)
       setConfirmingRemindIdx(null)
       setRemindResults({})
@@ -362,7 +372,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                 Link yourself to a participant to see suggested payments.
               </p>
             </div>
-          ) : myTransactions.length === 0 ? (
+          ) : activeTransactions.length === 0 ? (
             <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
               <PartyPopper size={48} className="mx-auto text-positive mb-2" />
               <h3 className="text-lg font-semibold text-foreground mb-1">
@@ -374,10 +384,36 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             </div>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground">
-                Suggested payments to settle up:
-              </p>
-              {myTransactions.map((tx, i) => {
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Suggested payments to settle up:
+                </p>
+                {showModeToggle && (
+                  <div className="flex rounded-full border border-border bg-muted/50 p-0.5 text-xs shrink-0">
+                    <button
+                      onClick={() => setSettlementMode('optimal')}
+                      className={`px-2.5 py-1 rounded-full transition-colors ${
+                        settlementMode === 'optimal'
+                          ? 'bg-accent text-white font-medium shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Fewer
+                    </button>
+                    <button
+                      onClick={() => setSettlementMode('greedy')}
+                      className={`px-2.5 py-1 rounded-full transition-colors ${
+                        settlementMode === 'greedy'
+                          ? 'bg-accent text-white font-medium shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Standard
+                    </button>
+                  </div>
+                )}
+              </div>
+              {activeTransactions.map((tx, i) => {
                 const iOwe = tx.fromId === myEntityId
                 const fromEmails = !iOwe ? fromEmailMap[tx.fromId] : undefined
                 const canRemind = !iOwe && !!fromEmails && fromEmails.length > 0

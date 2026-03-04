@@ -102,10 +102,17 @@ export function SettlementsPage() {
     currentTrip.exchange_rates
   ), [expenses, participants, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates])
 
-  // Calculate optimal settlement
+  // Calculate optimal and greedy settlement plans
   const optimalSettlement = useMemo(() => calculateOptimalSettlement(
     balanceCalculation.balances,
-    currentTrip.default_currency
+    currentTrip.default_currency,
+    'optimal'
+  ), [balanceCalculation.balances, currentTrip.default_currency])
+
+  const greedySettlement = useMemo(() => calculateOptimalSettlement(
+    balanceCalculation.balances,
+    currentTrip.default_currency,
+    'greedy'
   ), [balanceCalculation.balances, currentTrip.default_currency])
 
   // Stable string key for recipient IDs to avoid infinite re-fetch
@@ -352,6 +359,7 @@ export function SettlementsPage() {
             <CardContent className="pt-6">
               <SettlementPlan
                 plan={optimalSettlement}
+                greedyPlan={greedySettlement.totalTransactions !== optimalSettlement.totalTransactions ? greedySettlement : undefined}
                 onRecordSettlement={handleRecordSettlement}
                 bankDetailsMap={bankDetailsMap}
                 linkedParticipantIds={linkedParticipantIds}
