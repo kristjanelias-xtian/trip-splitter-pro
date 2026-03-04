@@ -16,73 +16,155 @@ export interface OptimalSettlementPlan {
   currency: string
 }
 
-/**
- * Calculate the optimal settlement plan to minimize the number of transactions
- *
- * Uses a greedy algorithm:
- * 1. Create lists of debtors (negative balance) and creditors (positive balance)
- * 2. Match the largest debtor with the largest creditor
- * 3. Create a transaction for the minimum of their absolute balances
- * 4. Update balances and repeat
- *
- * @param balances - Array of participant/family balances
- * @param currency - Currency for the transactions (default: 'EUR')
- * @returns Optimal settlement plan with minimal transactions
- */
-export function calculateOptimalSettlement(
-  balances: ParticipantBalance[],
-  currency: string = 'EUR'
-): OptimalSettlementPlan {
-  // Create working copies of balances
-  const workingBalances = balances.map(b => ({
-    ...b,
-    balance: b.balance,
-  }))
+export type SettlementMode = 'optimal' | 'greedy'
 
+/**
+ * Greedy settlement: match largest debtor with largest creditor repeatedly.
+ * Produces at most n-1 transactions.
+ */
+function settleGreedy(nonZero: ParticipantBalance[]): SettlementTransaction[] {
+  const working = nonZero.map(b => ({ ...b, balance: b.balance }))
   const transactions: SettlementTransaction[] = []
 
-  // Separate into debtors and creditors
   const getDebtors = () =>
-    workingBalances
-      .filter(b => b.balance < -0.01) // Negative balance = owes money
-      .sort((a, b) => a.balance - b.balance) // Most negative first
+    working
+      .filter(b => b.balance < -0.01)
+      .sort((a, b) => a.balance - b.balance)
 
   const getCreditors = () =>
-    workingBalances
-      .filter(b => b.balance > 0.01) // Positive balance = owed money
-      .sort((a, b) => b.balance - a.balance) // Largest first
+    working
+      .filter(b => b.balance > 0.01)
+      .sort((a, b) => b.balance - a.balance)
 
   let debtors = getDebtors()
   let creditors = getCreditors()
 
-  // Continue until all debts are settled
   while (debtors.length > 0 && creditors.length > 0) {
     const debtor = debtors[0]
     const creditor = creditors[0]
+    const transactionAmount = Math.min(Math.abs(debtor.balance), creditor.balance)
 
-    // Calculate transaction amount (minimum of absolute values)
-    const debtAmount = Math.abs(debtor.balance)
-    const creditAmount = creditor.balance
-    const transactionAmount = Math.min(debtAmount, creditAmount)
-
-    // Create transaction
     transactions.push({
       fromId: debtor.id,
       fromName: debtor.name,
       toId: creditor.id,
       toName: creditor.name,
-      amount: Math.round(transactionAmount * 100) / 100, // Round to 2 decimals
+      amount: Math.round(transactionAmount * 100) / 100,
       fromIsFamily: debtor.isFamily,
       toIsFamily: creditor.isFamily,
     })
 
-    // Update balances
     debtor.balance += transactionAmount
     creditor.balance -= transactionAmount
 
-    // Refresh lists (filter out settled balances)
     debtors = getDebtors()
     creditors = getCreditors()
+  }
+
+  return transactions
+}
+
+/**
+ * Find the optimal partition of participants into independent zero-sum subsets.
+ * Uses bitmask DP: dp[mask] = max number of zero-sum subsets that partition mask.
+ * Returns array of index arrays, one per subset.
+ *
+ * Falls back to single group (greedy) if n > 20 or DP fails.
+ */
+function findOptimalPartition(balances: number[]): number[][] {
+  const n = balances.length
+  if (n <= 1 || n > 20) {
+    return [Array.from({ length: n }, (_, i) => i)]
+  }
+
+  const full = (1 << n) - 1
+
+  // Precompute subset sums
+  const subsetSum = new Float64Array(1 << n)
+  for (let mask = 1; mask <= full; mask++) {
+    // Use lowest set bit to build incrementally
+    const lsb = mask & -mask
+    const lsbIdx = 31 - Math.clz32(lsb)
+    subsetSum[mask] = subsetSum[mask ^ lsb] + balances[lsbIdx]
+  }
+
+  // dp[mask] = max zero-sum subsets partitioning mask. -1 = not reachable.
+  const dp = new Int32Array(1 << n).fill(-1)
+  const parent = new Int32Array(1 << n).fill(0) // stores the submask chosen
+  dp[0] = 0
+
+  for (let mask = 1; mask <= full; mask++) {
+    // Try every non-empty submask of mask
+    let sub = mask
+    while (sub > 0) {
+      if (Math.abs(subsetSum[sub]) < 0.01) {
+        const rest = mask ^ sub
+        if (dp[rest] >= 0 && dp[rest] + 1 > dp[mask]) {
+          dp[mask] = dp[rest] + 1
+          parent[mask] = sub
+        }
+      }
+      sub = (sub - 1) & mask
+    }
+  }
+
+  // Fallback if DP didn't find a valid partition
+  if (dp[full] < 0) {
+    return [Array.from({ length: n }, (_, i) => i)]
+  }
+
+  // Reconstruct partition
+  const groups: number[][] = []
+  let remaining = full
+  while (remaining > 0) {
+    const sub = parent[remaining]
+    const group: number[] = []
+    let bits = sub
+    while (bits > 0) {
+      const lsb = bits & -bits
+      group.push(31 - Math.clz32(lsb))
+      bits ^= lsb
+    }
+    groups.push(group)
+    remaining ^= sub
+  }
+
+  return groups
+}
+
+/**
+ * Calculate the settlement plan.
+ *
+ * @param balances - Array of participant/family balances
+ * @param currency - Currency for the transactions (default: 'EUR')
+ * @param mode - 'optimal' (default) uses bitmask DP to find independent zero-sum
+ *               subsets then settles each greedily. 'greedy' uses plain greedy.
+ */
+export function calculateOptimalSettlement(
+  balances: ParticipantBalance[],
+  currency: string = 'EUR',
+  mode: SettlementMode = 'optimal'
+): OptimalSettlementPlan {
+  const nonZero = balances.filter(b => Math.abs(b.balance) > 0.01)
+
+  if (nonZero.length === 0) {
+    return { transactions: [], totalTransactions: 0, currency }
+  }
+
+  let transactions: SettlementTransaction[]
+
+  if (mode === 'greedy') {
+    transactions = settleGreedy(nonZero)
+  } else {
+    // Optimal: partition into independent zero-sum subsets, settle each
+    const partition = findOptimalPartition(nonZero.map(b => b.balance))
+    transactions = []
+    for (const group of partition) {
+      const subset = group.map(i => nonZero[i])
+      transactions.push(...settleGreedy(subset))
+    }
+    // Sort by amount descending for consistent presentation
+    transactions.sort((a, b) => b.amount - a.amount)
   }
 
   return {

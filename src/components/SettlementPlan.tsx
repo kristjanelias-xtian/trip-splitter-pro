@@ -12,6 +12,7 @@ export interface BankDetails {
 
 interface SettlementPlanProps {
   plan: OptimalSettlementPlan
+  greedyPlan?: OptimalSettlementPlan
   onRecordSettlement?: (transaction: SettlementTransaction) => void
   bankDetailsMap?: Record<string, BankDetails>
   linkedParticipantIds?: Set<string>
@@ -20,7 +21,11 @@ interface SettlementPlanProps {
   avatarMap?: Record<string, string | null>
 }
 
-export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
+export function SettlementPlan({ plan, greedyPlan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
+  const [mode, setMode] = useState<'optimal' | 'greedy'>('optimal')
+  const showToggle = greedyPlan && greedyPlan.totalTransactions !== plan.totalTransactions
+  const activePlan = mode === 'greedy' && greedyPlan ? greedyPlan : plan
+
   if (plan.transactions.length === 0) {
     return (
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
@@ -38,30 +43,58 @@ export function SettlementPlan({ plan, onRecordSettlement, bankDetailsMap, linke
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">
+      <div className="flex items-center justify-between mb-4 gap-3">
+        <h3 className="text-lg font-semibold text-foreground shrink-0">
           Settlement Plan
         </h3>
-        <span className="text-sm text-muted-foreground">
-          {plan.totalTransactions} {plan.totalTransactions === 1 ? 'transaction' : 'transactions'}
-        </span>
+        <div className="flex items-center gap-3">
+          {showToggle && (
+            <div className="flex rounded-full border border-border bg-muted/50 p-0.5 text-xs">
+              <button
+                onClick={() => setMode('optimal')}
+                className={`px-2.5 py-1 rounded-full transition-colors ${
+                  mode === 'optimal'
+                    ? 'bg-accent text-white font-medium shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Fewer
+              </button>
+              <button
+                onClick={() => setMode('greedy')}
+                className={`px-2.5 py-1 rounded-full transition-colors ${
+                  mode === 'greedy'
+                    ? 'bg-accent text-white font-medium shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Standard
+              </button>
+            </div>
+          )}
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {activePlan.totalTransactions} {activePlan.totalTransactions === 1 ? 'transaction' : 'transactions'}
+          </span>
+        </div>
       </div>
 
       {/* Info Box */}
       <div className="bg-accent/10 border border-accent/30 rounded-lg p-3 mb-4 flex items-start gap-2">
         <Lightbulb size={16} className="text-accent mt-0.5 flex-shrink-0" />
         <p className="text-sm text-foreground">
-          This is the optimal settlement plan with the minimum number of transactions needed to settle all balances.
+          {mode === 'optimal'
+            ? 'This plan uses the minimum number of transactions to settle all balances.'
+            : 'Standard settlement plan — each person settles with the largest counterparty first.'}
         </p>
       </div>
 
       {/* Transactions */}
       <div className="space-y-2">
-        {plan.transactions.map((transaction, index) => (
+        {activePlan.transactions.map((transaction, index) => (
           <SettlementTransactionCard
-            key={index}
+            key={`${mode}-${index}`}
             transaction={transaction}
-            currency={plan.currency}
+            currency={activePlan.currency}
             index={index + 1}
             onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
             bankDetails={bankDetailsMap?.[transaction.toId]}

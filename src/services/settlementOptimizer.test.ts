@@ -91,6 +91,108 @@ describe('calculateOptimalSettlement', () => {
   })
 })
 
+// ─── Optimal mode (bitmask DP) ──────────────────────────────────────
+describe('calculateOptimalSettlement — optimal mode', () => {
+  it('finds two independent zero-sum subsets → fewer transactions', () => {
+    // {A,B,C} sums to 0, {D,E} sums to 0
+    // Greedy mixes them: A(-50)→E(+40)=40, D(-40)→B(+30)=30, D(-10)→C(+20)=10, A(-10)→C(+10)=10 → 4
+    const balances = [
+      balance('a', 'A', -50),
+      balance('b', 'B', 30),
+      balance('c', 'C', 20),
+      balance('d', 'D', -40),
+      balance('e', 'E', 40),
+    ]
+    const optimal = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    const greedy = calculateOptimalSettlement(balances, 'EUR', 'greedy')
+    // Optimal: {A,B,C} → 2 txns + {D,E} → 1 txn = 3
+    expect(optimal.totalTransactions).toBe(3)
+    // Greedy crosses subsets → 4
+    expect(greedy.totalTransactions).toBe(4)
+  })
+
+  it('finds three independent pairs → 3 transactions instead of 5', () => {
+    const balances = [
+      balance('a', 'A', 10),
+      balance('b', 'B', -10),
+      balance('c', 'C', 20),
+      balance('d', 'D', -20),
+      balance('e', 'E', 30),
+      balance('f', 'F', -30),
+    ]
+    const optimal = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    expect(optimal.totalTransactions).toBe(3)
+  })
+
+  it('returns same count as greedy when no beneficial partition exists', () => {
+    // A = +60, B = -40, C = -20  — only one zero-sum group (all of them)
+    const balances = [
+      balance('a', 'A', 60),
+      balance('b', 'B', -40),
+      balance('c', 'C', -20),
+    ]
+    const optimal = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    const greedy = calculateOptimalSettlement(balances, 'EUR', 'greedy')
+    expect(optimal.totalTransactions).toBe(greedy.totalTransactions)
+  })
+
+  it('handles floating-point tolerance in subset sums', () => {
+    // 0.1 + 0.2 - 0.3 should be treated as zero
+    const balances = [
+      balance('a', 'A', 0.1),
+      balance('b', 'B', 0.2),
+      balance('c', 'C', -0.3),
+      balance('d', 'D', 5),
+      balance('e', 'E', -5),
+    ]
+    const result = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    // {A,B,C} and {D,E} are independent
+    expect(result.totalTransactions).toBe(3)
+  })
+
+  it('preserves total settlement amount after optimization', () => {
+    const balances = [
+      balance('a', 'A', -50),
+      balance('b', 'B', 30),
+      balance('c', 'C', 20),
+      balance('d', 'D', -40),
+      balance('e', 'E', 40),
+    ]
+    const result = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    const totalSettled = result.transactions.reduce((sum, t) => sum + t.amount, 0)
+    // Total debt = 50 + 40 = 90
+    expect(totalSettled).toBeCloseTo(90, 2)
+  })
+
+  it('greedy mode produces same results as before', () => {
+    const balances = [
+      balance('a', 'A', 100),
+      balance('b', 'B', 50),
+      balance('c', 'C', -80),
+      balance('d', 'D', -70),
+    ]
+    const greedy = calculateOptimalSettlement(balances, 'EUR', 'greedy')
+    const totalPaid = greedy.transactions.reduce((sum, t) => sum + t.amount, 0)
+    expect(totalPaid).toBeCloseTo(150, 2)
+    // Greedy: n-1 = 3 transactions
+    expect(greedy.totalTransactions).toBe(3)
+  })
+
+  it('sorts optimal transactions by amount descending', () => {
+    const balances = [
+      balance('a', 'A', -50),
+      balance('b', 'B', 30),
+      balance('c', 'C', 20),
+      balance('d', 'D', -40),
+      balance('e', 'E', 40),
+    ]
+    const result = calculateOptimalSettlement(balances, 'EUR', 'optimal')
+    for (let i = 1; i < result.transactions.length; i++) {
+      expect(result.transactions[i - 1].amount).toBeGreaterThanOrEqual(result.transactions[i].amount)
+    }
+  })
+})
+
 // ─── formatSettlementTransaction ──────────────────────────────────
 describe('formatSettlementTransaction', () => {
   it('formats transaction as readable string', () => {
