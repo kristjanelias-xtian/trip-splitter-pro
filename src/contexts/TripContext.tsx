@@ -6,6 +6,7 @@ import { generateTripCode } from '@/lib/tripCodeGenerator'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
+import { getMyTrips } from '@/lib/myTripsStorage'
 
 interface TripContextType {
   trips: Event[]
@@ -71,7 +72,38 @@ export function TripProvider({ children }: { children: ReactNode }) {
       )
       if (signal.aborted) return
       if (fetchError) throw fetchError
-      setTrips((data as unknown as Event[]) || [])
+      const fetchedTrips = (data as unknown as Event[]) || []
+      setTrips(fetchedTrips)
+
+      // Merge localStorage trips that weren't returned by the DB query.
+      // This covers trips visited via shared link where the user isn't creator or participant.
+      const fetchedCodes = new Set(fetchedTrips.map(t => t.trip_code))
+      const localTrips = getMyTrips()
+      const missingCodes = localTrips
+        .map(t => t.tripCode)
+        .filter(code => !fetchedCodes.has(code))
+
+      if (missingCodes.length > 0) {
+        const extras = await Promise.all(
+          missingCodes.map(async (code) => {
+            if (signal.aborted) return null
+            try {
+              const { data: trip } = await withTimeout<any>(
+                (supabase as any).from('trips').select('*').eq('trip_code', code).maybeSingle().abortSignal(signal),
+                15000, 'Loading shared trip timed out.'
+              )
+              return trip as Event | null
+            } catch { return null }
+          })
+        )
+        const valid = extras.filter((t): t is Event => t !== null)
+        if (valid.length > 0 && !signal.aborted) {
+          setTrips(prev => {
+            const ids = new Set(prev.map(t => t.id))
+            return [...prev, ...valid.filter(t => !ids.has(t.id))]
+          })
+        }
+      }
     } catch (err) {
       if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch trips')
