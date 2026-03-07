@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface InvitationData {
   id: string
@@ -28,6 +29,7 @@ export function JoinPage() {
   const { refreshTrips } = useTripContext()
   const navigate = useNavigate()
   const { newSignal, cancel } = useAbortController()
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const [pageState, setPageState] = useState<PageState>('loading')
   const [invitation, setInvitation] = useState<InvitationData | null>(null)
@@ -173,7 +175,7 @@ export function JoinPage() {
         await refreshTrips()
 
         // Navigate to the trip
-        navigate(`/t/${invitation!.trip_code}/quick`, { replace: true })
+        navigate(isMobile ? `/t/${invitation!.trip_code}/quick` : `/t/${invitation!.trip_code}/manage`, { replace: true })
       } catch (err) {
         logger.error('Failed to link user to participant', { error: String(err) })
         setLinkError('Failed to link your account. Please try again.')
@@ -186,7 +188,7 @@ export function JoinPage() {
 
   const handleOpenTrip = () => {
     if (invitation) {
-      navigate(`/t/${invitation.trip_code}/quick`)
+      navigate(isMobile ? `/t/${invitation.trip_code}/quick` : `/t/${invitation.trip_code}/manage`)
     }
   }
 
