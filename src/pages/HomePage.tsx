@@ -418,7 +418,7 @@ export function HomePage() {
         )}
 
         {/* Action Buttons — unauthenticated only (authenticated uses sheet + scan CTA) */}
-        {!isAuthenticated && (
+        {!isAuthenticated && localTrips.length > 0 && (
           <div className="flex gap-3 mb-8">
             <Button onClick={handleCreateTrip} className="gap-2">
               <Plus size={18} />
