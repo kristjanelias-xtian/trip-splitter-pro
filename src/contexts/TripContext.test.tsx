@@ -3,6 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { TripProvider, useTripContext } from './TripContext'
 import { buildTrip } from '@/test/factories'
 
+const mockGetMyTrips = vi.hoisted(() => vi.fn().mockReturnValue([]))
+
+vi.mock('@/lib/myTripsStorage', () => ({
+  getMyTrips: mockGetMyTrips,
+}))
+
 const mockSupabase = vi.hoisted(() => ({
   from: vi.fn(),
   auth: {
@@ -51,7 +57,9 @@ function TestConsumer() {
 describe('TripContext', () => {
   beforeEach(() => {
     mockAuth.loading = false
+    mockAuth.user = null
     mockSupabase.from.mockReset()
+    mockGetMyTrips.mockReturnValue([])
   })
 
   it('waits for authLoading=false before fetching', async () => {
@@ -70,14 +78,21 @@ describe('TripContext', () => {
     expect(mockSupabase.from).not.toHaveBeenCalled()
   })
 
-  it('sets trips from response', async () => {
+  it('sets trips from response (anonymous with localStorage trips)', async () => {
     const trips = [
       buildTrip({ id: 'trip-1', name: 'Summer', trip_code: 'summer-trip-Ab1234' }),
-      buildTrip({ id: 'trip-2', name: 'Winter' }),
+      buildTrip({ id: 'trip-2', name: 'Winter', trip_code: 'winter-trip-Cd5678' }),
     ]
 
+    mockGetMyTrips.mockReturnValue([
+      { tripCode: 'summer-trip-Ab1234', tripName: 'Summer', lastAccessed: '2025-01-01', addedAt: '2025-01-01' },
+      { tripCode: 'winter-trip-Cd5678', tripName: 'Winter', lastAccessed: '2025-01-01', addedAt: '2025-01-01' },
+    ])
+
     mockSupabase.from.mockReturnValue({
-      select: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: trips, error: null }) }) }),
+      select: () => ({
+        in: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: trips, error: null }) }) }),
+      }),
     })
 
     render(
@@ -95,7 +110,25 @@ describe('TripContext', () => {
     expect(screen.getByTestId('tripByCode').textContent).toBe('Summer')
   })
 
+  it('anonymous with empty localStorage sets empty trips without DB call', async () => {
+    mockGetMyTrips.mockReturnValue([])
+
+    render(
+      <TripProvider>
+        <TestConsumer />
+      </TripProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false')
+    })
+
+    expect(screen.getByTestId('count').textContent).toBe('0')
+    expect(mockSupabase.from).not.toHaveBeenCalled()
+  })
+
   it('getTripById returns undefined when not found', async () => {
+    mockGetMyTrips.mockReturnValue([])
     mockSupabase.from.mockReturnValue({
       select: () => ({ order: () => ({ abortSignal: () => Promise.resolve({ data: [], error: null }) }) }),
     })
