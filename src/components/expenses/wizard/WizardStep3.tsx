@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { fadeInUp } from '@/lib/animations'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface Participant {
@@ -42,6 +42,7 @@ export function WizardStep3({
   onAccountForFamilySizeChange,
   disabled = false,
 }: WizardStep3Props) {
+  const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const [showDetails, setShowDetails] = useState(false)
 
   // Show toggle only when any selected participant belongs to a wallet_group
@@ -199,7 +200,7 @@ export function WizardStep3({
                               className="text-base text-foreground cursor-pointer flex-1 flex items-center gap-2"
                             >
                               <ParticipantAvatar participant={participant} size="sm" />
-                              {getShortName(participant)}
+                              {shortNames.get(participant.id) || participant.name}
                               {!participant.is_adult && (
                                 <span className="text-sm text-muted-foreground">
                                   (child)

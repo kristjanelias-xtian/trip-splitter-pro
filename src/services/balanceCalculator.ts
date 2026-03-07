@@ -1,7 +1,7 @@
 import { Expense } from '@/types/expense'
 import { Participant } from '@/types/participant'
 import { Settlement } from '@/types/settlement'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 
 export interface ParticipantBalance {
   id: string
@@ -66,6 +66,7 @@ export function buildEntityMap(
   void trackingMode // kept for call-site compat; grouping is always wallet_group-based
   const entities: EntityInfo[] = []
   const participantToEntityId = new Map<string, string>()
+  const shortNames = buildShortNameMap(participants)
 
   const walletGroups = new Map<string, Participant[]>()
 
@@ -76,7 +77,7 @@ export function buildEntityMap(
       walletGroups.set(p.wallet_group, group)
     } else {
       // Standalone participant (no wallet_group)
-      entities.push({ id: p.id, name: getShortName(p), isFamily: false })
+      entities.push({ id: p.id, name: shortNames.get(p.id) || p.name, isFamily: false })
       participantToEntityId.set(p.id, p.id)
     }
   }
@@ -366,9 +367,10 @@ export function calculateWithinGroupBalances(
   }
 
   // Compute raw balances per member: balance = paid - share
+  const shortNames = buildShortNameMap(participants)
   const rawBalances = groupMembers.map(m => ({
     id: m.id,
-    name: getShortName(m),
+    name: shortNames.get(m.id) || m.name,
     is_adult: m.is_adult,
     totalPaid: paid.get(m.id) || 0,
     totalShare: share.get(m.id) || 0,

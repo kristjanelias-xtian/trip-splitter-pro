@@ -4,7 +4,7 @@ import { Participant } from '@/types/participant'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { User } from 'lucide-react'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 
 interface ExpenseSplitPreviewProps {
   amount: number
@@ -25,6 +25,8 @@ export function ExpenseSplitPreview({
   distribution,
   participants,
 }: ExpenseSplitPreviewProps) {
+  const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
+
   const splitEntries = useMemo(() => {
     const entries: SplitEntry[] = []
     if (distribution.type !== 'individuals') return entries
@@ -45,7 +47,7 @@ export function ExpenseSplitPreview({
           if (existing) {
             existing.memberIds.push(pid)
           } else {
-            entityMap.set(key, { name: p.wallet_group ?? getShortName(p), memberIds: [pid] })
+            entityMap.set(key, { name: p.wallet_group ?? (shortNames.get(pid) || p.name), memberIds: [pid] })
           }
         }
         const perEntity = amount / entityMap.size
@@ -54,7 +56,7 @@ export function ExpenseSplitPreview({
           for (const mid of entity.memberIds) {
             const p = participants.find(pp => pp.id === mid)
             if (p) {
-              entries.push({ id: mid, name: getShortName(p), amount: perMember })
+              entries.push({ id: mid, name: shortNames.get(mid) || p.name, amount: perMember })
             }
           }
         }
@@ -67,7 +69,7 @@ export function ExpenseSplitPreview({
           if (participant) {
             entries.push({
               id: participantId,
-              name: getShortName(participant),
+              name: shortNames.get(participantId) || participant.name,
               amount: shareAmount,
             })
           }
@@ -80,7 +82,7 @@ export function ExpenseSplitPreview({
           const shareAmount = (amount * split.value) / 100
           entries.push({
             id: split.participantId,
-            name: getShortName(participant),
+            name: shortNames.get(split.participantId) || participant.name,
             amount: shareAmount,
           })
         }
@@ -91,7 +93,7 @@ export function ExpenseSplitPreview({
         if (participant) {
           entries.push({
             id: split.participantId,
-            name: getShortName(participant),
+            name: shortNames.get(split.participantId) || participant.name,
             amount: split.value,
           })
         }
@@ -99,7 +101,7 @@ export function ExpenseSplitPreview({
     }
 
     return entries
-  }, [amount, distribution, participants])
+  }, [amount, distribution, participants, shortNames])
 
   const formatAmount = (value: number) => {
     return new Intl.NumberFormat('en-US', {

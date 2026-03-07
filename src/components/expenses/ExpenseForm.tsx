@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 import { ExpenseSplitPreview } from './ExpenseSplitPreview'
 
 interface ExpenseFormProps {
@@ -102,6 +102,7 @@ export function ExpenseForm({
   }, [])
 
   const adults = getAdultParticipants()
+  const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
 
   // Compute available currencies from trip settings
   const availableCurrencies = currentTrip
@@ -435,7 +436,7 @@ export function ExpenseForm({
               <div className="flex-1">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <Lightbulb size={16} className="text-accent" />
-                  <span><strong>{suggestedPayer.name.split(' ')[0]}</strong> should pay next</span>
+                  <span><strong>{suggestedPayer.name}</strong> should pay next</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Current balance:{' '}
@@ -459,7 +460,7 @@ export function ExpenseForm({
           <SelectContent>
             {adults.map(adult => (
               <SelectItem key={adult.id} value={adult.id}>
-                {getShortName(adult)}
+                {shortNames.get(adult.id) || adult.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -585,7 +586,7 @@ export function ExpenseForm({
                       htmlFor={`participant-${participant.id}`}
                       className="text-sm text-foreground cursor-pointer flex-1"
                     >
-                      {getShortName(participant)} {participant.is_adult ? '' : '(child)'}
+                      {shortNames.get(participant.id) || participant.name} {participant.is_adult ? '' : '(child)'}
                     </label>
                     {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
                       <Input

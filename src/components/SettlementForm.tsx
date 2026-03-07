@@ -1,4 +1,4 @@
-import { useState, FormEvent, useRef, useEffect } from 'react'
+import { useState, FormEvent, useRef, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 
 interface SettlementFormProps {
   onSubmit: (input: CreateSettlementInput) => Promise<void>
@@ -125,11 +125,12 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
     : ['EUR', 'USD', 'GBP', 'THB']
 
   // Get all adults for selection
+  const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const adultsForSelection = participants
     .filter(p => p.is_adult)
     .map(p => ({
       id: p.id,
-      name: getShortName(p),
+      name: shortNames.get(p.id) || p.name,
       groupName: p.wallet_group || null,
     }))
 
