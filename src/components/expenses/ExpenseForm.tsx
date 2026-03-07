@@ -586,7 +586,10 @@ export function ExpenseForm({
               const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
               return (
-                <div key={group.label ?? `standalone-${gi}`} className="contents">
+                <div key={group.label ?? `standalone-${gi}`} className={group.label
+                      ? 'rounded-lg bg-muted/40 border border-border/50 p-2 flex flex-wrap gap-2'
+                      : 'contents'
+                    }>
                   {group.label && (
                     <button
                       type="button"
