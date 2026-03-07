@@ -70,7 +70,7 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
           Bank Details
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut} className="gap-2 text-destructive focus:text-destructive">
+        <DropdownMenuItem onSelect={() => { signOut() }} className="gap-2 text-destructive focus:text-destructive">
           <LogOut size={16} />
           Sign out
         </DropdownMenuItem>

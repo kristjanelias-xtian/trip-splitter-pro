@@ -212,10 +212,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     logger.info('User signed out', { user_id: user?.id })
     clearMyTrips()
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      logger.error('Sign-out failed', { error: error.message })
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        logger.error('Sign-out failed', { error: error.message })
+      }
+    } catch (err) {
+      logger.error('Sign-out threw', { error: err instanceof Error ? err.message : String(err) })
     }
+    // Always clear local state — don't rely solely on onAuthStateChange
+    setUser(null)
+    setSession(null)
+    setUserProfile(null)
   }
 
   return (
