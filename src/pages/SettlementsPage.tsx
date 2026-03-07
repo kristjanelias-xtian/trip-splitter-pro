@@ -364,7 +364,7 @@ export function SettlementsPage() {
               <SettlementPlan
                 plan={optimalSettlement}
                 greedyPlan={greedySettlement.totalTransactions !== optimalSettlement.totalTransactions ? greedySettlement : undefined}
-                onRecordSettlement={handleRecordSettlement}
+                onSettle={handleRecordSettlement}
                 bankDetailsMap={bankDetailsMap}
                 linkedParticipantIds={linkedParticipantIds}
                 fromEmailMap={fromEmailMap}
@@ -383,7 +383,7 @@ export function SettlementsPage() {
               variant="outline"
               size="sm"
             >
-              Record a custom payment
+              Log a custom payment
             </Button>
           </div>
         )}
@@ -461,7 +461,7 @@ export function SettlementsPage() {
         <DialogContent hideClose className="max-w-lg max-h-[85vh] p-0 gap-0 flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
             <div className="w-8" />
-            <DialogTitle className="text-base font-semibold">Record Settlement</DialogTitle>
+            <DialogTitle className="text-base font-semibold">Settle Up</DialogTitle>
             <button onClick={closeDialog} aria-label="Close"
               className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
               <X className="w-4 h-4 text-muted-foreground" />
@@ -469,7 +469,7 @@ export function SettlementsPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <p className="text-sm text-muted-foreground mb-4">
-              Record a payment between participants.
+              Log a payment between participants.
             </p>
             <SettlementForm
               onSubmit={handleCustomSettlement}

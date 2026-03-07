@@ -419,7 +419,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           disabled={loading}
           className="flex-1"
         >
-          {loading ? 'Recording...' : 'Record Settlement'}
+          {loading ? 'Confirming...' : 'Confirm Payment'}
         </Button>
         {onCancel && (
           <Button

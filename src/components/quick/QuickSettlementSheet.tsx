@@ -273,12 +273,20 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const handleRecord = (tx: SettlementTransaction) => {
     // Entity IDs are already participant IDs (canonical adult in wallet_group)
+    let bankDetails = bankDetailsMap[tx.toId] || null
+    // When user is the recipient ("owed to you"), use their own profile bank details
+    if (!bankDetails && tx.toId === myEntityId && userProfile && (userProfile.bank_iban || userProfile.bank_account_holder)) {
+      bankDetails = {
+        holder: userProfile.bank_account_holder || '',
+        iban: userProfile.bank_iban || '',
+      }
+    }
     setPrefill({
       fromId: tx.fromId,
       toId: tx.toId,
       amount: tx.amount,
       note: `Settlement: ${tx.fromName} → ${tx.toName}`,
-      bankDetails: bankDetailsMap[tx.toId] || null,
+      bankDetails,
       toName: tx.toName,
     })
     setView('form')
@@ -358,7 +366,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     </button>
   )
 
-  const titleText = view === 'suggestions' ? 'Settle up' : 'Record payment'
+  const titleText = view === 'suggestions' ? 'Settle up' : 'Settle Up'
 
   const scrollContent = (
     <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
@@ -601,7 +609,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               className="w-full"
               onClick={handleRecordDifferent}
             >
-              Record a custom payment
+              Log a custom payment
             </Button>
           </div>
         </div>

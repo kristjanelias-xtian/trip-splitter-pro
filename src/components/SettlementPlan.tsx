@@ -13,7 +13,7 @@ export interface BankDetails {
 interface SettlementPlanProps {
   plan: OptimalSettlementPlan
   greedyPlan?: OptimalSettlementPlan
-  onRecordSettlement?: (transaction: SettlementTransaction) => void
+  onSettle?: (transaction: SettlementTransaction) => void
   bankDetailsMap?: Record<string, BankDetails>
   linkedParticipantIds?: Set<string>
   fromEmailMap?: Record<string, { name: string; email: string }[]>
@@ -21,7 +21,7 @@ interface SettlementPlanProps {
   avatarMap?: Record<string, string | null>
 }
 
-export function SettlementPlan({ plan, greedyPlan, onRecordSettlement, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
+export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
   const [mode, setMode] = useState<'optimal' | 'greedy'>('optimal')
   const showToggle = greedyPlan && greedyPlan.totalTransactions !== plan.totalTransactions
   const activePlan = mode === 'greedy' && greedyPlan ? greedyPlan : plan
@@ -96,7 +96,7 @@ export function SettlementPlan({ plan, greedyPlan, onRecordSettlement, bankDetai
             transaction={transaction}
             currency={activePlan.currency}
             index={index + 1}
-            onRecord={onRecordSettlement ? () => onRecordSettlement(transaction) : undefined}
+            onSettle={onSettle ? () => onSettle(transaction) : undefined}
             bankDetails={bankDetailsMap?.[transaction.toId]}
             linkedParticipantIds={linkedParticipantIds}
             fromEmails={fromEmailMap?.[transaction.fromId]}
@@ -113,7 +113,7 @@ interface SettlementTransactionCardProps {
   transaction: SettlementTransaction
   currency: string
   index: number
-  onRecord?: () => void
+  onSettle?: () => void
   bankDetails?: BankDetails
   linkedParticipantIds?: Set<string>
   fromEmails?: { name: string; email: string }[]
@@ -125,7 +125,7 @@ function SettlementTransactionCard({
   transaction,
   currency,
   index,
-  onRecord,
+  onSettle,
   bankDetails,
   linkedParticipantIds,
   fromEmails,
@@ -163,151 +163,135 @@ function SettlementTransactionCard({
 
   return (
     <Card>
-      <div className="p-4 flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Step Number */}
-          <div className="flex items-center mb-2">
-            <span className="text-xs font-medium text-muted-foreground">Step {index}</span>
-          </div>
-
-          {/* Transaction Details */}
-          <div className="flex items-center gap-2 text-sm flex-wrap">
-            <div className="flex items-center gap-1.5">
+      <div className="p-3 space-y-2">
+        {/* Names + amount + actions row */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground shrink-0">{index}.</span>
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap flex-1">
+            <div className="flex items-center gap-1">
               <ParticipantAvatar participant={{ name: transaction.fromName, avatar_url: avatarMap?.[transaction.fromId] ?? null }} size="sm" forceInitials={transaction.fromIsFamily} />
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-foreground text-sm truncate">
                 {transaction.fromName}
               </span>
             </div>
-
-            <span className="text-muted-foreground flex-shrink-0">→</span>
-
-            <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground shrink-0">→</span>
+            <div className="flex items-center gap-1">
               <ParticipantAvatar participant={{ name: transaction.toName, avatar_url: avatarMap?.[transaction.toId] ?? null }} size="sm" forceInitials={transaction.toIsFamily} />
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-foreground text-sm truncate">
                 {transaction.toName}
               </span>
             </div>
           </div>
-
-          {/* Amount */}
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-accent tabular-nums">{formattedAmount}</span>
+          <span className="text-base font-semibold text-accent tabular-nums shrink-0 ml-auto">{formattedAmount}</span>
+          <div className="flex gap-1.5 shrink-0">
+            {onSettle && (
+              <Button onClick={onSettle} size="sm" className="h-7 text-xs">
+                Settle
+              </Button>
+            )}
+            {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
+              <Button
+                onClick={() => {
+                  setConfirmingRemind(true)
+                  setRemindResult(null)
+                  if (fromEmails.length > 1) {
+                    const init: Record<string, boolean> = {}
+                    for (const e of fromEmails) init[e.email] = true
+                    setCheckedEmails(init)
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                title={`Send payment reminder to ${transaction.fromName}`}
+              >
+                <Bell size={12} className="mr-1" />
+                Remind
+              </Button>
+            )}
+            {confirmingRemind && (
+              <Button
+                onClick={() => setConfirmingRemind(false)}
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-muted-foreground"
+              >
+                <X size={14} />
+              </Button>
+            )}
           </div>
+        </div>
 
-          {/* Bank Details */}
-          {bankDetails && (bankDetails.iban || bankDetails.holder) && (
-            <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-              {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
-              {bankDetails.iban && <p>IBAN: {bankDetails.iban}</p>}
-            </div>
-          )}
-          {!bankDetails && linkedParticipantIds?.has(transaction.toId) && (
-            <p className="mt-2 text-xs text-muted-foreground italic">
-              Ask {transaction.toName} to add their bank details
+        {/* Bank Details */}
+        {bankDetails && (bankDetails.iban || bankDetails.holder) && (
+          <div className="text-xs text-muted-foreground pl-5 space-y-0.5">
+            {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
+            {bankDetails.iban && <p>IBAN: {bankDetails.iban}</p>}
+          </div>
+        )}
+        {!bankDetails && linkedParticipantIds?.has(transaction.toId) && (
+          <p className="text-xs text-muted-foreground italic pl-5">
+            Ask {transaction.toName} to add their bank details
+          </p>
+        )}
+
+        {/* Remind confirmation inline */}
+        {confirmingRemind && fromEmails && fromEmails.length > 0 && (
+          <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2 ml-5">
+            <p className="text-sm text-foreground">
+              Send payment reminder to <strong>{transaction.fromName}</strong>?
             </p>
-          )}
-
-          {/* Remind confirmation inline */}
-          {confirmingRemind && fromEmails && fromEmails.length > 0 && (
-            <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
-              <p className="text-sm text-foreground">
-                Send payment reminder to <strong>{transaction.fromName}</strong>?
-              </p>
-              {fromEmails.length === 1 ? (
-                <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {fromEmails.map(({ name, email }) => (
-                    <label key={email} className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={checkedEmails[email] !== false}
-                        onChange={(e) => setCheckedEmails(prev => ({ ...prev, [email]: e.target.checked }))}
-                        className="accent-primary"
-                      />
-                      <span>{name} — {email}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={handleSendReminder}
-                  disabled={sending || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
-                >
-                  {sending ? 'Sending…' : 'Send'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs"
-                  onClick={() => { setConfirmingRemind(false); setRemindResult(null) }}
-                  disabled={sending}
-                >
-                  Cancel
-                </Button>
+            {fromEmails.length === 1 ? (
+              <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {fromEmails.map(({ name, email }) => (
+                  <label key={email} className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checkedEmails[email] !== false}
+                      onChange={(e) => setCheckedEmails(prev => ({ ...prev, [email]: e.target.checked }))}
+                      className="accent-primary"
+                    />
+                    <span>{name} — {email}</span>
+                  </label>
+                ))}
               </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleSendReminder}
+                disabled={sending || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
+              >
+                {sending ? 'Sending…' : 'Send'}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => { setConfirmingRemind(false); setRemindResult(null) }}
+                disabled={sending}
+              >
+                Cancel
+              </Button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Remind result feedback */}
-          {remindResult === 'sent' && (
-            <p className="mt-2 text-xs text-positive flex items-center gap-1">
-              <Check size={12} />
-              Reminder sent to {transaction.fromName}
-            </p>
-          )}
-          {remindResult === 'error' && (
-            <p className="mt-2 text-xs text-destructive">
-              Failed to send reminder. Please try again.
-            </p>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2 flex-shrink-0">
-          {onRecord && (
-            <Button
-              onClick={onRecord}
-              size="sm"
-            >
-              <Check size={14} className="mr-1" />
-              Record
-            </Button>
-          )}
-          {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
-            <Button
-              onClick={() => {
-                setConfirmingRemind(true)
-                setRemindResult(null)
-                // Initialize all emails as checked
-                if (fromEmails.length > 1) {
-                  const init: Record<string, boolean> = {}
-                  for (const e of fromEmails) init[e.email] = true
-                  setCheckedEmails(init)
-                }
-              }}
-              size="sm"
-              variant="outline"
-              title={`Send payment reminder to ${transaction.fromName}`}
-            >
-              <Bell size={14} className="mr-1" />
-              Remind
-            </Button>
-          )}
-          {confirmingRemind && (
-            <Button
-              onClick={() => setConfirmingRemind(false)}
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground"
-            >
-              <X size={14} />
-            </Button>
-          )}
-        </div>
+        {/* Remind result feedback */}
+        {remindResult === 'sent' && (
+          <p className="text-xs text-positive flex items-center gap-1 pl-5">
+            <Check size={12} />
+            Reminder sent to {transaction.fromName}
+          </p>
+        )}
+        {remindResult === 'error' && (
+          <p className="text-xs text-destructive pl-5">
+            Failed to send reminder. Please try again.
+          </p>
+        )}
       </div>
     </Card>
   )
