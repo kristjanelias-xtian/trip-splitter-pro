@@ -269,7 +269,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
       </div>
 
       {/* Amount + Date */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 items-end">
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <div className="flex gap-2">
@@ -321,6 +321,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
             id="settlementDate"
             value={settlementDate}
             onChange={e => setSettlementDate(e.target.value)}
+            className="text-lg tabular-nums"
             disabled={loading}
           />
         </div>

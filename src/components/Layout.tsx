@@ -50,6 +50,7 @@ const iconMap: Record<string, React.ElementType> = {
   'Expenses': DollarSign,
   'Settlements': CreditCard,
   'Day Planner': CalendarDays,
+  'Planner': CalendarDays,
   'Shopping': ShoppingCart,
   'Dashboard': BarChart3,
   'More': MoreHorizontal,
@@ -117,7 +118,7 @@ export function Layout() {
       { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
     ]
     if (currentTrip?.enable_meals || currentTrip?.enable_activities) {
-      items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
+      items.push({ path: `/t/${tripCode}/planner`, label: 'Planner', requiresTrip: true })
     }
     if (currentTrip?.enable_shopping) {
       items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
