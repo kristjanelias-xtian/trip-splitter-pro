@@ -36,6 +36,8 @@ npm test             # Vitest
 
 **Always:** branch → commit → PR → squash-merge → delete branch (remote + local)
 
+**Before writing any code**, check out `main`, pull latest, and create a fresh branch. Never make changes directly on `main` or on an unrelated feature branch.
+
 ```bash
 git checkout -b fix/description
 # make changes
