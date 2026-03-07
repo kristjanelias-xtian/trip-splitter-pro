@@ -33,6 +33,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 // Mock TripContext
 const mockTrips = {
   trips: [] as any[],
+  myTripIds: new Set<string>(),
   loading: false,
   error: null,
   getTripById: vi.fn(),
@@ -70,6 +71,7 @@ describe('ConditionalHomePage', () => {
     mockAuth.loading = false
     mockTrips.loading = false
     mockTrips.trips = []
+    mockTrips.myTripIds = new Set()
     vi.mocked(getActiveTripId).mockReturnValue(null)
     // Default: desktop viewport (no mobile redirect)
     Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true })
@@ -114,6 +116,7 @@ describe('ConditionalHomePage', () => {
       end_date: tomorrow.toISOString().slice(0, 10),
     })
     mockTrips.trips = [trip]
+    mockTrips.myTripIds = new Set(['trip-1'])
     vi.mocked(getActiveTripId).mockReturnValue('trip-1')
 
     render(
@@ -144,6 +147,7 @@ describe('ConditionalHomePage', () => {
       end_date: endMonth.toISOString().slice(0, 10),
     })
     mockTrips.trips = [trip]
+    mockTrips.myTripIds = new Set(['trip-1'])
     vi.mocked(getActiveTripId).mockReturnValue('trip-1')
 
     render(

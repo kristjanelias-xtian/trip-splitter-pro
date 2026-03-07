@@ -18,7 +18,7 @@ export function ConditionalHomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { trips, loading: tripsLoading } = useTripContext()
+  const { trips, myTripIds, loading: tripsLoading } = useTripContext()
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const fromTrip = !!(location.state as any)?.fromTrip
@@ -65,7 +65,8 @@ export function ConditionalHomePage() {
       return
     }
 
-    const activeTripId = getActiveTripId(trips)
+    const myTrips = trips.filter(t => myTripIds.has(t.id))
+    const activeTripId = getActiveTripId(myTrips)
 
     if (activeTripId) {
       const activeTrip = trips.find(t => t.id === activeTripId)

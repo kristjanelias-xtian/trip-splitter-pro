@@ -10,6 +10,7 @@ import { getMyTrips } from '@/lib/myTripsStorage'
 
 interface TripContextType {
   trips: Event[]
+  myTripIds: Set<string>
   loading: boolean
   error: string | null
   getTripById: (id: string) => Event | undefined
@@ -26,6 +27,7 @@ const TripContext = createContext<TripContextType | undefined>(undefined)
 export function TripProvider({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth()
   const [trips, setTrips] = useState<Event[]>([])
+  const [myTripIds, setMyTripIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { newSignal, cancel } = useAbortController()
@@ -57,6 +59,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         )
         if (signal.aborted) return
         if (fetchError) throw fetchError
+        setMyTripIds(new Set())
         setTrips((data as unknown as Event[]) || [])
         return
       }
@@ -105,6 +108,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (signal.aborted) return
       if (fetchError) throw fetchError
       const fetchedTrips = (data as unknown as Event[]) || []
+      setMyTripIds(new Set(fetchedTrips.map(t => t.id)))
       setTrips(fetchedTrips)
 
       // Merge localStorage trips that weren't returned by the DB query.
@@ -337,6 +341,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const value: TripContextType = {
     trips,
+    myTripIds,
     loading,
     error,
     getTripById,
