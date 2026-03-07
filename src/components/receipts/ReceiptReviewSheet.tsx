@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast'
 import { ExtractedItem, MappedItem } from '@/types/receipt'
 import { IndividualsDistribution, ExpenseCategory } from '@/types/expense'
 import { Participant } from '@/types/participant'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 
 interface ReceiptReviewSheetProps {
   open: boolean
@@ -169,6 +169,7 @@ export function ReceiptReviewSheet({
   }, [receiptError])
 
   const adultParticipants = getAdultParticipants()
+  const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const baseCurrency = currentTrip?.default_currency ?? 'EUR'
   const knownCurrencies = useMemo(
     () => [baseCurrency, ...Object.keys(currentTrip?.exchange_rates ?? {})],
@@ -497,7 +498,7 @@ export function ReceiptReviewSheet({
           </SelectTrigger>
           <SelectContent>
             {adultParticipants.map(p => (
-              <SelectItem key={p.id} value={p.id}>{getShortName(p)}</SelectItem>
+              <SelectItem key={p.id} value={p.id}>{shortNames.get(p.id) || p.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -521,6 +522,7 @@ export function ReceiptReviewSheet({
                 index={i}
                 item={item}
                 participants={participants}
+                shortNames={shortNames}
                 onNameChange={name => updateItemName(i, name)}
                 onPriceChange={price => updateItemPrice(i, price)}
                 onToggleParticipant={pid => toggleParticipant(i, pid)}
@@ -688,6 +690,7 @@ interface ItemRowProps {
   index: number
   item: EditableItem
   participants: Participant[]
+  shortNames: Map<string, string>
   onNameChange: (name: string) => void
   onPriceChange: (price: string) => void
   onToggleParticipant: (pid: string) => void
@@ -699,6 +702,7 @@ function ItemRow({
   index,
   item,
   participants,
+  shortNames,
   onNameChange,
   onPriceChange,
   onToggleParticipant,
@@ -753,7 +757,7 @@ function ItemRow({
               ].join(' ')}
               title={p.name}
             >
-              {getShortName(p)}
+              {shortNames.get(p.id) || p.name}
             </button>
           )
         })}

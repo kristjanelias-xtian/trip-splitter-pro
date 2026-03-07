@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Lightbulb } from 'lucide-react'
 import { Label } from '@/components/ui/label'
@@ -9,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 
 interface SuggestedPayer {
@@ -43,6 +44,7 @@ export function WizardStep2({
   currency,
   disabled = false,
 }: WizardStep2Props) {
+  const shortNames = useMemo(() => buildShortNameMap(adults), [adults])
   const formatBalance = (balance: number, curr: string) => {
     const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -82,7 +84,7 @@ export function WizardStep2({
             <Lightbulb size={20} className="text-accent flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground">
-                <strong>{suggestedPayer.name.split(' ')[0]}</strong> should pay next
+                <strong>{suggestedPayer.name}</strong> should pay next
               </p>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Balance: {formatBalance(suggestedPayer.balance, currency)}
@@ -110,7 +112,7 @@ export function WizardStep2({
               <SelectItem key={adult.id} value={adult.id}>
                 <span className="flex items-center gap-2">
                   <ParticipantAvatar participant={adult} size="sm" />
-                  {getShortName(adult)}
+                  {shortNames.get(adult.id) || adult.name}
                 </span>
               </SelectItem>
             ))}

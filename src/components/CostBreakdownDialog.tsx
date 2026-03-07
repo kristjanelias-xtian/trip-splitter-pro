@@ -6,7 +6,7 @@ import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseC
 import { Expense } from '@/types/expense'
 import { Participant } from '@/types/participant'
 import { Settlement } from '@/types/settlement'
-import { getShortName } from '@/lib/participantUtils'
+import { buildShortNameMap } from '@/lib/participantUtils'
 
 interface CostBreakdownDialogProps {
   open: boolean
@@ -106,11 +106,7 @@ export function CostBreakdownDialog({
     )
   }, [settlements, groupMembers, groupName])
 
-  const participantNameMap = useMemo(() => {
-    const map = new Map<string, string>()
-    participants.forEach(p => map.set(p.id, getShortName(p)))
-    return map
-  }, [participants])
+  const participantNameMap = useMemo(() => buildShortNameMap(participants), [participants])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
