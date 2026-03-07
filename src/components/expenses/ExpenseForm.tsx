@@ -597,7 +597,7 @@ export function ExpenseForm({
                       disabled={loading}
                       className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
                         allGroupSelected
-                          ? 'bg-primary/15 text-primary border-primary/30'
+                          ? 'bg-background text-primary border-primary'
                           : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
                       }`}
                     >
