@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react'
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { ArrowRight, ArrowLeft, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -8,7 +8,7 @@ import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
-import { SettlementForm } from '@/components/SettlementForm'
+import { SettlementForm, SettlementFormHandle } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -60,8 +60,10 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [checkedEmails, setCheckedEmails] = useState<Record<string, boolean>>({})
   const [bankDialogOpen, setBankDialogOpen] = useState(false)
   const isSubmittingRef = useRef(false)
+  const formRef = useRef<SettlementFormHandle>(null)
   const keyboard = useKeyboardHeight()
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
 
   // Build email map: entity ID → emails (multiple adults in wallet_group)
   const fromEmailMap = useMemo(() => {
@@ -367,8 +369,54 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
 
   const titleText = view === 'suggestions' ? 'Settle up' : 'Settle Up'
 
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setIsScrolledToBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8)
+  }, [])
+
+  useEffect(() => {
+    setIsScrolledToBottom(false)
+    // Measure after content renders
+    requestAnimationFrame(() => handleScroll())
+  }, [view, handleScroll])
+
+  const formContent = (
+    <SettlementForm
+      ref={formRef}
+      hideButtons
+      onSubmit={handleSubmit}
+      onCancel={() => setView('suggestions')}
+      initialFromId={prefill?.fromId}
+      initialToId={prefill?.toId}
+      initialAmount={prefill?.amount}
+      initialNote={prefill?.note}
+      recipientBankDetails={prefill?.bankDetails}
+      recipientName={prefill?.toName}
+    />
+  )
+
+  const formFooter = (
+    <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3">
+      <Button
+        onClick={() => formRef.current?.submit()}
+        className="flex-1"
+      >
+        Confirm Payment
+      </Button>
+      <Button
+        type="button"
+        onClick={() => setView('suggestions')}
+        variant="outline"
+      >
+        Cancel
+      </Button>
+    </div>
+  )
+
   const scrollContent = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+    <div className="relative flex-1 min-h-0">
+      <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto overscroll-contain px-6 py-4">
       {view === 'suggestions' ? (
         <div className="space-y-4">
           {allSettled ? (
@@ -612,17 +660,10 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             </Button>
           </div>
         </div>
-      ) : (
-        <SettlementForm
-          onSubmit={handleSubmit}
-          onCancel={() => setView('suggestions')}
-          initialFromId={prefill?.fromId}
-          initialToId={prefill?.toId}
-          initialAmount={prefill?.amount}
-          initialNote={prefill?.note}
-          recipientBankDetails={prefill?.bankDetails}
-          recipientName={prefill?.toName}
-        />
+      ) : formContent}
+      </div>
+      {view === 'form' && !isScrolledToBottom && (
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent" />
       )}
     </div>
   )
@@ -653,6 +694,23 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               {closeBtn}
             </div>
             {scrollContent}
+            {view === 'form' && (
+              <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3 pwa-safe-bottom">
+                <Button
+                  onClick={() => formRef.current?.submit()}
+                  className="flex-1"
+                >
+                  Confirm Payment
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setView('suggestions')}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </SheetContent>
         </Sheet>
         {bankDialog}
@@ -670,6 +728,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             {closeBtn}
           </div>
           {scrollContent}
+          {view === 'form' && formFooter}
         </DialogContent>
       </Dialog>
       {bankDialog}
