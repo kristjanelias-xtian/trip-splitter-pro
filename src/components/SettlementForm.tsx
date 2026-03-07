@@ -273,32 +273,44 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <div className="flex gap-2">
-            <Input
-              type="text"
-              inputMode="decimal"
-              id="amount"
-              value={amount}
-              onChange={e => setAmount(e.target.value.replace(',', '.'))}
-              className="flex-1 text-lg tabular-nums"
-              placeholder="0.00"
-              pattern="[0-9]*[.,]?[0-9]*"
-              required
-              disabled={loading}
-            />
-            <Select
-              value={currency}
-              onValueChange={setCurrency}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                inputMode="decimal"
+                id="amount"
+                value={amount}
+                onChange={e => setAmount(e.target.value.replace(',', '.'))}
+                className={`text-lg tabular-nums ${availableCurrencies.length === 1 ? 'pr-14' : ''}`}
+                placeholder="0.00"
+                pattern="[0-9]*[.,]?[0-9]*"
+                required
+                disabled={loading}
+              />
+              {availableCurrencies.length === 1 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {currency}
+                </span>
+              )}
+            </div>
+            {availableCurrencies.length > 1 && (
+              <div className="flex gap-1 items-center">
                 {availableCurrencies.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCurrency(c)}
+                    disabled={loading}
+                    className={`h-10 px-2.5 text-xs rounded-md border transition-colors ${
+                      currency === c
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                    }`}
+                  >
+                    {c}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
         </div>
 
