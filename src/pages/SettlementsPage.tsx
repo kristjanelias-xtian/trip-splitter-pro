@@ -320,8 +320,39 @@ export function SettlementsPage() {
         ) : contextError ? (
           <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
         ) : <>
-        {/* Settlement Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Settlement Summary Stats — compact on mobile */}
+        <Card className="md:hidden">
+          <CardContent className="py-3 px-4">
+            <div className="grid grid-cols-3 divide-x divide-border text-center">
+              <div>
+                <div className="text-base font-bold tabular-nums">
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currentTrip.default_currency,
+                  }).format(
+                    balanceCalculation.balances
+                      .filter(b => b.balance < 0)
+                      .reduce((sum, b) => sum + Math.abs(b.balance), 0)
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground">to settle</div>
+              </div>
+              <div>
+                <div className="text-base font-bold tabular-nums">{optimalSettlement.totalTransactions}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {optimalSettlement.totalTransactions === 0 ? 'all settled!' : 'needed'}
+                </div>
+              </div>
+              <div>
+                <div className="text-base font-bold tabular-nums">{settlements.length}</div>
+                <div className="text-[10px] text-muted-foreground">recorded</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Settlement Summary Stats — full cards on desktop */}
+        <div className="hidden md:grid md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-sm text-muted-foreground mb-1">Total to Settle</div>
