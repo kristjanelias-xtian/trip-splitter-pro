@@ -183,7 +183,6 @@ export function SettlementsPage() {
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
     setPrefill({
       amount: transaction.amount,
-      note: `Settlement: ${transaction.fromName} → ${transaction.toName}`,
       fromId: transaction.fromId,
       toId: transaction.toId,
       bankDetails: bankDetailsMap[transaction.toId] || null,

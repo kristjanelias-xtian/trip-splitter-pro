@@ -285,7 +285,6 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       fromId: tx.fromId,
       toId: tx.toId,
       amount: tx.amount,
-      note: `Settlement: ${tx.fromName} → ${tx.toName}`,
       bankDetails,
       toName: tx.toName,
     })
