@@ -18,6 +18,7 @@ import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
@@ -54,6 +55,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [sendingRemind, setSendingRemind] = useState(false)
   const [remindResults, setRemindResults] = useState<Record<number, 'sent' | 'error'>>({})
   const [checkedEmails, setCheckedEmails] = useState<Record<string, boolean>>({})
+  const [bankDialogOpen, setBankDialogOpen] = useState(false)
   const isSubmittingRef = useRef(false)
   const keyboard = useKeyboardHeight()
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -476,9 +478,12 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                           )
                         }
                         return (
-                          <p className="mt-2 text-xs text-muted-foreground italic">
-                            Add your bank details in your profile so others can pay you
-                          </p>
+                          <button
+                            onClick={() => setBankDialogOpen(true)}
+                            className="mt-2 text-xs text-primary hover:underline"
+                          >
+                            Add your bank details so others can pay you →
+                          </button>
                         )
                       })()}
 
@@ -606,44 +611,52 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     </div>
   )
 
+  const bankDialog = <BankDetailsDialog open={bankDialogOpen} onOpenChange={setBankDialogOpen} />
+
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{
-            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-            bottom: keyboard.isVisible
-              ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
-              : undefined,
-            paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
-              ? `${keyboard.viewportOffset}px`
-              : undefined,
-          }}
-        >
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-            {leftSlot}
-            <SheetTitle className="text-base font-semibold">{titleText}</SheetTitle>
-            {closeBtn}
-          </div>
-          {scrollContent}
-        </SheetContent>
-      </Sheet>
+      <>
+        <Sheet open={open} onOpenChange={handleOpenChange}>
+          <SheetContent
+            side="bottom"
+            hideClose
+            className="flex flex-col p-0 rounded-t-2xl"
+            style={{
+              height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+              bottom: keyboard.isVisible
+                ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
+                : undefined,
+              paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
+                ? `${keyboard.viewportOffset}px`
+                : undefined,
+            }}
+          >
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+              {leftSlot}
+              <SheetTitle className="text-base font-semibold">{titleText}</SheetTitle>
+              {closeBtn}
+            </div>
+            {scrollContent}
+          </SheetContent>
+        </Sheet>
+        {bankDialog}
+      </>
     )
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          {leftSlot}
-          <DialogTitle className="text-base font-semibold">{titleText}</DialogTitle>
-          {closeBtn}
-        </div>
-        {scrollContent}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            {leftSlot}
+            <DialogTitle className="text-base font-semibold">{titleText}</DialogTitle>
+            {closeBtn}
+          </div>
+          {scrollContent}
+        </DialogContent>
+      </Dialog>
+      {bankDialog}
+    </>
   )
 }

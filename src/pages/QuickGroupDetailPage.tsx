@@ -24,9 +24,11 @@ import { PageErrorState } from '@/components/PageErrorState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
+import { useBankDetailsPrompt } from '@/hooks/useBankDetailsPrompt'
+import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
-  Loader2, Users
+  Loader2, Users, Landmark, X
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
@@ -55,6 +57,7 @@ export function QuickGroupDetailPage() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const bankPrompt = useBankDetailsPrompt()
   // Open receipt capture sheet when navigated here with openScan state
   useEffect(() => {
     if ((location.state as any)?.openScan) {
@@ -152,6 +155,29 @@ export function QuickGroupDetailPage() {
                 <span>{balanceCalc.balances.length} members</span>
               </button>
             </div>
+          )}
+          {bankPrompt.shouldShowNudge(!!myBalance && myBalance.balance > 0) && (
+            <Card className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+              <CardContent className="pt-4 pb-4 flex items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Landmark size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">Add your bank details</p>
+                    <p className="text-xs text-muted-foreground">So others know where to pay you</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" onClick={() => bankPrompt.setDialogOpen(true)}>Add</Button>
+                  <button
+                    onClick={bankPrompt.dismiss}
+                    aria-label="Dismiss"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
@@ -270,6 +296,9 @@ export function QuickGroupDetailPage() {
         open={historyOpen}
         onOpenChange={setHistoryOpen}
       />
+
+      {/* Bank details dialog */}
+      <BankDetailsDialog open={bankPrompt.dialogOpen} onOpenChange={bankPrompt.setDialogOpen} />
     </div>
   )
 }
