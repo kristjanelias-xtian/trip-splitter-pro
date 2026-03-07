@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
+import { SignInButton } from '@/components/auth/SignInButton'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -34,6 +36,7 @@ import {
 export function QuickGroupDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
   const { currentTrip, loading: tripLoading } = useCurrentTrip()
   const { myParticipant, isLinked } = useMyParticipant()
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
@@ -136,10 +139,32 @@ export function QuickGroupDetailPage() {
       ) : !isLinked ? (
         <Card className="mb-6">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground mb-4">
-              Link yourself to a participant to see your balance
-            </p>
-            <LinkParticipantDialog />
+            {!user ? (
+              <>
+                <p className="text-muted-foreground mb-2">
+                  Quick view tracks your personal balance.
+                </p>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Sign in to link yourself to a participant, or view the full trip overview.
+                </p>
+                <div className="flex flex-col items-center gap-3">
+                  <SignInButton type="standard" />
+                  <Link
+                    to={`/t/${currentTrip.trip_code}/dashboard`}
+                    className="text-sm text-accent hover:underline"
+                  >
+                    View full trip overview
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground mb-4">
+                  Link yourself to a participant to see your balance
+                </p>
+                <LinkParticipantDialog />
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (

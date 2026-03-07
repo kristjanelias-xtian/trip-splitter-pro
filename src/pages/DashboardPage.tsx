@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
+import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 import { ParticipantBalance } from '@/services/balanceCalculator'
 import type { Participant } from '@/types/participant'
 
@@ -133,6 +134,8 @@ export function DashboardPage() {
           )}
         </div>
       </div>
+
+      <OnboardingPrompts />
 
       {loading ? (
         <PageLoadingState />

@@ -18,9 +18,27 @@ import { TripNotFoundPage } from './pages/TripNotFoundPage'
 import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
 import { QuickHistoryPage } from './pages/QuickHistoryPage'
 import { useUserPreferences } from './contexts/UserPreferencesContext'
+import { useAuth } from './contexts/AuthContext'
+import { Loader2 } from 'lucide-react'
 
 function TripModeRedirect() {
   const { mode } = useUserPreferences()
+  const { user, loading: authLoading } = useAuth()
+
+  // Wait for auth to resolve before routing — prevents flash where auth users briefly see dashboard
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  // Unauth users always get Full mode — Quick view requires auth + participant linking
+  if (!user) {
+    return <Navigate to="dashboard" replace />
+  }
+
   return <Navigate to={mode === 'quick' ? 'quick' : 'dashboard'} replace />
 }
 
