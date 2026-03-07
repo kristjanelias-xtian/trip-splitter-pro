@@ -11,7 +11,7 @@ import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { ReceiptProvider } from '@/contexts/ReceiptContext'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { SignInButton } from '@/components/auth/SignInButton'
-import { ModeToggle } from '@/components/quick/ModeToggle'
+
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { useTripContext } from '@/contexts/TripContext'
@@ -82,7 +82,7 @@ export function QuickLayout() {
           </>
         )}
 
-        <div className="relative max-w-lg mx-auto px-4">
+        <div className="relative max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8">
           <div className="flex flex-col">
             {/* Row 1: back/logo + trip name (full width) + avatar */}
             <div className="flex items-center justify-between py-3">
@@ -131,25 +131,14 @@ export function QuickLayout() {
                   </button>
                 )}
                 <ReportIssueButton onGradient={onGradient} />
-                {isInTrip && (
-                  <div className="hidden lg:flex items-center gap-2">
-                    <button
-                      onClick={handleScanTap}
-                      aria-label="Scan receipt"
-                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                    >
-                      <ScanLine size={20} />
-                    </button>
-                    <ModeToggle onGradient={onGradient} />
-                  </div>
-                )}
+
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
 
             {/* Row 2: full-width action strip — only on trip detail page, not sub-pages */}
             {isInTrip && !isSubPage && currentTrip && (
-              <div className={`lg:hidden grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
+              <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                 <button
                   onClick={handleScanTap}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
@@ -190,7 +179,7 @@ export function QuickLayout() {
       </header>
 
       {/* Main content — extra top padding when two-row header is active */}
-      <main className={isInTrip && !isSubPage ? 'pt-[108px] lg:pt-16' : 'pt-16'}>
+      <main className={isInTrip && !isSubPage ? 'pt-[108px]' : 'pt-16'}>
         <QuickPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
