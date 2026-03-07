@@ -248,7 +248,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   const handleDone = () => {
     if (createdTripCode) {
       onOpenChange(false)
-      navigate(`/t/${createdTripCode}/quick`)
+      navigate(isMobile ? `/t/${createdTripCode}/quick` : `/t/${createdTripCode}/manage`)
     } else {
       onOpenChange(false)
     }
