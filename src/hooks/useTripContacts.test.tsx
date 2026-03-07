@@ -36,13 +36,17 @@ vi.mock('@/contexts/TripContext', () => ({
 
 let mockQueryResult: { data: any[] | null; error: any } = { data: [], error: null }
 let mockProfilesResult: { data: any[] | null; error: any } = { data: [], error: null }
+let mockMembershipResult: { data: any[] | null; error: any } = { data: [], error: null }
 
 const mockSupabase = vi.hoisted(() => ({
   from: vi.fn(),
 }))
 vi.mock('@/lib/supabase', () => ({ supabase: mockSupabase }))
 
+let participantsCallCount = 0
+
 function setupQueryChain() {
+  participantsCallCount = 0
   mockSupabase.from.mockImplementation((table: string) => {
     if (table === 'user_profiles') {
       return {
@@ -53,7 +57,20 @@ function setupQueryChain() {
         }),
       }
     }
-    // participants
+    // participants — first call is membership query (eq), second is contacts query (in)
+    participantsCallCount++
+    const callNum = participantsCallCount
+    if (callNum === 1) {
+      // Membership query: .select('trip_id').eq('user_id', ...).abortSignal(...)
+      return {
+        select: () => ({
+          eq: () => ({
+            abortSignal: () => Promise.resolve(mockMembershipResult),
+          }),
+        }),
+      }
+    }
+    // Contacts query: .select(...).in(...).limit(...).abortSignal(...)
     return {
       select: () => ({
         in: () => ({
@@ -78,6 +95,7 @@ describe('useTripContacts', () => {
     mockTrips.trips = []
     mockQueryResult = { data: [], error: null }
     mockProfilesResult = { data: [], error: null }
+    mockMembershipResult = { data: [], error: null }
     mockSupabase.from.mockReset()
     setupQueryChain()
   })
@@ -113,6 +131,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current', end_date: '2025-08-01' }),
       buildEvent({ id: 'trip-old', end_date: '2025-06-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Alice', email: 'alice@test.com', user_id: null, trip_id: 'trip-old' },
@@ -141,6 +160,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Me', email: 'me@test.com', user_id: 'user-1', trip_id: 'trip-old' },
@@ -165,6 +185,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-old', end_date: '2025-01-01' }),
       buildEvent({ id: 'trip-recent', end_date: '2025-09-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }, { trip_id: 'trip-recent' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Marta', email: 'marta@test.com', user_id: null, trip_id: 'trip-old' },
@@ -192,6 +213,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-a', end_date: '2025-03-01' }),
       buildEvent({ id: 'trip-b', end_date: '2025-06-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-a' }, { trip_id: 'trip-b' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Carlos', email: null, user_id: null, trip_id: 'trip-a' },
@@ -216,6 +238,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'No Email Person', email: null, user_id: null, trip_id: 'trip-old' },
@@ -239,6 +262,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Linked User', email: 'linked@test.com', user_id: 'user-linked', trip_id: 'trip-old' },
@@ -261,6 +285,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old', end_date: '2025-12-25' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Santa', email: 'santa@north.pole', user_id: null, trip_id: 'trip-old' },
@@ -284,6 +309,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-old', end_date: '2024-01-01' }),
       buildEvent({ id: 'trip-recent', end_date: '2025-12-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }, { trip_id: 'trip-recent' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Old Friend', email: 'old@test.com', user_id: null, trip_id: 'trip-old' },
@@ -308,6 +334,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Kairi', email: 'kairi@test.com', user_id: 'user-kairi', trip_id: 'trip-old' },
@@ -338,6 +365,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'No Account', email: 'noaccount@test.com', user_id: null, trip_id: 'trip-old' },
@@ -361,6 +389,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-old', end_date: '2025-01-01' }),
       buildEvent({ id: 'trip-recent', end_date: '2025-09-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }, { trip_id: 'trip-recent' }], error: null }
     mockQueryResult = {
       data: [
         // Older trip has email
@@ -391,6 +420,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-a', end_date: '2025-03-01' }),
       buildEvent({ id: 'trip-b', end_date: '2025-06-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-a' }, { trip_id: 'trip-b' }], error: null }
     mockQueryResult = {
       data: [
         // Older record has email
@@ -417,6 +447,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-current' }),
       buildEvent({ id: 'trip-old', end_date: '2025-06-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }], error: null }
     mockQueryResult = {
       data: [
         { name: 'Alex', email: null, user_id: 'user-alex-1', trip_id: 'trip-old' },
@@ -444,6 +475,7 @@ describe('useTripContacts', () => {
       buildEvent({ id: 'trip-old', end_date: '2025-01-01' }),
       buildEvent({ id: 'trip-recent', end_date: '2025-09-01' }),
     ]
+    mockMembershipResult = { data: [{ trip_id: 'trip-old' }, { trip_id: 'trip-recent' }], error: null }
     mockQueryResult = {
       data: [
         // More recent trip but no user_id (no display_name)

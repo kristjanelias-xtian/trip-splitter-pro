@@ -57,11 +57,39 @@ export function useTripContacts(currentTripId: string | undefined) {
     const fetchContacts = async () => {
       setLoading(true)
       try {
+        // First, find which trips the user actually participated in
+        const { data: myRows, error: myError } = await withTimeout(
+          supabase
+            .from('participants')
+            .select('trip_id')
+            .eq('user_id', user.id)
+            .abortSignal(controller.signal),
+          10000,
+          'Loading trip membership timed out.'
+        )
+
+        if (cancelledRef.current) return
+
+        if (myError) {
+          logger.warn('Failed to fetch user trip membership', { error: myError.message })
+          setLoading(false)
+          return
+        }
+
+        const myTripIds = new Set((myRows ?? []).map((r: any) => r.trip_id as string))
+        const participatedTripIds = otherTripIds.filter(id => myTripIds.has(id))
+
+        if (participatedTripIds.length === 0) {
+          setContacts([])
+          setLoading(false)
+          return
+        }
+
         const { data, error } = await withTimeout(
           supabase
             .from('participants')
             .select('name, email, user_id, trip_id, is_adult, nickname')
-            .in('trip_id', otherTripIds)
+            .in('trip_id', participatedTripIds)
             .limit(200)
             .abortSignal(controller.signal),
           15000,
