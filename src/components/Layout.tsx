@@ -3,7 +3,7 @@ import React from 'react'
 import { useState } from 'react'
 import {
   Home, DollarSign, CreditCard, CalendarDays,
-  ShoppingCart, BarChart3, Settings2, MoreHorizontal, ScanLine, Settings, Zap, Shield, ArrowLeft
+  ShoppingCart, BarChart3, Settings2, ScanLine, Settings, Zap, Shield, ArrowLeft
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -32,20 +32,11 @@ import { PullToRefreshProvider } from '@/contexts/PullToRefreshContext'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
 import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 
 // Icon mapping
 const iconMap: Record<string, React.ElementType> = {
   'Overview': Home,
   'Trips': Home,
-  'Events & Trips': Home,
   'Manage Trip': Settings2,
   'Manage Event': Settings2,
   'Expenses': DollarSign,
@@ -54,7 +45,6 @@ const iconMap: Record<string, React.ElementType> = {
   'Planner': CalendarDays,
   'Shopping': ShoppingCart,
   'Dashboard': BarChart3,
-  'More': MoreHorizontal,
 }
 
 export function Layout() {
@@ -65,7 +55,6 @@ export function Layout() {
   const { trips } = useTripContext()
   const { setMode } = useUserPreferences()
   const visibleTrips = trips.filter(t => !getHiddenTripCodes().includes(t.trip_code))
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [scanContextOpen, setScanContextOpen] = useState(false)
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
@@ -103,7 +92,7 @@ export function Layout() {
     return items
   }
 
-  // Mobile navigation - 5 primary items + overflow menu
+  // Mobile navigation - content tabs only
   const getMobileNavItems = () => {
     if (!tripCode) {
       return [
@@ -125,21 +114,8 @@ export function Layout() {
     return items
   }
 
-  // Overflow menu items (mobile only)
-  const getOverflowMenuItems = () => {
-    if (!tripCode) {
-      return []
-    }
-
-    return [
-      { path: '/', label: 'Events & Trips', requiresTrip: false },
-      { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
-    ]
-  }
-
   const desktopNavItems = getDesktopNavItems()
   const mobileNavItems = getMobileNavItems()
-  const overflowMenuItems = getOverflowMenuItems()
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -329,79 +305,6 @@ export function Layout() {
             )
           })}
 
-          {/* More menu button */}
-          <Sheet open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
-            <SheetTrigger asChild>
-              <button className="flex flex-col items-center justify-center w-full h-full relative">
-                {overflowMenuItems.some(item => isActive(item.path)) && (
-                  <motion.div
-                    layoutId="mobile-nav-indicator"
-                    className="absolute inset-x-2 top-0 h-1 bg-primary rounded-full"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <motion.div
-                  className="flex flex-col items-center"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <MoreHorizontal
-                    size={20}
-                    className={
-                      overflowMenuItems.some(item => isActive(item.path))
-                        ? 'text-primary'
-                        : 'text-muted-foreground'
-                    }
-                  />
-                  <span
-                    className={`text-xs mt-1 ${
-                      overflowMenuItems.some(item => isActive(item.path))
-                        ? 'text-primary font-medium'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    More
-                  </span>
-                </motion.div>
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-auto">
-              <SheetHeader>
-                <SheetTitle>More Options</SheetTitle>
-                <SheetDescription>
-                  Additional navigation options
-                </SheetDescription>
-              </SheetHeader>
-              <nav className="mt-6 space-y-2">
-                {overflowMenuItems.map((item) => {
-                  const Icon = iconMap[item.label as keyof typeof iconMap]
-                  const active = isActive(item.path)
-
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      state={item.path === '/' ? { fromTrip: true } : undefined}
-                      onClick={() => setMoreMenuOpen(false)}
-                      className="block relative"
-                    >
-                      <motion.div
-                        className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                          active
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                        }`}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Icon size={20} className="mr-3" />
-                        <span className="font-medium">{item.label}</span>
-                      </motion.div>
-                    </Link>
-                  )
-                })}
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </nav>}
 
