@@ -31,6 +31,10 @@ export function SettlementsPage() {
   const [showCustomSettlement, setShowCustomSettlement] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
   const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
+  const [prefilledFromId, setPrefilledFromId] = useState<string | undefined>(undefined)
+  const [prefilledToId, setPrefilledToId] = useState<string | undefined>(undefined)
+  const [prefilledBankDetails, setPrefilledBankDetails] = useState<BankDetails | null>(null)
+  const [prefilledRecipientName, setPrefilledRecipientName] = useState<string | undefined>(undefined)
   const customSettlementRef = useRef<HTMLDivElement>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
@@ -175,9 +179,13 @@ export function SettlementsPage() {
   }, [user, recipientKey, participants, currentTrip])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
-    // Pre-populate the custom settlement form with amount and note
+    // Pre-populate the custom settlement form with all fields
     setPrefilledAmount(transaction.amount)
-    setPrefilledNote(`Settlement from optimal plan: ${transaction.fromName} → ${transaction.toName}`)
+    setPrefilledNote(`Settlement: ${transaction.fromName} → ${transaction.toName}`)
+    setPrefilledFromId(transaction.fromId)
+    setPrefilledToId(transaction.toId)
+    setPrefilledBankDetails(bankDetailsMap[transaction.toId] || null)
+    setPrefilledRecipientName(transaction.toName)
 
     // Expand the custom settlement section
     setShowCustomSettlement(true)
@@ -199,6 +207,10 @@ export function SettlementsPage() {
     setShowCustomSettlement(false)
     setPrefilledAmount(undefined)
     setPrefilledNote(undefined)
+    setPrefilledFromId(undefined)
+    setPrefilledToId(undefined)
+    setPrefilledBankDetails(null)
+    setPrefilledRecipientName(undefined)
   }
 
   const handleRemind = async (transaction: SettlementTransaction, emails: string[]): Promise<void> => {
@@ -402,6 +414,10 @@ export function SettlementsPage() {
                     onCancel={() => setShowCustomSettlement(false)}
                     initialAmount={prefilledAmount}
                     initialNote={prefilledNote}
+                    initialFromId={prefilledFromId}
+                    initialToId={prefilledToId}
+                    recipientBankDetails={prefilledBankDetails}
+                    recipientName={prefilledRecipientName}
                   />
                 </div>
               )}
