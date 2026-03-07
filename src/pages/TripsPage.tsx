@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { EventForm } from '@/components/EventForm'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { CreateEventInput } from '@/types/trip'
@@ -11,13 +12,14 @@ export function TripsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { createTrip, error } = useTripContext()
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const handleCreate = async (input: CreateEventInput) => {
     const newEvent = await createTrip(input)
     if (!newEvent) {
       throw new Error('Failed to create')
     }
-    navigate(`/t/${newEvent.trip_code}/manage`)
+    navigate(isMobile ? `/t/${newEvent.trip_code}/quick` : `/t/${newEvent.trip_code}/manage`)
   }
 
   const handleCancel = () => {
