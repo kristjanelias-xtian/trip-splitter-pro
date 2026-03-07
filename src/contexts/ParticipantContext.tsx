@@ -9,6 +9,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
+import { logger } from '@/lib/logger'
 
 interface ParticipantContextType {
   participants: Participant[]
@@ -214,13 +215,44 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
         controller
       )
 
-      if (linkError) throw linkError
+      let emailApplied = !!userEmail
+      if (linkError) {
+        // If email unique constraint violation, retry without email
+        const isEmailConflict = linkError.message?.includes('participants_trip_email_unique') ||
+          linkError.code === '23505'
+        if (isEmailConflict && userEmail) {
+          logger.warn('linkUserToParticipant: email conflict, retrying without email', { participantId, userEmail })
+          emailApplied = false
+          const retryPayload: Record<string, unknown> = { user_id: userId }
+          if (displayName) {
+            retryPayload.name = displayName
+            const existing = participants.find(p => p.id === participantId)
+            if (existing && !existing.nickname && existing.name !== displayName) {
+              retryPayload.nickname = existing.name
+            }
+          }
+          const retryController = new AbortController()
+          const { error: retryError } = await withTimeout<any>(
+            (supabase as any)
+              .from('participants')
+              .update(retryPayload)
+              .eq('id', participantId)
+              .abortSignal(retryController.signal),
+            15000,
+            'Linking user timed out. Please check your connection and try again.',
+            retryController
+          )
+          if (retryError) throw retryError
+        } else {
+          throw linkError
+        }
+      }
 
       setParticipants(prev =>
         prev.map(p => {
           if (p.id !== participantId) return p
           const updates: Partial<Participant> = { user_id: userId }
-          if (userEmail) updates.email = userEmail
+          if (emailApplied) updates.email = userEmail
           if (displayName) {
             updates.name = displayName
             if (!p.nickname && p.name !== displayName) {
@@ -233,7 +265,9 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
 
       return true
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to link user to participant')
+      const msg = err instanceof Error ? err.message : 'Failed to link user to participant'
+      setError(msg)
+      logger.error('linkUserToParticipant failed', { participantId, userId, error: msg })
       console.error('Error linking user to participant:', err)
       return false
     }
