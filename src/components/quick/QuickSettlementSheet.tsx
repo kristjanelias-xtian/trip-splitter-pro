@@ -33,6 +33,9 @@ interface Prefill {
   fromId: string
   toId: string
   amount: number
+  note?: string
+  bankDetails?: BankDetails | null
+  toName?: string
 }
 
 export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementSheetProps) {
@@ -274,6 +277,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       fromId: tx.fromId,
       toId: tx.toId,
       amount: tx.amount,
+      note: `Settlement: ${tx.fromName} → ${tx.toName}`,
+      bankDetails: bankDetailsMap[tx.toId] || null,
+      toName: tx.toName,
     })
     setView('form')
   }
@@ -606,6 +612,9 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
           initialFromId={prefill?.fromId}
           initialToId={prefill?.toId}
           initialAmount={prefill?.amount}
+          initialNote={prefill?.note}
+          recipientBankDetails={prefill?.bankDetails}
+          recipientName={prefill?.toName}
         />
       )}
     </div>

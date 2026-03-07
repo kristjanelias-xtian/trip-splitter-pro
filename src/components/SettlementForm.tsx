@@ -1,6 +1,6 @@
 import { useState, FormEvent, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -26,9 +26,54 @@ interface SettlementFormProps {
   initialNote?: string
   initialFromId?: string
   initialToId?: string
+  recipientBankDetails?: { holder: string; iban: string } | null
+  recipientName?: string
 }
 
-export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId }: SettlementFormProps) {
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors shrink-0"
+    >
+      {copied ? (
+        <><Check size={12} className="text-positive" /> Copied!</>
+      ) : (
+        <><Clipboard size={12} /> Copy</>
+      )}
+    </button>
+  )
+}
+
+const BANK_SHORTCUTS = [
+  {
+    name: 'Swedbank',
+    url: 'https://www.swedbank.ee/private/d2d/payments2/smartPayment',
+    badgeClass: 'bg-orange-500 text-white font-bold',
+    badgeText: 'SW',
+  },
+  {
+    name: 'LHV',
+    url: 'https://www.lhv.ee/en/internetbank',
+    badgeClass: 'bg-black text-white font-bold',
+    badgeText: 'LHV',
+  },
+  {
+    name: 'SEB',
+    url: 'https://e.seb.ee/web/ipank',
+    badgeClass: 'bg-green-600 text-white font-bold',
+    badgeText: 'SEB',
+  },
+]
+
+export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId, recipientBankDetails, recipientName }: SettlementFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants } = useParticipantContext()
 
@@ -297,6 +342,74 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           disabled={loading}
         />
       </div>
+
+      {/* Pay Now Helper Panel */}
+      {recipientBankDetails?.iban && (
+        <div className="space-y-3 pt-2">
+          <div className="border-t border-border" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Payment details
+          </p>
+
+          {/* IBAN row */}
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase text-muted-foreground">
+                {recipientName ? `${recipientName}'s IBAN` : 'Recipient IBAN'}
+              </p>
+              <p className="font-mono text-sm font-semibold text-foreground truncate">
+                {recipientBankDetails.iban}
+              </p>
+            </div>
+            <CopyButton value={recipientBankDetails.iban} />
+          </div>
+
+          {/* Amount row */}
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase text-muted-foreground">
+                Amount ({currency})
+              </p>
+              <p className="text-sm font-semibold text-foreground tabular-nums">
+                {parseFloat(amount || '0').toFixed(2)}
+              </p>
+            </div>
+            <CopyButton value={parseFloat(amount || '0').toFixed(2)} />
+          </div>
+
+          {/* Notice */}
+          <div className="flex gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+            <Lightbulb size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              Banks don't allow apps to pre-fill payments directly. Copy the details above and paste them in your bank app — or tap a shortcut below to open it.
+            </p>
+          </div>
+
+          {/* Bank shortcuts */}
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Open your bank
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {BANK_SHORTCUTS.map(bank => (
+              <a
+                key={bank.name}
+                href={bank.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1.5 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+              >
+                <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg text-xs ${bank.badgeClass}`}>
+                  {bank.badgeText}
+                </span>
+                <span className="text-xs font-medium text-foreground flex items-center gap-1">
+                  {bank.name}
+                  <ExternalLink size={10} className="text-muted-foreground" />
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Submit Buttons */}
       <div className="flex gap-3 pt-2">
