@@ -171,6 +171,16 @@ Mode is stored per-user in `user_preferences.preferred_mode` and synced from Sup
 
 All contexts wrap Supabase calls in `withTimeout` (15 s, from `src/lib/fetchWithTimeout.ts`) so a slow network never leaves the UI stuck.
 
+### Home Page Trip Visibility
+
+The home page shows different trip lists depending on auth state:
+
+**Anonymous users:** Trip references (code + name) are cached in `localStorage` key `trip-splitter:my-trips` (max 100 entries). Trip data always lives in Supabase. `useCurrentTrip` auto-populates localStorage when any trip URL is visited. `TripContext` fetches only these specific trips from DB by `trip_code` (not all trips). If localStorage is cleared (iOS WebKit eviction, new device), the reference list is empty with no recovery path — sign-in is the only way to persist trip links permanently.
+
+**Authenticated users:** `TripContext` fetches trips from DB via three paths: (1) user is creator, (2) user linked as participant (`user_id`), (3) email discovery — someone else added a participant with the user's email but no `user_id` link yet. Then merges any localStorage trips not already in the result. `HomePage` splits these into "My Trips" (creator or linked participant with balance) and "Visited" (localStorage-only, no participant record). Email-discovered trips appear in "My Trips" since they have a participant record.
+
+**Key invariant:** `ensureTripLoaded(tripCode)` in `useCurrentTrip` handles navigation to any trip URL regardless of auth state — even if the trip isn't in the local array. The home page list is a convenience view; the URL is always the access token.
+
 ### Tracking Modes (expense splitting)
 
 All expenses use a single distribution type: `individuals`. The `tracking_mode` column still exists in the DB but is always `'individuals'` for new trips (UI selector removed).

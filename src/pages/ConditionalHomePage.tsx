@@ -24,9 +24,10 @@ export function ConditionalHomePage() {
   const fromTrip = !!(location.state as any)?.fromTrip
 
   // Track sign-in transition (null → non-null user) to avoid redirecting
-  // to a stranger's trip. When unauthenticated, TripContext fetches ALL trips
-  // (RLS is open). On sign-in there's a render cycle where `user` is set but
-  // `trips` still contains all trips — skip the redirect for that cycle.
+  // to a stranger's trip. When unauthenticated, TripContext fetches only
+  // localStorage-known trips (by trip_code). On sign-in there's a render
+  // cycle where `user` is set but `trips` still contains the old set —
+  // skip the redirect for that cycle.
   const prevUserIdRef = useRef<string | null | undefined>(undefined)
   const justSignedInRef = useRef(false)
 
@@ -52,8 +53,8 @@ export function ConditionalHomePage() {
     if (document.querySelector('[role="dialog"][data-state="open"]')) return
 
     // Only auto-redirect for authenticated users. For unauthenticated users,
-    // TripContext fetches ALL trips and localStorage includes shared-link trips,
-    // so there's no reliable way to distinguish "my trip" from "visited via link".
+    // TripContext fetches only localStorage-known trips — there's no reliable
+    // way to distinguish "my trip" from "visited via link".
     if (!user) return
 
     // Skip redirect on the render cycle right after sign-in — trips list

@@ -36,9 +36,22 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setError(null)
     try {
       if (!user) {
-        // Anonymous: fetch all trips so URL-based access (/t/:tripCode) keeps working
+        // Anonymous: fetch only trips the user previously visited (tracked in localStorage).
+        // We intentionally do NOT fetch all trips — that would be a scalability issue and
+        // the data is never displayed on the home page anyway (HomePage reads localStorage
+        // directly for anonymous users). Navigation to new trip URLs is handled by
+        // ensureTripLoaded() which fetches a single trip by trip_code on demand.
+        const localTrips = getMyTrips()
+        const codes = localTrips.map(t => t.tripCode)
+        if (codes.length === 0) {
+          setTrips([])
+          return
+        }
         const { data, error: fetchError } = await withTimeout(
-          supabase.from('trips').select('*').order('created_at', { ascending: false }).abortSignal(signal),
+          supabase.from('trips').select('*')
+            .in('trip_code', codes)
+            .order('created_at', { ascending: false })
+            .abortSignal(signal),
           15000,
           'Loading trips timed out. Please check your connection and try again.'
         )

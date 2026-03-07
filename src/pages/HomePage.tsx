@@ -25,6 +25,39 @@ import { motion } from 'framer-motion'
 
 const DEMO_TRIP_CODE = 'livigno-2025'
 
+/**
+ * Home Page — Trip Visibility Contract
+ *
+ * Anonymous users (not signed in):
+ *   Data source: localStorage key `trip-splitter:my-trips`
+ *   - Populated automatically by useCurrentTrip when any trip URL is visited
+ *   - Only trip references (code + name) are stored locally; trip data lives in Supabase
+ *   - Ephemeral: iOS WebKit may evict localStorage after ~7 days of inactivity
+ *   - If localStorage is empty → empty state with sign-in suggestion
+ *   - If localStorage has entries → TripContext fetches those specific trips
+ *     from DB (by trip_code), shown as simple cards with name + last accessed
+ *   - No balance calculation (requires participant link)
+ *
+ * Authenticated users:
+ *   Data source: Supabase DB (primary) + localStorage merge (visited trips)
+ *   - DB query finds trips via 3 paths:
+ *     1. User is trip creator (created_by = user.id)
+ *     2. User linked as participant (participants.user_id = user.id)
+ *     3. Email discovery: participant with matching email but no user_id link yet
+ *   - localStorage trips not in DB results are fetched individually and merged
+ *   - Split into "My Trips" (creator or has participant link → myBalance !== null)
+ *     and "Visited" (localStorage-only, no participant record → myBalance === null)
+ *   - TripCards show balance summary via useMyTripBalances hook
+ *
+ * PWA considerations:
+ *   - localStorage holds only trip references (codes); trip data is always in Supabase
+ *   - After iOS eviction, anonymous users lose their trip links; auth users are unaffected
+ *
+ * Trip access model:
+ *   - Trip URL = access token. Anyone with /t/:tripCode can view any trip.
+ *   - ensureTripLoaded() handles navigation to trips not in the local array
+ *   - useCurrentTrip auto-adds every visited trip to localStorage
+ */
 export function HomePage() {
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
@@ -123,7 +156,7 @@ export function HomePage() {
             Nothing yet
           </h3>
           <p className="text-muted-foreground mb-6">
-            Create a new trip or event, or access one via a shared link
+            Create a new trip, access one via a shared link, or sign in to access your trips from anywhere
           </p>
           <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
             <Plus size={18} />
@@ -256,8 +289,9 @@ export function HomePage() {
     }
 
     return (
+      <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {localTrips.map(trip => (
+        {localTrips.map((trip) => (
           <Card
             key={trip.tripCode}
             className="overflow-hidden"
@@ -314,6 +348,11 @@ export function HomePage() {
           </Card>
         ))}
       </div>
+      <p className="mt-6 text-xs text-center text-muted-foreground">
+        Your trip links are saved on this device only.{' '}
+        Sign in to access them from anywhere.
+      </p>
+    </>
     )
   }
 
