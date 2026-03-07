@@ -137,7 +137,7 @@ export function QuickLayout() {
                     <ModeToggle onGradient={onGradient} />
                   </div>
                 )}
-                {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
+                {user ? <UserMenu onGradient={onGradient} compact /> : <SignInButton />}
               </div>
             </div>
 

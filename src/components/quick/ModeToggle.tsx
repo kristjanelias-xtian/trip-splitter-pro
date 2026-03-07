@@ -18,8 +18,8 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
   const isOnFullTripRoute = !isOnQuickRoute && /\/t\/[^/]+\//.test(location.pathname)
   const effectiveMode = isOnQuickRoute ? 'quick' : isOnFullTripRoute ? 'full' : mode
 
-  const handleModeChange = async (newMode: 'quick' | 'full') => {
-    if (newMode === effectiveMode) return
+  const handleToggle = async () => {
+    const newMode = effectiveMode === 'quick' ? 'full' : 'quick'
     await setMode(newMode)
 
     // Navigate to the appropriate view only when inside a trip
@@ -33,38 +33,21 @@ export function ModeToggle({ onGradient = false }: ModeToggleProps) {
     // On home page (no tripCode): just update preference, no navigation needed
   }
 
-  const containerClass = onGradient
-    ? 'flex items-center bg-white/20 rounded-lg p-0.5'
-    : 'flex items-center bg-muted rounded-lg p-0.5'
+  const buttonClass = onGradient
+    ? 'border-white/40 bg-white/15 hover:bg-white/25 text-white'
+    : 'border-primary/40 bg-primary/10 hover:bg-primary/15 text-primary'
 
-  const activeClass = onGradient
-    ? 'bg-white/30 text-white shadow-sm'
-    : 'bg-background text-foreground shadow-sm'
-
-  const inactiveClass = onGradient
-    ? 'text-white/70 hover:text-white'
-    : 'text-muted-foreground hover:text-foreground'
+  // Show the opposite mode — clicking navigates to it
+  const Icon = effectiveMode === 'quick' ? LayoutGrid : Zap
+  const label = effectiveMode === 'quick' ? 'Full view' : 'Quick view'
 
   return (
-    <div className={containerClass}>
-      <button
-        onClick={() => handleModeChange('quick')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          effectiveMode === 'quick' ? activeClass : inactiveClass
-        }`}
-      >
-        <Zap size={14} />
-        Quick
-      </button>
-      <button
-        onClick={() => handleModeChange('full')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-          effectiveMode === 'full' ? activeClass : inactiveClass
-        }`}
-      >
-        <LayoutGrid size={14} />
-        Full
-      </button>
-    </div>
+    <button
+      onClick={handleToggle}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${buttonClass}`}
+    >
+      <Icon size={14} />
+      {label}
+    </button>
   )
 }

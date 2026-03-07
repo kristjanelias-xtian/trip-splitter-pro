@@ -13,9 +13,10 @@ import { BankDetailsDialog } from './BankDetailsDialog'
 
 interface UserMenuProps {
   onGradient?: boolean
+  compact?: boolean
 }
 
-export function UserMenu({ onGradient = false }: UserMenuProps) {
+export function UserMenu({ onGradient = false, compact = false }: UserMenuProps) {
   const { user, userProfile, signOut } = useAuth()
   const [showBankDetails, setShowBankDetails] = useState(false)
 
@@ -49,7 +50,7 @@ export function UserMenu({ onGradient = false }: UserMenuProps) {
               {initials}
             </div>
           )}
-          <span className={`hidden sm:inline text-sm font-medium max-w-[120px] truncate ${
+          <span className={`${compact ? 'hidden' : 'hidden sm:inline'} text-sm font-medium max-w-[120px] truncate ${
             onGradient ? 'text-white' : ''
           }`}>
             {displayName}
