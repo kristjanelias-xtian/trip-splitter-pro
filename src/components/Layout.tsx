@@ -176,7 +176,7 @@ export function Layout() {
                 />
               )
             })}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/15 to-black/5" />
           </>
         )}
 

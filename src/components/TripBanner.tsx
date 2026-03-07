@@ -44,7 +44,7 @@ export function TripBanner({ tripName, compact = false }: TripBannerProps) {
         })}
 
         {/* Gradient Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-transparent" />
 
         {/* Content */}
         <div className="relative h-full px-4 flex items-center">
@@ -89,7 +89,7 @@ export function TripBanner({ tripName, compact = false }: TripBannerProps) {
       })}
 
       {/* Gradient Overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent" />
 
       {/* Content */}
       <div className="relative h-full p-6 md:p-8 flex flex-col justify-end">
