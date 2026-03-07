@@ -59,6 +59,10 @@ export function HomePage() {
   const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
   const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
 
+  // Split visible trips into "my trips" (creator or linked participant) vs "visited" (localStorage-only)
+  const myTrips = visibleTrips.filter(({ trip, myBalance }) => trip.created_by === user?.id || myBalance !== null)
+  const visitedTrips = visibleTrips.filter(({ trip, myBalance }) => trip.created_by !== user?.id && myBalance === null)
+
   const activeTripId = useMemo(
     () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
     [visibleTrips]
@@ -139,6 +143,35 @@ export function HomePage() {
     </Card>
   )
 
+  const renderTripGrid = (trips: typeof visibleTrips) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {trips.map(({ trip, myBalance }, i) => (
+        <motion.div
+          key={trip.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
+        >
+          <TripCard
+            trip={trip}
+            balance={myBalance}
+            isActive={trip.id === activeTripId}
+            onClick={() => handleOpenTrip(trip.trip_code)}
+            actions={
+              <GroupActions
+                tripCode={trip.trip_code}
+                tripName={trip.name}
+                showRemove={trip.created_by !== user?.id && myBalance === null}
+                onHidden={() => handleHidden(trip.trip_code)}
+                onLeft={() => handleLeft(trip.trip_code)}
+              />
+            }
+          />
+        </motion.div>
+      ))}
+    </div>
+  )
+
   // Authenticated view: TripCard with balances
   const renderAuthenticatedTrips = () => {
     if (loading) {
@@ -151,32 +184,19 @@ export function HomePage() {
 
     return (
       <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleTrips.map(({ trip, myBalance }, i) => (
-            <motion.div
-              key={trip.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <TripCard
-                trip={trip}
-                balance={myBalance}
-                isActive={trip.id === activeTripId}
-                onClick={() => handleOpenTrip(trip.trip_code)}
-                actions={
-                  <GroupActions
-                    tripCode={trip.trip_code}
-                    tripName={trip.name}
-                    showRemove={trip.created_by !== user?.id && myBalance === null}
-                    onHidden={() => handleHidden(trip.trip_code)}
-                    onLeft={() => handleLeft(trip.trip_code)}
-                  />
-                }
-              />
-            </motion.div>
-          ))}
-        </div>
+        {myTrips.length > 0 && visitedTrips.length > 0 && (
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">My Trips</h2>
+        )}
+        {myTrips.length > 0 && renderTripGrid(myTrips)}
+
+        {visitedTrips.length > 0 && (
+          <div className={myTrips.length > 0 ? 'mt-8' : ''}>
+            {myTrips.length > 0 && (
+              <h2 className="text-sm font-medium text-muted-foreground mb-3">Visited</h2>
+            )}
+            {renderTripGrid(visitedTrips)}
+          </div>
+        )}
 
         {/* Create trip button */}
         <div className="mt-6 text-center">
