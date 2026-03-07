@@ -48,16 +48,19 @@ export function ExpenseWizard({
   if (mode === 'edit' || !isMobile) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
           <DialogTitle className="sr-only">
             {mode === 'edit' ? 'Edit Expense' : 'Add Expense'}
           </DialogTitle>
-          <ExpenseForm
-            onSubmit={onSubmit}
-            onCancel={() => onOpenChange(false)}
-            initialValues={initialValues}
-            submitLabel={mode === 'edit' ? 'Update Expense' : 'Add Expense'}
-          />
+          <div className="flex-1 min-h-0 flex flex-col px-6 py-6">
+            <ExpenseForm
+              onSubmit={onSubmit}
+              onCancel={() => onOpenChange(false)}
+              initialValues={initialValues}
+              submitLabel={mode === 'edit' ? 'Update Expense' : 'Add Expense'}
+              stickyFooter
+            />
+          </div>
         </DialogContent>
       </Dialog>
     )
