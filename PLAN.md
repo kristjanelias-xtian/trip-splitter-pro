@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-01 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅; nicknames + avatars ✅; receipt viewer ✅; scan-create fix ✅; dialog selector fix ✅)
+> Last updated: 2026-03-07 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅; nicknames + avatars ✅; receipt viewer ✅; scan-create fix ✅; dialog selector fix ✅; settlement UX overhaul ✅; expense form redesign ✅; desktop sticky footer ✅; category auto-inference ✅; PreToolUse branch guard ✅)
 
 ---
 
@@ -19,7 +19,7 @@
 | Auth | Supabase Auth (Google OAuth, implicit flow) |
 | Observability | Grafana Cloud — Loki (logs) + OTLP (metrics) via `log-proxy` |
 | Deployment | Cloudflare Pages |
-| Tests | Vitest + Testing Library (173 unit tests, all passing), Playwright (26 E2E smoke tests) |
+| Tests | Vitest + Testing Library (182 unit tests, all passing), Playwright (26 E2E smoke tests) |
 | AI SDK | `@anthropic-ai/sdk@0.32.1` — **already installed, not yet used** |
 | PDF Export | jsPDF + jspdf-autotable |
 | Maps | Leaflet + react-leaflet |
