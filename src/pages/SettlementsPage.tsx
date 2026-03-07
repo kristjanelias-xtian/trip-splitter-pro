@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
-import { ChevronDown, ChevronRight, Receipt, FileDown } from 'lucide-react'
+import { Receipt, FileDown, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -18,6 +18,7 @@ import { SettlementPlan, BankDetails } from '@/components/SettlementPlan'
 import { SettlementForm } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
@@ -28,14 +29,15 @@ export function SettlementsPage() {
   const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
   const { createSettlement, settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { receiptByExpenseId } = useReceiptContext()
-  const [showCustomSettlement, setShowCustomSettlement] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined)
-  const [prefilledNote, setPrefilledNote] = useState<string | undefined>(undefined)
-  const [prefilledFromId, setPrefilledFromId] = useState<string | undefined>(undefined)
-  const [prefilledToId, setPrefilledToId] = useState<string | undefined>(undefined)
-  const [prefilledBankDetails, setPrefilledBankDetails] = useState<BankDetails | null>(null)
-  const [prefilledRecipientName, setPrefilledRecipientName] = useState<string | undefined>(undefined)
-  const customSettlementRef = useRef<HTMLDivElement>(null)
+  const [showRecordDialog, setShowRecordDialog] = useState(false)
+  const [prefill, setPrefill] = useState<{
+    amount?: number
+    note?: string
+    fromId?: string
+    toId?: string
+    bankDetails?: BankDetails | null
+    recipientName?: string
+  } | null>(null)
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
   const [retrying, setRetrying] = useState(false)
@@ -179,24 +181,20 @@ export function SettlementsPage() {
   }, [user, recipientKey, participants, currentTrip])
 
   const handleRecordSettlement = (transaction: SettlementTransaction) => {
-    // Pre-populate the custom settlement form with all fields
-    setPrefilledAmount(transaction.amount)
-    setPrefilledNote(`Settlement: ${transaction.fromName} → ${transaction.toName}`)
-    setPrefilledFromId(transaction.fromId)
-    setPrefilledToId(transaction.toId)
-    setPrefilledBankDetails(bankDetailsMap[transaction.toId] || null)
-    setPrefilledRecipientName(transaction.toName)
+    setPrefill({
+      amount: transaction.amount,
+      note: `Settlement: ${transaction.fromName} → ${transaction.toName}`,
+      fromId: transaction.fromId,
+      toId: transaction.toId,
+      bankDetails: bankDetailsMap[transaction.toId] || null,
+      recipientName: transaction.toName,
+    })
+    setShowRecordDialog(true)
+  }
 
-    // Expand the custom settlement section
-    setShowCustomSettlement(true)
-
-    // Scroll to the custom settlement form
-    setTimeout(() => {
-      customSettlementRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      })
-    }, 100)
+  const closeDialog = () => {
+    setShowRecordDialog(false)
+    setPrefill(null)
   }
 
   const handleCustomSettlement = async (input: CreateSettlementInput) => {
@@ -204,13 +202,7 @@ export function SettlementsPage() {
     if (!result) {
       throw new Error('Failed to record settlement')
     }
-    setShowCustomSettlement(false)
-    setPrefilledAmount(undefined)
-    setPrefilledNote(undefined)
-    setPrefilledFromId(undefined)
-    setPrefilledToId(undefined)
-    setPrefilledBankDetails(null)
-    setPrefilledRecipientName(undefined)
+    closeDialog()
   }
 
   const handleRemind = async (transaction: SettlementTransaction, emails: string[]): Promise<void> => {
@@ -383,46 +375,17 @@ export function SettlementsPage() {
           </Card>
         )}
 
-        {/* Custom Settlement Form */}
+        {/* Record a payment button */}
         {participants.length > 0 && (
-          <Card ref={customSettlementRef}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Record Custom Settlement
-                </h3>
-                <Button
-                  onClick={() => setShowCustomSettlement(!showCustomSettlement)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  {showCustomSettlement ? (
-                    <><ChevronDown size={16} className="mr-1" /> Hide</>
-                  ) : (
-                    <><ChevronRight size={16} className="mr-1" /> Add Custom Payment</>
-                  )}
-                </Button>
-              </div>
-
-              {showCustomSettlement && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Record a payment that happened outside of the optimal settlement plan (e.g., partial payments, cash transfers, etc.)
-                  </p>
-                  <SettlementForm
-                    onSubmit={handleCustomSettlement}
-                    onCancel={() => setShowCustomSettlement(false)}
-                    initialAmount={prefilledAmount}
-                    initialNote={prefilledNote}
-                    initialFromId={prefilledFromId}
-                    initialToId={prefilledToId}
-                    recipientBankDetails={prefilledBankDetails}
-                    recipientName={prefilledRecipientName}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="flex justify-center">
+            <Button
+              onClick={() => { setPrefill(null); setShowRecordDialog(true) }}
+              variant="outline"
+              size="sm"
+            >
+              Record a custom payment
+            </Button>
+          </div>
         )}
 
         {/* Settlement History */}
@@ -492,6 +455,35 @@ export function SettlementsPage() {
         )}
         </>}
       </div>
+
+      {/* Record Settlement Dialog */}
+      <Dialog open={showRecordDialog} onOpenChange={(open) => { if (!open) closeDialog() }}>
+        <DialogContent hideClose className="max-w-lg max-h-[85vh] p-0 gap-0 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+            <div className="w-8" />
+            <DialogTitle className="text-base font-semibold">Record Settlement</DialogTitle>
+            <button onClick={closeDialog} aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Record a payment between participants.
+            </p>
+            <SettlementForm
+              onSubmit={handleCustomSettlement}
+              onCancel={closeDialog}
+              initialAmount={prefill?.amount}
+              initialNote={prefill?.note}
+              initialFromId={prefill?.fromId}
+              initialToId={prefill?.toId}
+              recipientBankDetails={prefill?.bankDetails}
+              recipientName={prefill?.recipientName}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
