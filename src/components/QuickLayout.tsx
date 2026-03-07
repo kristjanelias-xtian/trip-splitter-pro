@@ -82,7 +82,7 @@ export function QuickLayout() {
           </>
         )}
 
-        <div className="relative max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="relative max-w-lg mx-auto px-4">
           <div className="flex flex-col">
             {/* Row 1: back/logo + trip name (full width) + avatar */}
             <div className="flex items-center justify-between py-3">
