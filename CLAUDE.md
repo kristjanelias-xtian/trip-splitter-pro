@@ -51,6 +51,10 @@ git checkout main && git pull
 git branch -d fix/description
 ```
 
+**Hard rules (enforced by hook):**
+- NEVER commit directly on `main`. The PreToolUse hook in `.claude/hooks/no-commit-main.sh` will block it.
+- If a file changes unexpectedly between your edit and commit, investigate (e.g. check `git diff`) — do not assume a "linter" or external tool made the change. It may be another session or editor process.
+
 - `gh issue close` takes **one issue at a time** (not multiple args in one call)
 - Commit messages end with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 - Repo remote name: `kristjanelias-xtian/trip-splitter-pro`
