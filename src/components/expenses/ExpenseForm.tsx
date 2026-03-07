@@ -587,7 +587,7 @@ export function ExpenseForm({
 
               return (
                 <div key={group.label ?? `standalone-${gi}`} className={group.label
-                      ? 'rounded-lg bg-muted/40 border border-border/50 p-2.5 flex flex-wrap gap-2'
+                      ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
                       : 'flex flex-wrap gap-2'
                     }>
                   {group.label && (
@@ -597,7 +597,7 @@ export function ExpenseForm({
                       disabled={loading}
                       className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
                         allGroupSelected
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'bg-primary/15 text-primary border-primary/30'
                           : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
                       }`}
                     >
