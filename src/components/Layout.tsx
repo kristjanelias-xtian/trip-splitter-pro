@@ -187,12 +187,17 @@ export function Layout() {
               {currentTrip ? (
                 <Link to="/" state={{ fromTrip: true }} className="flex items-center gap-3 flex-1 min-w-0">
                   <ArrowLeft size={20} className={`shrink-0 ${onGradient ? 'text-white/80' : 'text-muted-foreground'}`} />
-                  <h1
-                    className={`font-bold text-lg truncate ${onGradient ? 'text-white' : 'text-foreground'}`}
-                    style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
-                  >
-                    {currentTrip.name}
-                  </h1>
+                  <div className="min-w-0">
+                    <h1
+                      className={`font-bold text-lg truncate ${onGradient ? 'text-white' : 'text-foreground'}`}
+                      style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
+                    >
+                      {currentTrip.name}
+                    </h1>
+                    <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
+                      {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
+                    </p>
+                  </div>
                 </Link>
               ) : (
                 <motion.div
