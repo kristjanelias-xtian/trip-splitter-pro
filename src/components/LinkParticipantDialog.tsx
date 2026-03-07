@@ -3,6 +3,7 @@ import { UserCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
+import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,10 +21,11 @@ interface LinkParticipantDialogProps {
 
 export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDialogProps) {
   const { user, userProfile } = useAuth()
-  const { participants, linkUserToParticipant } = useParticipantContext()
+  const { participants, linkUserToParticipant, error, clearError } = useParticipantContext()
   const { isLinked } = useMyParticipant()
   const [open, setOpen] = useState(false)
   const [linking, setLinking] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
 
   if (!user || isLinked) return null
 
@@ -32,17 +34,30 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
 
   const handleLink = async (participantId: string) => {
     setLinking(true)
+    setLinkError(null)
     const success = await linkUserToParticipant(participantId, user.id, user.email ?? undefined, userProfile?.display_name ?? undefined)
     setLinking(false)
 
     if (success) {
       setOpen(false)
       onLinked?.()
+    } else {
+      const msg = error || 'Failed to link — please try again'
+      setLinkError(msg)
+      logger.error('LinkParticipantDialog: link failed', { participantId, error: msg })
+    }
+  }
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (nextOpen) {
+      setLinkError(null)
+      clearError()
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
@@ -58,6 +73,12 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
             Link yourself to a participant so we can show your personal balance and pre-fill forms.
           </DialogDescription>
         </DialogHeader>
+        {linkError && (
+          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 mt-2">
+            <p className="text-sm font-medium text-destructive">Failed to link — please try again</p>
+            <p className="text-xs text-destructive/80 mt-1">{linkError}</p>
+          </div>
+        )}
         <div className="space-y-2 mt-4">
           {adultParticipants.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">

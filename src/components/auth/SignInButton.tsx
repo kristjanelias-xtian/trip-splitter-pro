@@ -1,5 +1,6 @@
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/contexts/AuthContext'
+import { logger } from '@/lib/logger'
 
 interface SignInButtonProps {
   type?: 'icon' | 'standard'
@@ -16,6 +17,7 @@ export function SignInButton({ type = 'icon' }: SignInButtonProps) {
         }
       }}
       onError={() => {
+        logger.error('Google Sign-In failed')
         console.error('Google Sign-In failed')
       }}
       size="medium"
