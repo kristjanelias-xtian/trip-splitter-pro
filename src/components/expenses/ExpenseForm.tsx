@@ -373,7 +373,7 @@ export function ExpenseForm({
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-4"
+      className="space-y-3"
       variants={fadeInUp}
       initial="initial"
       animate="animate"
@@ -439,51 +439,68 @@ export function ExpenseForm({
         </div>
       </div>
 
-      {/* Amount and Currency */}
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            inputMode="decimal"
-            id="amount"
-            value={amount}
-            onChange={e => setAmount(e.target.value.replace(',', '.'))}
-            className="flex-1 text-2xl h-14 tabular-nums"
-            placeholder="0.00"
-            pattern="[0-9]*[.,]?[0-9]*"
-            required
-            disabled={loading}
-          />
+      {/* Amount + Who Paid (2-col on desktop) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Amount and Currency */}
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              inputMode="decimal"
+              id="amount"
+              value={amount}
+              onChange={e => setAmount(e.target.value.replace(',', '.'))}
+              className="flex-1 text-lg h-10 tabular-nums"
+              placeholder="0.00"
+              pattern="[0-9]*[.,]?[0-9]*"
+              required
+              disabled={loading}
+            />
+            <Select
+              value={currency}
+              onValueChange={setCurrency}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-24 h-10 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCurrencies.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Who Paid */}
+        <div className="space-y-2">
+          <Label htmlFor="paidBy">Who Paid?</Label>
           <Select
-            value={currency}
-            onValueChange={setCurrency}
+            value={paidBy}
+            onValueChange={setPaidBy}
             disabled={loading}
           >
-            <SelectTrigger className="w-28 h-14 text-base">
-              <SelectValue />
+            <SelectTrigger id="paidBy" className="h-10">
+              <SelectValue placeholder="Select person..." />
             </SelectTrigger>
             <SelectContent>
-              {availableCurrencies.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+              {adults.map(adult => (
+                <SelectItem key={adult.id} value={adult.id}>
+                  {shortNames.get(adult.id) || adult.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      {/* Who Paid */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="paidBy">Who Paid?</Label>
           {suggestedPayer && expenses.length > 0 && (
             <button
               type="button"
               onClick={() => setPaidBy(suggestedPayer.id)}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Lightbulb size={12} className="text-accent" />
-              <span>
+              <Lightbulb size={12} className="text-accent shrink-0" />
+              <span className="truncate">
                 <strong className="font-medium text-foreground">{suggestedPayer.name}</strong>
                 {' '}should pay next{' '}
                 <span className={getBalanceColorClass(suggestedPayer.balance)}>
@@ -493,23 +510,6 @@ export function ExpenseForm({
             </button>
           )}
         </div>
-
-        <Select
-          value={paidBy}
-          onValueChange={setPaidBy}
-          disabled={loading}
-        >
-          <SelectTrigger id="paidBy">
-            <SelectValue placeholder="Select person..." />
-          </SelectTrigger>
-          <SelectContent>
-            {adults.map(adult => (
-              <SelectItem key={adult.id} value={adult.id}>
-                {shortNames.get(adult.id) || adult.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Split Mode Selector */}
@@ -711,7 +711,7 @@ export function ExpenseForm({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="space-y-4 p-4 bg-accent/5 rounded-lg border border-accent/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-accent/5 rounded-lg border border-accent/10">
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="expenseDate">Date</Label>
