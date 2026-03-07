@@ -340,7 +340,7 @@ export function HomePage() {
           <button
             onClick={handleScanTap}
             disabled={loading}
-            className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all mb-6 disabled:opacity-50"
+            className="w-full lg:hidden flex items-center justify-between px-5 py-4 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all mb-6 disabled:opacity-50"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
