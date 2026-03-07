@@ -524,7 +524,7 @@ export function SettlementsPage() {
                 hideButtons
               />
             </div>
-            <div className="shrink-0 border-t border-border px-4 py-3">
+            <div className="shrink-0 border-t border-border px-4 py-3 pwa-safe-bottom">
               <Button
                 onClick={() => formRef.current?.submit()}
                 disabled={submitting}
