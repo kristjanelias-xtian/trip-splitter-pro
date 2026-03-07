@@ -180,7 +180,7 @@ export function Layout() {
           </>
         )}
 
-        <div className={`relative mx-auto px-4 sm:px-6 lg:px-8 ${tripCode ? 'max-w-7xl' : 'max-w-4xl'}`}>
+        <div className={`relative mx-auto ${tripCode ? 'max-w-7xl px-4 sm:px-6 lg:px-8' : 'max-w-4xl px-4'}`}>
           <div className="flex flex-col">
             {/* Row 1 */}
             <div className="flex items-center justify-between py-4">

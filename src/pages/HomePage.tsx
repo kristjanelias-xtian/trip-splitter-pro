@@ -177,7 +177,7 @@ export function HomePage() {
   )
 
   const renderTripGrid = (trips: typeof visibleTrips) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className={`grid grid-cols-1 gap-4 ${trips.length >= 2 ? 'md:grid-cols-2' : ''}`}>
       {trips.map(({ trip, myBalance }, i) => (
         <motion.div
           key={trip.id}
@@ -290,7 +290,7 @@ export function HomePage() {
 
     return (
       <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${localTrips.length >= 2 ? 'md:grid-cols-2' : ''}`}>
         {localTrips.map((trip) => (
           <Card
             key={trip.tripCode}
