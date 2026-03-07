@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, Loader2, X, ScanLine, ChevronRight } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { useTripContext } from '@/contexts/TripContext'
@@ -9,6 +10,7 @@ import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { QuickParticipantPicker } from './QuickParticipantPicker'
 import { logger } from '@/lib/logger'
 
@@ -86,6 +88,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   const { refreshParticipants } = useParticipantContext()
   const keyboard = useKeyboardHeight()
   const scrollRef = useIOSScrollFix()
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -258,153 +261,182 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
     }, 300)
   }
 
-  return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent
-        side="bottom"
-        hideClose
-        className="flex flex-col p-0 rounded-t-2xl"
-        style={{
-          height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
-        }}
-      >
-        {/* Sticky header — never scrolls */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="w-8" />
-          <SheetTitle className="text-base font-semibold flex items-center gap-2 truncate">
-            <ScanLine size={20} className="flex-shrink-0" />
-            <span className="truncate">
-              {step === 'camera' && 'Scan a Receipt'}
-              {step === 'scanning' && 'Reading receipt…'}
-              {step === 'participants' && (createdTripName ?? 'Add People')}
-            </span>
-          </SheetTitle>
-          <button
-            onClick={handleClose}
-            aria-label="Close"
-            className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
+  const closeBtn = (
+    <button
+      onClick={handleClose}
+      aria-label="Close"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <X className="w-4 h-4 text-muted-foreground" />
+    </button>
+  )
 
-        {/* Scrollable content — only this scrolls */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
-          {/* Step 1: Camera */}
-          {step === 'camera' && (
-            <div className="flex flex-col gap-4 h-full">
-              {!previewUrl ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-                    <Camera size={40} className="text-muted-foreground" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium text-foreground">Add a receipt photo</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      A new group will be created automatically
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2 w-full max-w-xs">
-                    <Button variant="default" className="gap-2" onClick={() => cameraInputRef.current?.click()}>
-                      <Camera size={16} />
-                      Take Photo
-                    </Button>
-                    <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                      <Upload size={16} />
-                      Choose from Library
-                    </Button>
-                  </div>
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleFileInputChange}
-                  />
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileInputChange}
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <div className="relative rounded-lg overflow-hidden border border-border">
-                    <img
-                      src={previewUrl}
-                      alt="Receipt preview"
-                      className="w-full max-h-64 object-contain bg-muted"
-                    />
-                    <button
-                      onClick={handleReset}
-                      className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
-                      aria-label="Remove image"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
+  const titleContent = (
+    <>
+      <ScanLine size={20} className="flex-shrink-0" />
+      <span className="truncate">
+        {step === 'camera' && 'Scan a Receipt'}
+        {step === 'scanning' && 'Reading receipt…'}
+        {step === 'participants' && (createdTripName ?? 'Add People')}
+      </span>
+    </>
+  )
 
-                  {error && (
-                    <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-                      {error}
-                    </div>
-                  )}
-
-                  <Button onClick={handleScan} size="lg" className="gap-2">
-                    <ScanLine size={16} />
-                    Scan & Create Group
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 2: Scanning */}
-          {step === 'scanning' && (
-            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <Loader2 size={36} className="animate-spin text-primary" />
+  const scrollContent = (
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+      {/* Step 1: Camera */}
+      {step === 'camera' && (
+        <div className="flex flex-col gap-4 h-full">
+          {!previewUrl ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+                <Camera size={40} className="text-muted-foreground" />
               </div>
-              <div>
-                <p className="font-medium text-foreground">Reading your receipt…</p>
+              <div className="text-center">
+                <p className="font-medium text-foreground">Add a receipt photo</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Creating your group and extracting items
+                  A new group will be created automatically
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground">Usually takes 5–10 seconds</p>
-            </div>
-          )}
-
-          {/* Step 3: Add participants */}
-          {step === 'participants' && createdTripId && createdTripCode && createdTripName && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Add people to split the receipt with. You can always add more later.
-              </p>
-              <QuickParticipantPicker
-                tripId={createdTripId}
+              <div className="flex flex-col gap-2 w-full max-w-xs">
+                <Button variant="default" className="gap-2" onClick={() => cameraInputRef.current?.click()}>
+                  <Camera size={16} />
+                  Take Photo
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={16} />
+                  Choose from Library
+                </Button>
+              </div>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileInputChange}
               />
-              <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDone}>
-                Skip for now
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileInputChange}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="relative rounded-lg overflow-hidden border border-border">
+                <img
+                  src={previewUrl}
+                  alt="Receipt preview"
+                  className="w-full max-h-64 object-contain bg-muted"
+                />
+                <button
+                  onClick={handleReset}
+                  className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
+                  aria-label="Remove image"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {error && (
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  {error}
+                </div>
+              )}
+
+              <Button onClick={handleScan} size="lg" className="gap-2">
+                <ScanLine size={16} />
+                Scan & Create Group
               </Button>
             </div>
           )}
         </div>
+      )}
 
-        {/* Sticky footer — participants step */}
-        {step === 'participants' && (
-          <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
-            <Button className="w-full gap-1" onClick={handleDone}>
-              Done
-              <ChevronRight size={14} />
-            </Button>
+      {/* Step 2: Scanning */}
+      {step === 'scanning' && (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+            <Loader2 size={36} className="animate-spin text-primary" />
           </div>
-        )}
-      </SheetContent>
-    </Sheet>
+          <div>
+            <p className="font-medium text-foreground">Reading your receipt…</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Creating your group and extracting items
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">Usually takes 5–10 seconds</p>
+        </div>
+      )}
+
+      {/* Step 3: Add participants */}
+      {step === 'participants' && createdTripId && createdTripCode && createdTripName && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Add people to split the receipt with. You can always add more later.
+          </p>
+          <QuickParticipantPicker
+            tripId={createdTripId}
+          />
+          <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDone}>
+            Skip for now
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+
+  const stickyFooter = step === 'participants' ? (
+    <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
+      <Button className="w-full gap-1" onClick={handleDone}>
+        Done
+        <ChevronRight size={14} />
+      </Button>
+    </div>
+  ) : null
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={handleClose}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{
+            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+            bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+          }}
+        >
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold flex items-center gap-2 truncate">
+              {titleContent}
+            </SheetTitle>
+            {closeBtn}
+          </div>
+          {scrollContent}
+          {stickyFooter}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent hideClose className="flex flex-col max-h-[85vh] max-w-lg p-0 gap-0">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="w-8" />
+          <DialogTitle className="text-base font-semibold flex items-center gap-2 truncate">
+            {titleContent}
+          </DialogTitle>
+          {closeBtn}
+        </div>
+        {scrollContent}
+        {stickyFooter}
+      </DialogContent>
+    </Dialog>
   )
 }
