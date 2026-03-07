@@ -415,8 +415,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   )
 
   const scrollContent = (
-    <div className="relative flex-1 min-h-0 overflow-hidden">
-      <div ref={scrollRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto overscroll-contain px-6 py-4">
+    <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
       {view === 'suggestions' ? (
         <div className="space-y-4">
           {allSettled ? (
