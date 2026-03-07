@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useTripContext } from '@/contexts/TripContext'
-import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { EventForm } from '@/components/EventForm'
 import { CreateEventInput } from '@/types/trip'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -18,7 +17,6 @@ interface QuickCreateSheetProps {
 export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) {
   const navigate = useNavigate()
   const { createTrip } = useTripContext()
-  const { mode } = useUserPreferences()
   const keyboard = useKeyboardHeight()
   const scrollRef = useIOSScrollFix()
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -27,7 +25,7 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
     const newEvent = await createTrip(input)
     if (newEvent) {
       onOpenChange(false)
-      navigate(mode === 'quick' ? `/t/${newEvent.trip_code}/quick` : `/t/${newEvent.trip_code}/manage`)
+      navigate(isMobile ? `/t/${newEvent.trip_code}/quick` : `/t/${newEvent.trip_code}/manage`)
     }
   }
 
