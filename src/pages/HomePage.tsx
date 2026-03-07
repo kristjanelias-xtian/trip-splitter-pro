@@ -168,6 +168,7 @@ export function HomePage() {
                   <GroupActions
                     tripCode={trip.trip_code}
                     tripName={trip.name}
+                    showRemove={trip.created_by !== user?.id && myBalance === null}
                     onHidden={() => handleHidden(trip.trip_code)}
                     onLeft={() => handleLeft(trip.trip_code)}
                   />
