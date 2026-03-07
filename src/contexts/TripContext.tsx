@@ -49,18 +49,37 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }
 
       // Authenticated: scope to trips where user is creator OR participant
-      const { data: participantRows, error: participantError } = await withTimeout(
-        supabase.from('participants').select('trip_id').eq('user_id', user.id).abortSignal(signal),
-        10000,
-        'Loading trip membership timed out.'
-      )
+      // Run both participant lookups in parallel (user_id link + email match)
+      const [participantResult, emailResult] = await Promise.all([
+        withTimeout(
+          supabase.from('participants').select('trip_id').eq('user_id', user.id).abortSignal(signal),
+          10000,
+          'Loading trip membership timed out.'
+        ),
+        user.email
+          ? withTimeout(
+              supabase.from('participants').select('trip_id')
+                .ilike('email', user.email)
+                .is('user_id', null)
+                .abortSignal(signal),
+              10000,
+              'Loading email-matched trips timed out.'
+            )
+          : Promise.resolve({ data: [], error: null } as { data: { trip_id: string }[] | null; error: any }),
+      ])
       if (signal.aborted) return
-      if (participantError) throw participantError
+      if (participantResult.error) throw participantResult.error
 
-      const participantTripIds = (participantRows ?? []).map((r: any) => r.trip_id as string)
+      if (emailResult.error) {
+        logger.warn('Failed to fetch email-matched trips', { error: emailResult.error.message })
+      }
 
-      const filter = participantTripIds.length > 0
-        ? `created_by.eq.${user.id},id.in.(${participantTripIds.join(',')})`
+      const participantTripIds = (participantResult.data ?? []).map((r: any) => r.trip_id as string)
+      const emailTripIds = (emailResult.data ?? []).map((r: any) => r.trip_id as string)
+      const allTripIds = [...new Set([...participantTripIds, ...emailTripIds])]
+
+      const filter = allTripIds.length > 0
+        ? `created_by.eq.${user.id},id.in.(${allTripIds.join(',')})`
         : `created_by.eq.${user.id}`
 
       if (signal.aborted) return
