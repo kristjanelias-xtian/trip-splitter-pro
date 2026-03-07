@@ -30,6 +30,7 @@ interface ExpenseFormProps {
   onCancel?: () => void
   initialValues?: Partial<CreateExpenseInput>
   submitLabel?: string
+  stickyFooter?: boolean
 }
 
 const CATEGORIES: ExpenseCategory[] = [
@@ -46,6 +47,7 @@ export function ExpenseForm({
   onCancel,
   initialValues,
   submitLabel = 'Add Expense',
+  stickyFooter = false,
 }: ExpenseFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
@@ -370,14 +372,8 @@ export function ExpenseForm({
     return groups
   })()
 
-  return (
-    <motion.form
-      onSubmit={handleSubmit}
-      className="space-y-3"
-      variants={fadeInUp}
-      initial="initial"
-      animate="animate"
-    >
+  const formFields = (
+    <>
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -801,26 +797,52 @@ export function ExpenseForm({
         </AnimatePresence>
       </div>
 
-      {/* Submit Buttons */}
-      <div className="flex gap-3 pt-2">
+    </>
+  )
+
+  const buttons = (
+    <div className={stickyFooter ? 'shrink-0 border-t border-border px-1 pt-3 flex gap-3' : 'flex gap-3 pt-2'}>
+      <Button
+        type="submit"
+        disabled={loading}
+        className="flex-1"
+      >
+        {loading ? 'Saving...' : submitLabel}
+      </Button>
+      {onCancel && (
         <Button
-          type="submit"
+          type="button"
+          onClick={onCancel}
           disabled={loading}
-          className="flex-1"
+          variant="outline"
         >
-          {loading ? 'Saving...' : submitLabel}
+          Cancel
         </Button>
-        {onCancel && (
-          <Button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            variant="outline"
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
+      )}
+    </div>
+  )
+
+  return (
+    <motion.form
+      onSubmit={handleSubmit}
+      className={stickyFooter ? 'flex flex-col min-h-0 flex-1' : 'space-y-3'}
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+    >
+      {stickyFooter ? (
+        <>
+          <div className="flex-1 overflow-y-auto overscroll-contain space-y-3 pb-3">
+            {formFields}
+          </div>
+          {buttons}
+        </>
+      ) : (
+        <>
+          {formFields}
+          {buttons}
+        </>
+      )}
     </motion.form>
   )
 }
