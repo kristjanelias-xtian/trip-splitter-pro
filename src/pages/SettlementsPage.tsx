@@ -3,7 +3,7 @@ import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
-import { Receipt, FileDown, X } from 'lucide-react'
+import { Receipt, FileDown, X, Trash2 } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -23,6 +23,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
@@ -31,7 +41,7 @@ export function SettlementsPage() {
   const { user, userProfile } = useAuth()
   const { participants, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
-  const { createSettlement, settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
+  const { createSettlement, deleteSettlement, settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { receiptByExpenseId } = useReceiptContext()
   const [showRecordDialog, setShowRecordDialog] = useState(false)
   const [prefill, setPrefill] = useState<{
@@ -46,6 +56,7 @@ export function SettlementsPage() {
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
   const [retrying, setRetrying] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const isMobile = useMediaQuery('(max-width: 767px)')
   const formRef = useRef<SettlementFormHandle>(null)
   const keyboard = useKeyboardHeight()
@@ -216,6 +227,12 @@ export function SettlementsPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleDeleteSettlement = async () => {
+    if (!deletingId) return
+    await deleteSettlement(deletingId)
+    setDeletingId(null)
   }
 
   const handleRemind = async (transaction: SettlementTransaction, emails: string[]): Promise<void> => {
@@ -447,9 +464,9 @@ export function SettlementsPage() {
                   return (
                     <div
                       key={settlement.id}
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                      className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg"
                     >
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium text-foreground">
                             {fromParticipant?.name || 'Unknown'}
@@ -465,7 +482,7 @@ export function SettlementsPage() {
                           </p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <div className="text-lg font-bold text-positive tabular-nums">
                           {new Intl.NumberFormat('en-US', {
                             style: 'currency',
@@ -476,6 +493,13 @@ export function SettlementsPage() {
                           {new Date(settlement.settlement_date).toLocaleDateString()}
                         </div>
                       </div>
+                      <button
+                        onClick={() => setDeletingId(settlement.id)}
+                        aria-label="Delete settlement"
+                        className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   )
                 })}
@@ -589,6 +613,24 @@ export function SettlementsPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete settlement confirmation */}
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete settlement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the recorded payment. Balances will be recalculated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSettlement} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { EyeOff, LogOut } from 'lucide-react'
+import { EyeOff, X } from 'lucide-react'
 
 interface GroupActionsProps {
   tripCode: string
@@ -40,15 +40,15 @@ export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActi
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-            <LogOut size={14} />
-            Leave
+            <X size={14} />
+            Remove
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave "{tripName}"?</AlertDialogTitle>
+            <AlertDialogTitle>Remove "{tripName}" from your list?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the trip from your list. You can rejoin later via the share link.
+              This only removes the trip from your home page. Your expenses and data stay intact, and you can rejoin anytime via the share link.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -59,7 +59,7 @@ export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActi
                 onLeft?.()
               }}
             >
-              Leave
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
