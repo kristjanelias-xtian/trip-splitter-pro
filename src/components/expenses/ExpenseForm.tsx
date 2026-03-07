@@ -445,32 +445,44 @@ export function ExpenseForm({
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <div className="flex gap-2">
-            <Input
-              type="text"
-              inputMode="decimal"
-              id="amount"
-              value={amount}
-              onChange={e => setAmount(e.target.value.replace(',', '.'))}
-              className="flex-1 text-lg h-10 tabular-nums"
-              placeholder="0.00"
-              pattern="[0-9]*[.,]?[0-9]*"
-              required
-              disabled={loading}
-            />
-            <Select
-              value={currency}
-              onValueChange={setCurrency}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-24 h-10 text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                inputMode="decimal"
+                id="amount"
+                value={amount}
+                onChange={e => setAmount(e.target.value.replace(',', '.'))}
+                className={`text-lg h-10 tabular-nums ${availableCurrencies.length === 1 ? 'pr-14' : ''}`}
+                placeholder="0.00"
+                pattern="[0-9]*[.,]?[0-9]*"
+                required
+                disabled={loading}
+              />
+              {availableCurrencies.length === 1 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {currency}
+                </span>
+              )}
+            </div>
+            {availableCurrencies.length > 1 && (
+              <div className="flex gap-1 items-center">
                 {availableCurrencies.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCurrency(c)}
+                    disabled={loading}
+                    className={`h-10 px-2.5 text-xs rounded-md border transition-colors ${
+                      currency === c
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                    }`}
+                  >
+                    {c}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -571,71 +583,118 @@ export function ExpenseForm({
           </Button>
         </div>
 
-        <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
-          {participantGroups.map((group, gi) => {
-            const memberIds = group.members.map(m => m.id)
-            const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
-            const allGroupSelected = selectedCount === memberIds.length
-            const someGroupSelected = selectedCount > 0 && !allGroupSelected
+        {splitMode === 'equal' ? (
+          <div className="flex flex-wrap gap-2 rounded-lg border border-input p-3">
+            {participantGroups.map((group, gi) => {
+              const memberIds = group.members.map(m => m.id)
+              const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
-            return (
-              <div
-                key={group.label ?? `standalone-${gi}`}
-                className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
-              >
-                {group.label && (
-                  <div
-                    role="checkbox"
-                    aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
-                    className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
-                    onClick={() => handleGroupToggle(memberIds)}
-                  >
-                    <span
-                      className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
-                    >
-                      {allGroupSelected && <Check className="h-4 w-4" />}
-                    </span>
-                    <span className="text-xs font-medium text-foreground flex-1 flex items-center gap-1">
-                      <Users size={12} className="text-muted-foreground" />
-                      {group.label}
-                      <span className="text-xs text-muted-foreground font-normal">
-                        ({memberIds.length})
-                      </span>
-                    </span>
-                  </div>
-                )}
-                {group.members.map(participant => (
-                  <div key={participant.id} className={`flex items-center space-x-2 min-h-[44px] ${group.label ? 'pl-5' : ''}`}>
-                    <Checkbox
-                      id={`participant-${participant.id}`}
-                      checked={selectedParticipants.includes(participant.id)}
-                      onCheckedChange={() => handleParticipantToggle(participant.id)}
+              return (
+                <div key={group.label ?? `standalone-${gi}`} className="contents">
+                  {group.label && (
+                    <button
+                      type="button"
+                      onClick={() => handleGroupToggle(memberIds)}
                       disabled={loading}
-                    />
-                    <label
-                      htmlFor={`participant-${participant.id}`}
-                      className="text-sm text-foreground cursor-pointer flex-1"
+                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                        allGroupSelected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
+                      }`}
                     >
-                      {shortNames.get(participant.id) || participant.name} {participant.is_adult ? '' : '(child)'}
-                    </label>
-                    {splitMode !== 'equal' && selectedParticipants.includes(participant.id) && (
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={participantSplitValues[participant.id] || ''}
-                        onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
-                        placeholder={splitMode === 'percentage' ? '%' : currency}
-                        pattern="[0-9]*[.,]?[0-9]*"
+                      <Users size={12} />
+                      {group.label}
+                      <span className="text-xs opacity-70">({memberIds.length})</span>
+                    </button>
+                  )}
+                  {group.members.map(participant => (
+                    <button
+                      key={participant.id}
+                      type="button"
+                      onClick={() => handleParticipantToggle(participant.id)}
+                      disabled={loading}
+                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                        selectedParticipants.includes(participant.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                      }`}
+                    >
+                      {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
+                      {shortNames.get(participant.id) || participant.name}
+                      {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
+            {participantGroups.map((group, gi) => {
+              const memberIds = group.members.map(m => m.id)
+              const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
+              const allGroupSelected = selectedCount === memberIds.length
+              const someGroupSelected = selectedCount > 0 && !allGroupSelected
+
+              return (
+                <div
+                  key={group.label ?? `standalone-${gi}`}
+                  className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
+                >
+                  {group.label && (
+                    <div
+                      role="checkbox"
+                      aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
+                      className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
+                      onClick={() => handleGroupToggle(memberIds)}
+                    >
+                      <span
+                        className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
+                      >
+                        {allGroupSelected && <Check className="h-4 w-4" />}
+                      </span>
+                      <span className="text-xs font-medium text-foreground flex-1 flex items-center gap-1">
+                        <Users size={12} className="text-muted-foreground" />
+                        {group.label}
+                        <span className="text-xs text-muted-foreground font-normal">
+                          ({memberIds.length})
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {group.members.map(participant => (
+                    <div key={participant.id} className={`flex items-center space-x-2 min-h-[44px] ${group.label ? 'pl-5' : ''}`}>
+                      <Checkbox
+                        id={`participant-${participant.id}`}
+                        checked={selectedParticipants.includes(participant.id)}
+                        onCheckedChange={() => handleParticipantToggle(participant.id)}
                         disabled={loading}
-                        className="w-24 h-9"
                       />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
-        </div>
+                      <label
+                        htmlFor={`participant-${participant.id}`}
+                        className="text-sm text-foreground cursor-pointer flex-1"
+                      >
+                        {shortNames.get(participant.id) || participant.name} {participant.is_adult ? '' : '(child)'}
+                      </label>
+                      {selectedParticipants.includes(participant.id) && (
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={participantSplitValues[participant.id] || ''}
+                          onChange={(e) => handleParticipantSplitChange(participant.id, e.target.value.replace(',', '.'))}
+                          placeholder={splitMode === 'percentage' ? '%' : currency}
+                          pattern="[0-9]*[.,]?[0-9]*"
+                          disabled={loading}
+                          className="w-24 h-9"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Proportional group toggle — only when wallet_group participants are selected */}
         {hasSelectedGroups && (

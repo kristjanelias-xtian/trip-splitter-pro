@@ -1,13 +1,6 @@
 import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
 
 interface WizardStep1Props {
@@ -66,32 +59,44 @@ export function WizardStep1({
           Amount
         </Label>
         <div className="flex gap-3">
-          <Input
-            type="text"
-            id="amount"
-            value={amount}
-            onChange={(e) => onAmountChange(e.target.value.replace(',', '.'))}
-            className="flex-1 text-2xl h-14 tabular-nums"
-            placeholder="0.00"
-            inputMode="decimal"
-            pattern="[0-9]*[.,]?[0-9]*"
-            required
-            disabled={disabled}
-          />
-          <Select
-            value={currency}
-            onValueChange={onCurrencyChange}
-            disabled={disabled}
-          >
-            <SelectTrigger className="w-28 h-14 text-base">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              id="amount"
+              value={amount}
+              onChange={(e) => onAmountChange(e.target.value.replace(',', '.'))}
+              className={`text-2xl h-14 tabular-nums ${currencies.length === 1 ? 'pr-16' : ''}`}
+              placeholder="0.00"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              required
+              disabled={disabled}
+            />
+            {currencies.length === 1 && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base text-muted-foreground">
+                {currency}
+              </span>
+            )}
+          </div>
+          {currencies.length > 1 && (
+            <div className="flex gap-1 items-center">
               {currencies.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => onCurrencyChange(c)}
+                  disabled={disabled}
+                  className={`h-14 px-3 text-sm rounded-md border transition-colors ${
+                    currency === c
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                  }`}
+                >
+                  {c}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Enter the total amount spent
