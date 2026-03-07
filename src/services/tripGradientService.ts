@@ -45,57 +45,64 @@ const THEMES = {
   beach: {
     keywords: ['beach', 'thailand', 'bali', 'hawaii', 'maldives', 'caribbean', 'coast', 'island', 'tropical', 'sea', 'ocean'],
     gradients: [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Purple-blue
-      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Bright blue
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // Turquoise
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Soft blue-pink
-      'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', // Sandy
+      'linear-gradient(150deg, #0f2027 0%, #203a43 40%, #2c5364 100%)',  // Deep Ocean
+      'linear-gradient(135deg, #c94b4b 0%, #b33771 50%, #4a247c 100%)',  // Coral Reef
+      'linear-gradient(160deg, #1a1a2e 0%, #e65c00 50%, #f5af19 100%)',  // Tropical Sunset
+      'linear-gradient(120deg, #00b4db 0%, #0083b0 45%, #2e1065 100%)',  // Lagoon
+      'linear-gradient(140deg, #134e5e 0%, #1a8a6e 50%, #0d3b66 100%)',  // Seafoam Night
+      'linear-gradient(130deg, #e65c00 0%, #d45088 40%, #6441a5 100%)',  // Island Dusk
     ],
     icons: [Palmtree, Waves, Sun, Fish, Shell],
   },
   mountain: {
     keywords: ['mountain', 'alps', 'hiking', 'trek', 'hill', 'peak', 'valley'],
     gradients: [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Purple mountains
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // Green
-      'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', // Deep blue-green
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Soft pastels
+      'linear-gradient(145deg, #1a1a2e 0%, #16213e 35%, #1b4332 70%, #2d6a4f 100%)',  // Alpine Twilight
+      'linear-gradient(155deg, #b45309 0%, #92400e 50%, #44403c 100%)',  // Summit Glow
+      'linear-gradient(130deg, #065f46 0%, #047857 40%, #064e3b 100%)',  // Forest Depth
+      'linear-gradient(160deg, #1e1e2f 0%, #3b4371 50%, #5b4a8a 100%)',  // Mountain Storm
+      'linear-gradient(140deg, #3d5a3e 0%, #1b6b6d 50%, #111827 100%)',  // Ridgeline
     ],
     icons: [Mountain, Trees, TreePine],
   },
   ski: {
     keywords: ['ski', 'snow', 'winter', 'himos', 'levi', 'alps', 'whistler', 'aspen', 'slope'],
     gradients: [
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Icy pastels
-      'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)', // Purple-blue ice
-      'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', // White-blue
-      'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)', // Ice blue
+      'linear-gradient(135deg, #0c1445 0%, #0e6ba8 40%, #6b21a8 100%)',  // Northern Lights
+      'linear-gradient(150deg, #0f172a 0%, #1e3a5f 45%, #3b82f6 100%)',  // Black Diamond
+      'linear-gradient(120deg, #0a1628 0%, #1e40af 50%, #0ea5e9 100%)',  // Powder Blue
+      'linear-gradient(145deg, #1e1b4b 0%, #4338ca 50%, #2563eb 100%)',  // Frostbite
+      'linear-gradient(160deg, #042f2e 0%, #155e75 45%, #22d3ee 100%)',  // Glacier
     ],
     icons: [CloudSnow, Snowflake, Mountain, TreePine],
   },
   city: {
     keywords: ['city', 'urban', 'paris', 'london', 'tokyo', 'york', 'berlin', 'rome', 'barcelona', 'amsterdam'],
     gradients: [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Urban purple
-      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // Vibrant pink
-      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', // Sunset city
-      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', // Soft pink
+      'linear-gradient(135deg, #1a1a2e 0%, #6b21a8 50%, #db2777 100%)',  // Neon Noir
+      'linear-gradient(150deg, #111827 0%, #374151 40%, #d97706 100%)',  // Metropolitan
+      'linear-gradient(140deg, #7c3aed 0%, #ec4899 50%, #f97316 100%)',  // City Lights
+      'linear-gradient(125deg, #2e1065 0%, #9333ea 40%, #be123c 100%)',  // Nightlife
+      'linear-gradient(155deg, #1c1917 0%, #334155 50%, #475569 100%)',  // Urban Steel
+      'linear-gradient(135deg, #44403c 0%, #a16207 50%, #c2410c 100%)',  // Golden Hour
     ],
     icons: [Building2, Landmark, Coffee, ShoppingBag, Camera],
   },
   generic: {
     keywords: [],
     gradients: [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-      'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-      'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)',
+      'linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #c026d3 100%)',  // Ultraviolet
+      'linear-gradient(150deg, #7f1d1d 0%, #dc2626 45%, #f59e0b 100%)',  // Ember
+      'linear-gradient(120deg, #0c1445 0%, #0d9488 50%, #06b6d4 100%)',  // Deep Sea
+      'linear-gradient(140deg, #1a1a2e 0%, #be185d 50%, #f472b6 100%)',  // Midnight Rose
+      'linear-gradient(130deg, #052e16 0%, #059669 50%, #4ade80 100%)',  // Emerald Dark
+      'linear-gradient(155deg, #0f172a 0%, #475569 50%, #64748b 100%)',  // Slate Storm
+      'linear-gradient(145deg, #1c1917 0%, #b91c1c 45%, #c2410c 100%)',  // Crimson Night
+      'linear-gradient(160deg, #2e1065 0%, #4f46e5 45%, #3b82f6 100%)',  // Electric Indigo
+      'linear-gradient(135deg, #292524 0%, #b45309 50%, #d97706 100%)',  // Copper Dusk
+      'linear-gradient(125deg, #064e3b 0%, #0891b2 50%, #2563eb 100%)',  // Aurora
+      'linear-gradient(150deg, #18181b 0%, #991b1b 50%, #ea580c 100%)',  // Volcanic
+      'linear-gradient(140deg, #172554 0%, #1d4ed8 50%, #60a5fa 100%)',  // Sapphire
     ],
     icons: [Plane, MapPin, Compass, Luggage, Map, Camera],
   },
