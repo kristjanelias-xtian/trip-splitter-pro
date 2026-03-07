@@ -28,6 +28,8 @@ const STAY_COLORS = [
   { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', cellBorder: 'border-indigo-200', dot: 'bg-indigo-400' },
 ]
 
+const HOME_HEX_BG = '#f5f5f4' // stone-100, matches bg-muted/30
+
 const STAY_HEX_BG = [
   '#fffbeb', // amber-50
   '#f0f9ff', // sky-50
@@ -215,6 +217,15 @@ export function PlannerGrid({
               }
             }
 
+            // Checkout-to-home split: stay ends this day with no new stay starting
+            if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
+              const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
+              splitStyle = {
+                background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${HOME_HEX_BG} 50%)`,
+              }
+              splitBorderClass = 'border-border'
+            }
+
             const calendarDate = getCalendarDate(date)
             const context = getDayContext(date)
             const meals = getMealsForDate(date)
@@ -230,7 +241,7 @@ export function PlannerGrid({
                   'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
                   'h-20 md:h-24',
                   'hover:bg-accent/50 cursor-pointer',
-                  isSplit
+                  splitStyle
                     ? splitBorderClass
                     : stayColor
                       ? `${stayColor.bg} ${stayColor.cellBorder}`
