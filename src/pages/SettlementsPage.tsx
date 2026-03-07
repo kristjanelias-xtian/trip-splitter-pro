@@ -546,13 +546,14 @@ export function SettlementsPage() {
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Log a payment between participants.
               </p>
               <SettlementForm
+                ref={formRef}
+                hideButtons
                 onSubmit={handleCustomSettlement}
-                onCancel={closeDialog}
                 initialAmount={prefill?.amount}
                 initialNote={prefill?.note}
                 initialFromId={prefill?.fromId}
@@ -560,6 +561,16 @@ export function SettlementsPage() {
                 recipientBankDetails={prefill?.bankDetails}
                 recipientName={prefill?.recipientName}
               />
+            </div>
+            <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3">
+              <Button
+                onClick={() => formRef.current?.submit()}
+                disabled={submitting}
+                className="flex-1"
+              >
+                {submitting ? 'Confirming...' : 'Confirm Payment'}
+              </Button>
+              <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             </div>
           </DialogContent>
         </Dialog>
