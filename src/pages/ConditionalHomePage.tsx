@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
@@ -23,6 +23,20 @@ export function ConditionalHomePage() {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const fromTrip = !!(location.state as any)?.fromTrip
 
+  // Track sign-in transition (null → non-null user) to avoid redirecting
+  // to a stranger's trip. When unauthenticated, TripContext fetches ALL trips
+  // (RLS is open). On sign-in there's a render cycle where `user` is set but
+  // `trips` still contains all trips — skip the redirect for that cycle.
+  const prevUserIdRef = useRef<string | null | undefined>(undefined)
+  const justSignedInRef = useRef(false)
+
+  useEffect(() => {
+    if (prevUserIdRef.current === null && user?.id) {
+      justSignedInRef.current = true
+    }
+    prevUserIdRef.current = user?.id ?? null
+  }, [user?.id])
+
   useEffect(() => {
     if (!isMobile || tripsLoading) return
 
@@ -41,6 +55,14 @@ export function ConditionalHomePage() {
     // TripContext fetches ALL trips and localStorage includes shared-link trips,
     // so there's no reliable way to distinguish "my trip" from "visited via link".
     if (!user) return
+
+    // Skip redirect on the render cycle right after sign-in — trips list
+    // may still contain all trips (pre-auth fetch) and we'd redirect to
+    // a stranger's active trip.
+    if (justSignedInRef.current) {
+      justSignedInRef.current = false
+      return
+    }
 
     const activeTripId = getActiveTripId(trips)
 

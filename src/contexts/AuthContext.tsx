@@ -5,6 +5,7 @@ import { UserProfile } from '@/types/auth'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { debugLog } from '@/lib/debugLogger'
+import { clearMyTrips } from '@/lib/myTripsStorage'
 
 interface AuthContextType {
   user: User | null
@@ -210,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     logger.info('User signed out', { user_id: user?.id })
+    clearMyTrips()
     const { error } = await supabase.auth.signOut()
     if (error) {
       logger.error('Sign-out failed', { error: error.message })
