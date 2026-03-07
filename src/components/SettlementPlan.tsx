@@ -164,26 +164,68 @@ function SettlementTransactionCard({
   return (
     <Card>
       <div className="p-3 space-y-2">
-        {/* Names + amount + actions row */}
+        {/* Row 1: Names */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground shrink-0">{index}.</span>
-          <div className="flex items-center gap-1.5 min-w-0 flex-wrap flex-1">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <div className="flex items-center gap-1 min-w-0">
               <ParticipantAvatar participant={{ name: transaction.fromName, avatar_url: avatarMap?.[transaction.fromId] ?? null }} size="sm" forceInitials={transaction.fromIsFamily} />
-              <span className="font-medium text-foreground text-sm truncate">
+              <span className="font-medium text-foreground text-sm">
                 {transaction.fromName}
               </span>
             </div>
             <span className="text-muted-foreground shrink-0">→</span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <ParticipantAvatar participant={{ name: transaction.toName, avatar_url: avatarMap?.[transaction.toId] ?? null }} size="sm" forceInitials={transaction.toIsFamily} />
-              <span className="font-medium text-foreground text-sm truncate">
+              <span className="font-medium text-foreground text-sm">
                 {transaction.toName}
               </span>
             </div>
           </div>
-          <span className="text-base font-semibold text-accent tabular-nums shrink-0 ml-auto">{formattedAmount}</span>
-          <div className="flex gap-1.5 shrink-0">
+          {/* Amount + buttons inline on desktop */}
+          <span className="text-base font-semibold text-accent tabular-nums shrink-0 ml-auto hidden md:inline">{formattedAmount}</span>
+          <div className="hidden md:flex gap-1.5 shrink-0">
+            {onSettle && (
+              <Button onClick={onSettle} size="sm" className="h-7 text-xs">
+                Settle
+              </Button>
+            )}
+            {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
+              <Button
+                onClick={() => {
+                  setConfirmingRemind(true)
+                  setRemindResult(null)
+                  if (fromEmails.length > 1) {
+                    const init: Record<string, boolean> = {}
+                    for (const e of fromEmails) init[e.email] = true
+                    setCheckedEmails(init)
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                title={`Send payment reminder to ${transaction.fromName}`}
+              >
+                <Bell size={12} className="mr-1" />
+                Remind
+              </Button>
+            )}
+            {confirmingRemind && (
+              <Button
+                onClick={() => setConfirmingRemind(false)}
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-muted-foreground"
+              >
+                <X size={14} />
+              </Button>
+            )}
+          </div>
+        </div>
+        {/* Row 2: Amount + buttons on mobile */}
+        <div className="flex items-center justify-between pl-5 md:hidden">
+          <span className="text-base font-semibold text-accent tabular-nums">{formattedAmount}</span>
+          <div className="flex gap-1.5">
             {onSettle && (
               <Button onClick={onSettle} size="sm" className="h-7 text-xs">
                 Settle
