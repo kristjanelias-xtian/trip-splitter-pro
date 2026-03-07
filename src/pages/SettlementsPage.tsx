@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Receipt, FileDown, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
@@ -15,10 +16,11 @@ import { exportSettlementPlanToPDF } from '@/services/pdfExport'
 import type { SettlementTransaction } from '@/services/settlementOptimizer'
 import type { CreateSettlementInput } from '@/types/settlement'
 import { SettlementPlan, BankDetails } from '@/components/SettlementPlan'
-import { SettlementForm } from '@/components/SettlementForm'
+import { SettlementForm, SettlementFormHandle } from '@/components/SettlementForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
@@ -41,6 +43,9 @@ export function SettlementsPage() {
   const [bankDetailsMap, setBankDetailsMap] = useState<Record<string, BankDetails>>({})
   const [linkedParticipantIds, setLinkedParticipantIds] = useState<Set<string>>(new Set())
   const [retrying, setRetrying] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const formRef = useRef<SettlementFormHandle>(null)
 
   const handleRefresh = useCallback(
     () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
@@ -197,11 +202,16 @@ export function SettlementsPage() {
   }
 
   const handleCustomSettlement = async (input: CreateSettlementInput) => {
-    const result = await createSettlement(input)
-    if (!result) {
-      throw new Error('Failed to record settlement')
+    setSubmitting(true)
+    try {
+      const result = await createSettlement(input)
+      if (!result) {
+        throw new Error('Failed to record settlement')
+      }
+      closeDialog()
+    } finally {
+      setSubmitting(false)
     }
-    closeDialog()
   }
 
   const handleRemind = async (transaction: SettlementTransaction, emails: string[]): Promise<void> => {
@@ -455,34 +465,74 @@ export function SettlementsPage() {
         </>}
       </div>
 
-      {/* Record Settlement Dialog */}
-      <Dialog open={showRecordDialog} onOpenChange={(open) => { if (!open) closeDialog() }}>
-        <DialogContent hideClose className="max-w-lg max-h-[85vh] p-0 gap-0 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-            <div className="w-8" />
-            <DialogTitle className="text-base font-semibold">Settle Up</DialogTitle>
-            <button onClick={closeDialog} aria-label="Close"
-              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Log a payment between participants.
-            </p>
-            <SettlementForm
-              onSubmit={handleCustomSettlement}
-              onCancel={closeDialog}
-              initialAmount={prefill?.amount}
-              initialNote={prefill?.note}
-              initialFromId={prefill?.fromId}
-              initialToId={prefill?.toId}
-              recipientBankDetails={prefill?.bankDetails}
-              recipientName={prefill?.recipientName}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Record Settlement — Sheet on mobile, Dialog on desktop */}
+      {isMobile ? (
+        <Sheet open={showRecordDialog} onOpenChange={(open) => { if (!open) closeDialog() }}>
+          <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '92dvh' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="w-8" />
+              <SheetTitle className="text-base font-semibold">Settle Up</SheetTitle>
+              <button onClick={closeDialog} aria-label="Close"
+                className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Log a payment between participants.
+              </p>
+              <SettlementForm
+                ref={formRef}
+                onSubmit={handleCustomSettlement}
+                initialAmount={prefill?.amount}
+                initialNote={prefill?.note}
+                initialFromId={prefill?.fromId}
+                initialToId={prefill?.toId}
+                recipientBankDetails={prefill?.bankDetails}
+                recipientName={prefill?.recipientName}
+                hideButtons
+              />
+            </div>
+            <div className="shrink-0 border-t border-border px-4 py-3">
+              <Button
+                onClick={() => formRef.current?.submit()}
+                disabled={submitting}
+                className="w-full"
+              >
+                {submitting ? 'Confirming...' : 'Confirm Payment'}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={showRecordDialog} onOpenChange={(open) => { if (!open) closeDialog() }}>
+          <DialogContent hideClose className="max-w-lg max-h-[85vh] p-0 gap-0 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="w-8" />
+              <DialogTitle className="text-base font-semibold">Settle Up</DialogTitle>
+              <button onClick={closeDialog} aria-label="Close"
+                className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Log a payment between participants.
+              </p>
+              <SettlementForm
+                onSubmit={handleCustomSettlement}
+                onCancel={closeDialog}
+                initialAmount={prefill?.amount}
+                initialNote={prefill?.note}
+                initialFromId={prefill?.fromId}
+                initialToId={prefill?.toId}
+                recipientBankDetails={prefill?.bankDetails}
+                recipientName={prefill?.recipientName}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }

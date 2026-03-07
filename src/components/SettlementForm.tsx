@@ -1,4 +1,4 @@
-import { useState, FormEvent, useRef, useEffect, useMemo } from 'react'
+import { useState, FormEvent, useRef, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
 import { motion } from 'framer-motion'
 import { Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -19,6 +19,11 @@ import {
 import { fadeInUp } from '@/lib/animations'
 import { buildShortNameMap } from '@/lib/participantUtils'
 
+export interface SettlementFormHandle {
+  submit: () => void
+  loading: boolean
+}
+
 interface SettlementFormProps {
   onSubmit: (input: CreateSettlementInput) => Promise<void>
   onCancel?: () => void
@@ -28,6 +33,7 @@ interface SettlementFormProps {
   initialToId?: string
   recipientBankDetails?: { holder: string; iban: string } | null
   recipientName?: string
+  hideButtons?: boolean
 }
 
 function CopyButton({ value }: { value: string }) {
@@ -73,7 +79,7 @@ const BANK_SHORTCUTS = [
   },
 ]
 
-export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId, recipientBankDetails, recipientName }: SettlementFormProps) {
+export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormProps>(function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId, recipientBankDetails, recipientName, hideButtons }, ref) {
   const { currentTrip } = useCurrentTrip()
   const { participants } = useParticipantContext()
 
@@ -89,6 +95,13 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
   const [error, setError] = useState<string | null>(null)
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const isMounted = useRef(true)
+
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    submit: () => formRef.current?.requestSubmit(),
+    loading,
+  }), [loading])
 
   useEffect(() => {
     return () => { isMounted.current = false }
@@ -192,6 +205,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
 
   return (
     <motion.form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-4"
       variants={fadeInUp}
@@ -308,7 +322,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="e.g., Paid in cash, Partial payment, etc."
-          rows={2}
+          rows={1}
           disabled={loading}
         />
       </div>
@@ -379,7 +393,7 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
                 href={bank.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center gap-1.5 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+                className="flex flex-col items-center gap-1.5 rounded-lg border border-border p-2 hover:bg-muted/50 transition-colors"
               >
                 <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg text-xs ${bank.badgeClass}`}>
                   {bank.badgeText}
@@ -395,25 +409,27 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
       )}
 
       {/* Submit Buttons */}
-      <div className="flex gap-3 pt-2">
-        <Button
-          type="submit"
-          disabled={loading}
-          className="flex-1"
-        >
-          {loading ? 'Confirming...' : 'Confirm Payment'}
-        </Button>
-        {onCancel && (
+      {!hideButtons && (
+        <div className="flex gap-3 pt-2">
           <Button
-            type="button"
-            onClick={onCancel}
+            type="submit"
             disabled={loading}
-            variant="outline"
+            className="flex-1"
           >
-            Cancel
+            {loading ? 'Confirming...' : 'Confirm Payment'}
           </Button>
-        )}
-      </div>
+          {onCancel && (
+            <Button
+              type="button"
+              onClick={onCancel}
+              disabled={loading}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+      )}
     </motion.form>
   )
-}
+})
