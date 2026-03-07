@@ -2,6 +2,7 @@ import { Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Event } from '@/types/trip'
 import { ParticipantBalance, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { getTripGradientPattern } from '@/services/tripGradientService'
 
 interface TripCardProps {
   trip: Event
@@ -19,6 +20,7 @@ function formatCardDate(isoDate: string): string {
 }
 
 export function TripCard({ trip, balance, isActive, onClick, actions }: TripCardProps) {
+  const pattern = getTripGradientPattern(trip.name)
   const hasDate = trip.start_date || trip.end_date
   const dateLabel = hasDate
     ? trip.end_date && trip.end_date !== trip.start_date
@@ -27,7 +29,11 @@ export function TripCard({ trip, balance, isActive, onClick, actions }: TripCard
     : null
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden relative">
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+        style={{ background: pattern.gradient }}
+      />
       <div
         className="cursor-pointer hover:bg-accent/30 transition-colors"
         onClick={onClick}
