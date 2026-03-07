@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
-import { Plus, Search, Receipt, FileDown, SlidersHorizontal, ScanLine, User, Tag } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { Plus, Search, Receipt, FileDown, SlidersHorizontal, User, Tag } from 'lucide-react'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
@@ -15,7 +14,6 @@ import { exportExpensesToExcel } from '@/services/excelExport'
 import { ExpenseWizard } from '@/components/expenses/ExpenseWizard'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { PendingReceiptBanner, ReceiptReviewData } from '@/components/receipts/PendingReceiptBanner'
-import { ReceiptCaptureSheet } from '@/components/receipts/ReceiptCaptureSheet'
 import { ReceiptReviewSheet } from '@/components/receipts/ReceiptReviewSheet'
 import { ReceiptDetailsSheet } from '@/components/receipts/ReceiptDetailsSheet'
 import { ReceiptTask } from '@/types/receipt'
@@ -47,8 +45,6 @@ export function ExpensesPage() {
   const { settlements } = useSettlementContext()
   const { pendingReceipts, receiptByExpenseId, dismissReceiptTask } = useReceiptContext()
   const { user } = useAuth()
-  const { toast } = useToast()
-
   const handleRefresh = useCallback(() => refreshExpenses(), [refreshExpenses])
   useRegisterRefresh(handleRefresh)
 
@@ -59,7 +55,6 @@ export function ExpensesPage() {
   const [selectedPaidBy, setSelectedPaidBy] = useState<string | 'all'>('all')
   const [filtersVisible, setFiltersVisible] = useState(false)
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
-  const [showReceiptCapture, setShowReceiptCapture] = useState(false)
   const [receiptReviewData, setReceiptReviewData] = useState<ReceiptReviewData | null>(null)
   const [viewingReceiptTask, setViewingReceiptTask] = useState<ReceiptTask | null>(null)
   const [retrying, setRetrying] = useState(false)
@@ -180,9 +175,6 @@ export function ExpensesPage() {
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary pointer-events-none" />
               )}
             </div>
-            <Button onClick={() => setShowReceiptCapture(true)} variant="ghost" size="icon" title="Scan receipt">
-              <ScanLine size={18} />
-            </Button>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
               {showForm ? 'Cancel' : 'Add Expense'}
@@ -343,19 +335,6 @@ export function ExpensesPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Receipt Capture */}
-      {currentTrip && (
-        <ReceiptCaptureSheet
-          open={showReceiptCapture}
-          onOpenChange={setShowReceiptCapture}
-          tripId={currentTrip.id}
-          onScanned={(_taskId) => {
-            setShowReceiptCapture(false)
-            toast({ title: 'Receipt scanned', description: 'Review it using the banner above.' })
-          }}
-        />
-      )}
 
       {/* Receipt Review */}
       {receiptReviewData && (
