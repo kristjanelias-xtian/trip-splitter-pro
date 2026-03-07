@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Receipt, FileDown, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
@@ -46,6 +48,8 @@ export function SettlementsPage() {
   const [submitting, setSubmitting] = useState(false)
   const isMobile = useMediaQuery('(max-width: 767px)')
   const formRef = useRef<SettlementFormHandle>(null)
+  const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
 
   const handleRefresh = useCallback(
     () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
@@ -499,7 +503,16 @@ export function SettlementsPage() {
       {/* Record Settlement — Sheet on mobile, Dialog on desktop */}
       {isMobile ? (
         <Sheet open={showRecordDialog} onOpenChange={(open) => { if (!open) closeDialog() }}>
-          <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '92dvh' }}>
+          <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{
+            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+            ...(keyboard.isVisible && {
+              top: `${keyboard.viewportOffset}px`,
+              bottom: 'auto',
+            }),
+            ...(keyboard.viewportOffset > 0 && {
+              paddingBottom: `${keyboard.viewportOffset}px`,
+            }),
+          }}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
               <div className="w-8" />
               <SheetTitle className="text-base font-semibold">Settle Up</SheetTitle>
@@ -508,7 +521,7 @@ export function SettlementsPage() {
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Log a payment between participants.
               </p>
@@ -524,14 +537,15 @@ export function SettlementsPage() {
                 hideButtons
               />
             </div>
-            <div className="shrink-0 border-t border-border px-4 py-3">
+            <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3 pwa-safe-bottom">
               <Button
                 onClick={() => formRef.current?.submit()}
                 disabled={submitting}
-                className="w-full"
+                className="flex-1"
               >
                 {submitting ? 'Confirming...' : 'Confirm Payment'}
               </Button>
+              <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             </div>
           </SheetContent>
         </Sheet>
