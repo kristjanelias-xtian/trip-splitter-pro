@@ -114,6 +114,7 @@ export function Layout() {
     const items = [
       { path: `/t/${tripCode}/dashboard`, label: 'Overview', requiresTrip: true },
       { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
+      { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
     ]
     if (currentTrip?.enable_meals || currentTrip?.enable_activities) {
       items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
@@ -133,7 +134,6 @@ export function Layout() {
     return [
       { path: '/', label: 'Events & Trips', requiresTrip: false },
       { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
-      { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
     ]
   }
 
