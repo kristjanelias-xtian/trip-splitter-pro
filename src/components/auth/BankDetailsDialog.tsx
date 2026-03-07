@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,13 @@ export function BankDetailsDialog({ open, onOpenChange }: BankDetailsDialogProps
   const [holder, setHolder] = useState(userProfile?.bank_account_holder || '')
   const [iban, setIban] = useState(userProfile?.bank_iban || '')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open && userProfile) {
+      setHolder(userProfile.bank_account_holder || '')
+      setIban(userProfile.bank_iban || '')
+    }
+  }, [open, userProfile])
 
   const handleSave = async () => {
     setSaving(true)
