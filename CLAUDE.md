@@ -14,7 +14,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 - Auth: Supabase Auth (Google OAuth supported)
 - Observability: Grafana Cloud (Loki logs + OTLP metrics) via `log-proxy` Edge Function
 - Deployment: Cloudflare Pages
-- Tests: Vitest + Testing Library (175 tests)
+- Tests: Vitest + Testing Library (182 tests)
 
 ---
 
@@ -142,7 +142,7 @@ control needed for reads.
 
 The app has two UI modes that share a **unified home page** but differ inside trip views:
 
-- **Full mode** — multi-page layout inside a trip: Expenses / Settlements / Planner / Shopping / Dashboard, with bottom tab bar (mobile) and side nav (desktop)
+- **Full mode** — multi-page layout inside a trip: Overview / Expenses / Settlements (+ conditional Planner, Shopping), with bottom tab bar (mobile) and side nav (desktop)
 - **Quick mode** — streamlined single-trip view focused on balance summary and fast expense entry, no bottom nav
 
 Mode is stored per-user in `user_preferences.preferred_mode` and synced from Supabase on sign-in. Local storage (`spl1t:user-preferences`) is the source of truth when not signed in.
@@ -288,6 +288,26 @@ Breakpoint detection: `useMediaQuery('(max-width: 767px)')`.
 Desktop dialogs use `hideClose` (custom header close button) + `max-h-[85vh] p-0 gap-0`. Content is shared between Sheet and Dialog via extracted JSX variables.
 
 **Full audit log:** `docs/QUICK_ACTIONS_AUDIT.md`
+
+### Desktop Dialog Sticky Footer Pattern
+
+Desktop dialogs that contain scrollable form content use a flex column layout with a sticky footer for action buttons. The pattern prevents buttons from scrolling out of view:
+
+- `DialogContent`: `max-h-[90vh] flex flex-col p-0 gap-0` (no `overflow-y-auto`)
+- Wrapper div: `flex-1 min-h-0 flex flex-col px-6 py-6`
+- Form component: accepts `stickyFooter` prop → `flex flex-col min-h-0 flex-1`
+- Fields: wrapped in `flex-1 overflow-y-auto overscroll-contain`
+- Buttons: `shrink-0 border-t border-border`
+
+Applied to: `ExpenseForm` (via `stickyFooter` prop, used by `ExpenseWizard` desktop path), `SettlementForm` (inline pattern).
+
+### Category Auto-Inference (`src/lib/categoryInference.ts`)
+
+`inferCategory(description)` matches expense descriptions against keyword lists to auto-select category (Food, Accommodation, Transport, Activities, Training). Includes Estonian translations. Used in both `ExpenseForm` (desktop) and `MobileWizard` (mobile) with 300ms debounce. Manual category selection disables auto-inference for that expense via `categoryManuallySet` ref.
+
+### Participant Short Names (`src/lib/participantUtils.ts`)
+
+`buildShortNameMap(participants)` generates unique display names. When multiple participants share the same first name, falls back to full name. Possessive suffixes (Estonian -i, -e endings) are normalized during comparison. Used across ExpenseForm, SettlementForm, balance cards, and all participant pickers.
 
 ### iOS Keyboard / Viewport
 
@@ -494,7 +514,7 @@ iOS Safari ignores `manifest.start_url` and saves whatever URL was in the addres
 ## Testing
 
 ### Unit Tests
-Vitest + Testing Library. Run with `npm test`. 175 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
+Vitest + Testing Library. Run with `npm test`. 182 tests covering contexts, hooks, and key pages. Test files co-located with source (`*.test.tsx`). Use factories in `src/test/factories.ts` to build test data.
 
 ### E2E Smoke Tests (Playwright)
 26 automated tests: 13 routes × 2 viewports (mobile 375×812, desktop 1280×720). Supabase fully mocked via `page.route()`. Run with `npm run test:e2e` or `npm run test:e2e:ui`.
