@@ -580,15 +580,15 @@ export function ExpenseForm({
         </div>
 
         {splitMode === 'equal' ? (
-          <div className="flex flex-wrap gap-2 rounded-lg border border-input p-3">
+          <div className="rounded-lg border border-input p-3 space-y-3">
             {participantGroups.map((group, gi) => {
               const memberIds = group.members.map(m => m.id)
               const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
               return (
                 <div key={group.label ?? `standalone-${gi}`} className={group.label
-                      ? 'rounded-lg bg-muted/40 border border-border/50 p-2 flex flex-wrap gap-2'
-                      : 'contents'
+                      ? 'rounded-lg bg-muted/40 border border-border/50 p-2.5 flex flex-wrap gap-2'
+                      : 'flex flex-wrap gap-2'
                     }>
                   {group.label && (
                     <button
