@@ -8,6 +8,7 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { inferCategory } from '@/lib/categoryInference'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -62,6 +63,24 @@ export function ExpenseForm({
   )
   const [comment, setComment] = useState(initialValues?.comment || '')
   const [showMoreDetails, setShowMoreDetails] = useState(false)
+
+  // Track whether the user manually picked a category (don't override with auto-inference)
+  const categoryManuallySet = useRef(!!initialValues?.category)
+
+  const handleCategoryChange = (cat: ExpenseCategory) => {
+    categoryManuallySet.current = true
+    setCategory(cat)
+  }
+
+  // Auto-infer category from description (debounced)
+  useEffect(() => {
+    if (categoryManuallySet.current) return
+    const timer = setTimeout(() => {
+      const inferred = inferCategory(description)
+      if (inferred) setCategory(inferred)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [description])
 
   // Distribution state — always individuals
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
@@ -398,6 +417,28 @@ export function ExpenseForm({
         />
       </div>
 
+      {/* Category (inline pills) */}
+      <div className="space-y-1.5">
+        <Label>Category</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategoryChange(cat)}
+              disabled={loading}
+              className={`h-7 px-3 text-xs rounded-full border transition-colors ${
+                category === cat
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Amount and Currency */}
       <div className="space-y-2">
         <Label htmlFor="amount">Amount</Label>
@@ -478,39 +519,24 @@ export function ExpenseForm({
       </div>
 
       {/* Split Mode Selector */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Split Method</Label>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={splitMode === 'equal' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleSplitModeChange('equal')}
-            disabled={loading}
-            className="flex-1"
-          >
-            Equal Split
-          </Button>
-          <Button
-            type="button"
-            variant={splitMode === 'percentage' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleSplitModeChange('percentage')}
-            disabled={loading}
-            className="flex-1"
-          >
-            By %
-          </Button>
-          <Button
-            type="button"
-            variant={splitMode === 'amount' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleSplitModeChange('amount')}
-            disabled={loading}
-            className="flex-1"
-          >
-            By Amount
-          </Button>
+        <div className="flex gap-1.5">
+          {([['equal', 'Equal'], ['percentage', 'By %'], ['amount', 'By Amount']] as const).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => handleSplitModeChange(mode)}
+              disabled={loading}
+              className={`h-7 px-3 text-xs rounded-full border transition-colors ${
+                splitMode === mode
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         {splitMode !== 'equal' && (
           <p className="text-xs text-muted-foreground">
@@ -702,27 +728,6 @@ export function ExpenseForm({
                     onChange={e => setExpenseDate(e.target.value)}
                     disabled={loading}
                   />
-                </div>
-
-                {/* Category */}
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={category}
-                    onValueChange={(value) => setCategory(value as ExpenseCategory)}
-                    disabled={loading}
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(cat => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 {/* Comment */}

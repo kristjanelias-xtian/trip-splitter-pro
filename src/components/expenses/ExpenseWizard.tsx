@@ -14,6 +14,7 @@ import { calculateBalances } from '@/services/balanceCalculator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { inferCategory } from '@/lib/categoryInference'
 
 import { X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -124,6 +125,24 @@ function MobileWizard({
   // Proportional group splitting (per-expense toggle)
   const [accountForFamilySize, setAccountForFamilySize] = useState(false)
 
+  // Track whether user manually picked a category (don't override with auto-inference)
+  const categoryManuallySet = useRef(!!initialValues?.category)
+
+  // Auto-infer category from description (debounced)
+  useEffect(() => {
+    if (categoryManuallySet.current) return
+    const timer = setTimeout(() => {
+      const inferred = inferCategory(description)
+      if (inferred) setCategory(inferred)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [description])
+
+  const handleManualCategoryChange = (cat: string) => {
+    categoryManuallySet.current = true
+    setCategory(cat)
+  }
+
   const adults = getAdultParticipants()
 
   // Compute available currencies from trip settings
@@ -174,6 +193,7 @@ function MobileWizard({
         setSplitMode('equal')
         setParticipantSplitValues({})
         setAccountForFamilySize(false)
+        categoryManuallySet.current = false
         // Don't reset category, currency, date - likely to be reused
       }, 300)
       return () => clearTimeout(timer)
@@ -495,7 +515,7 @@ function MobileWizard({
               splitMode={splitMode}
               onSplitModeChange={handleSplitModeChange}
               category={category}
-              onCategoryChange={setCategory}
+              onCategoryChange={handleManualCategoryChange}
               expenseDate={expenseDate}
               onExpenseDateChange={setExpenseDate}
               comment={comment}
