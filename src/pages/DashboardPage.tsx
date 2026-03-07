@@ -1,19 +1,22 @@
 import { lazy, Suspense, useState, useCallback, useMemo } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
-import { Lightbulb, Receipt, FileDown, Share2 } from 'lucide-react'
+import { Lightbulb, Receipt, FileDown, Share2, Landmark, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useMyParticipant } from '@/hooks/useMyParticipant'
+import { useBankDetailsPrompt } from '@/hooks/useBankDetailsPrompt'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
-import { calculateBalances } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { exportTripSummaryToPDF } from '@/services/pdfExport'
 import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
+import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
 import { ParticipantBalance } from '@/services/balanceCalculator'
 import type { Participant } from '@/types/participant'
@@ -28,6 +31,8 @@ export function DashboardPage() {
   const { participants, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
+  const { myParticipant } = useMyParticipant()
+  const bankPrompt = useBankDetailsPrompt()
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
   const [retrying, setRetrying] = useState(false)
 
@@ -246,6 +251,38 @@ export function DashboardPage() {
         </Card>
       )}
 
+      {/* Bank details nudge */}
+      {(() => {
+        if (!myParticipant || !currentTrip) return null
+        const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
+        const myEntityId = entityMap.participantToEntityId.get(myParticipant.id) ?? myParticipant.id
+        const myBal = displayBalances.find(b => b.id === myEntityId)
+        if (!bankPrompt.shouldShowNudge(!!myBal && myBal.balance > 0)) return null
+        return (
+          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+            <CardContent className="pt-4 pb-4 flex items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Landmark size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Add your bank details</p>
+                  <p className="text-xs text-muted-foreground">So others know where to pay you</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button size="sm" onClick={() => bankPrompt.setDialogOpen(true)}>Add</Button>
+                <button
+                  onClick={bankPrompt.dismiss}
+                  aria-label="Dismiss"
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
+
       {/* Analytics & Insights */}
       {expenses.length > 0 && (
         <>
@@ -306,6 +343,9 @@ export function DashboardPage() {
       )}
 
       </>}
+
+      {/* Bank details dialog */}
+      <BankDetailsDialog open={bankPrompt.dialogOpen} onOpenChange={bankPrompt.setDialogOpen} />
 
       {/* Cost Breakdown Dialog */}
       {selectedBalance && (
