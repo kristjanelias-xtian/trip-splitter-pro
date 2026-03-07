@@ -474,31 +474,25 @@ export function ExpenseForm({
 
       {/* Who Paid */}
       <div className="space-y-2">
-        <Label htmlFor="paidBy">Who Paid?</Label>
-
-        {/* Smart Payer Suggestion */}
-        {suggestedPayer && expenses.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-3 bg-accent/10 border border-accent/20 rounded-lg"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Lightbulb size={16} className="text-accent" />
-                  <span><strong>{suggestedPayer.name}</strong> should pay next</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Current balance:{' '}
-                  <span className={getBalanceColorClass(suggestedPayer.balance)}>
-                    {formatBalance(suggestedPayer.balance, currentTrip?.default_currency || 'EUR')}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="paidBy">Who Paid?</Label>
+          {suggestedPayer && expenses.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPaidBy(suggestedPayer.id)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Lightbulb size={12} className="text-accent" />
+              <span>
+                <strong className="font-medium text-foreground">{suggestedPayer.name}</strong>
+                {' '}should pay next{' '}
+                <span className={getBalanceColorClass(suggestedPayer.balance)}>
+                  ({formatBalance(suggestedPayer.balance, currentTrip?.default_currency || 'EUR')})
+                </span>
+              </span>
+            </button>
+          )}
+        </div>
 
         <Select
           value={paidBy}
