@@ -21,7 +21,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { UserMenu } from '@/components/auth/UserMenu'
-import { ModeToggle } from '@/components/quick/ModeToggle'
+
 import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { isAdminUser } from '@/lib/adminAuth'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
@@ -223,19 +223,7 @@ export function Layout() {
                   </button>
                 )}
                 <ReportIssueButton onGradient={onGradient} />
-                {/* In trip: show scan + mode toggle (desktop only; Row 2 handles mobile). On home: hidden (page has its own scan CTA) */}
-                {tripCode && (
-                  <div className="hidden lg:flex items-center gap-2">
-                    <button
-                      onClick={handleScanTap}
-                      aria-label="Scan receipt"
-                      className={`p-2 rounded-md transition-colors ${onGradient ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                    >
-                      <ScanLine size={20} />
-                    </button>
-                    <ModeToggle onGradient={onGradient} />
-                  </div>
-                )}
+
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
@@ -249,7 +237,7 @@ export function Layout() {
                 onGradient ? 'border-white/40 bg-white/15 hover:bg-white/25 text-white' : 'border-primary/40 bg-primary/10 hover:bg-primary/15 text-primary'
               }`
               return (
-                <div className={`lg:hidden grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
+                <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                   <button onClick={handleScanTap} className={pillClass}>
                     <ScanLine size={14} />
                     Scan
@@ -270,7 +258,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px]' : 'mt-20'}`}>
         <LayoutPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
@@ -410,7 +398,7 @@ export function Layout() {
       </nav>}
 
       {/* Side navigation (desktop) */}
-      {tripCode && <aside className="hidden lg:block fixed left-0 top-20 bottom-0 w-64 bg-card border-r border-border soft-shadow">
+      {tripCode && <aside className="hidden lg:block fixed left-0 top-[108px] bottom-0 w-64 bg-card border-r border-border soft-shadow">
         <nav className="px-3 py-6 space-y-1">
           {desktopNavItems.map((item) => {
             const Icon = iconMap[item.label as keyof typeof iconMap]
