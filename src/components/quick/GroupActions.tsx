@@ -17,11 +17,12 @@ import { EyeOff, X } from 'lucide-react'
 interface GroupActionsProps {
   tripCode: string
   tripName: string
+  showRemove?: boolean
   onHidden?: () => void
   onLeft?: () => void
 }
 
-export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActionsProps) {
+export function GroupActions({ tripCode, tripName, showRemove, onHidden, onLeft }: GroupActionsProps) {
   return (
     <div className="flex gap-2">
       <Button
@@ -37,7 +38,7 @@ export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActi
         Hide
       </Button>
 
-      <AlertDialog>
+      {showRemove && <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
             <X size={14} />
@@ -63,7 +64,7 @@ export function GroupActions({ tripCode, tripName, onHidden, onLeft }: GroupActi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </div>
   )
 }
