@@ -184,7 +184,7 @@ function SettlementTransactionCard({
           </div>
           {/* Amount + buttons inline on desktop */}
           <span className="text-base font-semibold text-accent tabular-nums shrink-0 ml-auto hidden md:inline">{formattedAmount}</span>
-          <div className="hidden md:flex gap-1.5 shrink-0">
+          <div className="hidden md:flex flex-col gap-1 shrink-0">
             {onSettle && (
               <Button onClick={onSettle} size="sm" className="h-7 text-xs">
                 Settle
