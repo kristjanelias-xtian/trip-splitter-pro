@@ -7,6 +7,11 @@ export function getShortName(p: Pick<Participant, 'name' | 'nickname'>): string 
 
 type NameableParticipant = Pick<Participant, 'id' | 'name' | 'nickname'>
 
+/** Normalize short name for collision detection: lowercase, strip trailing 's/'s. */
+function collisionKey(short: string): string {
+  return short.replace(/'s$/i, '').toLowerCase()
+}
+
 /** Pre-compute short display names, using full name when short names collide. */
 export function buildShortNameMap(participants: NameableParticipant[]): Map<string, string> {
   const map = new Map<string, string>()
@@ -18,15 +23,16 @@ export function buildShortNameMap(participants: NameableParticipant[]): Map<stri
     full: p.name,
   }))
 
-  // Count short name occurrences
+  // Count collisions using normalized key ("Mari" and "Mari's" → same key)
   const counts = new Map<string, number>()
   for (const { short } of entries) {
-    counts.set(short, (counts.get(short) || 0) + 1)
+    const key = collisionKey(short)
+    counts.set(key, (counts.get(key) || 0) + 1)
   }
 
   // Use full name when short name is ambiguous
   for (const { id, short, full } of entries) {
-    map.set(id, (counts.get(short) || 0) > 1 ? full : short)
+    map.set(id, (counts.get(collisionKey(short)) || 0) > 1 ? full : short)
   }
 
   return map
