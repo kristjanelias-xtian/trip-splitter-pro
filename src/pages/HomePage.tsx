@@ -61,7 +61,7 @@ const DEMO_TRIP_CODE = 'livigno-2025'
 export function HomePage() {
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
-  const { loading: tripsLoading, refreshTrips } = useTripContext()
+  const { loading: tripsLoading, refreshTrips, emailDiscoveredTripIds } = useTripContext()
   const { mode } = useUserPreferences()
   const { tripBalances, loading: balancesLoading } = useMyTripBalances()
   const [localTrips, setLocalTrips] = useState<MyTripEntry[]>([])
@@ -92,9 +92,14 @@ export function HomePage() {
   const visibleTrips = tripBalances.filter(tb => !hiddenCodes.has(tb.trip.trip_code))
   const hiddenTrips = tripBalances.filter(tb => hiddenCodes.has(tb.trip.trip_code))
 
-  // Split visible trips into "my trips" (creator or linked participant) vs "visited" (localStorage-only)
-  const myTrips = visibleTrips.filter(({ trip, myBalance }) => trip.created_by === user?.id || myBalance !== null)
-  const visitedTrips = visibleTrips.filter(({ trip, myBalance }) => trip.created_by !== user?.id && myBalance === null)
+  // Split visible trips into "my trips", "invited" (email-discovered), and "visited" (localStorage-only)
+  const invitedTrips = visibleTrips.filter(({ trip }) => emailDiscoveredTripIds.has(trip.id))
+  const myTrips = visibleTrips.filter(({ trip, myBalance }) =>
+    !emailDiscoveredTripIds.has(trip.id) && (trip.created_by === user?.id || myBalance !== null)
+  )
+  const visitedTrips = visibleTrips.filter(({ trip, myBalance }) =>
+    !emailDiscoveredTripIds.has(trip.id) && trip.created_by !== user?.id && myBalance === null
+  )
 
   const activeTripId = useMemo(
     () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
@@ -194,7 +199,7 @@ export function HomePage() {
               <GroupActions
                 tripCode={trip.trip_code}
                 tripName={trip.name}
-                showRemove={trip.created_by !== user?.id && myBalance === null}
+                showRemove={trip.created_by !== user?.id && myBalance === null && !emailDiscoveredTripIds.has(trip.id)}
                 onHidden={() => handleHidden(trip.trip_code)}
                 onLeft={() => handleLeft(trip.trip_code)}
               />
@@ -215,18 +220,28 @@ export function HomePage() {
       return renderEmptyState()
     }
 
+    const sectionCount = [myTrips, invitedTrips, visitedTrips].filter(s => s.length > 0).length
+    const showHeadings = sectionCount > 1
+
     return (
       <>
-        {myTrips.length > 0 && visitedTrips.length > 0 && (
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">My Trips</h2>
+        {myTrips.length > 0 && (
+          <>
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">My Trips</h2>}
+            {renderTripGrid(myTrips)}
+          </>
         )}
-        {myTrips.length > 0 && renderTripGrid(myTrips)}
+
+        {invitedTrips.length > 0 && (
+          <div className={myTrips.length > 0 ? 'mt-8' : ''}>
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Invited</h2>}
+            {renderTripGrid(invitedTrips)}
+          </div>
+        )}
 
         {visitedTrips.length > 0 && (
-          <div className={myTrips.length > 0 ? 'mt-8' : ''}>
-            {myTrips.length > 0 && (
-              <h2 className="text-sm font-medium text-muted-foreground mb-3">Visited</h2>
-            )}
+          <div className={myTrips.length > 0 || invitedTrips.length > 0 ? 'mt-8' : ''}>
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Visited</h2>}
             {renderTripGrid(visitedTrips)}
           </div>
         )}

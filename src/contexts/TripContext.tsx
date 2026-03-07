@@ -11,6 +11,7 @@ import { getMyTrips } from '@/lib/myTripsStorage'
 interface TripContextType {
   trips: Event[]
   myTripIds: Set<string>
+  emailDiscoveredTripIds: Set<string>
   loading: boolean
   error: string | null
   getTripById: (id: string) => Event | undefined
@@ -28,6 +29,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth()
   const [trips, setTrips] = useState<Event[]>([])
   const [myTripIds, setMyTripIds] = useState<Set<string>>(new Set())
+  const [emailDiscoveredTripIds, setEmailDiscoveredTripIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { newSignal, cancel } = useAbortController()
@@ -60,6 +62,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         if (signal.aborted) return
         if (fetchError) throw fetchError
         setMyTripIds(new Set())
+        setEmailDiscoveredTripIds(new Set())
         setTrips((data as unknown as Event[]) || [])
         return
       }
@@ -109,6 +112,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (fetchError) throw fetchError
       const fetchedTrips = (data as unknown as Event[]) || []
       setMyTripIds(new Set(fetchedTrips.map(t => t.id)))
+      const creatorIds = new Set(fetchedTrips.filter(t => t.created_by === user.id).map(t => t.id))
+      setEmailDiscoveredTripIds(
+        new Set(emailTripIds.filter(id => !participantTripIds.includes(id) && !creatorIds.has(id)))
+      )
       setTrips(fetchedTrips)
 
       // Merge localStorage trips that weren't returned by the DB query.
@@ -342,6 +349,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const value: TripContextType = {
     trips,
     myTripIds,
+    emailDiscoveredTripIds,
     loading,
     error,
     getTripById,

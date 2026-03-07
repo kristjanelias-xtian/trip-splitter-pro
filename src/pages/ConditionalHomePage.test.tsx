@@ -34,6 +34,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 const mockTrips = {
   trips: [] as any[],
   myTripIds: new Set<string>(),
+  emailDiscoveredTripIds: new Set<string>(),
   loading: false,
   error: null,
   getTripById: vi.fn(),
