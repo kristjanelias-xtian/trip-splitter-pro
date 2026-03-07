@@ -81,9 +81,7 @@ export function Layout() {
 
   // Desktop navigation - all items visible
   const getDesktopNavItems = () => {
-    const items = [
-      { path: '/', label: 'Events & Trips', requiresTrip: false },
-    ]
+    const items: { path: string; label: string; requiresTrip: boolean }[] = []
 
     if (tripCode) {
       items.push(
