@@ -85,7 +85,7 @@ export function Layout() {
 
     if (tripCode) {
       items.push(
-        { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
+        { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
         { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
         { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
       )
@@ -96,7 +96,7 @@ export function Layout() {
         items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
       }
       items.push(
-        { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
+        { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
       )
     }
 
