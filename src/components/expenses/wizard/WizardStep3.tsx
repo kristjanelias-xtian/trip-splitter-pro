@@ -161,7 +161,7 @@ export function WizardStep3({
                     return (
                       <div
                         key={group.label ?? `standalone-${gi}`}
-                        className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
+                        className={group.label ? 'border-l-2 border-primary/30 pl-3 mt-2 first:mt-0' : ''}
                       >
                         {group.label && (
                           <div
