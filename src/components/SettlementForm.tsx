@@ -1,6 +1,6 @@
 import { useState, FormEvent, useRef, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
+import { Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -211,124 +211,93 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
         </motion.div>
       )}
 
-      {/* From Participant */}
-      <div className="space-y-2">
-        <Label htmlFor="fromParticipant">Who Paid? (From)</Label>
-        <Select
-          value={fromParticipantId}
-          onValueChange={setFromParticipantId}
-          disabled={loading}
-        >
-          <SelectTrigger id="fromParticipant">
-            <SelectValue placeholder="Select person..." />
-          </SelectTrigger>
-          <SelectContent>
-            {adultsForSelection.map(adult => (
-              <SelectItem key={adult.id} value={adult.id}>
-                {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* To Participant */}
-      <div className="space-y-2">
-        <Label htmlFor="toParticipant">Who Received? (To)</Label>
-        <Select
-          value={toParticipantId}
-          onValueChange={setToParticipantId}
-          disabled={loading}
-        >
-          <SelectTrigger id="toParticipant">
-            <SelectValue placeholder="Select person..." />
-          </SelectTrigger>
-          <SelectContent>
-            {adultsForSelection.map(adult => (
-              <SelectItem key={adult.id} value={adult.id}>
-                {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Visual Arrow Indicator */}
-      {fromParticipantId && toParticipantId && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-accent/10 border border-accent/20 rounded-lg p-4"
-        >
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <div className="text-center">
-              <span className="font-semibold text-foreground block">
-                {adultsForSelection.find(a => a.id === fromParticipantId)?.name}
-              </span>
-              {adultsForSelection.find(a => a.id === fromParticipantId)?.groupName && (
-                <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === fromParticipantId)?.groupName})
-                </span>
-              )}
-            </div>
-            <ArrowRight size={24} className="text-accent flex-shrink-0" />
-            <div className="text-center">
-              <span className="font-semibold text-foreground block">
-                {adultsForSelection.find(a => a.id === toParticipantId)?.name}
-              </span>
-              {adultsForSelection.find(a => a.id === toParticipantId)?.groupName && (
-                <span className="text-xs text-muted-foreground">
-                  ({adultsForSelection.find(a => a.id === toParticipantId)?.groupName})
-                </span>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Amount and Currency */}
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            inputMode="decimal"
-            id="amount"
-            value={amount}
-            onChange={e => setAmount(e.target.value.replace(',', '.'))}
-            className="flex-1 text-2xl h-14 tabular-nums"
-            placeholder="0.00"
-            pattern="[0-9]*[.,]?[0-9]*"
-            required
-            disabled={loading}
-          />
+      {/* From / To */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="fromParticipant">From</Label>
           <Select
-            value={currency}
-            onValueChange={setCurrency}
+            value={fromParticipantId}
+            onValueChange={setFromParticipantId}
             disabled={loading}
           >
-            <SelectTrigger className="w-24 h-14 text-base">
-              <SelectValue />
+            <SelectTrigger id="fromParticipant">
+              <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent>
-              {availableCurrencies.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+              {adultsForSelection.map(adult => (
+                <SelectItem key={adult.id} value={adult.id}>
+                  {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="toParticipant">To</Label>
+          <Select
+            value={toParticipantId}
+            onValueChange={setToParticipantId}
+            disabled={loading}
+          >
+            <SelectTrigger id="toParticipant">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              {adultsForSelection.map(adult => (
+                <SelectItem key={adult.id} value={adult.id}>
+                  {adult.groupName ? `${adult.name} (${adult.groupName})` : adult.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* Date */}
-      <div className="space-y-2">
-        <Label htmlFor="settlementDate">Settlement Date</Label>
-        <Input
-          type="date"
-          id="settlementDate"
-          value={settlementDate}
-          onChange={e => setSettlementDate(e.target.value)}
-          disabled={loading}
-        />
+      {/* Amount + Date */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              inputMode="decimal"
+              id="amount"
+              value={amount}
+              onChange={e => setAmount(e.target.value.replace(',', '.'))}
+              className="flex-1 text-lg tabular-nums"
+              placeholder="0.00"
+              pattern="[0-9]*[.,]?[0-9]*"
+              required
+              disabled={loading}
+            />
+            <Select
+              value={currency}
+              onValueChange={setCurrency}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCurrencies.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="settlementDate">Date</Label>
+          <Input
+            type="date"
+            id="settlementDate"
+            value={settlementDate}
+            onChange={e => setSettlementDate(e.target.value)}
+            disabled={loading}
+          />
+        </div>
       </div>
 
       {/* Note */}
@@ -351,6 +320,19 @@ export function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote,
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Payment details
           </p>
+
+          {/* Name row */}
+          {recipientBankDetails.holder && (
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase text-muted-foreground">Name</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {recipientBankDetails.holder}
+                </p>
+              </div>
+              <CopyButton value={recipientBankDetails.holder} />
+            </div>
+          )}
 
           {/* IBAN row */}
           <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
