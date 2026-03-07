@@ -6,6 +6,7 @@ import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +50,7 @@ export function ExpenseForm({
   const { participants, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
+  const { user } = useAuth()
 
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
@@ -114,6 +116,14 @@ export function ExpenseForm({
     ? calculateBalances(expenses, participants, currentTrip.tracking_mode, settlements, currentTrip.default_currency, currentTrip.exchange_rates)
     : null
   const suggestedPayer = balanceCalculation?.suggestedNextPayer
+
+  // Pre-fill paidBy with the authenticated user's linked adult participant
+  useEffect(() => {
+    if (paidBy !== '') return
+    if (!user || participants.length === 0) return
+    const linked = participants.find(p => p.user_id === user.id && p.is_adult)
+    if (linked) setPaidBy(linked.id)
+  }, [participants, user])
 
   // Auto-select all participants on mount if not editing and trip setting allows it
   const defaultSplitAll = currentTrip?.default_split_all ?? true
