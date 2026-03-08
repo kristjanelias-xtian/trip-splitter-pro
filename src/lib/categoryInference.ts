@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { ExpenseCategory } from '@/types/expense'
 
 const CATEGORY_KEYWORDS: Record<Exclude<ExpenseCategory, 'Other'>, string[]> = {

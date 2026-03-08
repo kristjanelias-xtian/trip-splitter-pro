@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 const GROUP_BORDER_COLORS = [
   'border-l-blue-500',
   'border-l-emerald-500',

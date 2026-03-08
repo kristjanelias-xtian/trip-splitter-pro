@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { render, RenderOptions } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ReactElement } from 'react'

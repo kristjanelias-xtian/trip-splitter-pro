@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import * as XLSX from 'xlsx'
 import type { Trip } from '@/types/trip'
 import type { Expense } from '@/types/expense'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChefHat, Trash2, ShoppingBasket, Utensils, Home, Receipt } from 'lucide-react'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, lazy, Suspense, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { CalendarDays, Map } from 'lucide-react'

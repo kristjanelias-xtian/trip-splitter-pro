@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { ParticipantsSetup } from '@/components/setup/ParticipantsSetup'

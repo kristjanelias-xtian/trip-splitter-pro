@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Participant } from '@/types/participant'
 
 export function getShortName(p: Pick<Participant, 'name' | 'nickname'>): string {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { hideTrip } from '@/lib/mutedTripsStorage'
 import { removeFromMyTrips } from '@/lib/myTripsStorage'
 import { Button } from '@/components/ui/button'

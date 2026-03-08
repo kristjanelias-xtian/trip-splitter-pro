@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 

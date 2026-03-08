@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image, X } from 'lucide-react'
 import { logger } from '@/lib/logger'

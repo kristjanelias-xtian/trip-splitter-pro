@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Gradient Service with Food-Themed Patterns
  * Generates deterministic gradient backgrounds with food icon overlays

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useRef, useEffect, type RefObject } from 'react'
 
 const isIOS =

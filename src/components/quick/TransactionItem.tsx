@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { TransactionItem as TxItem } from '@/services/transactionHistoryBuilder'
 import { convertToBaseCurrency } from '@/services/balanceCalculator'
 import { DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react'

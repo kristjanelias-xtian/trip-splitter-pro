@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSessionHealth } from '@/hooks/useSessionHealth'

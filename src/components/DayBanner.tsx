@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Building2 } from 'lucide-react'
 import { DateContext, formatDayHeader } from '@/lib/dateUtils'
 import { getGradientPattern } from '@/services/gradientService'

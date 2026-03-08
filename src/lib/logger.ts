@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { supabase } from '@/lib/supabase'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'

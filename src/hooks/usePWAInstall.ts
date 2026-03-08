@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useCallback } from 'react'
 
 const DISMISSED_KEY = 'spl1t:install-prompt-dismissed'

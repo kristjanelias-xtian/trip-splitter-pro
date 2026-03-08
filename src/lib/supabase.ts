@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 import { sessionHealthBus } from './sessionHealthBus'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useTripContext } from '@/contexts/TripContext'

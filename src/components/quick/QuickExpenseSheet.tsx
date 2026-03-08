@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useExpenseContext } from '@/contexts/ExpenseContext'

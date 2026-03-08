@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
 import { UtensilsCrossed, ChevronsDown, ChevronsUp } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'

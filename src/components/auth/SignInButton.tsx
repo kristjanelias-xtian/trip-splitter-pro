@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/lib/logger'

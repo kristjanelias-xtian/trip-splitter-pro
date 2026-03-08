@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { UserCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, Search, Receipt, FileDown, SlidersHorizontal, User, Tag } from 'lucide-react'

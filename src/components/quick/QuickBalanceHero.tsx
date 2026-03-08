@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ParticipantBalance, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { motion } from 'framer-motion'
 

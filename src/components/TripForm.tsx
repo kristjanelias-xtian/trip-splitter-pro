@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { CreateTripInput } from '@/types/trip'

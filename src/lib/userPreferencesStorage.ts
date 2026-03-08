@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * User Preferences localStorage fallback
  * Used for instant reads and as fallback when user is not authenticated.

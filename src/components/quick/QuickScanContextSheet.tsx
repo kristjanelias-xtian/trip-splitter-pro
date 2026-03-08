@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
 import { Plus, ScanLine, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useToast } from '@/hooks/use-toast'

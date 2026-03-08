@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { Zap, LayoutGrid } from 'lucide-react'

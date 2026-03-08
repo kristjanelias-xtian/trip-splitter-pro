@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { PartyPopper, Lightbulb, Check, Bell, X } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'

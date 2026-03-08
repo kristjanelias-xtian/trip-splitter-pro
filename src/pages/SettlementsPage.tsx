@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useMediaQuery } from '@/hooks/useMediaQuery'

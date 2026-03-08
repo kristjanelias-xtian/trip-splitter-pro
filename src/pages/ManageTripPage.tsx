@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Edit, Trash2, Info, X, Plus, ArrowLeft } from 'lucide-react'

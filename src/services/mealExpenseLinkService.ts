@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Meal-Expense Linking Service
  * Handles the relationship between restaurant meals and expenses
