@@ -572,6 +572,8 @@ function MobileWizard({
               comment={comment}
               onCommentChange={setComment}
               disabled={isSubmitting}
+              amount={amount}
+              currency={currency}
             />
           )}
 

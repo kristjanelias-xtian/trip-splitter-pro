@@ -8,6 +8,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { fadeInUp } from '@/lib/animations'
 import { buildShortNameMap } from '@/lib/participantUtils'
+import { ExpenseSplitPreview } from '../ExpenseSplitPreview'
+import type { ExpenseDistribution } from '@/types/expense'
+import type { Participant as FullParticipant } from '@/types/participant'
 
 type SplitMode = 'equal' | 'percentage' | 'amount'
 
@@ -36,6 +39,8 @@ interface WizardStep2Props {
   comment: string
   onCommentChange: (comment: string) => void
   disabled?: boolean
+  amount?: string
+  currency?: string
 }
 
 export function WizardStep3({
@@ -54,6 +59,8 @@ export function WizardStep3({
   comment,
   onCommentChange,
   disabled = false,
+  amount,
+  currency,
 }: WizardStep2Props) {
   const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const [showDetails, setShowDetails] = useState(false)
@@ -201,6 +208,25 @@ export function WizardStep3({
           </div>
         </div>
       )}
+
+      {/* Split Preview */}
+      {amount && currency && parseFloat(amount) > 0 && selectedParticipants.length > 0 && (() => {
+        const previewDistribution: ExpenseDistribution = {
+          type: 'individuals',
+          participants: selectedParticipants,
+          splitMode,
+          accountForFamilySize: hasSelectedGroups ? accountForFamilySize : undefined,
+        }
+
+        return (
+          <ExpenseSplitPreview
+            amount={parseFloat(amount)}
+            currency={currency}
+            distribution={previewDistribution}
+            participants={participants as unknown as FullParticipant[]}
+          />
+        )
+      })()}
 
       {/* Collapsible "More details" */}
       <div className="space-y-3">

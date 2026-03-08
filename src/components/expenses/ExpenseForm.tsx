@@ -351,7 +351,7 @@ export function ExpenseForm({
 
   // Group participants by wallet_group for display
   const participantGroups = (() => {
-    const groups: { label: string | null; members: typeof participants }[] = []
+    const groups: { label: string | null; isWalletGroup: boolean; members: typeof participants }[] = []
     const grouped = new Map<string, typeof participants>()
     const standalone: typeof participants = []
 
@@ -366,10 +366,10 @@ export function ExpenseForm({
     }
 
     for (const [label, members] of grouped) {
-      groups.push({ label, members })
+      groups.push({ label, isWalletGroup: true, members })
     }
     if (standalone.length > 0) {
-      groups.push({ label: null, members: standalone })
+      groups.push({ label: grouped.size > 0 ? 'Others' : null, isWalletGroup: false, members: standalone })
     }
 
     return groups
@@ -578,17 +578,19 @@ export function ExpenseForm({
                   {group.label && (
                     <div className="flex items-baseline justify-between mb-2">
                       <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleGroupToggle(memberIds)}
-                        disabled={loading}
-                        className="text-xs text-primary hover:text-primary/80 transition-colors"
-                      >
-                        {allGroupSelected ? 'deselect group' : 'select group'}
-                      </button>
+                      {group.isWalletGroup && (
+                        <button
+                          type="button"
+                          onClick={() => handleGroupToggle(memberIds)}
+                          disabled={loading}
+                          className="text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {allGroupSelected ? `deselect ${group.label}` : `select ${group.label}`}
+                        </button>
+                      )}
                     </div>
                   )}
-                  <div className={group.label
+                  <div className={group.isWalletGroup
                     ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
                     : 'flex flex-wrap gap-2'
                   }>
@@ -625,14 +627,16 @@ export function ExpenseForm({
                   {group.label && (
                     <div className="flex items-baseline justify-between mb-1 mt-2 first:mt-0">
                       <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleGroupToggle(memberIds)}
-                        disabled={loading}
-                        className="text-xs text-primary hover:text-primary/80 transition-colors"
-                      >
-                        {allGroupSelected ? 'deselect group' : 'select group'}
-                      </button>
+                      {group.isWalletGroup && (
+                        <button
+                          type="button"
+                          onClick={() => handleGroupToggle(memberIds)}
+                          disabled={loading}
+                          className="text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {allGroupSelected ? `deselect ${group.label}` : `select ${group.label}`}
+                        </button>
+                      )}
                     </div>
                   )}
                   {group.members.map(participant => (
@@ -743,7 +747,7 @@ export function ExpenseForm({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-accent/5 rounded-lg border border-accent/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-3 p-4 bg-accent/5 rounded-lg border border-accent/10">
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="expenseDate">Date</Label>
