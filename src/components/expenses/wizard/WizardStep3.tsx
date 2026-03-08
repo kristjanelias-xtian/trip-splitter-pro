@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Check } from 'lucide-react'
+import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -145,23 +146,29 @@ export function WizardStep3({
                   ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
                   : 'flex flex-wrap gap-2'
                 }>
-                  {group.members.map(participant => (
-                    <button
-                      key={participant.id}
-                      type="button"
-                      onClick={() => onParticipantToggle(participant.id)}
-                      disabled={disabled}
-                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                        selectedParticipants.includes(participant.id)
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background text-muted-foreground border-input hover:border-primary/50'
-                      }`}
-                    >
-                      {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
-                      {shortNames.get(participant.id) || participant.name}
-                      {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
-                    </button>
-                  ))}
+                  {group.members.map(participant => {
+                    const isSelected = selectedParticipants.includes(participant.id)
+                    const isChild = !participant.is_adult
+                    return (
+                      <button
+                        key={participant.id}
+                        type="button"
+                        onClick={() => onParticipantToggle(participant.id)}
+                        disabled={disabled}
+                        className={`inline-flex items-center gap-1.5 h-8 pl-1 pr-3 text-sm rounded-full border transition-colors ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : isChild
+                              ? 'bg-background text-muted-foreground border-dashed border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20'
+                              : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                        }`}
+                      >
+                        <ParticipantAvatar participant={participant} size="sm" forceInitials={isSelected} className={isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : ''} />
+                        {shortNames.get(participant.id) || participant.name}
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )
