@@ -68,7 +68,7 @@ export function WizardStep3({
 
   // Group participants by wallet_group for display
   const participantGroups = useMemo(() => {
-    const groups: { label: string | null; members: Participant[] }[] = []
+    const groups: { label: string | null; isWalletGroup: boolean; members: Participant[] }[] = []
     const grouped = new Map<string, Participant[]>()
     const standalone: Participant[] = []
 
@@ -83,10 +83,10 @@ export function WizardStep3({
     }
 
     for (const [label, members] of grouped) {
-      groups.push({ label, members })
+      groups.push({ label, isWalletGroup: true, members })
     }
     if (standalone.length > 0) {
-      groups.push({ label: null, members: standalone })
+      groups.push({ label: grouped.size > 0 ? 'Others' : null, isWalletGroup: false, members: standalone })
     }
 
     return groups
@@ -122,17 +122,19 @@ export function WizardStep3({
                 {group.label && (
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => onGroupToggle(memberIds)}
-                      disabled={disabled}
-                      className="text-xs text-primary hover:text-primary/80 transition-colors"
-                    >
-                      {allGroupSelected ? 'deselect group' : 'select group'}
-                    </button>
+                    {group.isWalletGroup && (
+                      <button
+                        type="button"
+                        onClick={() => onGroupToggle(memberIds)}
+                        disabled={disabled}
+                        className="text-xs text-primary hover:text-primary/80 transition-colors"
+                      >
+                        {allGroupSelected ? 'deselect all' : 'select all'}
+                      </button>
+                    )}
                   </div>
                 )}
-                <div className={group.label
+                <div className={group.isWalletGroup
                   ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
                   : 'flex flex-wrap gap-2'
                 }>
