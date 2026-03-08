@@ -3,6 +3,7 @@ import { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/logger'
 
 const CHUNK_RELOAD_KEY = 'spl1t:chunk-reload'
 
@@ -38,7 +39,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    logger.error('ErrorBoundary caught an error', {
+      errorMessage: error.message,
+      errorName: error.name,
+      componentStack: errorInfo.componentStack?.slice(0, 1000) ?? '',
+    })
 
     // Auto-reload once for stale chunk errors (new deploy invalidated cached JS)
     if (isStaleChunkError(error)) {
@@ -49,14 +54,6 @@ export class ErrorBoundary extends Component<Props, State> {
         return
       }
     }
-
-    import('@/lib/logger').then(({ logger }) => {
-      logger.error('React ErrorBoundary caught error', {
-        errorMessage: error.message,
-        errorName: error.name,
-        componentStack: errorInfo.componentStack?.slice(0, 1000) ?? '',
-      })
-    }).catch(() => {})
   }
 
   private handleReset = () => {

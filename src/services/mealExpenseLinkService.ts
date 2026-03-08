@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import { Expense } from '@/types/expense'
 import { Meal } from '@/types/meal'
 
@@ -25,13 +26,13 @@ export async function linkMealToExpense(
       .eq('id', expenseId)
 
     if (error) {
-      console.error('Error linking meal to expense:', error)
+      logger.error('Error linking meal to expense', { error: String(error) })
       return false
     }
 
     return true
   } catch (err) {
-    console.error('Error linking meal to expense:', err)
+    logger.error('Error linking meal to expense', { error: String(err) })
     return false
   }
 }
@@ -49,13 +50,13 @@ export async function unlinkMealFromExpense(mealId: string): Promise<boolean> {
       .eq('meal_id', mealId)
 
     if (error) {
-      console.error('Error unlinking meal from expense:', error)
+      logger.error('Error unlinking meal from expense', { error: String(error) })
       return false
     }
 
     return true
   } catch (err) {
-    console.error('Error unlinking meal from expense:', err)
+    logger.error('Error unlinking meal from expense', { error: String(err) })
     return false
   }
 }
@@ -80,13 +81,13 @@ export async function getExpenseForMeal(
       if (error.code === 'PGRST116') {
         return null
       }
-      console.error('Error fetching expense for meal:', error)
+      logger.error('Error fetching expense for meal', { error: String(error) })
       return null
     }
 
     return data as unknown as Expense
   } catch (err) {
-    console.error('Error fetching expense for meal:', err)
+    logger.error('Error fetching expense for meal', { error: String(err) })
     return null
   }
 }
@@ -119,13 +120,13 @@ export async function getMealsForExpense(
       .eq('id', expense.meal_id)
 
     if (error) {
-      console.error('Error fetching meals for expense:', error)
+      logger.error('Error fetching meals for expense', { error: String(error) })
       return []
     }
 
     return (data as unknown as Meal[]) || []
   } catch (err) {
-    console.error('Error fetching meals for expense:', err)
+    logger.error('Error fetching meals for expense', { error: String(err) })
     return []
   }
 }

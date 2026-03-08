@@ -10,6 +10,8 @@
  * This is acceptable — myTrips is a UI convenience cache, not a source of truth.
  */
 
+import { logger } from '@/lib/logger'
+
 const MY_TRIPS_KEY = 'trip-splitter:my-trips'
 const MAX_ENTRIES = 100
 const SCHEMA_VERSION = 1
@@ -88,7 +90,7 @@ export function addToMyTrips(tripCode: string, tripName: string): void {
 
     saveMyTrips(trimmed)
   } catch (error) {
-    console.error('Error adding trip to My Trips:', error)
+    logger.error('Error adding trip to My Trips', { error: String(error) })
   }
 }
 
@@ -101,7 +103,7 @@ export function removeFromMyTrips(tripCode: string): void {
     const filtered = trips.filter(t => t.tripCode !== tripCode)
     saveMyTrips(filtered)
   } catch (error) {
-    console.error('Error removing trip from My Trips:', error)
+    logger.error('Error removing trip from My Trips', { error: String(error) })
   }
 }
 
@@ -121,7 +123,7 @@ export function clearMyTrips(): void {
   try {
     localStorage.removeItem(MY_TRIPS_KEY)
   } catch (error) {
-    console.error('Error clearing My Trips:', error)
+    logger.error('Error clearing My Trips', { error: String(error) })
   }
 }
 

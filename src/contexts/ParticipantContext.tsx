@@ -88,7 +88,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       if (signal.aborted) return
       setError(err instanceof Error ? err.message : 'Failed to fetch data')
-      console.error('Error fetching participants:', err)
+      logger.error('Error fetching participants', { error: String(err) })
     } finally {
       if (!signal.aborted) {
         setLoading(false)
@@ -123,7 +123,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       return newParticipant
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create participant')
-      console.error('Error creating participant:', err)
+      logger.error('Error creating participant', { error: String(err) })
       return null
     }
   }
@@ -154,7 +154,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update participant')
-      console.error('Error updating participant:', err)
+      logger.error('Error updating participant', { error: String(err) })
       return false
     }
   }
@@ -183,7 +183,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete participant')
-      console.error('Error deleting participant:', err)
+      logger.error('Error deleting participant', { error: String(err) })
       return false
     }
   }
@@ -269,7 +269,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       const msg = err instanceof Error ? err.message : 'Failed to link user to participant'
       setError(msg)
       logger.error('linkUserToParticipant failed', { participantId, userId, error: msg })
-      console.error('Error linking user to participant:', err)
+      logger.error('Error linking user to participant', { error: String(err) })
       return false
     }
   }
@@ -300,7 +300,7 @@ export function ParticipantProvider({ children }: { children: ReactNode }) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unlink user from participant')
-      console.error('Error unlinking user from participant:', err)
+      logger.error('Error unlinking user from participant', { error: String(err) })
       return false
     }
   }

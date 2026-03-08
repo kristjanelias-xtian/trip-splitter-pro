@@ -236,7 +236,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
-        console.error('Error fetching meal ingredients:', error)
+        logger.error('Error fetching meal ingredients', { error: String(error) })
         return meals.map(meal => ({
           ...meal,
           shopping_items: [],
@@ -270,7 +270,7 @@ export function MealProvider({ children }: { children: ReactNode }) {
         }
       })
     } catch (error) {
-      console.error('Error fetching meals with ingredients:', error)
+      logger.error('Error fetching meals with ingredients', { error: String(error) })
       return meals.map(meal => ({
         ...meal,
         shopping_items: [],
@@ -294,13 +294,13 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
-        console.error('Error linking meal to shopping item:', error)
+        logger.error('Error linking meal to shopping item', { error: String(error) })
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error linking meal to shopping item:', error)
+      logger.error('Error linking meal to shopping item', { error: String(error) })
       return false
     }
   }
@@ -321,13 +321,13 @@ export function MealProvider({ children }: { children: ReactNode }) {
       )
 
       if (error) {
-        console.error('Error unlinking meal from shopping item:', error)
+        logger.error('Error unlinking meal from shopping item', { error: String(error) })
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error unlinking meal from shopping item:', error)
+      logger.error('Error unlinking meal from shopping item', { error: String(error) })
       return false
     }
   }

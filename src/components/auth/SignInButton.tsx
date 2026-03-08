@@ -19,7 +19,6 @@ export function SignInButton({ type = 'icon' }: SignInButtonProps) {
       }}
       onError={() => {
         logger.error('Google Sign-In failed')
-        console.error('Google Sign-In failed')
       }}
       size="medium"
       type={type}

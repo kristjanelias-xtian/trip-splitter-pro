@@ -8,6 +8,8 @@
  * as the user hides trips again.
  */
 
+import { logger } from '@/lib/logger'
+
 const STORAGE_KEY = 'trip-splitter:hidden-trips'
 const MAX_MUTED = 200
 const SCHEMA_VERSION = 1
@@ -51,7 +53,7 @@ export function hideTrip(tripCode: string): void {
     const trimmed = hidden.slice(-MAX_MUTED)
     saveHiddenTrips(trimmed)
   } catch (error) {
-    console.error('Error hiding trip:', error)
+    logger.error('Error hiding trip', { error: String(error) })
   }
 }
 
@@ -60,6 +62,6 @@ export function showTrip(tripCode: string): void {
     const hidden = getHiddenTripCodes().filter(c => c !== tripCode)
     saveHiddenTrips(hidden)
   } catch (error) {
-    console.error('Error showing trip:', error)
+    logger.error('Error showing trip', { error: String(error) })
   }
 }
