@@ -3,11 +3,13 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Button } from '@/components/ui/button'
 import { fadeInUp } from '@/lib/animations'
 import { buildShortNameMap } from '@/lib/participantUtils'
-import { ParticipantAvatar } from '@/components/ParticipantAvatar'
+
+type SplitMode = 'equal' | 'percentage' | 'amount'
 
 interface Participant {
   id: string
@@ -18,16 +20,21 @@ interface Participant {
   avatar_url?: string | null
 }
 
-interface WizardStep3Props {
+interface WizardStep2Props {
   participants: Participant[]
   selectedParticipants: string[]
   onParticipantToggle: (id: string) => void
   onGroupToggle: (memberIds: string[]) => void
   onSelectAll: () => void
   onDeselectAll: () => void
-  onAdvancedClick: () => void
   accountForFamilySize: boolean
   onAccountForFamilySizeChange: (value: boolean) => void
+  splitMode: SplitMode
+  onSplitModeChange: (mode: SplitMode) => void
+  expenseDate: string
+  onExpenseDateChange: (date: string) => void
+  comment: string
+  onCommentChange: (comment: string) => void
   disabled?: boolean
 }
 
@@ -38,13 +45,20 @@ export function WizardStep3({
   onGroupToggle,
   onSelectAll,
   onDeselectAll,
-  onAdvancedClick,
   accountForFamilySize,
   onAccountForFamilySizeChange,
+  splitMode,
+  onSplitModeChange,
+  expenseDate,
+  onExpenseDateChange,
+  comment,
+  onCommentChange,
   disabled = false,
-}: WizardStep3Props) {
+}: WizardStep2Props) {
   const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const [showDetails, setShowDetails] = useState(false)
+
+  const allSelected = selectedParticipants.length === participants.length
 
   // Show toggle only when any selected participant belongs to a wallet_group
   const hasSelectedGroups = useMemo(() => {
@@ -52,17 +66,8 @@ export function WizardStep3({
     return participants.some(p => selectedSet.has(p.id) && !!p.wallet_group)
   }, [selectedParticipants, participants])
 
-  const allSelected = selectedParticipants.length === participants.length
-
-  const getSelectionText = () => {
-    if (allSelected) {
-      return `Split equally between all ${participants.length} people`
-    }
-    return `Split between ${selectedParticipants.length} selected`
-  }
-
   // Group participants by wallet_group for display
-  const participantGroups = (() => {
+  const participantGroups = useMemo(() => {
     const groups: { label: string | null; members: Participant[] }[] = []
     const grouped = new Map<string, Participant[]>()
     const standalone: Participant[] = []
@@ -85,142 +90,109 @@ export function WizardStep3({
     }
 
     return groups
-  })()
+  }, [participants])
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-5"
       variants={fadeInUp}
       initial="initial"
       animate="animate"
     >
-      {/* Summary Card */}
-      <div className="p-4 bg-muted/50 rounded-lg border border-border">
-        <div className="flex items-center gap-3">
-          <Users size={24} className="text-primary flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground">{getSelectionText()}</p>
-          </div>
+      {/* Participant chips */}
+      <div className="space-y-2">
+        <Label className="text-base font-medium">Split between</Label>
+        <div className="rounded-lg border border-input p-3 space-y-3">
+          {participantGroups.map((group, gi) => {
+            const memberIds = group.members.map(m => m.id)
+            const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
+
+            return (
+              <div
+                key={group.label ?? `standalone-${gi}`}
+                className={group.label
+                  ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
+                  : 'flex flex-wrap gap-2'
+                }
+              >
+                {/* "All" toggle chip — only in the first group */}
+                {gi === 0 && (
+                  <button
+                    type="button"
+                    onClick={allSelected ? onDeselectAll : onSelectAll}
+                    disabled={disabled}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                      allSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                    }`}
+                  >
+                    {allSelected && <Check className="w-3 h-3" />}
+                    All
+                  </button>
+                )}
+                {group.label && (
+                  <button
+                    type="button"
+                    onClick={() => onGroupToggle(memberIds)}
+                    disabled={disabled}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                      allGroupSelected
+                        ? 'bg-background text-primary border-primary'
+                        : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
+                    }`}
+                  >
+                    <Users size={12} />
+                    {group.label}
+                    <span className="text-xs opacity-70">({memberIds.length})</span>
+                  </button>
+                )}
+                {group.members.map(participant => (
+                  <button
+                    key={participant.id}
+                    type="button"
+                    onClick={() => onParticipantToggle(participant.id)}
+                    disabled={disabled}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                      selectedParticipants.includes(participant.id)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                    }`}
+                  >
+                    {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
+                    {shortNames.get(participant.id) || participant.name}
+                    {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
+                  </button>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* Selection Controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onSelectAll}
-          disabled={disabled}
-          className="h-11 px-3 text-sm flex-1"
-        >
-          Select All
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onDeselectAll}
-          disabled={disabled}
-          className="h-11 px-3 text-sm flex-1"
-        >
-          Deselect All
-        </Button>
-      </div>
-
-      {/* Choose Specific People */}
-      <div className="space-y-3">
-        <Button
-          type="button"
-          onClick={() => setShowDetails(!showDetails)}
-          variant="outline"
-          className="w-full h-12 justify-between"
-          disabled={disabled}
-        >
-          <span>Choose specific people</span>
-          {showDetails ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-        </Button>
-
-        <AnimatePresence>
-          {showDetails && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4 overflow-hidden"
+      {/* Split method pills */}
+      <div className="space-y-2">
+        <Label className="text-base font-medium">Split method</Label>
+        <div className="flex gap-1.5">
+          {([['equal', 'Equal'], ['percentage', 'By %'], ['amount', 'By Amount']] as const).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onSplitModeChange(mode)}
+              disabled={disabled}
+              className={`h-8 px-3 text-sm rounded-full border transition-colors ${
+                splitMode === mode
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+              }`}
             >
-              <div className="space-y-2">
-                <Label className="text-base font-medium">Participants</Label>
-                <div className="space-y-2 rounded-lg border border-input p-3">
-                  {participantGroups.map((group, gi) => {
-                    const memberIds = group.members.map(m => m.id)
-                    const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
-                    const allGroupSelected = selectedCount === memberIds.length
-                    const someGroupSelected = selectedCount > 0 && !allGroupSelected
-
-                    return (
-                      <div
-                        key={group.label ?? `standalone-${gi}`}
-                        className={group.label ? 'border-l-2 border-primary/30 pl-3 mt-2 first:mt-0' : ''}
-                      >
-                        {group.label && (
-                          <div
-                            role="checkbox"
-                            aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
-                            className="flex items-center space-x-3 min-h-[44px] py-1 cursor-pointer"
-                            onClick={() => onGroupToggle(memberIds)}
-                          >
-                            <span
-                              className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
-                            >
-                              {allGroupSelected && <Check className="h-4 w-4" />}
-                            </span>
-                            <span className="text-sm font-medium text-foreground flex-1 flex items-center gap-1.5">
-                              <Users size={14} className="text-muted-foreground" />
-                              {group.label}
-                              <span className="text-xs text-muted-foreground font-normal">
-                                ({memberIds.length})
-                              </span>
-                            </span>
-                          </div>
-                        )}
-                        {group.members.map((participant) => (
-                          <div
-                            key={participant.id}
-                            className={`flex items-center space-x-3 min-h-[44px] py-1 ${group.label ? 'pl-6' : ''}`}
-                          >
-                            <Checkbox
-                              id={`participant-${participant.id}`}
-                              checked={selectedParticipants.includes(participant.id)}
-                              onCheckedChange={() => onParticipantToggle(participant.id)}
-                              disabled={disabled}
-                            />
-                            <label
-                              htmlFor={`participant-${participant.id}`}
-                              className="text-base text-foreground cursor-pointer flex-1 flex items-center gap-2"
-                            >
-                              <ParticipantAvatar participant={participant} size="sm" />
-                              {shortNames.get(participant.id) || participant.name}
-                              {!participant.is_adult && (
-                                <span className="text-sm text-muted-foreground">
-                                  (child)
-                                </span>
-                              )}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Proportional group toggle — only when wallet_group participants are selected */}
+      {/* Wallet group toggle — only when wallet_group participants are selected */}
       {hasSelectedGroups && (
         <div className="flex items-center space-x-3 min-h-[44px] py-1">
           <Checkbox
@@ -238,20 +210,61 @@ export function WizardStep3({
         </div>
       )}
 
-      {/* Advanced Options */}
-      <div className="pt-4 border-t border-border">
-        <Button
+      {/* Collapsible "More details" */}
+      <div className="space-y-3">
+        <button
           type="button"
-          onClick={onAdvancedClick}
-          variant="outline"
-          className="w-full h-12"
+          onClick={() => setShowDetails(!showDetails)}
           disabled={disabled}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          Advanced Options
-          <span className="text-xs text-muted-foreground ml-2">
-            (custom split, date, category)
-          </span>
-        </Button>
+          {showDetails ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          More details
+          <span className="text-xs">(date, comment)</span>
+        </button>
+
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4 overflow-hidden"
+            >
+              {/* Date */}
+              <div className="space-y-2">
+                <Label htmlFor="expenseDate" className="text-sm font-medium">
+                  Date
+                </Label>
+                <Input
+                  type="date"
+                  id="expenseDate"
+                  value={expenseDate}
+                  onChange={(e) => onExpenseDateChange(e.target.value)}
+                  className="h-10 text-base"
+                  disabled={disabled}
+                />
+              </div>
+
+              {/* Comment */}
+              <div className="space-y-2">
+                <Label htmlFor="comment" className="text-sm font-medium">
+                  Comment (optional)
+                </Label>
+                <Textarea
+                  id="comment"
+                  value={comment}
+                  onChange={(e) => onCommentChange(e.target.value)}
+                  placeholder="Additional notes..."
+                  rows={2}
+                  className="text-base resize-none"
+                  disabled={disabled}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   )

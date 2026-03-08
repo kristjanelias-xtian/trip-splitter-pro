@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import { motion } from 'framer-motion'
 
 interface WizardProgressProps {
   currentStep: number
@@ -7,33 +6,23 @@ interface WizardProgressProps {
 }
 
 export function WizardProgress({ currentStep, totalSteps }: WizardProgressProps) {
-  const percentage = (currentStep / totalSteps) * 100
-
   return (
-    <div className="mt-2">
-      {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-muted/30 rounded-full overflow-hidden mb-1">
-        <motion.div
-          className="h-full bg-primary"
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{
-            type: 'spring',
-            stiffness: 100,
-            damping: 20,
-          }}
-        />
-      </div>
-
-      {/* Step Indicator */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          Step {currentStep} of {totalSteps}
-        </p>
-        <p className="text-xs font-medium text-primary">
-          {percentage.toFixed(0)}%
-        </p>
-      </div>
+    <div className="flex items-center justify-center gap-1.5 mt-1">
+      {Array.from({ length: totalSteps }, (_, i) => {
+        const step = i + 1
+        return (
+          <div
+            key={step}
+            className={`rounded-full transition-all duration-200 ${
+              step === currentStep
+                ? 'w-5 h-1.5 bg-primary'
+                : step < currentStep
+                  ? 'w-1.5 h-1.5 bg-primary/60'
+                  : 'w-1.5 h-1.5 bg-muted-foreground/30'
+            }`}
+          />
+        )
+      })}
     </div>
   )
 }
