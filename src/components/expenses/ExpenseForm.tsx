@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState, useEffect, useRef, useMemo, FormEvent } from 'react'
+import { useState, useEffect, useRef, useMemo, FormEvent, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
@@ -32,6 +32,7 @@ interface ExpenseFormProps {
   initialValues?: Partial<CreateExpenseInput>
   submitLabel?: string
   stickyFooter?: boolean
+  scrollRef?: RefObject<HTMLDivElement>
 }
 
 const CATEGORIES: ExpenseCategory[] = [
@@ -49,6 +50,7 @@ export function ExpenseForm({
   initialValues,
   submitLabel = 'Add Expense',
   stickyFooter = false,
+  scrollRef,
 }: ExpenseFormProps) {
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
@@ -836,7 +838,7 @@ export function ExpenseForm({
     >
       {stickyFooter ? (
         <>
-          <div className="flex-1 overflow-y-auto overscroll-contain space-y-3 pb-3">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain space-y-3 pb-3">
             {formFields}
           </div>
           {buttons}
