@@ -42,6 +42,7 @@ import { removeFromMyTrips } from '@/lib/myTripsStorage'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { isAdminUser } from '@/lib/adminAuth'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -475,6 +476,20 @@ export function ManageTripPage() {
 
       {/* Accommodations Section */}
       <StaySection />
+
+      {/* Appearance Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Choose your preferred color theme</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label>Theme</Label>
+            <ThemeToggle />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* PWA install guide — mobile only, hidden when already installed */}
       {shouldShowInSettings && (

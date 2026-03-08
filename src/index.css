@@ -98,6 +98,11 @@
     --positive-foreground: 240 21% 10%;
     --negative: 31 100% 55%; /* Lighter warm orange for dark mode */
     --negative-foreground: 30 17% 98%;
+
+    /* Shadows — stronger for dark backgrounds */
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.40);
+    --shadow-soft-md: 0 4px 12px rgba(0, 0, 0, 0.50);
+    --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.60);
   }
 }
 
