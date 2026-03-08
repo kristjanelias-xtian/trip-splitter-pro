@@ -8,7 +8,7 @@ Family Trip Cost Splitter — A mobile-first web application for splitting costs
 
 **Tech Stack:**
 - Frontend: React 18 + TypeScript, Vite
-- Styling: Tailwind CSS + shadcn/ui components
+- Styling: Tailwind CSS + shadcn/ui components (dark mode via `darkMode: 'class'`)
 - State: React Context API (one provider per domain)
 - Database: Supabase (PostgreSQL + Edge Functions)
 - Auth: Supabase Auth (Google OAuth supported)
@@ -315,6 +315,10 @@ Applied to: `ExpenseForm` (via `stickyFooter` prop, used by `ExpenseWizard` desk
 
 `inferCategory(description)` matches expense descriptions against keyword lists to auto-select category (Food, Accommodation, Transport, Activities, Training). Includes Estonian translations. Used in both `ExpenseForm` (desktop) and `MobileWizard` (mobile) with 300ms debounce. Manual category selection disables auto-inference for that expense via `categoryManuallySet` ref.
 
+### Dark Mode / Theme (`src/hooks/useTheme.ts`)
+
+`useTheme()` hook manages theme state (`light`/`dark`/`system`) persisted in `localStorage` key `spl1t:theme`. Applies `.dark` class to `<html>`. `ThemeToggle` component (`src/components/ThemeToggle.tsx`) renders a segmented control with icon + text labels; accepts `size` prop (`default`/`compact`). Shown in UserMenu dropdown, ManageTripPage settings, and HomePage footer. All colors use CSS custom properties in `index.css` with light/dark variants via `.dark` selector.
+
 ### Participant Short Names (`src/lib/participantUtils.ts`)
 
 `buildShortNameMap(participants)` generates unique display names. When multiple participants share the same first name, falls back to full name. Possessive suffixes (Estonian -i, -e endings) are normalized during comparison. Used across ExpenseForm, SettlementForm, balance cards, and all participant pickers.
@@ -373,17 +377,9 @@ Stays are managed separately in `StayContext`. Activities in `ActivityContext`.
 
 ### Contact Autocomplete (`useTripContacts`)
 
-`useTripContacts(currentTripId)` hook (`src/hooks/useTripContacts.ts`) fetches deduplicated contacts from the current user's other trips — "people you've tripped with". Returns `TripContact[]` with `name`, `email`, `user_id`, `display_name`, `lastSeenAt`. Only runs for authenticated users.
+`useTripContacts(currentTripId)` hook (`src/hooks/useTripContacts.ts`) fetches deduplicated contacts from the current user's other trips — "people you've tripped with". Returns `TripContact[]` with `name`, `email`, `user_id`, `display_name`, `lastSeenAt`. Only runs for authenticated users. Dedup priority: `user_id` > `email` > `name`. Sorted by recency.
 
-**Data sources:** Participant records from other trips + `user_profiles` table (for `display_name` and `email` of linked Spl1t accounts). Profile email serves as fallback when participant records lack email.
-
-**Dedup strategy:** Primary key = `user_id` (linked accounts) > `email` > `name`. Post-merge pass catches cross-key email matches. Prefers records with `display_name`. Sorted by recency (most recent trip first).
-
-**UI integration:**
-- **`ParticipantsSetup`** (Full mode, `src/components/setup/ParticipantsSetup.tsx`): Autocomplete dropdown on Name field. Selecting a contact auto-fills name + email + `suggestedUserId`. Collapsible **"Recent (N)"** disclosure list (same pattern as QuickParticipantPicker) for one-tap adding of past trip contacts. Per-participant **"Send invite"** button on the participant list (visible when participant has email + user authenticated) with 2s sent indicator. No invite logic in the add flow itself.
-- **`QuickParticipantPicker`** (Quick mode, `src/components/quick/QuickParticipantPicker.tsx`): Same autocomplete dropdown on manual add form. Recent contacts shown in a **collapsible disclosure list** (collapsed by default) — each row shows name + full email for disambiguation, with `+` button (or `✓` if already added). No invite logic in the add flow.
-
-Both components use identical patterns: `filteredContacts` memo (min 2 chars, limit 5), keyboard navigation (arrow keys + Enter/Escape), click-outside dismiss, `justSelectedRef` to prevent dropdown re-opening after selection.
+Used in `ParticipantsSetup` (Full mode) and `QuickParticipantPicker` (Quick mode) — autocomplete dropdown on Name field + collapsible "Recent" disclosure list. Both use `filteredContacts` memo (min 2 chars, limit 5), keyboard nav, click-outside dismiss.
 
 ### Email Templates (`send-email` Edge Function)
 
@@ -455,69 +451,17 @@ and the user-friendly error message will never be shown.
 
 ## PWA (Progressive Web App)
 
-The app can be installed as a PWA ("Add to Home Screen"). Three layers ensure it always launches to `/` (the home page), not whatever deep link was active at install time.
+The app can be installed as a PWA ("Add to Home Screen"). Three layers ensure it always launches to `/` (the home page): manifest (`start_url: "/"`), service worker (`public/sw.js` — intercepts deep link launches), and client-side guard (`src/main.tsx` — fallback for iOS). All three are needed because iOS ignores `manifest.start_url`.
 
-### Manifest (`public/manifest.webmanifest`)
+**Install guide:** `usePWAInstall` hook + `InstallGuide` component (`variant="banner"` on HomePage, `variant="settings"` on ManageTripPage).
 
-Standard PWA manifest: `start_url: "/"`, `scope: "/"`, `display: "standalone"`, theme color `#e8613a`. Icons: 16px, 32px, 180px (apple-touch-icon), 512px. Referenced in `index.html` `<head>`.
+**Admin in PWA:** Shield icon → `/admin/all-trips`; uses `navigate()` in standalone mode (not `window.open`).
 
-### Service Worker (`public/sw.js`)
+**Safe-area:** `pwa-safe-bottom` CSS class scoped to `@media (display-mode: standalone)` for iPhone home indicator padding. Applied to bottom nav and sheet footers.
 
-Minimal SW focused on one job: intercept home screen launches into `/t/...` deep links and redirect to `/`. Uses `sec-fetch-dest: document` + no-referrer heuristic to detect standalone launches. `skipWaiting()` + `clients.claim()` for immediate activation.
+**Pull-to-refresh:** `usePullToRefresh` hook + `PullToRefreshProvider`. Only in standalone PWA mode. Rubber-band 0.5x resistance, 80px threshold. Skips when sheets are open. Pages register callbacks via `useRegisterRefresh`.
 
-Registered via inline `<script>` in `index.html` (not via Vite — must be at `/sw.js`).
-
-### Client-Side Guard (`src/main.tsx`)
-
-Fallback for when the SW doesn't fire (common on iOS). Before `ReactDOM.createRoot`, checks `navigator.standalone` (iOS) or `display-mode: standalone` media query. If standalone + pathname starts with `/t/`, calls `window.location.replace('/')` — React never renders the wrong route.
-
-### Smart Install Guide (`src/components/InstallGuide.tsx`)
-
-`usePWAInstall` hook (`src/hooks/usePWAInstall.ts`) detects mobile, standalone mode, and engagement (2+ visits via localStorage counter). Two variants:
-- **`variant="banner"`** — shown on `HomePage` for engaged mobile users who haven't installed yet; dismissible
-- **`variant="settings"`** — always available in `ManageTripPage`
-
-Platform-specific instructions (iOS: Share → Add to Home Screen; Android: menu → Add to Home screen).
-
-### Admin in PWA
-
-Shield icon button in both Layout and QuickLayout headers — visible to admin user in both browser and standalone PWA mode, navigates to `/admin/all-trips`. In standalone PWA mode, `AdminAllTripsPage` uses `navigate()` instead of `window.open(_blank)` to load trips (new browser contexts in standalone trigger the SW/client guard redirect). Mobile-responsive: card layout at < lg, table at >= lg.
-
-### Safe-Area Padding (iPhone home indicator)
-
-In PWA standalone mode, the bottom tab bar needs safe-area padding so the iPhone home indicator doesn't overlap tap targets. `viewport-fit=cover` on the viewport meta enables `env(safe-area-inset-bottom)`. CSS utility `pwa-safe-bottom` in `index.css` is scoped to `@media (display-mode: standalone)` — regular browser is unaffected. Applied to bottom nav and main content margin in `Layout.tsx`.
-
-### Pull-to-Refresh (`usePullToRefresh`)
-
-In standalone PWA mode there's no address bar or refresh button. A custom pull-to-refresh gesture provides a native-feeling way to reload data.
-
-**Architecture:** `PullToRefreshProvider` (wraps each layout) stores the current page's refresh callback in a ref. Pages register their callback via `useRegisterRefresh(useCallback(...))`. The `usePullToRefresh` hook in each layout handles touch gestures and calls the registered callback.
-
-**Gesture behaviour:**
-- Only activates in standalone PWA mode (`display-mode: standalone` / `navigator.standalone`) — regular browsers have native refresh; touch listeners are not registered at all outside standalone mode
-- Only activates when `window.scrollY <= 0` (at scroll top)
-- Ignores horizontal swipes (direction locked on first significant movement)
-- Skips when any Radix sheet/dialog is open (`document.querySelector('[role="dialog"][data-state="open"]')`)
-- Rubber-band resistance: `deltaY * 0.5`, capped at 120px. Threshold to trigger: 80px.
-- `touchmove` uses `passive: false` + `preventDefault()` during pull to suppress native iOS bounce and Chrome PTR
-- `overscroll-behavior-y: none` on body in `index.css` disables Chrome Android's native PTR
-
-**Indicator:** `PullToRefreshIndicator` at top of `<main>` — `ArrowDown` icon rotates 0-180deg proportional to progress; `Loader2` spinner during refresh. Transitions disabled during active drag for instant finger tracking.
-
-**Page refresh callbacks:**
-| Page | Callback |
-|------|----------|
-| HomePage | `refreshTrips()` |
-| QuickGroupDetailPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
-| ExpensesPage | `refreshExpenses()` |
-| SettlementsPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
-| DashboardPage | `refreshParticipants + refreshExpenses + refreshSettlements` |
-| ShoppingPage | `refreshShoppingItems()` |
-| PlannerPage | `refreshMeals + refreshActivities + refreshStays` |
-
-### iOS `start_url` Limitation
-
-iOS Safari ignores `manifest.start_url` and saves whatever URL was in the address bar at install time. All three layers (manifest, SW, client guard) are needed because iOS is inconsistent about which defense fires across versions.
+See `docs/PWA.md` for full details (gesture behaviour, page callbacks, iOS limitations).
 
 ---
 
@@ -531,58 +475,12 @@ Vitest + Testing Library. Run with `npm test`. 182 tests covering contexts, hook
 
 ### Manual iOS Keyboard Tests
 
-Playwright cannot trigger the real iOS Safari keyboard. These tests must be run on a physical iPhone before merging any PR that touches:
-- Bottom sheets (`AppSheet`, `MobileWizard`, or any component using `useKeyboardHeight`)
-- Form inputs inside sheets (amount fields, text fields)
-- `useKeyboardHeight` hook itself
-- `MobileWizard.tsx`, `MobileWizardShell.tsx`
-- Any file in the "Same vulnerability" list in `docs/SHEET_AUDIT.md §8.1`
+Required on a **physical iPhone (Safari only)** before merging PRs that touch bottom sheets, `useKeyboardHeight`, or `MobileWizard`. Test: open sheet → tap input → switch to numpad → confirm header/close button visible and tappable above keyboard. Playwright cannot trigger the real iOS keyboard (`visualViewport` always reports 0).
 
-**Device:** iPhone (any model with Face ID preferred — taller notch = less visible space = more likely to expose layout bugs)
-**Browser:** Safari (not Chrome on iOS — Chrome uses UIWebView which has different keyboard behaviour)
-
-**Test protocol — run for each affected sheet:**
-
-1. Open the sheet on a real iPhone in Safari
-2. Tap an amount or text input field
-3. Switch from the default keyboard to the **numpad** (tap the numpad/123 key)
-   → The numpad is taller than the text keyboard. This is when `visualViewport.offsetTop > 0` occurs.
-4. Confirm: the sheet **header and close button (✕)** are fully visible and tappable above the keyboard
-5. Confirm: input fields are visible above the keyboard, not hidden behind it
-6. Tap the close button — sheet closes cleanly
-7. Re-open the sheet and repeat with the text keyboard
-
-**Sheets to test (as of last sheet audit):**
-- ExpenseWizard (MobileWizard) — amount field, Step 1
-- ReceiptCaptureSheet — no amount field, skip numpad test
-- QuickSettlementSheet — amount field
-- DayDetailSheet — no amount field, skip numpad test
-- ParticipantEditSheet (if exists) — text fields only
-- Any new sheet added since the last audit
-
-**Pass criteria:**
-- ✅ Header visible with numpad open
-- ✅ Close button tappable with numpad open
-- ✅ No content hidden behind keyboard
-- ✅ Sheet closes cleanly after keyboard interaction
-- ✅ Re-opening sheet works (no stale keyboard height)
-
-**Known limitation:** `useKeyboardHeight` uses `window.visualViewport` which is not available in Playwright's simulated environment. Keyboard height is always 0 in automated tests. There is no way to automate these checks — physical device testing is the only option.
-
-**If a sheet fails:** The fix pattern is in `MobileWizard.tsx` (PR #376) — subtract `viewportOffset` from sheet height and add it as `paddingBottom`. See `useKeyboardHeight` hook for the `viewportOffset` value.
+**Pass criteria:** Header visible with numpad open, close button tappable, no content behind keyboard, clean re-open. **Fix pattern:** top-based positioning with `viewportOffset` (see iOS Keyboard section). Full test protocol and sheet list in `docs/SHEET_AUDIT.md §8.1`.
 
 ### Production Smoke Tests (Playwright MCP)
-Interactive browser testing against https://split.xtian.me using Playwright MCP. Results recorded in `docs/SMOKE_TEST_RESULTS.md`. Scenarios cover:
-1. Shared link access (unauthenticated) — verifies RLS SELECT policy
-2. Shared link access (authenticated non-creator) — requires manual OAuth
-3. Expense submit guard — double-tap prevention
-4. Error boundary — no white screens during navigation
-5. Admin access control — unauthenticated users blocked
-6. Session health — requires manual OAuth + wait
-7. Trip navigation state clearing — no stale data between trips
-8. Console error baseline — no application errors across all pages
-
-Run interactively via Claude Code with Playwright MCP. Scenarios requiring Google OAuth must be tested manually.
+8 interactive scenarios against https://split.xtian.me via Playwright MCP. Results in `docs/SMOKE_TEST_RESULTS.md`. 2 scenarios require manual Google OAuth; rest are automated.
 
 ---
 
@@ -590,7 +488,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Sheet hidden behind iOS keyboard | `fixed; bottom:0` behind keyboard | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight` when `keyboard.isVisible`. **Never** compute `bottom` from `window.innerHeight` — it's unreliable on iOS Safari. |
+| Sheet hidden behind iOS keyboard / numpad | `fixed; bottom:0` behind keyboard, or numpad taller → `visualViewport.offsetTop > 0` hides header | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight` when `keyboard.isVisible`. **Never** compute `bottom` from `window.innerHeight`. Manual iPhone test required (Playwright can't trigger real keyboard). |
 | Keyboard pops on sheet open | `autoFocus` / `ref.focus()` in useEffect | Remove auto-focus |
 | ModeToggle shows wrong state | Reads stored pref, not current route | Use `pathname.includes('/quick')` → `effectiveMode` |
 | Mobile lands on all-trips page | Stored pref is `full` from desktop | `ConditionalHomePage` checks `window.innerWidth < 768` |
@@ -604,9 +502,7 @@ Run interactively via Claude Code with Playwright MCP. Scenarios requiring Googl
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
-| Sheet header hidden when numpad opens | iOS numpad is taller → `visualViewport.offsetTop > 0` → header above visible area | Use `top: viewportOffset` positioning (see iOS Keyboard section). The `viewportOffset` value shifts the sheet down with the visual viewport. |
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
-| Sheet content hidden behind numpad (iOS) | numpad is taller than text keyboard → `visualViewport.offsetTop > 0` pushes sheet up | Use top-based positioning: `top: viewportOffset`, `bottom: 'auto'`. See PR #409 and `useKeyboardHeight`. Playwright cannot test this — manual iPhone required. |
 | iOS scroll lock in bottom sheets | `overscroll-behavior: contain` on scroll containers causes iOS Safari to stop routing scroll events after user reaches a boundary | `useIOSScrollFix` hook — nudges `scrollTop` 1px from boundaries on `touchstart`. Applied to all sheet scroll containers via `ref={scrollRef}`. No-op on non-iOS. |
 | "text/html is not a valid JavaScript MIME type" | New deploy changed JS chunk hashes; browser's cached HTML references old chunks; CDN returns SPA fallback HTML | `ErrorBoundary` auto-detects and reloads once (`sessionStorage` guard). If still broken, shows "New version available" card. No code fix needed — just a deploy artifact. |
 

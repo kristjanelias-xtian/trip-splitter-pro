@@ -11,6 +11,7 @@
 
 - **Shared link access** — no signup required; trip URL is the access token
 - **AI receipt scanning** — photo → Claude extracts line items → assign to participants → expense created
+- **Dark mode** — system preference detection with manual light/dark/system toggle
 - **Two UI modes** — Quick (streamlined single-page) + Full (multi-page dashboard with tabs)
 - **Wallet groups** — shared wallets with per-expense equal-split toggle and within-group balances
 - **Multi-currency** — default currency per trip with exchange rate tracking
@@ -30,7 +31,7 @@
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18 + TypeScript, Vite 6 |
-| Styling | Tailwind CSS + shadcn/ui |
+| Styling | Tailwind CSS + shadcn/ui (dark mode) |
 | State | React Context API |
 | Database | Supabase (PostgreSQL + RLS + Edge Functions) |
 | Auth | Supabase Auth (Google OAuth) |
