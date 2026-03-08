@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useRef, useEffect, type RefObject } from 'react'
 
-const isIOS =
-  typeof navigator !== 'undefined' &&
-  /iPhone|iPad|iPod/.test(navigator.userAgent)
-
 /**
- * Prevents the iOS Safari scroll-lock bug where a scroll container
- * with `overscroll-behavior: contain` becomes unresponsive after
- * the user scrolls to a boundary.
+ * Prevents a scroll-lock bug on touch devices (iOS Safari, Android Chrome)
+ * where a scroll container with `overscroll-behavior: contain` becomes
+ * unresponsive after the user scrolls to a boundary.
  *
  * Fix: on each `touchstart`, nudge `scrollTop` 1px away from the
- * exact top/bottom boundary so iOS never detects the "at boundary"
+ * exact top/bottom boundary so the browser never detects the "at boundary"
  * state that triggers the lock.
  *
- * Only activates on iOS — no-op on other platforms.
+ * The handler only fires on `touchstart`, so it is naturally a no-op on
+ * desktop (mouse/trackpad never triggers `touchstart`).
  *
  * @param externalRef - Optional existing ref to use instead of creating one
  */
@@ -26,7 +23,7 @@ export function useIOSScrollFix<T extends HTMLElement = HTMLDivElement>(
 
   useEffect(() => {
     const el = ref.current
-    if (!el || !isIOS) return
+    if (!el) return
 
     const handler = () => {
       const { scrollTop, scrollHeight, clientHeight } = el
