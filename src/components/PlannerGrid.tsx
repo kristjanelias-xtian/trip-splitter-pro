@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { cn } from '@/lib/utils'
 import { getDayContext } from '@/lib/dateUtils'
 import { Card } from '@/components/ui/card'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Event } from '@/types/trip'

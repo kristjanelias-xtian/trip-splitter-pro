@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ReceiptTask, ExtractedItem, MappedItem } from '@/types/receipt'

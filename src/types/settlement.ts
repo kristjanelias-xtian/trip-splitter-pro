@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Settlement represents a payment transfer between two participants/families
  * Used to record when someone pays back their debt

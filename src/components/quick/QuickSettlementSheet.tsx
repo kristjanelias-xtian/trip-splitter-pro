@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { ArrowRight, ArrowLeft, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'

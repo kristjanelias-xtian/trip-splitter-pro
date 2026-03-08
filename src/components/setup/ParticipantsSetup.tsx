@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby, MoreHorizontal } from 'lucide-react'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ScanLine, Settings, LayoutGrid, Shield } from 'lucide-react'
 import { useState } from 'react'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck } from 'lucide-react'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export interface Stay {
   id: string
   trip_id: string

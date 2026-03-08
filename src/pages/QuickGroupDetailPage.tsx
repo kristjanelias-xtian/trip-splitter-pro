@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useNavigate, useLocation, Link } from 'react-router-dom'

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type TrackingMode = 'individuals' | 'families'
 
 export interface Event {

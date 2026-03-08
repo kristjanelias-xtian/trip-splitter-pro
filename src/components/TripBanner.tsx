@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { motion } from 'framer-motion'
 

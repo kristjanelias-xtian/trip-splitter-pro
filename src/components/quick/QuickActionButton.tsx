@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Trip Gradient Service with Location-Themed Patterns
  * Generates themed gradient backgrounds with location-specific icon overlays

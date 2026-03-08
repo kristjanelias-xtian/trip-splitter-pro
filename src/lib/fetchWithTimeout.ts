@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Wraps a promise with a timeout. If the promise doesn't resolve within
  * the specified milliseconds, the returned promise rejects with a timeout error.

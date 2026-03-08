@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useCallback } from 'react'
 
 type Theme = 'light' | 'dark' | 'system'

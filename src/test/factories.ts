@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Participant } from '@/types/participant'
 import type { Expense, ExpenseDistribution } from '@/types/expense'
 import type { Settlement } from '@/types/settlement'

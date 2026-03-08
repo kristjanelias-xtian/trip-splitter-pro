@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'

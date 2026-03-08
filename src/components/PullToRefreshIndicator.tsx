@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ArrowDown, Loader2 } from 'lucide-react'
 
 const THRESHOLD = 80

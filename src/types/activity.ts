@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type ActivityTimeSlot = 'morning' | 'afternoon' | 'evening'
 
 export interface Activity {

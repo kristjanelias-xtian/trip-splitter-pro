@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Hidden Trips Storage
  * Tracks trips the user has hidden from Quick Mode home.

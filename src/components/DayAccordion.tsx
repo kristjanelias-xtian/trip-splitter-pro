@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { MealWithIngredients, MealType } from '@/types/meal'
 import type { Activity } from '@/types/activity'
 import { DateContext } from '@/lib/dateUtils'

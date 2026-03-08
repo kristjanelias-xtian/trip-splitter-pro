@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type ReceiptTaskStatus = 'pending' | 'processing' | 'review' | 'complete' | 'failed';
 
 export interface ExtractedItem {

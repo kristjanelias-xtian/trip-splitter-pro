@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
 import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check, Baby } from 'lucide-react'
 import { useParticipantContext } from '@/contexts/ParticipantContext'

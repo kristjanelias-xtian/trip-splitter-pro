@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createContext, useContext, useRef, useState, useCallback, type ReactNode } from 'react'
 
 interface PullToRefreshContextValue {

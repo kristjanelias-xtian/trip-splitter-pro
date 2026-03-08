@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
 import { ExpenseDistribution } from '@/types/expense'
 import { Participant } from '@/types/participant'

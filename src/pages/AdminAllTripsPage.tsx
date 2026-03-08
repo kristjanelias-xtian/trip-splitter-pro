@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, ExternalLink, Calendar, UserCircle, ShieldAlert } from 'lucide-react'

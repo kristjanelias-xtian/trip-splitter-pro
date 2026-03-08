@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'

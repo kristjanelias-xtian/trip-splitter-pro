@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useParams, useNavigate } from 'react-router-dom'
 import { AlertCircle, Home, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'

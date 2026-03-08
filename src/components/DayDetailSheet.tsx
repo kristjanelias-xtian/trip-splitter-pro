@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Building2, X } from 'lucide-react'
 import { getDayNumber, getDayContext } from '@/lib/dateUtils'
 import { Badge } from '@/components/ui/badge'

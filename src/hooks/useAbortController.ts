@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useRef, useEffect } from 'react'
 
 export function useAbortController() {

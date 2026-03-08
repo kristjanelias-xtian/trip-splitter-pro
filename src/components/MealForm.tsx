@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, CloudSun, Moon, Plus, X, Utensils, Home, Receipt } from 'lucide-react'

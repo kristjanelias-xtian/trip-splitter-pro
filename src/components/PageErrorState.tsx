@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

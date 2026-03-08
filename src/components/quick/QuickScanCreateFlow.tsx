@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, Loader2, X, ScanLine, ChevronRight } from 'lucide-react'

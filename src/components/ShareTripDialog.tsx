@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { Copy, Share2, Check, Mail, MessageCircle, Send } from 'lucide-react'
