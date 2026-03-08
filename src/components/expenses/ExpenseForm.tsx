@@ -753,9 +753,9 @@ export function ExpenseForm({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-2">
                 {/* Date */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="expenseDate">Date</Label>
                   <Input
                     type="date"
@@ -767,14 +767,14 @@ export function ExpenseForm({
                 </div>
 
                 {/* Comment */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="comment">Comment (Optional)</Label>
                   <Textarea
                     id="comment"
                     value={comment}
                     onChange={e => setComment(e.target.value)}
                     placeholder="Additional notes..."
-                    rows={2}
+                    rows={1}
                     disabled={loading}
                   />
                 </div>
