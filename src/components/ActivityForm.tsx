@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fadeInUp } from '@/lib/animations'
+import { logger } from '@/lib/logger'
 
 interface ActivityFormProps {
   activity?: Activity
@@ -123,7 +124,7 @@ export function ActivityForm({
         }
       }
     } catch (error) {
-      console.error('Error saving activity:', error)
+      logger.error('Error saving activity:', { error: String(error) })
       setError('An error occurred while saving')
     } finally {
       setSubmitting(false)

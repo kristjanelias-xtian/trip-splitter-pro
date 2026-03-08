@@ -9,26 +9,21 @@
 
 ```
 Is this an overlay that blocks interaction with the page?
-├── YES → Does it contain form inputs or require keyboard?
-│   ├── YES → Is the user on mobile (< 768px)?
-│   │   ├── YES → Bottom Sheet (92dvh, keyboard-aware)
-│   │   └── NO  → Centered Dialog (max-h-[85vh], flex column)
-│   └── NO  → Is it a read-only detail view or picker?
-│       ├── YES → Is the user on mobile (< 768px)?
-│       │   ├── YES → Bottom Sheet (75dvh, no keyboard hook)
-│       │   └── NO  → Centered Dialog (max-h-[85vh])
-│       └── NO  → Small confirmation / action?
-│           └── YES → AlertDialog (same on all viewports)
+├── YES → Is it a delete / destructive confirmation?
+│   └── YES → AlertDialog (same on all viewports, no Sheet needed)
+├── YES → Is it a multi-step wizard with step navigation?
+│   └── YES → Raw Sheet + Dialog (see ExpenseWizard / QuickScanCreateFlow)
+├── YES → Any other overlay (form, picker, detail view)?
+│   └── YES → ResponsiveOverlay (hasInputs=true for forms, false for read-only)
 └── NO → Inline card or section (not covered here)
 ```
 
 **Rules:**
-- Every overlay that appears on mobile MUST be a bottom Sheet. No centered dialogs on phones.
-- Every overlay that appears on desktop MUST be a centered Dialog. No bottom sheets on desktop.
-- Detection: `useMediaQuery('(max-width: 767px)')` — never `window.innerWidth`.
-- Multi-step wizards: Sheet on mobile (MobileWizard pattern), Dialog on desktop.
-- Delete confirmations: AlertDialog (small, centered, same on all viewports). These are the one exception to the Sheet-on-mobile rule — they're short enough that centering is fine.
-- The **same content JSX** should be extracted into a variable and rendered inside both Sheet and Dialog to avoid duplication.
+- **Default choice: `ResponsiveOverlay`** (`src/components/ui/ResponsiveOverlay.tsx`). It renders `AppSheet` on mobile (< 768px) and `Dialog` on desktop, handling breakpoint detection, keyboard, and iOS scroll fixes internally.
+- Detection: `useMediaQuery('(max-width: 767px)')` — never `window.innerWidth`, never `768px`.
+- **Delete confirmations:** `AlertDialog` (small, centered, same on all viewports). The one exception to the Sheet-on-mobile rule — they're short enough that centering is fine.
+- **Multi-step wizards:** Use raw `Sheet` + `Dialog` directly (see §4). Only `ExpenseWizard` and `QuickScanCreateFlow` need this.
+- **Never** use raw `Sheet`/`Dialog` for simple single-screen overlays — use `ResponsiveOverlay` instead.
 
 ---
 
@@ -215,6 +210,97 @@ For simple dialogs that are small enough to work on all viewports (confirmations
 
 ---
 
+## 3c. ResponsiveOverlay — Standard Wrapper (preferred)
+
+**Use `ResponsiveOverlay` for every new overlay.** It renders `AppSheet` on mobile and `Dialog` on desktop, sharing the same header structure. You don't need to manage breakpoint detection, keyboard, or iOS scroll fixes manually.
+
+```tsx
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
+
+function MyOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <ResponsiveOverlay
+      open={open}
+      onClose={onClose}
+      title="Title"
+      hasInputs           // true → 92dvh + keyboard hooks (mobile); false → 75dvh (default)
+      maxWidth="max-w-lg"  // desktop Dialog max-width (default: 'max-w-lg')
+      footer={<Button>Save</Button>}  // optional sticky footer
+    >
+      {/* content */}
+    </ResponsiveOverlay>
+  )
+}
+```
+
+**Props reference:**
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `open` | `boolean` | — | Controls visibility |
+| `onClose` | `() => void` | — | Called on close (both mobile swipe and desktop overlay click) |
+| `title` | `ReactNode` | — | Shown in sticky header center slot |
+| `hasInputs` | `boolean` | `false` | `true` → 92dvh + keyboard handling; `false` → 75dvh read-only |
+| `maxWidth` | `string` | `'max-w-lg'` | Desktop dialog max-width class |
+| `footer` | `ReactNode` | — | Sticky footer below scroll area |
+| `onBack` | `() => void` | — | Shows ← back arrow in left slot |
+| `headerExtra` | `ReactNode` | — | Content below title row (e.g. description, progress bar) |
+| `preventOutsideClose` | `boolean` | `false` | Block overlay click during submission |
+| `scrollRef` | `RefObject<HTMLDivElement>` | — | External scroll ref (e.g. for `useScrollIntoView`) |
+| `scrollClassName` | `string` | `'px-4 py-4'` | Override scroll container className |
+
+---
+
+## 3d. AlertDialog — Delete / Destructive Confirmations
+
+**All delete confirmations MUST use `AlertDialog`, not `Dialog` or `ResponsiveOverlay`.** AlertDialog prevents closing by clicking outside (user must explicitly cancel or confirm), which is the correct UX for destructive actions.
+
+```tsx
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+
+<AlertDialog open={showDelete} onOpenChange={setShowDelete}>
+  <AlertDialogContent className="max-w-sm">
+    <AlertDialogHeader>
+      <AlertDialogTitle>Delete Item?</AlertDialogTitle>
+      <AlertDialogDescription>
+        Are you sure? This action cannot be undone.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction
+        onClick={handleDelete}
+        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      >
+        Delete
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
+
+**Key differences from Dialog:**
+- `AlertDialogCancel` auto-closes (no need for manual `onClick`)
+- `AlertDialogAction` styled as primary by default — override with destructive classes
+- No outside-click dismiss (safe for destructive actions)
+- Same on all viewports (small centered modal)
+
+---
+
+## 3e. Documented Exceptions (raw Sheet/Dialog)
+
+Two components intentionally bypass `ResponsiveOverlay` and manage their own `Sheet`/`Dialog` rendering:
+
+1. **`ExpenseWizard`** (`src/components/expenses/ExpenseWizard.tsx`) — Multi-step wizard with step navigation, custom progress bar, and separate MobileWizard/MobileEditSheet/Desktop paths.
+2. **`QuickScanCreateFlow`** (`src/components/quick/QuickScanCreateFlow.tsx`) — 3-step flow (camera → scanning → participants) with trip creation mid-flow and close-prevention during scanning.
+
+These are the only components that should use raw `Sheet`/`Dialog`. All other overlays should use `ResponsiveOverlay`.
+
+---
+
 ## 4. MobileWizard Rules
 
 The MobileWizard (in `ExpenseWizard.tsx`) is a special multi-step sheet pattern.
@@ -366,70 +452,54 @@ Copy-paste this into PR reviews for any new or modified sheet/dialog:
 
 ---
 
-## Appendix A — Existing Component Audit (2026-03-08)
+## Appendix A — Existing Component Audit (2026-03-08, updated 2026-03-08 post-PR #661)
 
 ### Audit Table
 
-| Component | File | Opens as | Dual mode | Height | hideClose | Header shrink-0 | IOSScrollFix | pwa-safe-bottom | Keyboard pattern | Issues |
-|-----------|------|----------|-----------|--------|-----------|-----------------|--------------|-----------------|------------------|--------|
-| AppSheet | ui/AppSheet.tsx | Sheet | N/A (base) | 92/75dvh | ✅ | ✅ | ✅ | ✅ footer | **top-based** ✅ | — |
-| MobileWizard | expenses/ExpenseWizard.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | Edit mode also uses Sheet on mobile (MobileEditSheet) |
-| SettlementsPage | pages/SettlementsPage.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| QuickSettlementSheet | quick/QuickSettlementSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| QuickCreateSheet | quick/QuickCreateSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | **top-based** ✅ | — |
-| QuickScanCreateFlow | quick/QuickScanCreateFlow.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| QuickParticipantSetupSheet | quick/QuickParticipantSetupSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| ReceiptReviewSheet | receipts/ReceiptReviewSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| ReceiptCaptureSheet | receipts/ReceiptCaptureSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | N/A (no inputs) | P3: no pwa-safe |
-| ReceiptDetailsSheet | receipts/ReceiptDetailsSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ✅ | N/A (read-only) | — |
-| QuickHistorySheet | quick/QuickHistorySheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
-| QuickScanContextSheet | quick/QuickScanContextSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
-| QuickGroupMembersSheet | quick/QuickGroupMembersSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | — |
-| DayDetailSheet | DayDetailSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
-| CostBreakdownDialog | CostBreakdownDialog.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| ReportIssueDialog | ReportIssueDialog.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | **top-based** ✅ | — |
-| ShareTripDialog | ShareTripDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| LinkParticipantDialog | LinkParticipantDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| BankDetailsDialog | auth/BankDetailsDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| ManageTripPage edit | pages/ManageTripPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| ShoppingPage add | pages/ShoppingPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| ExpensesPage delete | pages/ExpensesPage.tsx | AlertDialog | N/A | default | ❌ | ✅ | ❌ | ❌ | N/A | — (correct for confirmation) |
-| ActivityCard edit/delete | ActivityCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| MealCard edit/delete | MealCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| MealGrid add | MealGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| TimeSlotGrid add | TimeSlotGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| ShoppingItemCard edit/delete | ShoppingItemCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| ShoppingItemRow edit/delete | ShoppingItemRow.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
-| StayCard edit/delete | StayCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+**Legend:** RO = `ResponsiveOverlay`, Raw = raw Sheet+Dialog, AD = AlertDialog
 
-### Prioritised Issue List
+| Component | File | Wrapper | Notes |
+|-----------|------|---------|-------|
+| **ResponsiveOverlay consumers (25)** | | | |
+| SettlementsPage form | pages/SettlementsPage.tsx | RO | hasInputs, keyboard ✅ |
+| QuickSettlementSheet | quick/QuickSettlementSheet.tsx | RO | hasInputs, keyboard ✅ |
+| QuickCreateSheet | quick/QuickCreateSheet.tsx | RO | hasInputs, keyboard ✅ |
+| QuickParticipantSetupSheet | quick/QuickParticipantSetupSheet.tsx | RO | hasInputs, keyboard ✅ |
+| ReceiptReviewSheet | receipts/ReceiptReviewSheet.tsx | RO | hasInputs, keyboard ✅ |
+| ReceiptCaptureSheet | receipts/ReceiptCaptureSheet.tsx | RO | no inputs |
+| ReceiptDetailsSheet | receipts/ReceiptDetailsSheet.tsx | RO | read-only 75dvh |
+| QuickHistorySheet | quick/QuickHistorySheet.tsx | RO | read-only 75dvh |
+| QuickScanContextSheet | quick/QuickScanContextSheet.tsx | RO | read-only 75dvh |
+| QuickGroupMembersSheet | quick/QuickGroupMembersSheet.tsx | RO | read-only 75dvh |
+| DayDetailSheet | DayDetailSheet.tsx | RO | read-only 75dvh |
+| ReportIssueDialog | ReportIssueDialog.tsx | RO | hasInputs, keyboard ✅ |
+| ShareTripDialog | ShareTripDialog.tsx | RO | no inputs |
+| LinkParticipantDialog | LinkParticipantDialog.tsx | RO | hasInputs |
+| BankDetailsDialog | auth/BankDetailsDialog.tsx | RO | hasInputs |
+| MealCard edit | MealCard.tsx | RO | hasInputs |
+| ActivityCard edit | ActivityCard.tsx | RO | hasInputs |
+| StayCard edit | StayCard.tsx | RO | hasInputs |
+| ShoppingItemCard edit | ShoppingItemCard.tsx | RO | hasInputs |
+| ShoppingItemRow edit | ShoppingItemRow.tsx | RO | hasInputs |
+| ManageTripPage edit | pages/ManageTripPage.tsx | RO | hasInputs |
+| ShoppingPage add | pages/ShoppingPage.tsx | RO | hasInputs |
+| MealGrid add | MealGrid.tsx | RO | hasInputs |
+| TimeSlotGrid add | TimeSlotGrid.tsx | RO | hasInputs |
+| CostBreakdownDialog | CostBreakdownDialog.tsx | RO | read-only |
+| **Raw Sheet+Dialog (2 exceptions)** | | | |
+| ExpenseWizard | expenses/ExpenseWizard.tsx | Raw | Multi-step wizard, custom progress bar |
+| QuickScanCreateFlow | quick/QuickScanCreateFlow.tsx | Raw | 3-step flow with trip creation mid-flow |
+| **AlertDialog (delete confirmations)** | | | |
+| ExpensesPage delete | pages/ExpensesPage.tsx | AD | — |
+| SettlementsPage delete | pages/SettlementsPage.tsx | AD | — |
+| ManageTripPage delete | pages/ManageTripPage.tsx | AD | — |
+| MealCard delete | MealCard.tsx | AD | — |
+| ActivityCard delete | ActivityCard.tsx | AD | — |
+| StayCard delete | StayCard.tsx | AD | — |
+| ShoppingItemCard delete | ShoppingItemCard.tsx | AD | — |
+| ShoppingItemRow delete | ShoppingItemRow.tsx | AD | — |
+| GroupActions delete | quick/GroupActions.tsx | AD | — |
 
-#### P1 — Broken on device (keyboard positioning)
+### Issue History (all resolved)
 
-1–6. ✅ **All 6 sheets migrated to top-based keyboard positioning** (`top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight`) — PR #653
-   - AppSheet, QuickSettlementSheet, QuickCreateSheet, QuickScanCreateFlow, ReceiptReviewSheet, QuickParticipantSetupSheet
-
-#### P2 — Visual bug
-
-7. ✅ **ReportIssueDialog converted to dual Sheet/Dialog** — PR #656
-   - Mobile: bottom Sheet with standard pattern (92dvh, top-based keyboard, hideClose, 3-slot header, useIOSScrollFix)
-   - Desktop: Dialog with `max-h-[85vh]`, same header/content pattern
-   - Removed `transform: translateY()` hack entirely
-
-#### P3 — Inconsistency (not visibly broken)
-
-8. ✅ **AppSheet footer** now has `pwa-safe-bottom` (cascades to all AppSheet consumers) — PR #653
-   - Remaining sheets without footer (QuickCreateSheet, QuickHistorySheet, QuickScanContextSheet, ReceiptCaptureSheet, QuickGroupMembersSheet, DayDetailSheet) have no footer, so no `pwa-safe-bottom` needed. Closed.
-
-9. ✅ **Sheet-only components converted to dual Sheet/Dialog** — PR #656
-   - QuickParticipantSetupSheet — now renders Dialog on desktop
-   - QuickGroupMembersSheet — now renders Dialog on desktop
-
-10. ✅ **Dialog-only components — closed as acceptable** — PR #656
-    - Remaining ~14 dialog-only components (ShareTripDialog, LinkParticipantDialog, BankDetailsDialog, ActivityCard, MealCard, MealGrid, TimeSlotGrid, ShoppingItemCard, ShoppingItemRow, StayCard, ManageTripPage edit, ShoppingPage add, CostBreakdownDialog) are small forms (2–4 fields) or confirmations. Centered dialogs work fine on mobile. Converting each adds ~50 lines of boilerplate for marginal UX gain. Revisit only if users report friction.
-
-11. ✅ **Max-height standardized** — All dialogs now use `max-h-[85vh]` — PR #653
-
-12. ✅ **`useIOSScrollFix` added to all dialogs with `overflow-y-auto`** — PR #656
-    - CostBreakdownDialog, ActivityCard, MealCard, MealGrid, TimeSlotGrid, ShoppingItemCard, ShoppingItemRow, StayCard, ManageTripPage edit, ShoppingPage add
-    - ShareTripDialog, LinkParticipantDialog, BankDetailsDialog have no `overflow-y-auto`, so no fix needed.
+All P1–P3 issues from the original audit are resolved. See git history for PRs #653, #656, #658, #659, #661.

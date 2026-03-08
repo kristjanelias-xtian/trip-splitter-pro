@@ -241,7 +241,7 @@ On mobile (< 768 px), renders `MobileWizard` (bottom Sheet, 3–4 step wizard). 
 **Important behaviours:**
 - `paidBy` is pre-filled with the auth user's linked adult participant (`participant.user_id === user.id && is_adult`) via a `useEffect` that fires when the form opens and the field is still empty
 - `suggestedPayer` banner still shows the balance-based suggestion; tapping it overrides `paidBy`
-- `useMediaQuery('(max-width: 768px)')` initialises as `false` on first render, then updates — this is expected behaviour
+- `useMediaQuery('(max-width: 767px)')` initialises as `false` on first render, then updates — this is expected behaviour
 - Sheet height: `keyboard.isVisible ? availableHeight : 92dvh`
 - Sheet bottom: `keyboard.isVisible ? Math.max(0, keyboardHeight - viewportOffset) : undefined` — **critical for iOS** (see iOS section)
 - Sheet paddingBottom: `viewportOffset > 0 ? viewportOffset : undefined` — keeps content above keyboard overlap zone when iOS scrolls the visual viewport
@@ -278,6 +278,16 @@ Always `dvh`. **Never** `vh`. **Never** `100vh`. **Never** `h-screen`.
 - Never show two buttons that both close the sheet.
 
 **Full spec and audit log:** `docs/SHEET_AUDIT.md`
+
+### ResponsiveOverlay (`src/components/ui/ResponsiveOverlay.tsx`)
+
+Use `ResponsiveOverlay` for **every overlay** that needs Sheet on mobile / Dialog on desktop. Handles breakpoint detection (`767px`), keyboard handling, and iOS scroll fixes internally. Props: `hasInputs`, `footer`, `headerExtra`, `scrollRef`, `scrollClassName`, `maxWidth`, `onBack`, `preventOutsideClose`.
+
+**Exceptions (raw Sheet/Dialog):** `ExpenseWizard` (multi-step wizard with step navigation) and `QuickScanCreateFlow` (3-step flow with trip creation mid-flow).
+
+**AlertDialog rule:** Delete/destructive confirmations use `AlertDialog` (not `Dialog` or `ResponsiveOverlay`). Small, centered, same on all viewports.
+
+**Breakpoint standard:** Mobile detection uses `useMediaQuery('(max-width: 767px)')` — all components use `767px`, not `768px`.
 
 ### Quick Actions Standard (QuickGroupDetailPage)
 
