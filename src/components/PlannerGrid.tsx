@@ -122,6 +122,34 @@ function getCalendarDate(date: string): number {
   return new Date(date + 'T00:00:00').getDate()
 }
 
+function formatMonthYear(date: string): string {
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+function getMonthShort(date: string): string {
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })
+}
+
+/**
+ * Returns a month/year label if the first trip date in this week
+ * is in a different month than the last trip date in the previous week.
+ * The first week always gets a label.
+ */
+function getMonthLabel(week: (string | null)[], prevWeek: (string | null)[] | null): string | null {
+  const firstTripDate = week.find((d) => d !== null)
+  if (!firstTripDate) return null
+
+  if (!prevWeek) return formatMonthYear(firstTripDate)
+
+  const lastPrevTripDate = [...prevWeek].reverse().find((d) => d !== null)
+  if (!lastPrevTripDate) return formatMonthYear(firstTripDate)
+
+  const currMonth = new Date(firstTripDate + 'T00:00:00').getMonth()
+  const prevMonth = new Date(lastPrevTripDate + 'T00:00:00').getMonth()
+
+  return currMonth !== prevMonth ? formatMonthYear(firstTripDate) : null
+}
+
 function slotHasContent(
   slot: ActivityTimeSlot,
   meals: MealWithIngredients[],
@@ -182,99 +210,116 @@ export function PlannerGrid({
         </div>
 
         {/* Calendar weeks */}
-        <div className="grid grid-cols-7 gap-1">
-          {weeks.flat().map((date, i) => {
-            if (!date) {
-              return (
-                <div
-                  key={`empty-${i}`}
-                  className="h-20 md:h-24 rounded-lg"
-                />
-              )
-            }
-
-            const staysOnDate = getStaysForDate(date)
-            const isSplit = staysOnDate.length === 2
-
-            // For single-stay rendering, use getStayForDate (excludes checkout-only)
-            const stay = isSplit ? null : getStayForDate(date)
-            const colorIdx = stay ? stayColorMap.get(stay.id) : undefined
-            const stayColor = colorIdx !== undefined ? STAY_COLORS[colorIdx] : null
-
-            // For split days, determine departing (checkout) and arriving (checkin) stays
-            let splitStyle: React.CSSProperties | undefined
-            let splitBorderClass: string | undefined
-            if (isSplit) {
-              const departingStay = staysOnDate.find((s) => s.check_out_date === date)
-              const arrivingStay = staysOnDate.find((s) => s.check_in_date === date)
-              if (departingStay && arrivingStay) {
-                const departIdx = stayColorMap.get(departingStay.id) ?? 0
-                const arriveIdx = stayColorMap.get(arrivingStay.id) ?? 0
-                splitStyle = {
-                  background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${STAY_HEX_BG[arriveIdx % STAY_HEX_BG.length]} 50%)`,
-                }
-                splitBorderClass = STAY_COLORS[arriveIdx % STAY_COLORS.length].cellBorder
-              }
-            }
-
-            // Checkout-to-home split: stay ends this day with no new stay starting
-            if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
-              const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
-              splitStyle = {
-                background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${HOME_HEX_BG} 50%)`,
-              }
-              splitBorderClass = 'border-border'
-            }
-
-            const calendarDate = getCalendarDate(date)
-            const context = getDayContext(date)
-            const meals = getMealsForDate(date)
-            const activities = getActivitiesForDate(date)
-            const activityCount = activities.length
-
-            return (
-              <button
-                key={date}
-                type="button"
-                onClick={() => onDayClick(date)}
-                className={cn(
-                  'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
-                  'h-20 md:h-24',
-                  'hover:bg-accent/50 cursor-pointer',
-                  splitStyle
-                    ? splitBorderClass
-                    : stayColor
-                      ? `${stayColor.bg} ${stayColor.cellBorder}`
-                      : 'bg-muted/30 border-border',
-                  context === 'today' && 'ring-2 ring-primary',
-                  context === 'past' && 'opacity-60'
-                )}
-                style={splitStyle}
-              >
-                <span className="text-xs font-bold leading-none">{calendarDate}</span>
-                <div className="flex gap-1 mt-1.5">
-                  {TIME_SLOTS.map((slot) => {
-                    const filled = slotHasContent(slot, meals, activities)
+        {weeks.map((week, weekIdx) => {
+          const monthLabel = getMonthLabel(week, weekIdx === 0 ? null : weeks[weekIdx - 1])
+          return (
+            <div key={weekIdx}>
+              {monthLabel && (
+                <div className={cn(
+                  'text-xs font-semibold text-muted-foreground mb-1',
+                  weekIdx > 0 && 'mt-3'
+                )}>
+                  {monthLabel}
+                </div>
+              )}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {week.map((date, dayIdx) => {
+                  if (!date) {
                     return (
                       <div
-                        key={slot}
-                        className={cn(
-                          'w-2 h-2 rounded-full',
-                          filled ? DOT_FILLED_COLORS[slot] : 'bg-muted-foreground/20'
-                        )}
+                        key={`empty-${weekIdx}-${dayIdx}`}
+                        className="h-20 md:h-24 rounded-lg"
                       />
                     )
-                  })}
-                </div>
-                {activityCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {activityCount}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+                  }
+
+                  const staysOnDate = getStaysForDate(date)
+                  const isSplit = staysOnDate.length === 2
+
+                  const stay = isSplit ? null : getStayForDate(date)
+                  const colorIdx = stay ? stayColorMap.get(stay.id) : undefined
+                  const stayColor = colorIdx !== undefined ? STAY_COLORS[colorIdx] : null
+
+                  let splitStyle: React.CSSProperties | undefined
+                  let splitBorderClass: string | undefined
+                  if (isSplit) {
+                    const departingStay = staysOnDate.find((s) => s.check_out_date === date)
+                    const arrivingStay = staysOnDate.find((s) => s.check_in_date === date)
+                    if (departingStay && arrivingStay) {
+                      const departIdx = stayColorMap.get(departingStay.id) ?? 0
+                      const arriveIdx = stayColorMap.get(arrivingStay.id) ?? 0
+                      splitStyle = {
+                        background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${STAY_HEX_BG[arriveIdx % STAY_HEX_BG.length]} 50%)`,
+                      }
+                      splitBorderClass = STAY_COLORS[arriveIdx % STAY_COLORS.length].cellBorder
+                    }
+                  }
+
+                  if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
+                    const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
+                    splitStyle = {
+                      background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${HOME_HEX_BG} 50%)`,
+                    }
+                    splitBorderClass = 'border-border'
+                  }
+
+                  const calendarDate = getCalendarDate(date)
+                  const context = getDayContext(date)
+                  const meals = getMealsForDate(date)
+                  const activities = getActivitiesForDate(date)
+                  const activityCount = activities.length
+
+                  return (
+                    <button
+                      key={date}
+                      type="button"
+                      onClick={() => onDayClick(date)}
+                      className={cn(
+                        'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
+                        'h-20 md:h-24',
+                        'hover:bg-accent/50 cursor-pointer',
+                        splitStyle
+                          ? splitBorderClass
+                          : stayColor
+                            ? `${stayColor.bg} ${stayColor.cellBorder}`
+                            : 'bg-muted/30 border-border',
+                        context === 'today' && 'ring-2 ring-primary',
+                        context === 'past' && 'opacity-60'
+                      )}
+                      style={splitStyle}
+                    >
+                      {calendarDate === 1 && (
+                        <span className="text-[8px] font-semibold text-muted-foreground leading-none uppercase tracking-wide">
+                          {getMonthShort(date)}
+                        </span>
+                      )}
+                      <span className="text-xs font-bold leading-none">{calendarDate}</span>
+                      <div className="flex gap-1 mt-1.5">
+                        {TIME_SLOTS.map((slot) => {
+                          const filled = slotHasContent(slot, meals, activities)
+                          return (
+                            <div
+                              key={slot}
+                              className={cn(
+                                'w-2 h-2 rounded-full',
+                                filled ? DOT_FILLED_COLORS[slot] : 'bg-muted-foreground/20'
+                              )}
+                            />
+                          )
+                        })}
+                      </div>
+                      {activityCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                          {activityCount}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
 
         {/* Stay legend */}
         {(legendStays.length > 0 || hasHomeDays) && (

@@ -78,6 +78,23 @@ export function PlannerPage() {
 
   const tripDates = generateDateRange(currentTrip.start_date, currentTrip.end_date)
 
+  const formatTripDateRange = (startDate: string, endDate: string): string => {
+    const start = new Date(startDate + 'T00:00:00')
+    const end = new Date(endDate + 'T00:00:00')
+    const sameYear = start.getFullYear() === end.getFullYear()
+    const sameMonth = sameYear && start.getMonth() === end.getMonth()
+
+    const monthShort = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' })
+
+    if (sameMonth) {
+      return `${monthShort(start)} ${start.getDate()} – ${end.getDate()}, ${start.getFullYear()}`
+    }
+    if (sameYear) {
+      return `${monthShort(start)} ${start.getDate()} – ${monthShort(end)} ${end.getDate()}, ${start.getFullYear()}`
+    }
+    return `${monthShort(start)} ${start.getDate()}, ${start.getFullYear()} – ${monthShort(end)} ${end.getDate()}, ${end.getFullYear()}`
+  }
+
   const getMealsForDate = (date: string): MealWithIngredients[] => {
     if (!enableMeals) return []
     return mealsWithIngredients.filter((meal) => meal.meal_date === date)
@@ -105,7 +122,7 @@ export function PlannerPage() {
       <div>
         <h2 className="text-2xl font-bold text-foreground">Day Planner</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {currentTrip.name} &bull; {tripDates.length} days
+          {currentTrip.name} &bull; {formatTripDateRange(currentTrip.start_date, currentTrip.end_date)}
         </p>
       </div>
 
