@@ -86,7 +86,7 @@ export function QuickLayout() {
         <div className="relative max-w-lg mx-auto px-4">
           <div className="flex flex-col">
             {/* Row 1: back/logo + trip name (full width) + avatar */}
-            <div className="flex items-center justify-between py-3">
+            <div className="flex items-center justify-between py-4">
               <div className="flex items-center gap-3 min-w-0">
                 {isInTrip ? (
                   <>
@@ -98,7 +98,7 @@ export function QuickLayout() {
                       <ArrowLeft size={20} />
                     </Link>
                     <div className="min-w-0">
-                      <h1 className={`text-base font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
+                      <h1 className={`text-lg font-semibold line-clamp-2 leading-tight ${onGradient ? 'text-white' : 'text-foreground'}`} style={onGradient ? { textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}>
                         {currentTrip?.name}
                       </h1>
                       {currentTrip && (
