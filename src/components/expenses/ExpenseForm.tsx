@@ -632,7 +632,7 @@ export function ExpenseForm({
                                 : 'bg-background text-muted-foreground border-input hover:border-primary/50'
                           }`}
                         >
-                          <ParticipantAvatar participant={participant} size="sm" className={isSelected ? 'bg-white/20 text-white' : color.avatar} />
+                          <ParticipantAvatar participant={participant} size="sm" className={color.avatar} />
                           {shortNames.get(participant.id) || participant.name}
                           {isSelected && <Check className="w-3 h-3" />}
                         </button>
