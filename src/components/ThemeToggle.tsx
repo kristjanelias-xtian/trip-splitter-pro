@@ -19,7 +19,7 @@ export function ThemeToggle() {
           aria-label={label}
           className={`rounded-md p-1.5 transition-colors ${
             theme === value
-              ? 'bg-background text-foreground shadow-sm'
+              ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
