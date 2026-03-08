@@ -24,9 +24,8 @@ import { ExpenseForm } from './ExpenseForm'
 import { WizardProgress } from './wizard/WizardProgress'
 import { WizardNavigation } from './wizard/WizardNavigation'
 import { WizardStep1 } from './wizard/WizardStep1'
-import { WizardStep2 } from './wizard/WizardStep2'
-import { WizardStep3 } from './wizard/WizardStep3'
-import { WizardStep4 } from './wizard/WizardStep4'
+import { WizardStep3 as WizardStep2New } from './wizard/WizardStep3'
+import { WizardStep4 as WizardStep3Custom } from './wizard/WizardStep4'
 
 interface ExpenseWizardProps {
   open: boolean
@@ -163,7 +162,6 @@ function MobileWizard({
   const scrollRef = useIOSScrollFix()
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSubmittingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
@@ -173,8 +171,6 @@ function MobileWizard({
   useEffect(() => {
     return () => { isMounted.current = false }
   }, [])
-
-  const totalSteps = showAdvanced ? 4 : 3
 
   // Form state
   const [description, setDescription] = useState(initialValues?.description || '')
@@ -254,7 +250,6 @@ function MobileWizard({
       const timer = setTimeout(() => {
         if (!isMounted.current) return
         setCurrentStep(1)
-        setShowAdvanced(false)
         setIsSubmitting(false)
         setDescription('')
         setAmount('')
@@ -324,6 +319,9 @@ function MobileWizard({
     }
   }, [splitMode, selectedParticipants, amount])
 
+  // totalSteps: 2 for equal split, 3 when custom split (% or amount) is selected
+  const totalSteps = splitMode !== 'equal' ? 3 : 2
+
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
     setError(null)
@@ -335,11 +333,6 @@ function MobileWizard({
     if (!canProceed()) return
 
     setCurrentStep((prev) => Math.min(totalSteps, prev + 1))
-  }
-
-  const handleAdvanced = () => {
-    setShowAdvanced(true)
-    setCurrentStep(4)
   }
 
   const handleSubmit = async () => {
@@ -438,13 +431,11 @@ function MobileWizard({
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return description.trim() !== '' && parseFloat(amount) > 0
+        return description.trim() !== '' && parseFloat(amount) > 0 && paidBy !== ''
       case 2:
-        return paidBy !== ''
-      case 3:
         return selectedParticipants.length > 0
-      case 4: {
-        if (splitMode === 'equal') return true
+      case 3: {
+        // Custom split step — only reachable when splitMode !== 'equal'
         const amtNum = parseFloat(amount)
         if (splitMode === 'percentage') {
           let total = 0
@@ -545,11 +536,6 @@ function MobileWizard({
               onCurrencyChange={setCurrency}
               availableCurrencies={availableCurrencies}
               disabled={isSubmitting}
-            />
-          )}
-
-          {currentStep === 2 && (
-            <WizardStep2
               paidBy={paidBy}
               onPaidByChange={setPaidBy}
               adults={adults}
@@ -562,43 +548,43 @@ function MobileWizard({
                     }
                   : null
               }
-              currency={currentTrip?.default_currency || 'EUR'}
-              disabled={isSubmitting}
+              hasExpenses={expenses.length > 0}
+              tripCurrency={currentTrip?.default_currency || 'EUR'}
+              category={category}
+              onCategoryChange={handleManualCategoryChange}
             />
           )}
 
-          {currentStep === 3 && (
-            <WizardStep3
+          {currentStep === 2 && (
+            <WizardStep2New
               participants={participants}
               selectedParticipants={selectedParticipants}
               onParticipantToggle={handleParticipantToggle}
               onGroupToggle={handleGroupToggle}
               onSelectAll={handleSelectAll}
               onDeselectAll={handleDeselectAll}
-              onAdvancedClick={handleAdvanced}
               accountForFamilySize={accountForFamilySize}
               onAccountForFamilySizeChange={setAccountForFamilySize}
-              disabled={isSubmitting}
-            />
-          )}
-
-          {currentStep === 4 && (
-            <WizardStep4
               splitMode={splitMode}
               onSplitModeChange={handleSplitModeChange}
-              category={category}
-              onCategoryChange={handleManualCategoryChange}
               expenseDate={expenseDate}
               onExpenseDateChange={setExpenseDate}
               comment={comment}
               onCommentChange={setComment}
               disabled={isSubmitting}
+            />
+          )}
+
+          {currentStep === 3 && splitMode !== 'equal' && (
+            <WizardStep3Custom
+              splitMode={splitMode}
               amount={amount}
               currency={currency}
               participants={participants}
               selectedParticipants={selectedParticipants}
               participantSplitValues={participantSplitValues}
               onParticipantSplitChange={handleParticipantSplitChange}
+              disabled={isSubmitting}
             />
           )}
         </div>
