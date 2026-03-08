@@ -7,6 +7,12 @@ import {
   SheetContent,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { TimeSlotGrid } from './TimeSlotGrid'
 import type { MealWithIngredients } from '@/types/meal'
@@ -50,59 +56,89 @@ export function DayDetailSheet({
   enableActivities = true,
 }: DayDetailSheetProps) {
   const scrollRef = useIOSScrollFix()
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   if (!date) return null
 
   const dayNumber = getDayNumber(date, tripStartDate)
   const context = getDayContext(date)
 
-  return (
-    <Sheet open={!!date} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        hideClose
-        className="flex flex-col p-0 rounded-t-2xl"
-        style={{ height: '75dvh' }}
+  const closeBtn = (
+    <button
+      onClick={() => onOpenChange(false)}
+      aria-label="Close"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <X className="w-4 h-4 text-muted-foreground" />
+    </button>
+  )
+
+  const badges = (
+    <div className="flex items-center gap-2 flex-wrap px-4 pb-3">
+      <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-bold">
+        Day {dayNumber}
+      </Badge>
+      <Badge
+        variant="outline"
+        className={`${CONTEXT_STYLES[context]} capitalize`}
       >
-        {/* Sticky header — never scrolls */}
+        {context}
+      </Badge>
+      {stayName && (
+        <Badge variant="outline" className="gap-1">
+          <Building2 size={12} />
+          {stayName}
+        </Badge>
+      )}
+    </div>
+  )
+
+  const scrollContent = (
+    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+      <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={!!date} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{ height: '75dvh' }}
+        >
+          <div className="shrink-0 border-b border-border">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="w-8" />
+              <SheetTitle className="text-base font-semibold">
+                {formatSheetDate(date)}
+              </SheetTitle>
+              {closeBtn}
+            </div>
+            {badges}
+          </div>
+          {scrollContent}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Dialog open={!!date} onOpenChange={onOpenChange}>
+      <DialogContent hideClose className="flex flex-col max-h-[85vh] max-w-lg p-0 gap-0">
         <div className="shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="w-8" />
-            <SheetTitle className="text-base font-semibold">
+            <DialogTitle className="text-base font-semibold">
               {formatSheetDate(date)}
-            </SheetTitle>
-            <button
-              onClick={() => onOpenChange(false)}
-              aria-label="Close"
-              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+            </DialogTitle>
+            {closeBtn}
           </div>
-          <div className="flex items-center gap-2 flex-wrap px-4 pb-3">
-            <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-bold">
-              Day {dayNumber}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={`${CONTEXT_STYLES[context]} capitalize`}
-            >
-              {context}
-            </Badge>
-            {stayName && (
-              <Badge variant="outline" className="gap-1">
-                <Building2 size={12} />
-                {stayName}
-              </Badge>
-            )}
-          </div>
+          {badges}
         </div>
-
-        {/* Scrollable content — only this scrolls */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-          <TimeSlotGrid date={date} meals={meals} activities={activities} enableMeals={enableMeals} enableActivities={enableActivities} />
-        </div>
-      </SheetContent>
-    </Sheet>
+        {scrollContent}
+      </DialogContent>
+    </Dialog>
   )
 }
