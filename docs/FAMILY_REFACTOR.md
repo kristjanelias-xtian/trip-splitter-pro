@@ -253,7 +253,7 @@ PR #392: Fixed 2 regressions introduced by Phase 3.
 - Fix: used `buildEntityMap` throughout, matching the pattern already correct in `QuickSettlementSheet.tsx`
 - File: `SettlementsPage.tsx`
 
-Documented in `PHASE_3_BUGS.md`.
+(Bugs documented and fixed in PR #392.)
 
 ### Phase 4 — 2026-02-25
 
