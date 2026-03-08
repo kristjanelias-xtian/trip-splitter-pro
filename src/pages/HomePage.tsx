@@ -451,10 +451,7 @@ export function HomePage() {
         {/* Footer: theme toggle (for anon users) + What's New */}
         <div className="mt-8 flex flex-col items-center gap-3">
           {!isAuthenticated && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Theme</span>
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
           )}
           {isAuthenticated && (
             <a
