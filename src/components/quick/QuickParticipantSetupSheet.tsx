@@ -27,7 +27,10 @@ export function QuickParticipantSetupSheet({ open, onOpenChange }: QuickParticip
         className="flex flex-col p-0 rounded-t-2xl"
         style={{
           height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-          bottom: keyboard.isVisible ? `${keyboard.keyboardHeight}px` : undefined,
+          ...(keyboard.isVisible && {
+            top: `${keyboard.viewportOffset}px`,
+            bottom: 'auto',
+          }),
         }}
       >
         {/* Sticky header — never scrolls */}

@@ -70,20 +70,19 @@ export function AppSheet({
   const keyboard = hasInputs ? useKeyboardHeight() : null
   const scrollRef = useIOSScrollFix()
 
-  const sheetHeight = keyboard?.isVisible
-    ? `${keyboard.availableHeight}px`
-    : height
-  const sheetBottom = keyboard?.isVisible
-    ? `${keyboard.keyboardHeight}px`
-    : undefined
-
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
       <SheetContent
         side="bottom"
         hideClose
         className="flex flex-col p-0 rounded-t-2xl"
-        style={{ height: sheetHeight, bottom: sheetBottom }}
+        style={{
+          height: keyboard?.isVisible ? `${keyboard.availableHeight}px` : height,
+          ...(keyboard?.isVisible && {
+            top: `${keyboard.viewportOffset}px`,
+            bottom: 'auto',
+          }),
+        }}
         onInteractOutside={preventOutsideClose ? (e) => e.preventDefault() : undefined}
       >
         {/* STICKY HEADER — never scrolls */}
@@ -112,7 +111,7 @@ export function AppSheet({
 
         {/* STICKY FOOTER — never scrolls */}
         {footer && (
-          <div className="shrink-0 px-4 py-3 border-t border-border bg-background">
+          <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
             {footer}
           </div>
         )}

@@ -49,7 +49,7 @@ export function ExpenseWizard({
   if (mode === 'edit' || !isMobile) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
           <DialogTitle className="sr-only">
             {mode === 'edit' ? 'Edit Expense' : 'Add Expense'}
           </DialogTitle>

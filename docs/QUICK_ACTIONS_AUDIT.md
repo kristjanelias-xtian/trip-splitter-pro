@@ -16,7 +16,7 @@
 | # | Button | Component opened | Mobile behaviour | Desktop behaviour | Height | Width | Navigates away? | Keyboard: width stable? | Header stable on keyboard? |
 |---|--------|-----------------|------------------|-------------------|--------|-------|-----------------|------------------------|---------------------------|
 | 1 | Scan a receipt | `ReceiptCaptureSheet` | Bottom sheet (`side="bottom"`) | **Same bottom sheet** — no desktop dialog | `92dvh` (static, no keyboard hook) | `w-full` (no explicit width) | No ✅ | N/A (no text inputs) | Yes ✅ (shrink-0 header) |
-| 2 | Add an expense | `QuickExpenseSheet` → `ExpenseWizard` → Mobile: `MobileWizard` (Sheet), Desktop: `ExpenseForm` (Dialog) | Bottom sheet, keyboard-aware height/bottom/paddingBottom with `viewportOffset` | Centered Dialog `max-w-2xl max-h-[90vh]` | Mobile: `92dvh` / `availableHeight` when keyboard open. Desktop: `max-h-[90vh]` | Mobile: `w-full`. Desktop: `max-w-2xl` (672px) | No ✅ | Yes ✅ | Yes ✅ (shrink-0 + viewportOffset fix) |
+| 2 | Add an expense | `QuickExpenseSheet` → `ExpenseWizard` → Mobile: `MobileWizard` (Sheet), Desktop: `ExpenseForm` (Dialog) | Bottom sheet, keyboard-aware height/bottom/paddingBottom with `viewportOffset` | Centered Dialog `max-w-2xl max-h-[85vh]` | Mobile: `92dvh` / `availableHeight` when keyboard open. Desktop: `max-h-[85vh]` | Mobile: `w-full`. Desktop: `max-w-2xl` (672px) | No ✅ | Yes ✅ | Yes ✅ (shrink-0 + viewportOffset fix) |
 | 3 | Settle up | `QuickSettlementSheet` | Bottom sheet, keyboard-aware height/bottom but **missing `viewportOffset`** | **Same bottom sheet** — no desktop dialog | `92dvh` / `availableHeight` when keyboard open | `w-full` (no explicit width) | No ✅ | Yes ✅ | **Partial** — no `viewportOffset` fix, numpad can push header off screen |
 | 4 | View expenses & payments | `QuickHistoryPage` (page navigation) | **Navigates away** to `/t/:tripCode/quick/history` — full page inside QuickLayout | **Navigates away** — same full page | Page height (not a sheet) | `max-w-lg mx-auto` page container | Yes ❌ | N/A | N/A |
 
@@ -37,7 +37,7 @@
   - `hideClose` ✅, `shrink-0` header ✅, `dvh` ✅
   - `useKeyboardHeight` with `viewportOffset` fix ✅ (best implementation)
   - Sticky footer with navigation buttons ✅
-- Desktop: `Dialog` + `DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"` ✅
+- Desktop: `Dialog` + `DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto"` ✅
   - Centered modal ✅
   - But `max-w-2xl` (672px), not `max-w-lg` (512px)
   - Uses `vh` not `dvh` for `max-h` (desktop, acceptable)

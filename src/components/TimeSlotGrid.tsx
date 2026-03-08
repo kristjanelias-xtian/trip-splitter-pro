@@ -150,7 +150,7 @@ export function TimeSlotGrid({ date, meals, activities, enableMeals = true, enab
 
       {/* Add Meal Form Dialog */}
       <Dialog open={showAddMealForm} onOpenChange={setShowAddMealForm}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - {formatDialogDate(date)}
@@ -167,7 +167,7 @@ export function TimeSlotGrid({ date, meals, activities, enableMeals = true, enab
 
       {/* Add Activity Form Dialog */}
       <Dialog open={showAddActivityForm} onOpenChange={setShowAddActivityForm}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Add Activity - {selectedTimeSlot ? TIME_SLOT_LABELS[selectedTimeSlot] : ''} - {formatDialogDate(date)}

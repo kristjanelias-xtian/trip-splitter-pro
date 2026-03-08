@@ -681,12 +681,10 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             className="flex flex-col p-0 rounded-t-2xl"
             style={{
               height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-              bottom: keyboard.isVisible
-                ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
-                : undefined,
-              paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
-                ? `${keyboard.viewportOffset}px`
-                : undefined,
+              ...(keyboard.isVisible && {
+                top: `${keyboard.viewportOffset}px`,
+                bottom: 'auto',
+              }),
             }}
           >
             <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
