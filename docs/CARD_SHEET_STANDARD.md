@@ -373,7 +373,7 @@ Copy-paste this into PR reviews for any new or modified sheet/dialog:
 | Component | File | Opens as | Dual mode | Height | hideClose | Header shrink-0 | IOSScrollFix | pwa-safe-bottom | Keyboard pattern | Issues |
 |-----------|------|----------|-----------|--------|-----------|-----------------|--------------|-----------------|------------------|--------|
 | AppSheet | ui/AppSheet.tsx | Sheet | N/A (base) | 92/75dvh | ✅ | ✅ | ✅ | ✅ footer | **top-based** ✅ | — |
-| MobileWizard | expenses/ExpenseWizard.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
+| MobileWizard | expenses/ExpenseWizard.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | Edit mode also uses Sheet on mobile (MobileEditSheet) |
 | SettlementsPage | pages/SettlementsPage.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
 | QuickSettlementSheet | quick/QuickSettlementSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
 | QuickCreateSheet | quick/QuickCreateSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | **top-based** ✅ | — |

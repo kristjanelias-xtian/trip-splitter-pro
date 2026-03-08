@@ -45,8 +45,8 @@ export function ExpenseWizard({
 }: ExpenseWizardProps) {
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  // For edit mode or desktop, use the traditional form
-  if (mode === 'edit' || !isMobile) {
+  // Desktop: always use Dialog (both create and edit)
+  if (!isMobile) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
@@ -67,7 +67,19 @@ export function ExpenseWizard({
     )
   }
 
-  // Mobile wizard implementation
+  // Mobile edit: bottom Sheet with ExpenseForm
+  if (mode === 'edit') {
+    return (
+      <MobileEditSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+        initialValues={initialValues}
+      />
+    )
+  }
+
+  // Mobile create: multi-step wizard
   return (
     <MobileWizard
       open={open}
@@ -75,6 +87,62 @@ export function ExpenseWizard({
       onSubmit={onSubmit}
       initialValues={initialValues}
     />
+  )
+}
+
+function MobileEditSheet({
+  open,
+  onOpenChange,
+  onSubmit,
+  initialValues,
+}: Omit<ExpenseWizardProps, 'mode'>) {
+  const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        hideClose
+        className="flex flex-col p-0 rounded-t-2xl"
+        style={{
+          height: keyboard.isVisible
+            ? `${keyboard.availableHeight}px`
+            : '92dvh',
+          ...(keyboard.isVisible && {
+            top: `${keyboard.viewportOffset}px`,
+            bottom: 'auto',
+          }),
+        }}
+      >
+        {/* Sticky header */}
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <SheetTitle className="text-base font-semibold">Edit Expense</SheetTitle>
+            <button
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* ExpenseForm with stickyFooter handles scroll + buttons internally */}
+        <div className="flex-1 min-h-0 flex flex-col px-6 py-4 pwa-safe-bottom">
+          <ExpenseForm
+            onSubmit={onSubmit}
+            onCancel={() => onOpenChange(false)}
+            initialValues={initialValues}
+            submitLabel="Update Expense"
+            stickyFooter
+            scrollRef={scrollRef}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
