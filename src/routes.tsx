@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { QuickLayout } from './components/QuickLayout'
