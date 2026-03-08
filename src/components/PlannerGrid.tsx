@@ -33,6 +33,10 @@ const STAY_COLORS = [
 const HOME_HEX_BG_LIGHT = '#f5f5f4' // stone-100
 const HOME_HEX_BG_DARK = 'rgba(28, 25, 23, 0.3)' // stone-900/30
 
+// Subtle diagonal stripe pattern for Home portions of split cells
+const HOME_STRIPE_LIGHT = `repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(168,162,158,0.18) 3px, rgba(168,162,158,0.18) 4px)`
+const HOME_STRIPE_DARK = `repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(168,162,158,0.12) 3px, rgba(168,162,158,0.12) 4px)`
+
 const STAY_HEX_BG_LIGHT = [
   '#fffbeb', // amber-50
   '#f0f9ff', // sky-50
@@ -186,6 +190,7 @@ export function PlannerGrid({
   const isDark = resolvedTheme === 'dark'
   const stayHexBg = isDark ? STAY_HEX_BG_DARK : STAY_HEX_BG_LIGHT
   const homeHexBg = isDark ? HOME_HEX_BG_DARK : HOME_HEX_BG_LIGHT
+  const homeStripe = isDark ? HOME_STRIPE_DARK : HOME_STRIPE_LIGHT
 
   const weeks = getCalendarWeeks(tripDates)
   const stayColorMap = getStayColorMap(tripDates, getStaysForDate)
@@ -211,10 +216,12 @@ export function PlannerGrid({
     }
   }
 
-  // Also show Home legend when last day has a stay that extends past the trip
+  // Show Home legend when first/last day has a stay split
   if (!hasHomeDays && tripDates.length > 0) {
+    const firstStay = getStayForDate(tripDates[0])
     const lastStay = getStayForDate(tripDates[tripDates.length - 1])
-    if (lastStay && lastStay.check_out_date !== tripDates[tripDates.length - 1]) {
+    if ((firstStay && firstStay.check_in_date === tripDates[0]) ||
+        (lastStay && lastStay.check_out_date !== tripDates[tripDates.length - 1])) {
       hasHomeDays = true
     }
   }
@@ -283,7 +290,7 @@ export function PlannerGrid({
                   if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
                     const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                      background: `${homeStripe}, linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -293,7 +300,17 @@ export function PlannerGrid({
                   if (!splitStyle && !isSplit && stay && date === lastTripDate && stay.check_out_date !== date) {
                     const stayIdx = stayColorMap.get(stay.id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                      background: `${homeStripe}, linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                    }
+                    splitBorderClass = 'border-border'
+                  }
+
+                  // First trip day: show Home→Stay split if stay starts on this day
+                  const firstTripDate = tripDates[0]
+                  if (!splitStyle && !isSplit && stay && date === firstTripDate && stay.check_in_date === date) {
+                    const stayIdx = stayColorMap.get(stay.id) ?? 0
+                    splitStyle = {
+                      background: `${homeStripe}, linear-gradient(135deg, ${homeHexBg} 50%, ${stayHexBg[stayIdx % stayHexBg.length]} 50%)`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -374,7 +391,10 @@ export function PlannerGrid({
             ))}
             {hasHomeDays && (
               <div className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                <div
+                  className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"
+                  style={{ backgroundImage: homeStripe }}
+                />
                 <span className="text-[10px] text-muted-foreground">Home</span>
               </div>
             )}
