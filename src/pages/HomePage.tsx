@@ -22,6 +22,7 @@ import { useTripContext } from '@/contexts/TripContext'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { motion } from 'framer-motion'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const DEMO_TRIP_CODE = 'livigno-2025'
 
@@ -447,9 +448,15 @@ export function HomePage() {
           {isAuthenticated ? renderAuthenticatedTrips() : renderLocalTrips()}
         </div>
 
-        {/* What's New link */}
-        {isAuthenticated && (
-          <div className="mt-8 text-center">
+        {/* Footer: theme toggle (for anon users) + What's New */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          {!isAuthenticated && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Theme</span>
+              <ThemeToggle />
+            </div>
+          )}
+          {isAuthenticated && (
             <a
               href="https://github.com/kristjanelias-xtian/trip-splitter-pro/blob/main/docs/RELEASE_NOTES.md"
               target="_blank"
@@ -459,8 +466,8 @@ export function HomePage() {
               What's New · v1.0.0
               <ExternalLink size={12} />
             </a>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <QuickCreateSheet open={createOpen} onOpenChange={setCreateOpen} />

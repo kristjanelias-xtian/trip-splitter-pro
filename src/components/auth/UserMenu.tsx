@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LogOut, Landmark } from 'lucide-react'
 import { BankDetailsDialog } from './BankDetailsDialog'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface UserMenuProps {
   onGradient?: boolean
@@ -69,6 +70,11 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
           <Landmark size={16} />
           Bank Details
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <div className="px-2 py-1.5 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => { signOut() }} className="gap-2 text-destructive focus:text-destructive">
           <LogOut size={16} />
