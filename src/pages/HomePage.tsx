@@ -460,7 +460,7 @@ export function HomePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              What's New · v1.0.0
+              What's New · v1.2.0
               <ExternalLink size={12} />
             </a>
           )}
