@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
@@ -99,7 +100,7 @@ export function useMyTripBalances() {
             return { trip, myBalance, totalExpenses: calc.totalExpenses, loading: false }
           } catch (error) {
             if (cancelled) return { trip, myBalance: null, totalExpenses: 0, loading: false }
-            console.error(`Error fetching balance for trip ${trip.id}:`, error)
+            logger.error('Error fetching balance for trip', { trip_id: trip.id, error: String(error) })
             return { trip, myBalance: null, totalExpenses: 0, loading: false }
           }
         })

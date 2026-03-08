@@ -8,6 +8,8 @@
  * preferences are re-synced from Supabase on next sign-in.
  */
 
+import { logger } from '@/lib/logger'
+
 const PREFERENCES_KEY = 'spl1t:user-preferences'
 const OLD_PREFERENCES_KEY = 'trip-splitter:user-preferences'
 const SCHEMA_VERSION = 1
@@ -67,6 +69,6 @@ export function setLocalPreferences(prefs: Partial<UserPreferencesLocal>): void 
     const updated: StoredPreferences = { ...current, ...prefs, version: SCHEMA_VERSION }
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify(updated))
   } catch (error) {
-    console.error('Error saving preferences to localStorage:', error)
+    logger.error('Error saving preferences to localStorage', { error: String(error) })
   }
 }
