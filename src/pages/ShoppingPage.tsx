@@ -246,7 +246,7 @@ export function ShoppingPage() {
 
       {/* Add Shopping Item Form Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Shopping Item</DialogTitle>
           </DialogHeader>

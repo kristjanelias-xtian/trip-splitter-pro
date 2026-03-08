@@ -303,7 +303,7 @@ Desktop dialogs use `hideClose` (custom header close button) + `max-h-[85vh] p-0
 
 Desktop dialogs that contain scrollable form content use a flex column layout with a sticky footer for action buttons. The pattern prevents buttons from scrolling out of view:
 
-- `DialogContent`: `max-h-[90vh] flex flex-col p-0 gap-0` (no `overflow-y-auto`)
+- `DialogContent`: `max-h-[85vh] flex flex-col p-0 gap-0` (no `overflow-y-auto`)
 - Wrapper div: `flex-1 min-h-0 flex flex-col px-6 py-6`
 - Form component: accepts `stickyFooter` prop → `flex flex-col min-h-0 flex-1`
 - Fields: wrapped in `flex-1 overflow-y-auto overscroll-contain`

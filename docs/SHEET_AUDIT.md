@@ -45,14 +45,14 @@ These all use the standard Radix Dialog pattern with DialogHeader/DialogTitle. C
 
 | # | Component | File | className | Notes |
 |---|-----------|------|-----------|-------|
-| 12 | ExpenseWizard (desktop/edit) | ExpenseWizard.tsx:47 | `max-w-2xl max-h-[90vh] overflow-y-auto` | OK |
+| 12 | ExpenseWizard (desktop/edit) | ExpenseWizard.tsx:47 | `max-w-2xl max-h-[85vh] overflow-y-auto` | OK |
 | 13 | ReportIssueDialog | ReportIssueDialog.tsx | `sm:max-w-md` + keyboard transform | OK (unique keyboard handling via transform) |
 | 14 | BankDetailsDialog | auth/BankDetailsDialog.tsx | `max-w-md` | OK |
 | 15 | ShareTripDialog | ShareTripDialog.tsx | `sm:max-w-md` | OK |
 | 16 | LinkParticipantDialog | LinkParticipantDialog.tsx | `max-w-sm` | OK |
 | 17 | CostBreakdownDialog | CostBreakdownDialog.tsx | `max-h-[85vh] overflow-y-auto sm:max-w-xl` | OK |
 | 18 | ManageTripPage edit | ManageTripPage.tsx | Dialog + AlertDialog | OK |
-| 19 | FamiliesSetup edit family | setup/FamiliesSetup.tsx | `max-w-lg max-h-[90vh] overflow-y-auto` | OK |
+| 19 | FamiliesSetup edit family | setup/FamiliesSetup.tsx | `max-w-lg max-h-[85vh] overflow-y-auto` | OK |
 | 20+ | TimeSlotGrid, StayCard, ActivityCard, ShoppingItemCard, MealCard | Various | Standard Dialog + AlertDialog | OK |
 
 ### Cross-cutting issue: Radix default close button
@@ -116,12 +116,10 @@ No variations. No plain X without circle. No oversized X. No Radix default absol
     className="flex flex-col p-0 rounded-t-2xl"
     style={{
       height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-      bottom: keyboard.isVisible
-        ? `${Math.max(0, keyboard.keyboardHeight - keyboard.viewportOffset)}px`
-        : undefined,
-      paddingBottom: keyboard.isVisible && keyboard.viewportOffset > 0
-        ? `${keyboard.viewportOffset}px`
-        : undefined,
+      ...(keyboard.isVisible && {
+        top: `${keyboard.viewportOffset}px`,
+        bottom: 'auto',
+      }),
     }}
   >
     {/* STICKY HEADER — never scrolls */}
@@ -186,7 +184,7 @@ Always `dvh`. **Never** `vh`. **Never** `100vh`. **Never** `h-screen`.
 ### 7. Background bleed-through
 
 - Overlay: `bg-black/80` in `sheet.tsx` — already correct.
-- Below-keyboard bleed: fixed by `bottom: keyboardHeight` from rule 5.
+- Below-keyboard bleed: fixed by top-based positioning (`top: viewportOffset`, `bottom: 'auto'`) from rule 5.
 
 ### 8. Scroll behaviour
 
@@ -293,7 +291,7 @@ interface AppSheetProps {
 
 | # | Component | Issue | Fix applied | Status |
 |---|-----------|-------|-------------|--------|
-| 12 | MobileWizard (ExpenseWizard.tsx) | iOS Safari: numpad keyboard causes `visualViewport.offsetTop > 0`, pushing sheet header above visible viewport — ✕ close button disappears on first numpad open | Added `viewportOffset` to `useKeyboardHeight` hook (tracks `visualViewport.offsetTop`). **v1 (PR #376):** subtracted offset from height — fixed header but left gap between sheet and keyboard. **v2 (PR #380):** keep `height: availableHeight` (no subtraction), reduce `bottom` by `viewportOffset` (closes gap), add `paddingBottom: viewportOffset` (keeps content above keyboard overlap). When offset=0, identical to pre-#376 behavior. | ✅ Done (PR #380) |
+| 12 | MobileWizard (ExpenseWizard.tsx) | iOS Safari: numpad keyboard causes `visualViewport.offsetTop > 0`, pushing sheet header above visible viewport — ✕ close button disappears on first numpad open | Added `viewportOffset` to `useKeyboardHeight` hook (tracks `visualViewport.offsetTop`). **v1 (PR #376):** subtracted offset from height. **v2 (PR #380):** bottom-based with viewportOffset. **v3 (PR #409):** switched to top-based positioning (`top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight`). All 6 sheets with keyboard handling now use the same top-based pattern. | ✅ Done (PR #409, all sheets PR #653) |
 
 ### Test results
 
@@ -370,14 +368,13 @@ All three close button close-ups are visually identical: rounded circle, thin bo
 
 ### 8.1 — Other sheets missing `viewportOffset` adjustment
 
-The same `visualViewport.offsetTop` issue fixed in MobileWizard (PR #373) exists in all other sheets that use `keyboard.availableHeight` without subtracting `keyboard.viewportOffset`:
+✅ **All 6 sheets migrated to top-based keyboard positioning** (`top: viewportOffset`, `bottom: 'auto'`, `height: availableHeight`) in PR #653:
 
-- `AppSheet` (`src/components/ui/AppSheet.tsx`) — shared component; fixing here would cover most consumers
+- `AppSheet` (`src/components/ui/AppSheet.tsx`)
 - `ReceiptReviewSheet` (`src/components/receipts/ReceiptReviewSheet.tsx`)
 - `QuickSettlementSheet` (`src/components/quick/QuickSettlementSheet.tsx`)
 - `QuickCreateSheet` (`src/components/quick/QuickCreateSheet.tsx`)
 - `QuickParticipantSetupSheet` (`src/components/quick/QuickParticipantSetupSheet.tsx`)
 - `QuickScanCreateFlow` (`src/components/quick/QuickScanCreateFlow.tsx`)
 
-**Fix:** In each, apply the same pattern as MobileWizard: keep `height: availableHeight`, reduce `bottom` by `viewportOffset`, add `paddingBottom: viewportOffset`.
-Alternatively, fix `AppSheet` and migrate sheets that don't use it yet.
+Also added `pwa-safe-bottom` to AppSheet footer and standardized all dialog `max-h` to `85vh`.

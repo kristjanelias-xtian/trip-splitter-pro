@@ -122,7 +122,7 @@ export function ShoppingItemRow({ item }: ShoppingItemRowProps) {
 
       {/* Edit Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Shopping Item</DialogTitle>
           </DialogHeader>
