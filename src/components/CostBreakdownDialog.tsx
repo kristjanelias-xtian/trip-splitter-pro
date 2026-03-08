@@ -2,6 +2,7 @@
 import { useMemo } from 'react'
 import { Receipt, Wallet, Users, Check, ArrowRight } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
@@ -108,10 +109,12 @@ export function CostBreakdownDialog({
   }, [settlements, groupMembers, groupName])
 
   const participantNameMap = useMemo(() => buildShortNameMap(participants), [participants])
+  const scrollRef = useIOSScrollFix()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] sm:max-w-xl flex flex-col p-0 gap-0">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-4">
         <DialogHeader>
           <DialogTitle>{balance.name}</DialogTitle>
           <DialogDescription>
@@ -274,6 +277,7 @@ export function CostBreakdownDialog({
               </div>
             </div>
           )}
+        </div>
         </div>
       </DialogContent>
     </Dialog>

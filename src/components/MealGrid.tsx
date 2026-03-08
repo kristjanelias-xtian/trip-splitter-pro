@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { Sunrise, Sun, Moon, Plus } from 'lucide-react'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { MealWithIngredients, MealType, MEAL_TYPE_LABELS } from '@/types/meal'
 import { MealCard } from './MealCard'
 import { MealForm } from './MealForm'
@@ -38,6 +39,7 @@ const MEAL_HEADER_BG = {
 export function MealGrid({ date, meals }: MealGridProps) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null)
+  const scrollRef = useIOSScrollFix()
 
   // Helper to get meal for specific slot
   const getMealForSlot = (mealType: MealType): MealWithIngredients | undefined => {
@@ -113,18 +115,20 @@ export function MealGrid({ date, meals }: MealGridProps) {
 
       {/* Add Meal Form Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - {formatDialogDate(date)}
-            </DialogTitle>
-          </DialogHeader>
-          <MealForm
-            initialDate={date}
-            initialMealType={selectedMealType || undefined}
-            onSuccess={() => setShowAddForm(false)}
-            onCancel={() => setShowAddForm(false)}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+            <DialogHeader>
+              <DialogTitle>
+                Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - {formatDialogDate(date)}
+              </DialogTitle>
+            </DialogHeader>
+            <MealForm
+              initialDate={date}
+              initialMealType={selectedMealType || undefined}
+              onSuccess={() => setShowAddForm(false)}
+              onCancel={() => setShowAddForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>

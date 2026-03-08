@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Trash2, ExternalLink, MessageSquare } from 'lucide-react'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { format } from 'date-fns'
 import { useStayContext } from '@/contexts/StayContext'
 import type { Stay } from '@/types/stay'
@@ -25,6 +26,7 @@ export function StayCard({ stay }: StayCardProps) {
   const { deleteStay } = useStayContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const scrollRef = useIOSScrollFix()
 
   const handleDelete = async () => {
     const success = await deleteStay(stay.id)
@@ -86,15 +88,17 @@ export function StayCard({ stay }: StayCardProps) {
 
       {/* Edit Form Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Accommodation</DialogTitle>
-          </DialogHeader>
-          <StayForm
-            stay={stay}
-            onSuccess={() => setShowEditForm(false)}
-            onCancel={() => setShowEditForm(false)}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+            <DialogHeader>
+              <DialogTitle>Edit Accommodation</DialogTitle>
+            </DialogHeader>
+            <StayForm
+              stay={stay}
+              onSuccess={() => setShowEditForm(false)}
+              onCancel={() => setShowEditForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 

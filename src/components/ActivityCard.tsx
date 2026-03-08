@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Trash2, MapPin, User, ExternalLink } from 'lucide-react'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import type { Activity } from '@/types/activity'
@@ -26,6 +27,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
   const { participants } = useParticipantContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const scrollRef = useIOSScrollFix()
 
   const responsiblePerson = activity.responsible_participant_id
     ? participants.find((p) => p.id === activity.responsible_participant_id)
@@ -96,17 +98,19 @@ export function ActivityCard({ activity }: ActivityCardProps) {
 
       {/* Edit Form Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Activity</DialogTitle>
-          </DialogHeader>
-          <ActivityForm
-            activity={activity}
-            date={activity.activity_date}
-            timeSlot={activity.time_slot}
-            onSuccess={() => setShowEditForm(false)}
-            onCancel={() => setShowEditForm(false)}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+            <DialogHeader>
+              <DialogTitle>Edit Activity</DialogTitle>
+            </DialogHeader>
+            <ActivityForm
+              activity={activity}
+              date={activity.activity_date}
+              timeSlot={activity.time_slot}
+              onSuccess={() => setShowEditForm(false)}
+              onCancel={() => setShowEditForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
