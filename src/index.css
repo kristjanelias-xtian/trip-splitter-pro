@@ -40,7 +40,7 @@
     /* Balance & Status Colors */
     --positive: 142 71% 45%; /* Green for money owed to you */
     --positive-foreground: 0 0% 100%;
-    --negative: 0 84% 60%; /* Red for money you owe (same as destructive) */
+    --negative: 31 100% 48%; /* Warm orange for money you owe #F77F00 */
     --negative-foreground: 0 0% 100%;
 
     /* Custom design tokens */
@@ -96,7 +96,7 @@
     /* Balance & Status Colors - Dark Mode */
     --positive: 142 71% 55%; /* Brighter green for dark backgrounds */
     --positive-foreground: 240 21% 10%;
-    --negative: 0 84% 65%; /* Slightly lighter red for dark mode */
+    --negative: 31 100% 55%; /* Lighter warm orange for dark mode */
     --negative-foreground: 30 17% 98%;
   }
 }
