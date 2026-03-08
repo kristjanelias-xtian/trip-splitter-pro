@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { generateShareableUrl } from '@/lib/tripCodeGenerator'
+import { logger } from '@/lib/logger'
 
 interface ShareTripDialogProps {
   tripCode: string
@@ -34,7 +35,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
         },
       })
         .then(url => setQrCodeUrl(url))
-        .catch(err => console.error('Error generating QR code:', err))
+        .catch(err => logger.error('Error generating QR code:', { error: String(err) }))
     }
   }, [open, shareUrl, qrCodeUrl])
 
@@ -48,7 +49,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
       })
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Error copying to clipboard:', err)
+      logger.error('Error copying to clipboard:', { error: String(err) })
       toast({
         title: 'Copy failed',
         description: 'Please copy the link manually',
@@ -86,7 +87,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
         })
       } catch (err) {
         // User cancelled or error occurred
-        console.log('Share cancelled or failed:', err)
+        logger.info('Share cancelled or failed:', { error: String(err) })
       }
     } else {
       // Fallback to copy

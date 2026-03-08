@@ -1,15 +1,15 @@
 # Sheet / Dialog Audit
 
 > Started: 2026-02-24
-> Status: IN PROGRESS
+> Status: COMPLETE
 > Purpose: Document every sheet and dialog in the app,
 >   define the standard, record every gap found, and
 >   track every fix applied.
-> This file is the source of truth for this session.
-> Update it continuously — after every step, after every
-> finding, after every fix. Never let it go stale.
-> If context is lost and this session is resumed, read
-> this file first to understand exactly where things stand.
+>
+> **As of PR #659:** All sheets use `AppSheet` (via `ResponsiveOverlay`) except
+> `ExpenseWizard` and `QuickScanCreateFlow` (multi-step wizards that manage
+> their own Sheet/Dialog rendering). All delete confirmations use `AlertDialog`.
+> New overlays should use `ResponsiveOverlay` — see `docs/CARD_SHEET_STANDARD.md`.
 
 ---
 

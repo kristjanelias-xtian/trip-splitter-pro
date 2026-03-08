@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { fadeInUp } from '@/lib/animations'
+import { logger } from '@/lib/logger'
 
 interface StayFormProps {
   stay?: Stay
@@ -97,7 +98,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
         }
       }
     } catch (error) {
-      console.error('Error saving stay:', error)
+      logger.error('Error saving stay:', { error: String(error) })
       setError('An error occurred while saving')
     } finally {
       setSubmitting(false)

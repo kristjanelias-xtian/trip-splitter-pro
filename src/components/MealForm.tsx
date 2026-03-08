@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { fadeInUp } from '@/lib/animations'
+import { logger } from '@/lib/logger'
 
 interface IngredientInput {
   name: string
@@ -162,7 +163,7 @@ export function MealForm({
           }
         }
       } catch (error) {
-        console.error('Error loading ingredients:', error)
+        logger.error('Error loading ingredients:', { error: String(error) })
       } finally {
         setLoadingIngredients(false)
       }
@@ -303,7 +304,7 @@ export function MealForm({
         }
       }
     } catch (error) {
-      console.error('Error saving meal:', error)
+      logger.error('Error saving meal:', { error: String(error) })
       setError('An error occurred while saving')
     } finally {
       setSubmitting(false)

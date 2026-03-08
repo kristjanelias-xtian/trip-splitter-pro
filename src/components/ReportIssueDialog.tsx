@@ -162,7 +162,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
       resetForm()
       onOpenChange(false)
     } catch (err) {
-      console.error('Error submitting issue:', err)
+      logger.error('Error submitting issue:', { error: String(err) })
       toast({
         title: 'Failed to send feedback',
         description: 'Please try again later.',

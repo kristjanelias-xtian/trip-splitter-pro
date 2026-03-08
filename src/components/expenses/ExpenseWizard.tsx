@@ -43,7 +43,7 @@ export function ExpenseWizard({
   initialValues,
   mode = 'create',
 }: ExpenseWizardProps) {
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   // Desktop: always use Dialog (both create and edit)
   if (!isMobile) {
