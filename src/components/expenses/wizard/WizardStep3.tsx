@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
+import { ChevronDown, ChevronRight, Check } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -101,69 +101,59 @@ export function WizardStep3({
     >
       {/* Participant chips */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">Split between</Label>
+        <div className="flex items-baseline justify-between">
+          <Label className="text-base font-medium">Split between</Label>
+          <button
+            type="button"
+            onClick={allSelected ? onDeselectAll : onSelectAll}
+            disabled={disabled}
+            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            {allSelected ? 'Deselect all' : 'Select all'}
+          </button>
+        </div>
         <div className="rounded-lg border border-input p-3 space-y-3">
           {participantGroups.map((group, gi) => {
             const memberIds = group.members.map(m => m.id)
             const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
             return (
-              <div
-                key={group.label ?? `standalone-${gi}`}
-                className={group.label
+              <div key={group.label ?? `standalone-${gi}`}>
+                {group.label && (
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => onGroupToggle(memberIds)}
+                      disabled={disabled}
+                      className="text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      {allGroupSelected ? 'deselect group' : 'select group'}
+                    </button>
+                  </div>
+                )}
+                <div className={group.label
                   ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
                   : 'flex flex-wrap gap-2'
-                }
-              >
-                {/* "All" toggle chip — only in the first group */}
-                {gi === 0 && (
-                  <button
-                    type="button"
-                    onClick={allSelected ? onDeselectAll : onSelectAll}
-                    disabled={disabled}
-                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                      allSelected
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
-                    }`}
-                  >
-                    {allSelected && <Check className="w-3 h-3" />}
-                    All
-                  </button>
-                )}
-                {group.label && (
-                  <button
-                    type="button"
-                    onClick={() => onGroupToggle(memberIds)}
-                    disabled={disabled}
-                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                      allGroupSelected
-                        ? 'bg-background text-primary border-primary'
-                        : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
-                    }`}
-                  >
-                    <Users size={12} />
-                    {group.label}
-                    <span className="text-xs opacity-70">({memberIds.length})</span>
-                  </button>
-                )}
-                {group.members.map(participant => (
-                  <button
-                    key={participant.id}
-                    type="button"
-                    onClick={() => onParticipantToggle(participant.id)}
-                    disabled={disabled}
-                    className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                      selectedParticipants.includes(participant.id)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-muted-foreground border-input hover:border-primary/50'
-                    }`}
-                  >
-                    {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
-                    {shortNames.get(participant.id) || participant.name}
-                    {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
-                  </button>
-                ))}
+                }>
+                  {group.members.map(participant => (
+                    <button
+                      key={participant.id}
+                      type="button"
+                      onClick={() => onParticipantToggle(participant.id)}
+                      disabled={disabled}
+                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                        selectedParticipants.includes(participant.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                      }`}
+                    >
+                      {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
+                      {shortNames.get(participant.id) || participant.name}
+                      {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
             )
           })}

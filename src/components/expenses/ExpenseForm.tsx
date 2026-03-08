@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef, useMemo, FormEvent, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lightbulb, ChevronDown, ChevronRight, Users, Check } from 'lucide-react'
+import { Lightbulb, ChevronDown, ChevronRight, Check } from 'lucide-react'
 import { CreateExpenseInput, ExpenseCategory, ExpenseDistribution, SplitMode } from '@/types/expense'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -555,31 +555,16 @@ export function ExpenseForm({
 
       {/* Split Between */}
       <div className="space-y-2">
-        <Label>Split Between</Label>
-
-        {/* Selection Controls */}
-        <div className="flex items-center gap-2 mb-2">
-          <Button
+        <div className="flex items-baseline justify-between">
+          <Label>Split Between</Label>
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleSelectAll}
+            onClick={selectedParticipants.length === participants.length ? handleDeselectAll : handleSelectAll}
             disabled={loading}
-            className="h-8 px-2 text-xs"
+            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Select All
-          </Button>
-          <span className="text-muted-foreground">|</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleDeselectAll}
-            disabled={loading}
-            className="h-8 px-2 text-xs"
-          >
-            Deselect All
-          </Button>
+            {selectedParticipants.length === participants.length ? 'Deselect all' : 'Select all'}
+          </button>
         </div>
 
         {splitMode === 'equal' ? (
@@ -589,43 +574,42 @@ export function ExpenseForm({
               const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
               return (
-                <div key={group.label ?? `standalone-${gi}`} className={group.label
-                      ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
-                      : 'flex flex-wrap gap-2'
-                    }>
+                <div key={group.label ?? `standalone-${gi}`}>
                   {group.label && (
-                    <button
-                      type="button"
-                      onClick={() => handleGroupToggle(memberIds)}
-                      disabled={loading}
-                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                        allGroupSelected
-                          ? 'bg-background text-primary border-primary'
-                          : 'bg-muted text-muted-foreground border-input hover:border-primary/50'
-                      }`}
-                    >
-                      <Users size={12} />
-                      {group.label}
-                      <span className="text-xs opacity-70">({memberIds.length})</span>
-                    </button>
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleGroupToggle(memberIds)}
+                        disabled={loading}
+                        className="text-xs text-primary hover:text-primary/80 transition-colors"
+                      >
+                        {allGroupSelected ? 'deselect group' : 'select group'}
+                      </button>
+                    </div>
                   )}
-                  {group.members.map(participant => (
-                    <button
-                      key={participant.id}
-                      type="button"
-                      onClick={() => handleParticipantToggle(participant.id)}
-                      disabled={loading}
-                      className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
-                        selectedParticipants.includes(participant.id)
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background text-muted-foreground border-input hover:border-primary/50'
-                      }`}
-                    >
-                      {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
-                      {shortNames.get(participant.id) || participant.name}
-                      {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
-                    </button>
-                  ))}
+                  <div className={group.label
+                    ? 'border-l-2 border-primary/30 pl-3 flex flex-wrap gap-2'
+                    : 'flex flex-wrap gap-2'
+                  }>
+                    {group.members.map(participant => (
+                      <button
+                        key={participant.id}
+                        type="button"
+                        onClick={() => handleParticipantToggle(participant.id)}
+                        disabled={loading}
+                        className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-full border transition-colors ${
+                          selectedParticipants.includes(participant.id)
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-muted-foreground border-input hover:border-primary/50'
+                        }`}
+                      >
+                        {selectedParticipants.includes(participant.id) && <Check className="w-3 h-3" />}
+                        {shortNames.get(participant.id) || participant.name}
+                        {!participant.is_adult && <span className="text-xs opacity-70">(child)</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )
             })}
@@ -634,34 +618,21 @@ export function ExpenseForm({
           <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-input p-3">
             {participantGroups.map((group, gi) => {
               const memberIds = group.members.map(m => m.id)
-              const selectedCount = memberIds.filter(id => selectedParticipants.includes(id)).length
-              const allGroupSelected = selectedCount === memberIds.length
-              const someGroupSelected = selectedCount > 0 && !allGroupSelected
+              const allGroupSelected = memberIds.every(id => selectedParticipants.includes(id))
 
               return (
-                <div
-                  key={group.label ?? `standalone-${gi}`}
-                  className={group.label ? 'rounded-lg bg-muted/40 border border-border/50 p-2 mt-2 first:mt-0' : ''}
-                >
+                <div key={group.label ?? `standalone-${gi}`}>
                   {group.label && (
-                    <div
-                      role="checkbox"
-                      aria-checked={someGroupSelected ? 'mixed' : allGroupSelected}
-                      className="flex items-center space-x-2 min-h-[36px] cursor-pointer"
-                      onClick={() => handleGroupToggle(memberIds)}
-                    >
-                      <span
-                        className={`grid place-content-center h-4 w-4 shrink-0 rounded-sm border border-primary shadow ${allGroupSelected ? 'bg-primary text-primary-foreground' : ''} ${someGroupSelected ? 'opacity-60' : ''}`}
+                    <div className="flex items-baseline justify-between mb-1 mt-2 first:mt-0">
+                      <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleGroupToggle(memberIds)}
+                        disabled={loading}
+                        className="text-xs text-primary hover:text-primary/80 transition-colors"
                       >
-                        {allGroupSelected && <Check className="h-4 w-4" />}
-                      </span>
-                      <span className="text-xs font-medium text-foreground flex-1 flex items-center gap-1">
-                        <Users size={12} className="text-muted-foreground" />
-                        {group.label}
-                        <span className="text-xs text-muted-foreground font-normal">
-                          ({memberIds.length})
-                        </span>
-                      </span>
+                        {allGroupSelected ? 'deselect group' : 'select group'}
+                      </button>
                     </div>
                   )}
                   {group.members.map(participant => (
