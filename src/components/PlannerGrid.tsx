@@ -22,12 +22,12 @@ const DOT_FILLED_COLORS: Record<ActivityTimeSlot, string> = {
 }
 
 const STAY_COLORS = [
-  { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-900', text: 'text-amber-700 dark:text-amber-300', cellBorder: 'border-amber-200 dark:border-amber-900', dot: 'bg-amber-400' },
-  { bg: 'bg-sky-50 dark:bg-sky-950/20', border: 'border-sky-200 dark:border-sky-900', text: 'text-sky-700 dark:text-sky-300', cellBorder: 'border-sky-200 dark:border-sky-900', dot: 'bg-sky-400' },
-  { bg: 'bg-rose-50 dark:bg-rose-950/20', border: 'border-rose-200 dark:border-rose-900', text: 'text-rose-700 dark:text-rose-300', cellBorder: 'border-rose-200 dark:border-rose-900', dot: 'bg-rose-400' },
-  { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-900', text: 'text-emerald-700 dark:text-emerald-300', cellBorder: 'border-emerald-200 dark:border-emerald-900', dot: 'bg-emerald-400' },
-  { bg: 'bg-violet-50 dark:bg-violet-950/20', border: 'border-violet-200 dark:border-violet-900', text: 'text-violet-700 dark:text-violet-300', cellBorder: 'border-violet-200 dark:border-violet-900', dot: 'bg-violet-400' },
-  { bg: 'bg-indigo-50 dark:bg-indigo-950/20', border: 'border-indigo-200 dark:border-indigo-900', text: 'text-indigo-700 dark:text-indigo-300', cellBorder: 'border-indigo-200 dark:border-indigo-900', dot: 'bg-indigo-400' },
+  { bg: 'bg-amber-100 dark:bg-amber-800/30', border: 'border-amber-300 dark:border-amber-700', text: 'text-amber-700 dark:text-amber-300', cellBorder: 'border-amber-300 dark:border-amber-700', dot: 'bg-amber-400' },
+  { bg: 'bg-sky-100 dark:bg-sky-800/30', border: 'border-sky-300 dark:border-sky-700', text: 'text-sky-700 dark:text-sky-300', cellBorder: 'border-sky-300 dark:border-sky-700', dot: 'bg-sky-400' },
+  { bg: 'bg-rose-100 dark:bg-rose-800/30', border: 'border-rose-300 dark:border-rose-700', text: 'text-rose-700 dark:text-rose-300', cellBorder: 'border-rose-300 dark:border-rose-700', dot: 'bg-rose-400' },
+  { bg: 'bg-emerald-100 dark:bg-emerald-800/30', border: 'border-emerald-300 dark:border-emerald-700', text: 'text-emerald-700 dark:text-emerald-300', cellBorder: 'border-emerald-300 dark:border-emerald-700', dot: 'bg-emerald-400' },
+  { bg: 'bg-violet-100 dark:bg-violet-800/30', border: 'border-violet-300 dark:border-violet-700', text: 'text-violet-700 dark:text-violet-300', cellBorder: 'border-violet-300 dark:border-violet-700', dot: 'bg-violet-400' },
+  { bg: 'bg-indigo-100 dark:bg-indigo-800/30', border: 'border-indigo-300 dark:border-indigo-700', text: 'text-indigo-700 dark:text-indigo-300', cellBorder: 'border-indigo-300 dark:border-indigo-700', dot: 'bg-indigo-400' },
 ]
 
 const HOME_HEX_BG_LIGHT = '#f5f5f4' // stone-100
@@ -35,24 +35,24 @@ const HOME_HEX_BG_DARK = 'rgba(28, 25, 23, 0.3)' // stone-900/30
 
 // Subtle diagonal stripe pattern for Home portions of split cells
 const HOME_STRIPE_LIGHT = `repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(168,162,158,0.18) 3px, rgba(168,162,158,0.18) 4px)`
-const HOME_STRIPE_DARK = `repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(168,162,158,0.12) 3px, rgba(168,162,158,0.12) 4px)`
+const HOME_STRIPE_DARK = `repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(168,162,158,0.22) 3px, rgba(168,162,158,0.22) 4px)`
 
 const STAY_HEX_BG_LIGHT = [
-  '#fffbeb', // amber-50
-  '#f0f9ff', // sky-50
-  '#fff1f2', // rose-50
-  '#ecfdf5', // emerald-50
-  '#f5f3ff', // violet-50
-  '#eef2ff', // indigo-50
+  '#fef3c7', // amber-100
+  '#e0f2fe', // sky-100
+  '#ffe4e6', // rose-100
+  '#d1fae5', // emerald-100
+  '#ede9fe', // violet-100
+  '#e0e7ff', // indigo-100
 ]
 
 const STAY_HEX_BG_DARK = [
-  'rgba(69, 26, 3, 0.2)',  // amber-950/20
-  'rgba(8, 47, 73, 0.2)',  // sky-950/20
-  'rgba(76, 5, 25, 0.2)',  // rose-950/20
-  'rgba(2, 44, 34, 0.2)',  // emerald-950/20
-  'rgba(46, 16, 101, 0.2)', // violet-950/20
-  'rgba(30, 27, 75, 0.2)', // indigo-950/20
+  'rgba(146, 64, 14, 0.3)',  // amber-800/30
+  'rgba(7, 89, 133, 0.3)',   // sky-800/30
+  'rgba(159, 18, 57, 0.3)',  // rose-800/30
+  'rgba(6, 95, 70, 0.3)',    // emerald-800/30
+  'rgba(91, 33, 182, 0.3)',  // violet-800/30
+  'rgba(55, 48, 163, 0.3)',  // indigo-800/30
 ]
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -329,7 +329,7 @@ export function PlannerGrid({
                       className={cn(
                         'flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 transition-colors relative',
                         'h-20 md:h-24',
-                        'hover:bg-accent/50 cursor-pointer',
+                        'hover:brightness-[0.96] dark:hover:brightness-110 cursor-pointer',
                         splitStyle
                           ? splitBorderClass
                           : stayColor
