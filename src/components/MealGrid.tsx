@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { Sunrise, Sun, Moon, Plus } from 'lucide-react'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { MealWithIngredients, MealType, MEAL_TYPE_LABELS } from '@/types/meal'
 import { MealCard } from './MealCard'
 import { MealForm } from './MealForm'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Card } from '@/components/ui/card'
 
 export interface MealGridProps {
@@ -39,7 +38,6 @@ const MEAL_HEADER_BG = {
 export function MealGrid({ date, meals }: MealGridProps) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null)
-  const scrollRef = useIOSScrollFix()
 
   // Helper to get meal for specific slot
   const getMealForSlot = (mealType: MealType): MealWithIngredients | undefined => {
@@ -113,24 +111,20 @@ export function MealGrid({ date, meals }: MealGridProps) {
         {renderMealSlot('dinner')}
       </div>
 
-      {/* Add Meal Form Dialog */}
-      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-            <DialogHeader>
-              <DialogTitle>
-                Add {selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - {formatDialogDate(date)}
-              </DialogTitle>
-            </DialogHeader>
-            <MealForm
-              initialDate={date}
-              initialMealType={selectedMealType || undefined}
-              onSuccess={() => setShowAddForm(false)}
-              onCancel={() => setShowAddForm(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Add Meal Form */}
+      <ResponsiveOverlay
+        open={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={`Add ${selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - ${formatDialogDate(date)}`}
+        hasInputs
+      >
+        <MealForm
+          initialDate={date}
+          initialMealType={selectedMealType || undefined}
+          onSuccess={() => setShowAddForm(false)}
+          onCancel={() => setShowAddForm(false)}
+        />
+      </ResponsiveOverlay>
     </>
   )
 }

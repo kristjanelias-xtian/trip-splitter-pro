@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
 import { Receipt, Wallet, Users, Check, ArrowRight } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Badge } from '@/components/ui/badge'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
@@ -109,18 +108,20 @@ export function CostBreakdownDialog({
   }, [settlements, groupMembers, groupName])
 
   const participantNameMap = useMemo(() => buildShortNameMap(participants), [participants])
-  const scrollRef = useIOSScrollFix()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] sm:max-w-xl flex flex-col p-0 gap-0">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-4">
-        <DialogHeader>
-          <DialogTitle>{balance.name}</DialogTitle>
-          <DialogDescription>
-            Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={balance.name}
+      maxWidth="sm:max-w-xl"
+      headerExtra={
+        <p className="text-sm text-muted-foreground px-4 pb-3 text-center">
+          Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
+        </p>
+      }
+    >
+      <div className="space-y-4">
 
         {/* Within-group breakdown */}
         {withinGroupBalances && withinGroupBalances.length > 0 && (
@@ -278,8 +279,7 @@ export function CostBreakdownDialog({
             </div>
           )}
         </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveOverlay>
   )
 }
