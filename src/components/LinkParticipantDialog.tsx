@@ -6,14 +6,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 interface LinkParticipantDialogProps {
   trigger?: React.ReactNode
@@ -58,29 +51,28 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <>
+      {/* Trigger button — clicks open the overlay */}
+      <span onClick={() => handleOpenChange(true)}>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
             <UserCheck size={16} />
             This is me
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Which participant are you?</DialogTitle>
-          <DialogDescription>
-            Link yourself to a participant so we can show your personal balance and pre-fill forms.
-          </DialogDescription>
-        </DialogHeader>
+      </span>
+
+      <ResponsiveOverlay open={open} onClose={() => handleOpenChange(false)} title="Which participant are you?" maxWidth="max-w-sm">
+        <p className="text-sm text-muted-foreground mb-4">
+          Link yourself to a participant so we can show your personal balance and pre-fill forms.
+        </p>
         {linkError && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 mt-2">
+          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 mb-4">
             <p className="text-sm font-medium text-destructive">Failed to link — please try again</p>
             <p className="text-xs text-destructive/80 mt-1">{linkError}</p>
           </div>
         )}
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2">
           {adultParticipants.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No unlinked participants available. All participants are already claimed.
@@ -103,7 +95,7 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
             ))
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveOverlay>
+    </>
   )
 }

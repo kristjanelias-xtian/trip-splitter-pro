@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
@@ -13,12 +12,7 @@ import { ShoppingItemRow } from '@/components/ShoppingItemRow'
 import { ShoppingItemForm } from '@/components/ShoppingItemForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 type SortColumn = 'status' | 'name' | 'category'
 type SortDirection = 'asc' | 'desc'
@@ -31,7 +25,6 @@ export function ShoppingPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('status')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [retrying, setRetrying] = useState(false)
-  const scrollRef = useIOSScrollFix()
 
   const handleRefresh = useCallback(() => refreshShoppingItems(), [refreshShoppingItems])
   useRegisterRefresh(handleRefresh)
@@ -246,20 +239,13 @@ export function ShoppingPage() {
         )}
       </div>
 
-      {/* Add Shopping Item Form Dialog */}
-      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-            <DialogHeader>
-              <DialogTitle>Add Shopping Item</DialogTitle>
-            </DialogHeader>
-            <ShoppingItemForm
-              onSuccess={() => setShowAddForm(false)}
-              onCancel={() => setShowAddForm(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Add Shopping Item Form */}
+      <ResponsiveOverlay open={showAddForm} onClose={() => setShowAddForm(false)} title="Add Shopping Item" hasInputs>
+        <ShoppingItemForm
+          onSuccess={() => setShowAddForm(false)}
+          onCancel={() => setShowAddForm(false)}
+        />
+      </ResponsiveOverlay>
     </>
   )
 }

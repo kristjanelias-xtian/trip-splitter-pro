@@ -2,14 +2,7 @@
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { Copy, Share2, Check, Mail, MessageCircle, Send } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
@@ -102,22 +95,21 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <>
+      {/* Trigger button — clicks open the overlay */}
+      <span onClick={() => setOpen(true)}>
         {trigger || (
           <Button variant="outline" className="gap-2">
             <Share2 size={16} />
             Share Trip
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share Trip</DialogTitle>
-          <DialogDescription>
-            Share this link with your group members. Anyone with the link can view and contribute to this trip.
-          </DialogDescription>
-        </DialogHeader>
+      </span>
+
+      <ResponsiveOverlay open={open} onClose={() => setOpen(false)} title="Share Trip" maxWidth="sm:max-w-md">
+        <p className="text-sm text-muted-foreground mb-4">
+          Share this link with your group members. Anyone with the link can view and contribute to this trip.
+        </p>
 
         <div className="space-y-4">
           {/* QR Code */}
@@ -195,7 +187,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
             </p>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveOverlay>
+    </>
   )
 }

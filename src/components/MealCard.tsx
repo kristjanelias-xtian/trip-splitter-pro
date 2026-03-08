@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChefHat, Trash2, ShoppingBasket, Utensils, Home, Receipt } from 'lucide-react'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useMealContext } from '@/contexts/MealContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -11,6 +10,7 @@ import { MealForm } from './MealForm'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,6 @@ export function MealCard({ meal }: MealCardProps) {
   const { expenses } = useExpenseContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const scrollRef = useIOSScrollFix()
 
   const responsiblePerson = meal.responsible_participant_id
     ? participants.find((p) => p.id === meal.responsible_participant_id)
@@ -173,21 +172,14 @@ export function MealCard({ meal }: MealCardProps) {
         </Card>
       </motion.div>
 
-      {/* Edit Form Dialog */}
-      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-            <DialogHeader>
-              <DialogTitle>Edit Meal</DialogTitle>
-            </DialogHeader>
-            <MealForm
-              meal={meal}
-              onSuccess={() => setShowEditForm(false)}
-              onCancel={() => setShowEditForm(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Form */}
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Meal" hasInputs>
+        <MealForm
+          meal={meal}
+          onSuccess={() => setShowEditForm(false)}
+          onCancel={() => setShowEditForm(false)}
+        />
+      </ResponsiveOverlay>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

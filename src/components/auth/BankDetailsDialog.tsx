@@ -5,13 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 interface BankDetailsDialogProps {
   open: boolean
@@ -54,52 +48,53 @@ export function BankDetailsDialog({ open, onOpenChange }: BankDetailsDialogProps
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Bank Details</DialogTitle>
-          <DialogDescription>
-            Add your bank details so others can see where to send payments in settlement plans.
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Bank Details"
+      hasInputs
+      maxWidth="max-w-md"
+    >
+      <p className="text-sm text-muted-foreground mb-4">
+        Add your bank details so others can see where to send payments in settlement plans.
+      </p>
 
-        <div className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label htmlFor="accountHolder">Account Holder Name</Label>
-            <Input
-              id="accountHolder"
-              value={holder}
-              onChange={(e) => setHolder(e.target.value)}
-              placeholder="e.g., John Smith"
-              disabled={saving}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="iban">IBAN</Label>
-            <Input
-              id="iban"
-              value={iban}
-              onChange={(e) => setIban(e.target.value)}
-              placeholder="e.g., DE89 3704 0044 0532 0130 00"
-              disabled={saving}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button onClick={handleSave} disabled={saving} className="flex-1">
-              {saving ? 'Saving...' : 'Save'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-          </div>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="accountHolder">Account Holder Name</Label>
+          <Input
+            id="accountHolder"
+            value={holder}
+            onChange={(e) => setHolder(e.target.value)}
+            placeholder="e.g., John Smith"
+            disabled={saving}
+          />
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="space-y-2">
+          <Label htmlFor="iban">IBAN</Label>
+          <Input
+            id="iban"
+            value={iban}
+            onChange={(e) => setIban(e.target.value)}
+            placeholder="e.g., DE89 3704 0044 0532 0130 00"
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </ResponsiveOverlay>
   )
 }

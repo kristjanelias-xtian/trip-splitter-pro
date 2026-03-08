@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Edit, Trash2 } from 'lucide-react'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import type { ShoppingItemWithMeals } from '@/types/shopping'
 import { CATEGORY_LABELS } from '@/types/shopping'
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,6 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [toggling, setToggling] = useState(false)
-  const scrollRef = useIOSScrollFix()
 
   const handleToggle = async () => {
     if (toggling) return
@@ -141,21 +140,14 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
         </Card>
       </motion.div>
 
-      {/* Edit Form Dialog */}
-      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-            <DialogHeader>
-              <DialogTitle>Edit Item</DialogTitle>
-            </DialogHeader>
-            <ShoppingItemForm
-              item={item}
-              onSuccess={() => setShowEditForm(false)}
-              onCancel={() => setShowEditForm(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Form */}
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Item" hasInputs>
+        <ShoppingItemForm
+          item={item}
+          onSuccess={() => setShowEditForm(false)}
+          onCancel={() => setShowEditForm(false)}
+        />
+      </ResponsiveOverlay>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
