@@ -9,20 +9,22 @@ const options = [
 
 interface ThemeToggleProps {
   size?: 'default' | 'compact'
+  iconOnly?: boolean
 }
 
-export function ThemeToggle({ size = 'default' }: ThemeToggleProps) {
+export function ThemeToggle({ size = 'default', iconOnly = false }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme()
 
   const isCompact = size === 'compact'
 
   return (
-    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1 gap-1">
+    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1 gap-1 w-fit">
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
           onClick={() => setTheme(value)}
           aria-label={label}
+          title={label}
           className={`flex items-center gap-1.5 rounded-md transition-colors ${
             isCompact ? 'px-2 py-1' : 'px-3 py-1.5'
           } ${
@@ -32,7 +34,7 @@ export function ThemeToggle({ size = 'default' }: ThemeToggleProps) {
           }`}
         >
           <Icon size={isCompact ? 14 : 16} />
-          <span className="text-xs font-medium">{label}</span>
+          {!iconOnly && <span className="text-xs font-medium">{label}</span>}
         </button>
       ))}
     </div>
