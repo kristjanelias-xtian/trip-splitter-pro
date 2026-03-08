@@ -10,6 +10,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { calculateBalances, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
 import { inferCategory } from '@/lib/categoryInference'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -57,6 +58,11 @@ export function ExpenseForm({
   const { expenses } = useExpenseContext()
   const { settlements } = useSettlementContext()
   const { user } = useAuth()
+
+  // When used inside a desktop Dialog (no scrollRef prop), apply useIOSScrollFix
+  // internally so the scroll container still gets overscroll-behavior: contain
+  const internalScrollRef = useIOSScrollFix()
+  const effectiveScrollRef = scrollRef ?? internalScrollRef
 
   const [description, setDescription] = useState(initialValues?.description || '')
   const [amount, setAmount] = useState(initialValues?.amount?.toString() || '')
@@ -813,7 +819,7 @@ export function ExpenseForm({
     >
       {stickyFooter ? (
         <>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain space-y-3 pb-3">
+          <div ref={effectiveScrollRef} className="flex-1 overflow-y-auto space-y-3 pb-3">
             {formFields}
           </div>
           {buttons}

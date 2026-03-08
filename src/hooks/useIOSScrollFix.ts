@@ -2,19 +2,18 @@
 import { useRef, useEffect, type RefObject } from 'react'
 
 /**
- * Prevents a scroll-lock bug on touch devices where a scroll container with
- * `overscroll-behavior: contain` becomes unresponsive after the user scrolls
- * to a boundary.
+ * Applies `overscroll-behavior: contain` and platform-specific scroll fixes
+ * to prevent scroll chaining in bottom sheets and dialogs.
  *
- * Platform-specific handling:
- * - **iOS Safari**: nudge `scrollTop` 1px away from the exact top/bottom
- *   boundary on each `touchstart` so the browser never detects the "at
- *   boundary" state that triggers the lock.
- * - **Android Chrome**: override `overscroll-behavior` to `auto` at runtime.
- *   The boundary-nudge technique doesn't work on Android (different touch
- *   gesture evaluation model). Minor scroll chaining is acceptable since
- *   Android has no rubber-band effect.
- * - **Desktop**: no-op (mouse/trackpad never triggers the bug).
+ * Instead of applying `overscroll-contain` in CSS (which breaks Android Chrome),
+ * this hook applies it programmatically only where safe:
+ *
+ * - **iOS Safari**: sets `contain` + nudges `scrollTop` 1px from boundaries
+ *   on each `touchstart` to prevent the scroll-lock bug.
+ * - **Desktop** (no touch): sets `contain` to prevent scroll chaining through
+ *   dialogs/sheets.
+ * - **Android**: no-op — never sees `contain`, avoiding the scroll-lock bug
+ *   entirely. Minor scroll chaining is acceptable (no rubber-band on Android).
  *
  * @param externalRef - Optional existing ref to use instead of creating one
  */
@@ -31,8 +30,9 @@ export function useIOSScrollFix<T extends HTMLElement = HTMLDivElement>(
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
     if (isIOS) {
-      // iOS Safari: nudge scrollTop 1px from boundaries on touchstart
-      // to prevent overscroll-contain scroll-lock bug
+      // iOS Safari: apply contain + nudge scrollTop 1px from boundaries
+      // on touchstart to prevent overscroll-contain scroll-lock bug
+      el.style.overscrollBehavior = 'contain'
       const handler = () => {
         const { scrollTop, scrollHeight, clientHeight } = el
         if (scrollTop <= 0) {
@@ -42,13 +42,16 @@ export function useIOSScrollFix<T extends HTMLElement = HTMLDivElement>(
         }
       }
       el.addEventListener('touchstart', handler, { passive: true })
-      return () => el.removeEventListener('touchstart', handler)
-    } else if ('ontouchstart' in window) {
-      // Android: overscroll-contain causes scroll-lock; disable it
-      // Minor scroll chaining is acceptable (no rubber-band on Android)
-      el.style.overscrollBehavior = 'auto'
+      return () => {
+        el.style.overscrollBehavior = ''
+        el.removeEventListener('touchstart', handler)
+      }
+    } else if (!('ontouchstart' in window)) {
+      // Desktop: prevent scroll chaining through dialogs
+      el.style.overscrollBehavior = 'contain'
       return () => { el.style.overscrollBehavior = '' }
     }
+    // Android: no-op — leave default 'auto', no scroll-lock
   }, [ref])
 
   return ref

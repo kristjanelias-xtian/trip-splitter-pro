@@ -9,7 +9,7 @@
  * Rules:
  * - Height: always h-[Xdvh] — never vh, never h-screen
  * - Header: shrink-0, never scrolls, always visible
- * - Content: flex-1 overflow-y-auto overscroll-contain
+ * - Content: flex-1 overflow-y-auto (overscroll-contain applied by useIOSScrollFix)
  * - Footer/CTA: shrink-0, never scrolls, always visible
  * - Close button: rounded-full w-8 h-8 border border-border
  *   with X w-4 h-4 — identical on every sheet, no exceptions
@@ -112,7 +112,7 @@ export function AppSheet({
         )}
 
         {/* SCROLLABLE CONTENT — only this scrolls */}
-        <div ref={scrollRef} className={`flex-1 overflow-y-auto overscroll-contain ${scrollClassName ?? 'px-4 py-4'}`}>
+        <div ref={scrollRef} className={`flex-1 overflow-y-auto ${scrollClassName ?? 'px-4 py-4'}`}>
           {children}
         </div>
 
