@@ -72,7 +72,7 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5">
-          <ThemeToggle size="compact" />
+          <ThemeToggle size="compact" iconOnly />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => { signOut() }} className="gap-2 text-destructive focus:text-destructive">
