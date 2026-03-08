@@ -55,6 +55,16 @@ const STAY_HEX_BG_DARK = [
   'rgba(55, 48, 163, 0.3)',  // indigo-800/30
 ]
 
+// Opaque dark stay colors for split cell gradients (rgba blended against card bg rgb(26,26,35))
+const STAY_HEX_BG_DARK_OPAQUE = [
+  'rgb(62, 37, 21)',   // amber-800/30 on card
+  'rgb(20, 45, 64)',   // sky-800/30 on card
+  'rgb(66, 24, 42)',   // rose-800/30 on card
+  'rgb(20, 47, 46)',   // emerald-800/30 on card
+  'rgb(46, 28, 79)',   // violet-800/30 on card
+  'rgb(35, 33, 73)',   // indigo-800/30 on card
+]
+
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 interface PlannerGridProps {
@@ -189,6 +199,7 @@ export function PlannerGrid({
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
   const stayHexBg = isDark ? STAY_HEX_BG_DARK : STAY_HEX_BG_LIGHT
+  const stayHexBgOpaque = isDark ? STAY_HEX_BG_DARK_OPAQUE : STAY_HEX_BG_LIGHT
   const homeHexBg = isDark ? HOME_HEX_BG_DARK : HOME_HEX_BG_LIGHT
   const homeStripe = isDark ? HOME_STRIPE_DARK : HOME_STRIPE_LIGHT
 
@@ -292,7 +303,7 @@ export function PlannerGrid({
                     // Solid stay diagonal covers stripe on left; stripe visible only on home (right) half
                     const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
+                      background: `linear-gradient(135deg, ${stayHexBgOpaque[departIdx % stayHexBgOpaque.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -303,7 +314,7 @@ export function PlannerGrid({
                     // Checkout→Home split: stay top-left, home bottom-right
                     const stayIdx = stayColorMap.get(stay.id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
+                      background: `linear-gradient(135deg, ${stayHexBgOpaque[stayIdx % stayHexBgOpaque.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -315,7 +326,7 @@ export function PlannerGrid({
                     // Solid stay diagonal covers stripe on right; stripe visible only on home (left) half
                     const stayIdx = stayColorMap.get(stay.id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, transparent 50%, ${stayHexBg[stayIdx % stayHexBg.length]} 50%), ${homeStripe}, ${homeHexBg}`,
+                      background: `linear-gradient(135deg, transparent 50%, ${stayHexBgOpaque[stayIdx % stayHexBgOpaque.length]} 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
