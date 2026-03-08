@@ -30,6 +30,13 @@ window.addEventListener('unhandledrejection', (event) => {
   }))
 })
 
+// Prevent browser pull-to-refresh on non-Android platforms.
+// On Android Chrome, body overscroll-behavior-y: none causes scroll-lock
+// inside bottom sheets (interaction with react-remove-scroll).
+if (!/Android/i.test(navigator.userAgent)) {
+  document.body.style.overscrollBehaviorY = 'none'
+}
+
 // PWA home screen launch guard
 // Fallback for when the service worker does not intercept the initial
 // navigation (common on iOS). If launched in standalone mode into a
