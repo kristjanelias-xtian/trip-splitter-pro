@@ -171,7 +171,7 @@ export function WizardStep3({
                         disabled={disabled}
                         className={`inline-flex items-center gap-1.5 h-8 pl-1 pr-3 text-sm rounded-full border transition-colors ${
                           isSelected
-                            ? color.chip
+                            ? 'bg-slate-700 text-white border-slate-700 dark:bg-slate-500 dark:border-slate-500'
                             : isChild
                               ? 'bg-background text-muted-foreground border-dashed border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20'
                               : 'bg-background text-muted-foreground border-input hover:border-primary/50'
