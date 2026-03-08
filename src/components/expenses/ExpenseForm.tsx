@@ -753,7 +753,7 @@ export function ExpenseForm({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-3 p-4 bg-accent/5 rounded-lg border border-accent/10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-3">
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="expenseDate">Date</Label>
@@ -819,7 +819,7 @@ export function ExpenseForm({
     >
       {stickyFooter ? (
         <>
-          <div ref={effectiveScrollRef} className="flex-1 overflow-y-auto space-y-3 pb-3">
+          <div ref={effectiveScrollRef} className="flex-1 overflow-y-auto space-y-3 pb-3 px-1 -mx-1">
             {formFields}
           </div>
           {buttons}
