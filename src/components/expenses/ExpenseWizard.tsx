@@ -505,7 +505,7 @@ function MobileWizard({
         {/* Scrollable content — only this scrolls */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto overscroll-contain min-h-0 px-6 py-4"
+          className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
         >
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">

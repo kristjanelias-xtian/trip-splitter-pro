@@ -120,7 +120,7 @@ export function ResponsiveOverlay({
         )}
 
         {/* SCROLLABLE CONTENT */}
-        <div ref={scrollRef} className={`flex-1 overflow-y-auto overscroll-contain ${scrollClassName ?? 'px-4 py-4'}`}>
+        <div ref={scrollRef} className={`flex-1 overflow-y-auto ${scrollClassName ?? 'px-4 py-4'}`}>
           {children}
         </div>
 

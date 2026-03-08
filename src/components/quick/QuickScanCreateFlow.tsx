@@ -284,7 +284,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   )
 
   const scrollContent = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">
       {/* Step 1: Camera */}
       {step === 'camera' && (
         <div className="flex flex-col gap-4 h-full">
