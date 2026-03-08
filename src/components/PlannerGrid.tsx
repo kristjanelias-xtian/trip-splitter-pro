@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { cn } from '@/lib/utils'
 import { getDayContext } from '@/lib/dateUtils'
+import { useTheme } from '@/hooks/useTheme'
 import { Card } from '@/components/ui/card'
 import type { MealWithIngredients, MealType } from '@/types/meal'
 import type { Activity, ActivityTimeSlot } from '@/types/activity'
@@ -21,23 +22,33 @@ const DOT_FILLED_COLORS: Record<ActivityTimeSlot, string> = {
 }
 
 const STAY_COLORS = [
-  { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', cellBorder: 'border-amber-200', dot: 'bg-amber-400' },
-  { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', cellBorder: 'border-sky-200', dot: 'bg-sky-400' },
-  { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', cellBorder: 'border-rose-200', dot: 'bg-rose-400' },
-  { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', cellBorder: 'border-emerald-200', dot: 'bg-emerald-400' },
-  { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', cellBorder: 'border-violet-200', dot: 'bg-violet-400' },
-  { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', cellBorder: 'border-indigo-200', dot: 'bg-indigo-400' },
+  { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-900', text: 'text-amber-700 dark:text-amber-300', cellBorder: 'border-amber-200 dark:border-amber-900', dot: 'bg-amber-400' },
+  { bg: 'bg-sky-50 dark:bg-sky-950/20', border: 'border-sky-200 dark:border-sky-900', text: 'text-sky-700 dark:text-sky-300', cellBorder: 'border-sky-200 dark:border-sky-900', dot: 'bg-sky-400' },
+  { bg: 'bg-rose-50 dark:bg-rose-950/20', border: 'border-rose-200 dark:border-rose-900', text: 'text-rose-700 dark:text-rose-300', cellBorder: 'border-rose-200 dark:border-rose-900', dot: 'bg-rose-400' },
+  { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-900', text: 'text-emerald-700 dark:text-emerald-300', cellBorder: 'border-emerald-200 dark:border-emerald-900', dot: 'bg-emerald-400' },
+  { bg: 'bg-violet-50 dark:bg-violet-950/20', border: 'border-violet-200 dark:border-violet-900', text: 'text-violet-700 dark:text-violet-300', cellBorder: 'border-violet-200 dark:border-violet-900', dot: 'bg-violet-400' },
+  { bg: 'bg-indigo-50 dark:bg-indigo-950/20', border: 'border-indigo-200 dark:border-indigo-900', text: 'text-indigo-700 dark:text-indigo-300', cellBorder: 'border-indigo-200 dark:border-indigo-900', dot: 'bg-indigo-400' },
 ]
 
-const HOME_HEX_BG = '#f5f5f4' // stone-100, matches bg-muted/30
+const HOME_HEX_BG_LIGHT = '#f5f5f4' // stone-100
+const HOME_HEX_BG_DARK = 'rgba(28, 25, 23, 0.3)' // stone-900/30
 
-const STAY_HEX_BG = [
+const STAY_HEX_BG_LIGHT = [
   '#fffbeb', // amber-50
   '#f0f9ff', // sky-50
   '#fff1f2', // rose-50
   '#ecfdf5', // emerald-50
   '#f5f3ff', // violet-50
   '#eef2ff', // indigo-50
+]
+
+const STAY_HEX_BG_DARK = [
+  'rgba(69, 26, 3, 0.2)',  // amber-950/20
+  'rgba(8, 47, 73, 0.2)',  // sky-950/20
+  'rgba(76, 5, 25, 0.2)',  // rose-950/20
+  'rgba(2, 44, 34, 0.2)',  // emerald-950/20
+  'rgba(46, 16, 101, 0.2)', // violet-950/20
+  'rgba(30, 27, 75, 0.2)', // indigo-950/20
 ]
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -171,6 +182,11 @@ export function PlannerGrid({
   getStaysForDate,
   onDayClick,
 }: PlannerGridProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const stayHexBg = isDark ? STAY_HEX_BG_DARK : STAY_HEX_BG_LIGHT
+  const homeHexBg = isDark ? HOME_HEX_BG_DARK : HOME_HEX_BG_LIGHT
+
   const weeks = getCalendarWeeks(tripDates)
   const stayColorMap = getStayColorMap(tripDates, getStaysForDate)
 
@@ -191,6 +207,14 @@ export function PlannerGrid({
         })
       }
     } else {
+      hasHomeDays = true
+    }
+  }
+
+  // Also show Home legend when last day has a stay that extends past the trip
+  if (!hasHomeDays && tripDates.length > 0) {
+    const lastStay = getStayForDate(tripDates[tripDates.length - 1])
+    if (lastStay && lastStay.check_out_date !== tripDates[tripDates.length - 1]) {
       hasHomeDays = true
     }
   }
@@ -250,7 +274,7 @@ export function PlannerGrid({
                       const departIdx = stayColorMap.get(departingStay.id) ?? 0
                       const arriveIdx = stayColorMap.get(arrivingStay.id) ?? 0
                       splitStyle = {
-                        background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${STAY_HEX_BG[arriveIdx % STAY_HEX_BG.length]} 50%)`,
+                        background: `linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, ${stayHexBg[arriveIdx % stayHexBg.length]} 50%)`,
                       }
                       splitBorderClass = STAY_COLORS[arriveIdx % STAY_COLORS.length].cellBorder
                     }
@@ -259,7 +283,17 @@ export function PlannerGrid({
                   if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
                     const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
                     splitStyle = {
-                      background: `linear-gradient(135deg, ${STAY_HEX_BG[departIdx % STAY_HEX_BG.length]} 50%, ${HOME_HEX_BG} 50%)`,
+                      background: `linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                    }
+                    splitBorderClass = 'border-border'
+                  }
+
+                  // Last trip day: show split to Home if stay extends past the trip
+                  const lastTripDate = tripDates[tripDates.length - 1]
+                  if (!splitStyle && !isSplit && stay && date === lastTripDate && stay.check_out_date !== date) {
+                    const stayIdx = stayColorMap.get(stay.id) ?? 0
+                    splitStyle = {
+                      background: `linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
                     }
                     splitBorderClass = 'border-border'
                   }
