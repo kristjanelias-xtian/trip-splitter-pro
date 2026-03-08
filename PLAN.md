@@ -1,7 +1,7 @@
 # PLAN.md — Spl1t Feature Planning Document
 
 > **Living document.** Update at the start and end of every session.
-> Last updated: 2026-03-07 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅; nicknames + avatars ✅; receipt viewer ✅; scan-create fix ✅; dialog selector fix ✅; settlement UX overhaul ✅; expense form redesign ✅; desktop sticky footer ✅; category auto-inference ✅; PreToolUse branch guard ✅)
+> Last updated: 2026-03-08 (Phases 1–7 ✅; family refactor Phases 1–4 ✅ COMPLETE; PWA ✅; pull-to-refresh ✅; invite UX simplified ✅; email header branding ✅; issue report email ✅; scan flow sheet fix ✅; contact is_adult ✅; iOS scroll lock fix ✅; nicknames + avatars ✅; receipt viewer ✅; scan-create fix ✅; dialog selector fix ✅; settlement UX overhaul ✅; expense form redesign ✅; desktop sticky footer ✅; category auto-inference ✅; PreToolUse branch guard ✅; home page UX ✅; desktop header redesign ✅; dark mode ✅)
 
 ---
 
@@ -797,6 +797,43 @@ Replace ad-hoc loading/error patterns with the shared components from 7a.
 | 2026-03-01 | PWA sheet safe-area | PR #539 (closes #531): Added `pwa-safe-bottom` class to all bottom sheet sticky footers for iPhone home indicator padding in standalone PWA mode. |
 | 2026-03-01 | Receipt race condition | PR #540 (closes #538): Await receipt image path update to prevent race condition between upload and task row update. |
 | 2026-03-01 | Scan participant removal | PR #541 (closes #537): X button to remove participant chips + toggle checkmarks on recent contacts in QuickScanCreateFlow. |
+| 2026-03-01 | Docs update | PR #542: Update CLAUDE.md and PLAN.md with PRs #491–#541. |
+| 2026-03-02 | Desktop header alignment | PRs #548, #550, #552: Align desktop header with sidebar, add mobile participant action menu, section labels in dropdown, remove sidebar offset. |
+| 2026-03-02 | Planner diagonal split | PR #556 (closes #553): Show diagonal split on checkout day between stay color and home. |
+| 2026-03-02 | Auth redirect fix | PR #555 (closes #554): Skip auto-redirect on sign-in to prevent landing on stranger's trip. |
+| 2026-03-02 | Settlement optimizer | PR #547 (closes #545): Bitmask DP settlement optimizer + mode toggle. |
+| 2026-03-02 | Bank details sync | PR #558 (closes #557): Sync bank details fields when profile loads after dialog opens. |
+| 2026-03-02 | Settlement UX overhaul | PRs #559–#582: Bank details nudge, Pay Now helper panel, settlement form → Dialog/Sheet overlay, compact cards, "Settle" terminology, promoted to mobile bottom tab bar, desktop sticky footer, keyboard handling + iOS scroll fix. |
+| 2026-03-02 | Participant short names | PRs #561, #563: Disambiguate participants with same first name using full name fallback + normalize possessive suffixes (Estonian -i, -e endings). |
+| 2026-03-02 | Desktop ExpenseForm redesign | PRs #564, #567, #572, #575, #577, #584: Auto-fill payer, auto-categorize from description, compact suggestion, 2-column grid, chip-style participants, dialog sticky footer. |
+| 2026-03-02 | Trip header gradients | PR #568: Redesign trip header gradients with rich 3-stop colors + varied angles. |
+| 2026-03-02 | Fresh-branch rule | PR #570: Add fresh-branch rule to Git Workflow section in CLAUDE.md. |
+| 2026-03-02 | PreToolUse hook | PR #583: Block commits on main branch via `.claude/hooks/no-commit-main.sh`. |
+| 2026-03-02 | Docs update | PR #587: Update PLAN.md and CLAUDE.md after PRs #555–#584. |
+| 2026-03-03 | Settlement delete + trip leave | PR #598 (closes #586, #594): Add settlement delete + clarify trip "Leave" as "Remove". |
+| 2026-03-03 | Participant linking errors | PR #588: Add error handling for "This is me" participant linking + email conflict retry. |
+| 2026-03-03 | Shared link access fixes | PRs #589, #590, #591: Route unauth shared link → Full mode, merge localStorage trips into auth fetch for PWA, auto-link participants by email match. |
+| 2026-03-03 | Home page trip visibility | PRs #592, #593, #596, #602, #603, #605: Scope recent companions to participated trips, discover trips by participant email, distinguish My Trips vs Visited, optimize anonymous trip fetch + empty state UX. |
+| 2026-03-03 | Home page desktop | PRs #595, #604, #597, #599: Render scan/create overlays as centered Dialogs on desktop, hide scan receipt CTA on desktop. |
+| 2026-03-03 | Trip management UX | PRs #600, #608: Only show Remove on localStorage-only trips, hide duplicate create button. |
+| 2026-03-04 | Equal split chip picker | PRs #609, #611, #614, #616: Visually nest group members, stack wallet groups vertically, tinted group header with left accent, outline style for selected header. |
+| 2026-03-04 | Desktop layout alignment | PRs #610, #612, #615: Match header width to content, align home page desktop layout, align in-trip header. |
+| 2026-03-04 | Desktop header redesign | PRs #618, #620, #621: Unify desktop header to 2-row layout, clean up pills, single mode button + avatar-only in Quick. |
+| 2026-03-04 | Desktop sidebar + nav | PRs #622, #624, #625: Remove redundant sidebar items, add Event/Trip subtitle to Full mode header, reorder sidebar — Dashboard first, Manage last. |
+| 2026-03-04 | iOS date input fix | PR #619: Strip iOS native date-input chrome that inflates height beyond h-10. |
+| 2026-03-04 | Sign-out fix | PR #623: Sign out button not responding — use onSelect + defensive state clear. |
+| 2026-03-05 | Navigation fixes | PRs #626, #627: Desktop trip creation → Full mode, mobile trip creation/join → Quick mode. |
+| 2026-03-05 | Settlement layout | PR #628: Stack Settle/Remind buttons vertically on desktop. |
+| 2026-03-06 | Mobile nav cleanup | PR #629: Remove redundant "More" menu from mobile bottom tab bar. |
+| 2026-03-06 | Home page cards | PR #630: Add trip gradient accent strip to home page trip cards. |
+| 2026-03-06 | Invited section | PR #631: Add "Invited" section to HomePage for email-discovered trips. |
+| 2026-03-06 | Edge function fix | PR #634: Remove JWT verification from create-github-issue edge function. |
+| 2026-03-06 | Scan button cleanup | PR #637 (closes #636): Remove redundant scan button from ExpensesPage. |
+| 2026-03-07 | Header sizing | PR #638: Unify Quick mode header sizing to match Full mode on mobile. |
+| 2026-03-07 | Planner month indicators | PR #639: Add month indicators to Day Planner calendar. |
+| 2026-03-07 | CSS variable fix | PR #640: Align --negative CSS variable with Tailwind negative color. |
+| 2026-03-07 | Dark mode | PR #641: Dark mode with system preference support — `useTheme` hook, `ThemeToggle`, CSS variables, Tailwind `darkMode: 'class'` strategy. |
+| 2026-03-08 | ThemeToggle redesign | PR #642: ThemeToggle redesigned as self-describing segmented control with icon + text labels and `size` prop (`default`/`compact`). Removed standalone "Theme" labels from UserMenu, ManageTripPage, HomePage. |
 
 ---
 

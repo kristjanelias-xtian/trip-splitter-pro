@@ -1,5 +1,65 @@
 # Release Notes
 
+## v1.2.0 — March 2026
+
+### Dark Mode
+- System preference detection with manual override (light/dark/system) (#641)
+- `useTheme` hook with localStorage persistence (`spl1t:theme`) and `.dark` class strategy (#641)
+- ThemeToggle redesigned as self-describing segmented control with icon + text labels (#642)
+- All CSS colors use custom properties with `.dark` variants — shadcn components auto-adapt
+
+### Settlement UX Overhaul
+- Settlement form refactored from inline to Dialog (desktop) / Sheet (mobile) overlay (#562)
+- Bank details nudge in Quick mode + Dashboard when user is owed money (#559)
+- Pay Now helper panel with copy IBAN + open banking app shortcuts (#560)
+- Compact 2-row settlement cards on mobile; terminology unified to "Settle" (#565, #571)
+- Settlements promoted to mobile bottom tab bar as 3rd tab (#580)
+- Settlement delete + trip "Leave" renamed to "Remove" (#598)
+
+### Desktop ExpenseForm Redesign
+- Auto-fill payer from auth user's linked participant (#564)
+- Auto-categorize expenses from description via keyword matching (#567)
+- Compact 2-column grid layout with chip-style participant list (#575, #577)
+- Inline "should pay next" suggestion (#572)
+- Dialog sticky footer for action buttons (#584)
+
+### Home Page & Navigation
+- Trip gradient accent strips on home page cards (#630)
+- "Invited" section for email-discovered trips (#631)
+- My Trips vs Visited trip distinction (#596)
+- Desktop scan/create overlays as centered Dialogs (#595)
+- Mobile trip creation/join → Quick mode; desktop → Full mode (#626, #627)
+- ConditionalHomePage only redirects to owned/participated trips (#617)
+
+### Desktop Header Redesign
+- Unified 2-row desktop header layout (#618, #620, #621)
+- Single mode button, avatar-only in Quick view (#621)
+- Dashboard-first sidebar order, removed redundant items (#622, #625)
+- Event/Trip subtitle in Full mode header (#624)
+
+### Planner & Calendar
+- Month indicators on Day Planner calendar (#639)
+- Diagonal split on checkout day between stay color and home (#556)
+
+### Participant & Group UX
+- Short name disambiguation — full name fallback + possessive suffix normalization (#561, #563)
+- Equal split chip picker — nested group members, tinted headers, outline selection (#609, #611, #614, #616)
+- Auto-link participants by email match on shared link access (#591)
+
+### Fixes
+- Settlement optimizer with bitmask DP (#547)
+- Sign-out button fix — use onSelect + defensive state clear (#623)
+- iOS date input height fix (#619)
+- CSS --negative variable aligned with Tailwind (#640)
+- Edge function JWT verification removed from create-github-issue (#634)
+- Scan button removed from ExpensesPage (#637)
+- Quick mode header sizing unified with Full mode (#638)
+
+### Testing
+- 182 unit tests (up from 173 in v1.1.0), 26 E2E unchanged
+
+---
+
 ## v1.1.0 — March 2026
 
 ### PWA
