@@ -71,9 +71,8 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
           Bank Details
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <div className="px-2 py-1.5 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Theme</span>
-          <ThemeToggle />
+        <div className="px-2 py-1.5">
+          <ThemeToggle size="compact" />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => { signOut() }} className="gap-2 text-destructive focus:text-destructive">

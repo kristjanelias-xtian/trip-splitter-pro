@@ -481,13 +481,9 @@ export function ManageTripPage() {
       <Card>
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose your preferred color theme</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <Label>Theme</Label>
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </CardContent>
       </Card>
 
