@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo } from 'react'
-import { X, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -11,10 +11,7 @@ import { TransactionItem } from '@/components/quick/TransactionItem'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { Card, CardContent } from '@/components/ui/card'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 type FilterType = 'all' | 'expenses' | 'payments'
 
@@ -29,10 +26,8 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
   const { expenses, loading: expensesLoading, error: expenseError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: settlementsLoading, error: settlementError, refreshSettlements } = useSettlementContext()
-  const scrollRef = useIOSScrollFix()
   const [filter, setFilter] = useState<FilterType>('all')
   const [retrying, setRetrying] = useState(false)
-  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const contextError = participantError || expenseError || settlementError
 
@@ -70,18 +65,12 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
     { key: 'payments', label: 'Payments' },
   ]
 
-  const closeBtn = (
-    <button
-      onClick={() => onOpenChange(false)}
-      aria-label="Close"
-      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+  return (
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Expenses & Payments"
     >
-      <X className="w-4 h-4 text-muted-foreground" />
-    </button>
-  )
-
-  const scrollContent = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
       {/* Filters */}
       <div className="flex gap-2 mb-4">
         {filterButtons.map(({ key, label }) => (
@@ -132,39 +121,6 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
           ))}
         </div>
       )}
-    </div>
-  )
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{ height: '75dvh' }}
-        >
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="w-8" />
-            <SheetTitle className="text-base font-semibold">Expenses & Payments</SheetTitle>
-            {closeBtn}
-          </div>
-          {scrollContent}
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="w-8" />
-          <DialogTitle className="text-base font-semibold">Expenses & Payments</DialogTitle>
-          {closeBtn}
-        </div>
-        {scrollContent}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
   )
 }

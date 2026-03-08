@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
-import { ArrowRight, ArrowLeft, PartyPopper, Bell, Check, X } from 'lucide-react'
+import { useState, useRef, useMemo, useEffect } from 'react'
+import { ArrowRight, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -11,10 +11,7 @@ import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
 import { SettlementForm, SettlementFormHandle } from '@/components/SettlementForm'
 import { CreateSettlementInput } from '@/types/settlement'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
@@ -62,9 +59,6 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
   const [bankDialogOpen, setBankDialogOpen] = useState(false)
   const isSubmittingRef = useRef(false)
   const formRef = useRef<SettlementFormHandle>(null)
-  const keyboard = useKeyboardHeight()
-  const isMobile = useMediaQuery('(max-width: 767px)')
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
 
   // Build email map: entity ID → emails (multiple adults in wallet_group)
   const fromEmailMap = useMemo(() => {
@@ -346,41 +340,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     }).format(amount)
   }
 
-  const leftSlot = view === 'form' ? (
-    <button
-      onClick={() => setView('suggestions')}
-      aria-label="Go back"
-      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-    >
-      <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-    </button>
-  ) : (
-    <div className="w-8" />
-  )
-
-  const closeBtn = (
-    <button
-      onClick={() => handleOpenChange(false)}
-      aria-label="Close"
-      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-    >
-      <X className="w-4 h-4 text-muted-foreground" />
-    </button>
-  )
-
   const titleText = view === 'suggestions' ? 'Settle up' : 'Settle Up'
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setIsScrolledToBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8)
-  }, [])
-
-  useEffect(() => {
-    setIsScrolledToBottom(false)
-    // Measure after content renders
-    requestAnimationFrame(() => handleScroll())
-  }, [view, handleScroll])
 
   const formContent = (
     <SettlementForm
@@ -397,27 +357,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     />
   )
 
-  const formFooter = (
-    <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3">
-      <Button
-        onClick={() => formRef.current?.submit()}
-        className="flex-1"
-      >
-        Confirm Payment
-      </Button>
-      <Button
-        type="button"
-        onClick={() => setView('suggestions')}
-        variant="outline"
-      >
-        Cancel
-      </Button>
-    </div>
-  )
-
   const scrollContent = (
-    <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
+    <>
       {view === 'suggestions' ? (
         <div className="space-y-4">
           {allSettled ? (
@@ -662,75 +603,40 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
           </div>
         </div>
       ) : formContent}
-      </div>
-      {view === 'form' && !isScrolledToBottom && (
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent" />
-      )}
-    </div>
+    </>
   )
-
-  const bankDialog = <BankDetailsDialog open={bankDialogOpen} onOpenChange={setBankDialogOpen} />
-
-  if (isMobile) {
-    return (
-      <>
-        <Sheet open={open} onOpenChange={handleOpenChange}>
-          <SheetContent
-            side="bottom"
-            hideClose
-            className="flex flex-col p-0 rounded-t-2xl"
-            style={{
-              height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-              ...(keyboard.isVisible && {
-                top: `${keyboard.viewportOffset}px`,
-                bottom: 'auto',
-              }),
-            }}
-          >
-            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-              {leftSlot}
-              <SheetTitle className="text-base font-semibold">{titleText}</SheetTitle>
-              {closeBtn}
-            </div>
-            {scrollContent}
-            {view === 'form' && (
-              <div className="shrink-0 border-t border-border px-4 py-3 flex gap-3 pwa-safe-bottom">
-                <Button
-                  onClick={() => formRef.current?.submit()}
-                  className="flex-1"
-                >
-                  Confirm Payment
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setView('suggestions')}
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
-          </SheetContent>
-        </Sheet>
-        {bankDialog}
-      </>
-    )
-  }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-            {leftSlot}
-            <DialogTitle className="text-base font-semibold">{titleText}</DialogTitle>
-            {closeBtn}
+      <ResponsiveOverlay
+        open={open}
+        onClose={() => handleOpenChange(false)}
+        title={titleText}
+        hasInputs
+        onBack={view === 'form' ? () => setView('suggestions') : undefined}
+        footer={view === 'form' ? (
+          <div className="flex gap-3">
+            <Button
+              onClick={() => formRef.current?.submit()}
+              className="flex-1"
+            >
+              Confirm Payment
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setView('suggestions')}
+              variant="outline"
+            >
+              Cancel
+            </Button>
           </div>
-          {scrollContent}
-          {view === 'form' && formFooter}
-        </DialogContent>
-      </Dialog>
-      {bankDialog}
+        ) : undefined}
+        scrollClassName="px-6 py-4"
+        scrollRef={scrollRef}
+      >
+        {scrollContent}
+      </ResponsiveOverlay>
+      <BankDetailsDialog open={bankDialogOpen} onOpenChange={setBankDialogOpen} />
     </>
   )
 }

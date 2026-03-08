@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image, X } from 'lucide-react'
+import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
 import { useScrollIntoView } from '@/hooks/useScrollIntoView'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -148,10 +145,8 @@ export function ReceiptReviewSheet({
   mappedItems,
   onDone,
 }: ReceiptReviewSheetProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)')
   const keyboard = useKeyboardHeight()
   const contentRef = useRef<HTMLDivElement>(null)
-  useIOSScrollFix(contentRef)
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
@@ -417,24 +412,7 @@ export function ReceiptReviewSheet({
     }
   }
 
-  const onClose = () => onOpenChange(false)
-
-  const header = (
-    <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-      <div className="w-8" />
-      <SheetTitle className="text-base font-semibold">Review Receipt</SheetTitle>
-      <button
-        onClick={onClose}
-        aria-label="Close"
-        className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-      >
-        <X className="w-4 h-4 text-muted-foreground" />
-      </button>
-    </div>
-  )
-
   const body = (
-    <div ref={contentRef} className="flex-1 overflow-y-auto overscroll-contain">
     <div className="px-4 py-3 space-y-4">
       {/* Receipt image thumbnail (collapsible) */}
       {receiptImageUrl && (
@@ -623,11 +601,10 @@ export function ReceiptReviewSheet({
         </div>
       </div>
     </div>
-    </div>
   )
 
-  const footer = (
-    <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
+  const footerContent = (
+    <>
       <Button
         onClick={handleSubmit}
         disabled={!canSubmit || submitting}
@@ -648,45 +625,22 @@ export function ReceiptReviewSheet({
           Assign all items to submit
         </p>
       )}
-    </div>
+    </>
   )
 
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{
-            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
-            ...(keyboard.isVisible && {
-              top: `${keyboard.viewportOffset}px`,
-              bottom: 'auto',
-            }),
-          }}
-        >
-          {header}
-          {body}
-          {footer}
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideClose
-        className="flex flex-col max-w-2xl max-h-[85vh] p-0 gap-0"
-        aria-describedby={undefined}
-      >
-        <DialogTitle className="sr-only">Review Receipt</DialogTitle>
-        {header}
-        {body}
-        {footer}
-      </DialogContent>
-    </Dialog>
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Review Receipt"
+      hasInputs
+      maxWidth="max-w-2xl"
+      footer={footerContent}
+      scrollRef={contentRef}
+      scrollClassName=""
+    >
+      {body}
+    </ResponsiveOverlay>
   )
 }
 

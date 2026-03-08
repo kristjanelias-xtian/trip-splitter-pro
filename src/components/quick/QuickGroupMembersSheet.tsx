@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { UserCheck, X, ChevronDown, Check } from 'lucide-react'
+import { UserCheck, ChevronDown, Check } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
 import { Expense } from '@/types/expense'
 import { Settlement } from '@/types/settlement'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 interface QuickGroupMembersSheetProps {
   open: boolean
@@ -34,9 +31,7 @@ export function QuickGroupMembersSheet({
   exchangeRates = {},
   settlements = [],
 }: QuickGroupMembersSheetProps) {
-  const scrollRef = useIOSScrollFix()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
-  const isMobile = useMediaQuery('(max-width: 767px)')
 
   function isLinked(balanceId: string): boolean {
     return !!participants.find(p => p.id === balanceId)?.user_id
@@ -63,30 +58,13 @@ export function QuickGroupMembersSheet({
     return participant?.wallet_group ?? null
   }
 
-  const closeBtn = (
-    <button
-      onClick={() => onOpenChange(false)}
-      aria-label="Close"
-      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+  return (
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={`Group (${balances.length} ${balances.length === 1 ? 'member' : 'members'})`}
+      scrollClassName=""
     >
-      <X className="w-4 h-4 text-muted-foreground" />
-    </button>
-  )
-
-  const header = (
-    <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-      <div className="w-8" />
-      {isMobile ? (
-        <SheetTitle className="text-base font-semibold">Group ({balances.length} {balances.length === 1 ? 'member' : 'members'})</SheetTitle>
-      ) : (
-        <DialogTitle className="text-base font-semibold">Group ({balances.length} {balances.length === 1 ? 'member' : 'members'})</DialogTitle>
-      )}
-      {closeBtn}
-    </div>
-  )
-
-  const scrollContent = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
       {balances.map((b, i) => {
         const isMe = b.id === myParticipantId
         const linked = isLinked(b.id)
@@ -151,32 +129,7 @@ export function QuickGroupMembersSheet({
           </div>
         )
       })}
-    </div>
-  )
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{ height: '75dvh' }}
-        >
-          {header}
-          {scrollContent}
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="flex flex-col max-h-[85vh] max-w-lg p-0 gap-0">
-        {header}
-        {scrollContent}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
   )
 }
 

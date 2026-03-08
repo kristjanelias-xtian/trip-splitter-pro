@@ -7,7 +7,7 @@
  * Desktop gets a centered dialog with identical header structure.
  */
 
-import { ReactNode } from 'react'
+import { ReactNode, RefObject } from 'react'
 import { X, ArrowLeft } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
@@ -21,7 +21,7 @@ import {
 export interface ResponsiveOverlayProps {
   open: boolean
   onClose: () => void
-  title: string
+  title: ReactNode
   /** true → 92dvh + keyboard hooks (mobile), false → 75dvh fixed (mobile). Default false. */
   hasInputs?: boolean
   /** Desktop dialog max-width class. Default 'max-w-lg'. */
@@ -34,6 +34,10 @@ export interface ResponsiveOverlayProps {
   headerExtra?: ReactNode
   /** Prevent closing when clicking outside. */
   preventOutsideClose?: boolean
+  /** External ref for the scroll container (e.g. for useIOSScrollFix + useScrollIntoView). */
+  scrollRef?: RefObject<HTMLDivElement>
+  /** Override the scroll container className. Default: 'px-4 py-4'. */
+  scrollClassName?: string
   children: ReactNode
 }
 
@@ -59,10 +63,13 @@ export function ResponsiveOverlay({
   onBack,
   headerExtra,
   preventOutsideClose = false,
+  scrollRef: externalScrollRef,
+  scrollClassName,
   children,
 }: ResponsiveOverlayProps) {
   const isMobile = useMediaQuery('(max-width: 767px)')
-  const scrollRef = useIOSScrollFix()
+  const internalScrollRef = useIOSScrollFix()
+  const scrollRef = externalScrollRef ?? internalScrollRef
 
   // Mobile: delegate to AppSheet (single source of truth for sheets)
   if (isMobile) {
@@ -77,6 +84,8 @@ export function ResponsiveOverlay({
         onBack={onBack}
         headerExtra={headerExtra}
         preventOutsideClose={preventOutsideClose}
+        scrollRef={externalScrollRef}
+        scrollClassName={scrollClassName}
       >
         {children}
       </AppSheet>
@@ -111,7 +120,7 @@ export function ResponsiveOverlay({
         )}
 
         {/* SCROLLABLE CONTENT */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div ref={scrollRef} className={`flex-1 overflow-y-auto overscroll-contain ${scrollClassName ?? 'px-4 py-4'}`}>
           {children}
         </div>
 

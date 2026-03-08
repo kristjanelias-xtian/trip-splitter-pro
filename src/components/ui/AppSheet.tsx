@@ -22,7 +22,7 @@
  * Last audited: 2026-02-24
  */
 
-import { ReactNode } from 'react'
+import { ReactNode, RefObject } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
@@ -31,7 +31,7 @@ import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 interface AppSheetProps {
   open: boolean
   onClose: () => void
-  title: string
+  title: ReactNode
   height?: '92dvh' | '75dvh'
   footer?: ReactNode
   onBack?: () => void
@@ -41,6 +41,10 @@ interface AppSheetProps {
   headerExtra?: ReactNode
   /** Prevent closing when clicking outside (e.g. during submission) */
   preventOutsideClose?: boolean
+  /** External ref for the scroll container — overrides internal useIOSScrollFix ref */
+  scrollRef?: RefObject<HTMLDivElement>
+  /** Override the scroll container className. Default: 'px-4 py-4'. */
+  scrollClassName?: string
 }
 
 function SheetButton({ onClick, label, children }: { onClick: () => void; label: string; children: ReactNode }) {
@@ -66,9 +70,12 @@ export function AppSheet({
   children,
   headerExtra,
   preventOutsideClose = false,
+  scrollRef: externalScrollRef,
+  scrollClassName,
 }: AppSheetProps) {
   const keyboard = hasInputs ? useKeyboardHeight() : null
-  const scrollRef = useIOSScrollFix()
+  const internalScrollRef = useIOSScrollFix()
+  const scrollRef = externalScrollRef ?? internalScrollRef
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
@@ -105,7 +112,7 @@ export function AppSheet({
         )}
 
         {/* SCROLLABLE CONTENT — only this scrolls */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div ref={scrollRef} className={`flex-1 overflow-y-auto overscroll-contain ${scrollClassName ?? 'px-4 py-4'}`}>
           {children}
         </div>
 
