@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { fadeInUp } from '@/lib/animations'
 import { buildShortNameMap } from '@/lib/participantUtils'
+import { getParticipantColor } from '@/lib/participantChipColors'
 import { ExpenseSplitPreview } from '../ExpenseSplitPreview'
 import type { ExpenseDistribution } from '@/types/expense'
 import type { Participant as FullParticipant } from '@/types/participant'
@@ -100,6 +101,18 @@ export function WizardStep3({
     return groups
   }, [participants])
 
+  // Flat color index for each participant across all groups
+  const participantColorMap = useMemo(() => {
+    const map = new Map<string, number>()
+    let i = 0
+    for (const group of participantGroups) {
+      for (const p of group.members) {
+        map.set(p.id, i++)
+      }
+    }
+    return map
+  }, [participantGroups])
+
   return (
     <motion.div
       className="space-y-5"
@@ -149,6 +162,7 @@ export function WizardStep3({
                   {group.members.map(participant => {
                     const isSelected = selectedParticipants.includes(participant.id)
                     const isChild = !participant.is_adult
+                    const color = getParticipantColor(participantColorMap.get(participant.id) ?? 0)
                     return (
                       <button
                         key={participant.id}
@@ -157,13 +171,13 @@ export function WizardStep3({
                         disabled={disabled}
                         className={`inline-flex items-center gap-1.5 h-8 pl-1 pr-3 text-sm rounded-full border transition-colors ${
                           isSelected
-                            ? 'bg-primary text-primary-foreground border-primary'
+                            ? color.chip
                             : isChild
                               ? 'bg-background text-muted-foreground border-dashed border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20'
                               : 'bg-background text-muted-foreground border-input hover:border-primary/50'
                         }`}
                       >
-                        <ParticipantAvatar participant={participant} size="sm" forceInitials={isSelected} className={isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : ''} />
+                        <ParticipantAvatar participant={participant} size="sm" className={isSelected ? 'bg-white/20 text-white' : color.avatar} />
                         {shortNames.get(participant.id) || participant.name}
                         {isSelected && <Check className="w-3 h-3" />}
                       </button>
