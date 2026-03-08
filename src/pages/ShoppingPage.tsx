@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
@@ -30,6 +31,7 @@ export function ShoppingPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('status')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [retrying, setRetrying] = useState(false)
+  const scrollRef = useIOSScrollFix()
 
   const handleRefresh = useCallback(() => refreshShoppingItems(), [refreshShoppingItems])
   useRegisterRefresh(handleRefresh)
@@ -246,14 +248,16 @@ export function ShoppingPage() {
 
       {/* Add Shopping Item Form Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Shopping Item</DialogTitle>
-          </DialogHeader>
-          <ShoppingItemForm
-            onSuccess={() => setShowAddForm(false)}
-            onCancel={() => setShowAddForm(false)}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+            <DialogHeader>
+              <DialogTitle>Add Shopping Item</DialogTitle>
+            </DialogHeader>
+            <ShoppingItemForm
+              onSuccess={() => setShowAddForm(false)}
+              onCancel={() => setShowAddForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>

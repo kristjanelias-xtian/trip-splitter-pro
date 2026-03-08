@@ -378,29 +378,29 @@ Copy-paste this into PR reviews for any new or modified sheet/dialog:
 | QuickSettlementSheet | quick/QuickSettlementSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
 | QuickCreateSheet | quick/QuickCreateSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | **top-based** ✅ | — |
 | QuickScanCreateFlow | quick/QuickScanCreateFlow.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
-| QuickParticipantSetupSheet | quick/QuickParticipantSetupSheet.tsx | Sheet only | ❌ | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | P3: no desktop |
+| QuickParticipantSetupSheet | quick/QuickParticipantSetupSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
 | ReceiptReviewSheet | receipts/ReceiptReviewSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ✅ | **top-based** ✅ | — |
 | ReceiptCaptureSheet | receipts/ReceiptCaptureSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | N/A (no inputs) | P3: no pwa-safe |
 | ReceiptDetailsSheet | receipts/ReceiptDetailsSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ✅ | N/A (read-only) | — |
 | QuickHistorySheet | quick/QuickHistorySheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
 | QuickScanContextSheet | quick/QuickScanContextSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
-| QuickGroupMembersSheet | quick/QuickGroupMembersSheet.tsx | Sheet only | ❌ | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no desktop, no pwa-safe |
+| QuickGroupMembersSheet | quick/QuickGroupMembersSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | — |
 | DayDetailSheet | DayDetailSheet.tsx | Sheet+Dialog | ✅ useMediaQuery | 75dvh | ✅ | ✅ | ✅ | ❌ | N/A (read-only) | P3: no pwa-safe |
-| CostBreakdownDialog | CostBreakdownDialog.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile, no IOSScrollFix |
-| ReportIssueDialog | ReportIssueDialog.tsx | Dialog only | ❌ | dynamic (keyboard) | ❌ | ✅ | ❌ | ❌ | transform-based | P2: non-standard keyboard handling, P3: no sheet on mobile |
+| CostBreakdownDialog | CostBreakdownDialog.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| ReportIssueDialog | ReportIssueDialog.tsx | Sheet+Dialog | ✅ useMediaQuery | 92dvh | ✅ | ✅ | ✅ | ❌ | **top-based** ✅ | — |
 | ShareTripDialog | ShareTripDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
 | LinkParticipantDialog | LinkParticipantDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
 | BankDetailsDialog | auth/BankDetailsDialog.tsx | Dialog only | ❌ | default | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| ManageTripPage edit | pages/ManageTripPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| ShoppingPage add | pages/ShoppingPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
+| ManageTripPage edit | pages/ManageTripPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| ShoppingPage add | pages/ShoppingPage.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
 | ExpensesPage delete | pages/ExpensesPage.tsx | AlertDialog | N/A | default | ❌ | ✅ | ❌ | ❌ | N/A | — (correct for confirmation) |
-| ActivityCard edit/delete | ActivityCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| MealCard edit/delete | MealCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| MealGrid add | MealGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| TimeSlotGrid add | TimeSlotGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| ShoppingItemCard edit/delete | ShoppingItemCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| ShoppingItemRow edit/delete | ShoppingItemRow.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
-| StayCard edit/delete | StayCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ❌ | ❌ | N/A | P3: no sheet on mobile |
+| ActivityCard edit/delete | ActivityCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| MealCard edit/delete | MealCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| MealGrid add | MealGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| TimeSlotGrid add | TimeSlotGrid.tsx | Dialog only | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| ShoppingItemCard edit/delete | ShoppingItemCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| ShoppingItemRow edit/delete | ShoppingItemRow.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
+| StayCard edit/delete | StayCard.tsx | Dialog/AlertDialog | ❌ | max-h-[85vh] | ❌ | ✅ | ✅ | ❌ | N/A | — |
 
 ### Prioritised Issue List
 
@@ -411,27 +411,25 @@ Copy-paste this into PR reviews for any new or modified sheet/dialog:
 
 #### P2 — Visual bug
 
-7. **ReportIssueDialog uses non-standard keyboard handling** — `transform: translateY(-)` to shift dialog up instead of top-based positioning. Works but is inconsistent with sheet pattern and may interact poorly with iOS Safari viewport scrolling.
-   - File: `src/components/ReportIssueDialog.tsx:188-192`
-   - Fix: For dialogs this is acceptable (centered, not bottom-anchored). Document as exception.
+7. ✅ **ReportIssueDialog converted to dual Sheet/Dialog** — PR #656
+   - Mobile: bottom Sheet with standard pattern (92dvh, top-based keyboard, hideClose, 3-slot header, useIOSScrollFix)
+   - Desktop: Dialog with `max-h-[85vh]`, same header/content pattern
+   - Removed `transform: translateY()` hack entirely
 
 #### P3 — Inconsistency (not visibly broken)
 
 8. ✅ **AppSheet footer** now has `pwa-safe-bottom` (cascades to all AppSheet consumers) — PR #653
-   - Remaining: QuickCreateSheet, QuickHistorySheet, QuickScanContextSheet, ReceiptCaptureSheet, QuickGroupMembersSheet, DayDetailSheet (no footer or not using AppSheet)
+   - Remaining sheets without footer (QuickCreateSheet, QuickHistorySheet, QuickScanContextSheet, ReceiptCaptureSheet, QuickGroupMembersSheet, DayDetailSheet) have no footer, so no `pwa-safe-bottom` needed. Closed.
 
-9. **Sheet-only components with no desktop Dialog:**
-   - QuickParticipantSetupSheet — mobile-only component, acceptable
-   - QuickGroupMembersSheet — mobile-only component, acceptable
+9. ✅ **Sheet-only components converted to dual Sheet/Dialog** — PR #656
+   - QuickParticipantSetupSheet — now renders Dialog on desktop
+   - QuickGroupMembersSheet — now renders Dialog on desktop
 
-10. **Dialog-only components with no mobile Sheet:**
-    - CostBreakdownDialog, ReportIssueDialog, ShareTripDialog, LinkParticipantDialog, BankDetailsDialog
-    - All planner/shopping dialogs: ActivityCard, MealCard, MealGrid, TimeSlotGrid, ShoppingItemCard, ShoppingItemRow, StayCard, ManageTripPage edit, ShoppingPage add
-    - These are all short-form dialogs or simple edit forms. On mobile they render as centered Radix dialogs (not bottom sheets). They work but don't follow the Sheet-on-mobile standard.
-    - **Decision needed:** Are these worth converting? Most are small enough that centered dialogs are acceptable on mobile. Priority is low — convert only if users report friction.
+10. ✅ **Dialog-only components — closed as acceptable** — PR #656
+    - Remaining ~14 dialog-only components (ShareTripDialog, LinkParticipantDialog, BankDetailsDialog, ActivityCard, MealCard, MealGrid, TimeSlotGrid, ShoppingItemCard, ShoppingItemRow, StayCard, ManageTripPage edit, ShoppingPage add, CostBreakdownDialog) are small forms (2–4 fields) or confirmations. Centered dialogs work fine on mobile. Converting each adds ~50 lines of boilerplate for marginal UX gain. Revisit only if users report friction.
 
 11. ✅ **Max-height standardized** — All dialogs now use `max-h-[85vh]` — PR #653
 
-12. **Dialog-only components missing `useIOSScrollFix`:**
-    - CostBreakdownDialog, all planner/shopping dialogs
-    - Low impact since these are short-form content unlikely to hit scroll boundaries.
+12. ✅ **`useIOSScrollFix` added to all dialogs with `overflow-y-auto`** — PR #656
+    - CostBreakdownDialog, ActivityCard, MealCard, MealGrid, TimeSlotGrid, ShoppingItemCard, ShoppingItemRow, StayCard, ManageTripPage edit, ShoppingPage add
+    - ShareTripDialog, LinkParticipantDialog, BankDetailsDialog have no `overflow-y-auto`, so no fix needed.

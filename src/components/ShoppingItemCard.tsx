@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Edit, Trash2 } from 'lucide-react'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
 import type { ShoppingItemWithMeals } from '@/types/shopping'
 import { CATEGORY_LABELS } from '@/types/shopping'
@@ -28,6 +29,7 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [toggling, setToggling] = useState(false)
+  const scrollRef = useIOSScrollFix()
 
   const handleToggle = async () => {
     if (toggling) return
@@ -141,15 +143,17 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
 
       {/* Edit Form Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Item</DialogTitle>
-          </DialogHeader>
-          <ShoppingItemForm
-            item={item}
-            onSuccess={() => setShowEditForm(false)}
-            onCancel={() => setShowEditForm(false)}
-          />
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+            <DialogHeader>
+              <DialogTitle>Edit Item</DialogTitle>
+            </DialogHeader>
+            <ShoppingItemForm
+              item={item}
+              onSuccess={() => setShowEditForm(false)}
+              onCancel={() => setShowEditForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 

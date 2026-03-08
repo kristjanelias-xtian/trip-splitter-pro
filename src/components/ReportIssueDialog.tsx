@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -9,10 +11,10 @@ import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -66,6 +68,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
   const { toast } = useToast()
   const { user } = useAuth()
   const keyboard = useKeyboardHeight()
+  const scrollRef = useIOSScrollFix()
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
   const [screenshots, setScreenshots] = useState<File[]>([])
@@ -181,111 +185,162 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
     }
   }
 
+  const closeBtn = (
+    <button
+      onClick={() => onOpenChange(false)}
+      aria-label="Close"
+      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+    >
+      <X className="w-4 h-4 text-muted-foreground" />
+    </button>
+  )
+
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="issue-subject">Subject</Label>
+        <Input
+          id="issue-subject"
+          placeholder="Brief description of the issue"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="issue-description">Details (optional)</Label>
+        <Textarea
+          id="issue-description"
+          placeholder="What happened? What did you expect to happen?"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Screenshots (optional)</Label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        {previews.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {previews.map((url, i) => (
+              <div key={i} className="relative inline-block">
+                <img
+                  src={url}
+                  alt={`Screenshot ${i + 1}`}
+                  className="h-20 w-20 rounded-md border border-border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeScreenshot(i)}
+                  className="absolute -top-2 -right-2 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow-sm"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {screenshots.length < MAX_SCREENSHOTS && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImagePlus size={16} />
+            {screenshots.length === 0 ? 'Attach Screenshots' : 'Add More'}
+          </Button>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={submitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting || !subject.trim()}>
+          {submitting ? (
+            <>
+              <Loader2 size={16} className="mr-2 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            'Send Report'
+          )}
+        </Button>
+      </div>
+    </form>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          hideClose
+          className="flex flex-col p-0 rounded-t-2xl"
+          style={{
+            height: keyboard.isVisible ? `${keyboard.availableHeight}px` : '92dvh',
+            ...(keyboard.isVisible && {
+              top: `${keyboard.viewportOffset}px`,
+              bottom: 'auto',
+            }),
+          }}
+        >
+          {/* Sticky header */}
+          <div className="shrink-0 border-b border-border">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="w-8" />
+              <SheetTitle className="text-base font-semibold">Report an Issue</SheetTitle>
+              {closeBtn}
+            </div>
+            <SheetDescription className="px-4 pb-3 mt-0">
+              Found a bug or have feedback? Let us know and we'll look into it.
+            </SheetDescription>
+          </div>
+
+          {/* Scrollable content */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+            {formContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-md"
-        style={keyboard.isVisible ? {
-          transform: `translate(-50%, calc(-50% - ${keyboard.keyboardHeight / 2}px))`,
-          maxHeight: `calc(100dvh - ${keyboard.keyboardHeight}px - 32px)`,
-          overflowY: 'auto',
-        } : undefined}
-      >
-        <DialogHeader>
-          <DialogTitle>Report an Issue</DialogTitle>
-          <DialogDescription>
+      <DialogContent hideClose className="flex flex-col max-h-[85vh] max-w-md p-0 gap-0">
+        {/* Sticky header */}
+        <div className="shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-8" />
+            <DialogTitle className="text-base font-semibold">Report an Issue</DialogTitle>
+            {closeBtn}
+          </div>
+          <DialogDescription className="px-4 pb-3 mt-0">
             Found a bug or have feedback? Let us know and we'll look into it.
           </DialogDescription>
-        </DialogHeader>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="issue-subject">Subject</Label>
-            <Input
-              id="issue-subject"
-              placeholder="Brief description of the issue"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="issue-description">Details (optional)</Label>
-            <Textarea
-              id="issue-description"
-              placeholder="What happened? What did you expect to happen?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Screenshots (optional)</Label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            {previews.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {previews.map((url, i) => (
-                  <div key={i} className="relative inline-block">
-                    <img
-                      src={url}
-                      alt={`Screenshot ${i + 1}`}
-                      className="h-20 w-20 rounded-md border border-border object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeScreenshot(i)}
-                      className="absolute -top-2 -right-2 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow-sm"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {screenshots.length < MAX_SCREENSHOTS && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImagePlus size={16} />
-                {screenshots.length === 0 ? 'Attach Screenshots' : 'Add More'}
-              </Button>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting || !subject.trim()}>
-              {submitting ? (
-                <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                'Send Report'
-              )}
-            </Button>
-          </div>
-        </form>
+        {/* Scrollable content */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+          {formContent}
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -44,6 +44,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { isAdminUser } from '@/lib/adminAuth'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 
 export function ManageTripPage() {
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -61,6 +62,7 @@ export function ManageTripPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [retrying, setRetrying] = useState(false)
+  const scrollRef = useIOSScrollFix()
 
   // Currency settings state
   const [currencyDefault, setCurrencyDefault] = useState(currentTrip?.default_currency || 'EUR')
@@ -537,39 +539,41 @@ export function ManageTripPage() {
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
-          <DialogHeader>
-            <DialogTitle>Edit {entityLabel} Details</DialogTitle>
-            <DialogDescription>
-              Update the name, dates, or currency
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0 mx-4 sm:mx-auto">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-4">
+            <DialogHeader>
+              <DialogTitle>Edit {entityLabel} Details</DialogTitle>
+              <DialogDescription>
+                Update the name, dates, or currency
+              </DialogDescription>
+            </DialogHeader>
 
-          {/* Warning about meals */}
-          {meals.length > 0 && (
-            <Alert>
-              <Info size={16} className="mt-0.5" />
-              <AlertDescription>
-                <strong>Note:</strong> Changing dates may hide meals that fall outside the
-                new date range. Those meals will remain in the database.
-              </AlertDescription>
-            </Alert>
-          )}
+            {/* Warning about meals */}
+            {meals.length > 0 && (
+              <Alert>
+                <Info size={16} className="mt-0.5" />
+                <AlertDescription>
+                  <strong>Note:</strong> Changing dates may hide meals that fall outside the
+                  new date range. Those meals will remain in the database.
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <EventForm
-            initialValues={{
-              name: currentTrip.name,
-              start_date: currentTrip.start_date,
-              end_date: currentTrip.end_date,
-              event_type: currentTrip.event_type,
-              default_currency: currentTrip.default_currency,
-            }}
-            onSubmit={handleEditTrip}
-            onCancel={() => setShowEditDialog(false)}
-            submitLabel="Save Changes"
-            isLoading={isUpdating}
-            isEditMode
-          />
+            <EventForm
+              initialValues={{
+                name: currentTrip.name,
+                start_date: currentTrip.start_date,
+                end_date: currentTrip.end_date,
+                event_type: currentTrip.event_type,
+                default_currency: currentTrip.default_currency,
+              }}
+              onSubmit={handleEditTrip}
+              onCancel={() => setShowEditDialog(false)}
+              submitLabel="Save Changes"
+              isLoading={isUpdating}
+              isEditMode
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
