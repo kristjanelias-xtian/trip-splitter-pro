@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { ScanLine, ChevronDown, ChevronUp, Image, X, Pencil } from 'lucide-react'
+import { ScanLine, ChevronDown, ChevronUp, Image, Pencil } from 'lucide-react'
 import { ReceiptTask } from '@/types/receipt'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 interface ReceiptDetailsSheetProps {
   open: boolean
@@ -21,8 +18,6 @@ interface ReceiptDetailsSheetProps {
 export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, onReprocess }: ReceiptDetailsSheetProps) {
   const items = task.extracted_items ?? []
   const currency = task.extracted_currency ?? '—'
-  const isMobile = useMediaQuery('(max-width: 767px)')
-  const scrollRef = useIOSScrollFix()
 
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
   const [showThumbnail, setShowThumbnail] = useState(false)
@@ -45,29 +40,26 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
       })
   }, [open, task.receipt_image_path])
 
-  const onClose = () => onOpenChange(false)
+  const footer = canReprocess && onReprocess ? (
+    <Button
+      onClick={onReprocess}
+      variant="outline"
+      className="w-full gap-2"
+    >
+      <Pencil size={16} />
+      Edit mapping
+    </Button>
+  ) : undefined
 
-  const header = (
-    <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-      <div className="w-8" />
-      <SheetTitle className="text-base font-semibold flex items-center gap-2 min-w-0">
-        <ScanLine size={18} className="shrink-0" />
-        <span className="truncate">
-          Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
-        </span>
-      </SheetTitle>
-      <button
-        onClick={onClose}
-        aria-label="Close"
-        className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
-      >
-        <X className="w-4 h-4 text-muted-foreground" />
-      </button>
-    </div>
-  )
-
-  const body = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
+  return (
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={<span className="flex items-center gap-2 min-w-0"><ScanLine size={18} className="shrink-0" /><span className="truncate">Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}</span></span>}
+      maxWidth="max-w-2xl"
+      footer={footer}
+      scrollClassName=""
+    >
       <div className="px-4 py-3 space-y-3">
         {/* Receipt image thumbnail (collapsible) */}
         {receiptImageUrl && (
@@ -118,53 +110,6 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
           </div>
         )}
       </div>
-    </div>
-  )
-
-  const footer = canReprocess && onReprocess ? (
-    <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
-      <Button
-        onClick={onReprocess}
-        variant="outline"
-        className="w-full gap-2"
-      >
-        <Pencil size={16} />
-        Edit mapping
-      </Button>
-    </div>
-  ) : null
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{ height: '75dvh' }}
-        >
-          {header}
-          {body}
-          {footer}
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideClose
-        className="flex flex-col max-w-2xl max-h-[85vh] p-0 gap-0"
-        aria-describedby={undefined}
-      >
-        <DialogTitle className="sr-only">
-          Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}
-        </DialogTitle>
-        {header}
-        {body}
-        {footer}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
   )
 }

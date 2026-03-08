@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
 import { Camera, Upload, Loader2, X, ScanLine } from 'lucide-react'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { useIOSScrollFix } from '@/hooks/useIOSScrollFix'
 import { logger } from '@/lib/logger'
+import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 
 interface ReceiptCaptureSheetProps {
   open: boolean
@@ -73,8 +70,6 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
   const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
-  const isMobile = useMediaQuery('(max-width: 767px)')
-  const scrollRef = useIOSScrollFix()
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -206,18 +201,15 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
     onOpenChange(nextOpen)
   }
 
-  const closeBtn = (
-    <button
-      onClick={() => handleOpenChange(false)}
-      aria-label="Close"
-      className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
+  return (
+    <ResponsiveOverlay
+      open={open}
+      onClose={() => handleOpenChange(false)}
+      title={<span className="flex items-center gap-2"><ScanLine size={20} />Scan Receipt</span>}
+      hasInputs
+      preventOutsideClose={scanning}
+      scrollClassName=""
     >
-      <X className="w-4 h-4 text-muted-foreground" />
-    </button>
-  )
-
-  const scrollContent = (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
       {!previewUrl ? (
         /* File selection state */
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-4">
@@ -321,45 +313,6 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
           )}
         </div>
       )}
-    </div>
-  )
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="flex flex-col p-0 rounded-t-2xl"
-          style={{ height: '92dvh' }}
-        >
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="w-8" />
-            <SheetTitle className="text-base font-semibold flex items-center gap-2">
-              <ScanLine size={20} />
-              Scan Receipt
-            </SheetTitle>
-            {closeBtn}
-          </div>
-          {scrollContent}
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent hideClose className="flex flex-col max-h-[85vh] p-0 gap-0">
-        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="w-8" />
-          <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <ScanLine size={20} />
-            Scan Receipt
-          </DialogTitle>
-          {closeBtn}
-        </div>
-        {scrollContent}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveOverlay>
   )
 }
