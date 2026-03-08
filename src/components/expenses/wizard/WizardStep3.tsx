@@ -129,7 +129,7 @@ export function WizardStep3({
                         disabled={disabled}
                         className="text-xs text-primary hover:text-primary/80 transition-colors"
                       >
-                        {allGroupSelected ? 'deselect all' : 'select all'}
+                        {allGroupSelected ? `deselect ${group.label}` : `select ${group.label}`}
                       </button>
                     )}
                   </div>
