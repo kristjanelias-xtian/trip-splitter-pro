@@ -288,9 +288,11 @@ export function PlannerGrid({
                   }
 
                   if (!isSplit && staysOnDate.length === 1 && staysOnDate[0].check_out_date === date) {
+                    // Checkout→Home split: stay top-left, home bottom-right
+                    // Solid stay diagonal covers stripe on left; stripe visible only on home (right) half
                     const departIdx = stayColorMap.get(staysOnDate[0].id) ?? 0
                     splitStyle = {
-                      background: `${homeStripe}, linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                      background: `linear-gradient(135deg, ${stayHexBg[departIdx % stayHexBg.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -298,9 +300,10 @@ export function PlannerGrid({
                   // Last trip day: show split to Home if stay extends past the trip
                   const lastTripDate = tripDates[tripDates.length - 1]
                   if (!splitStyle && !isSplit && stay && date === lastTripDate && stay.check_out_date !== date) {
+                    // Checkout→Home split: stay top-left, home bottom-right
                     const stayIdx = stayColorMap.get(stay.id) ?? 0
                     splitStyle = {
-                      background: `${homeStripe}, linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, ${homeHexBg} 50%)`,
+                      background: `linear-gradient(135deg, ${stayHexBg[stayIdx % stayHexBg.length]} 50%, transparent 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
@@ -308,9 +311,11 @@ export function PlannerGrid({
                   // First trip day: show Home→Stay split if stay starts on this day
                   const firstTripDate = tripDates[0]
                   if (!splitStyle && !isSplit && stay && date === firstTripDate && stay.check_in_date === date) {
+                    // Home→Stay split: home top-left, stay bottom-right
+                    // Solid stay diagonal covers stripe on right; stripe visible only on home (left) half
                     const stayIdx = stayColorMap.get(stay.id) ?? 0
                     splitStyle = {
-                      background: `${homeStripe}, linear-gradient(135deg, ${homeHexBg} 50%, ${stayHexBg[stayIdx % stayHexBg.length]} 50%)`,
+                      background: `linear-gradient(135deg, transparent 50%, ${stayHexBg[stayIdx % stayHexBg.length]} 50%), ${homeStripe}, ${homeHexBg}`,
                     }
                     splitBorderClass = 'border-border'
                   }
