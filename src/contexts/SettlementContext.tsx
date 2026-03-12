@@ -7,6 +7,7 @@ import {
   UpdateSettlementInput,
 } from '@/types/settlement'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
+import { useAuth } from '@/contexts/AuthContext'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
 import { useAbortController } from '@/hooks/useAbortController'
@@ -31,6 +32,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const { currentTrip, tripCode } = useCurrentTrip()
+  const { user } = useAuth()
   const { newSignal, cancel } = useAbortController()
 
   // Fetch settlements for current trip
@@ -89,6 +91,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
         id,
         ...input,
         settlement_date: input.settlement_date || new Date().toISOString().split('T')[0],
+        created_by: user?.id ?? null,
       }
 
       const controller = new AbortController()

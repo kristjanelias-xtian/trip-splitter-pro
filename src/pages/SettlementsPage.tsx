@@ -487,13 +487,15 @@ export function SettlementsPage() {
                           {new Date(settlement.settlement_date).toLocaleDateString()}
                         </div>
                       </div>
-                      <button
-                        onClick={() => setDeletingId(settlement.id)}
-                        aria-label="Delete settlement"
-                        className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {(settlement.created_by == null || settlement.created_by === user?.id) && (
+                        <button
+                          onClick={() => setDeletingId(settlement.id)}
+                          aria-label="Delete settlement"
+                          className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   )
                 })}

@@ -13,6 +13,7 @@ export interface Settlement {
   currency: string
   settlement_date: string
   note?: string | null
+  created_by?: string | null
   created_at: string
   updated_at: string
 }
