@@ -8,12 +8,16 @@ import {
   setLocalPreferences,
 } from '@/lib/userPreferencesStorage'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { applyThemeFromServer } from '@/hooks/useTheme'
+
+type Theme = 'light' | 'dark' | 'system'
 
 interface UserPreferencesContextType {
   mode: AppMode
   defaultTripId: string | null
   setMode: (mode: AppMode) => Promise<void>
   setDefaultTripId: (tripId: string | null) => Promise<void>
+  saveThemePreference: (theme: Theme) => Promise<void>
   loading: boolean
 }
 
@@ -77,6 +81,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         setModeState(serverMode)
         setDefaultTripIdState(serverTripId)
         setLocalPreferences({ preferredMode: serverMode, defaultTripId: serverTripId })
+
+        // Sync theme from server if set
+        const serverTheme = data.theme_preference as Theme | null
+        if (serverTheme) {
+          applyThemeFromServer(serverTheme)
+        }
       }
       hasInitialized.current = true
       setLoading(false)
@@ -112,8 +122,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     await upsertPreferences({ default_trip_id: tripId })
   }, [upsertPreferences])
 
+  const saveThemePreference = useCallback(async (theme: Theme) => {
+    await upsertPreferences({ theme_preference: theme })
+  }, [upsertPreferences])
+
   return (
-    <UserPreferencesContext.Provider value={{ mode, defaultTripId, setMode, setDefaultTripId, loading }}>
+    <UserPreferencesContext.Provider value={{ mode, defaultTripId, setMode, setDefaultTripId, saveThemePreference, loading }}>
       {children}
     </UserPreferencesContext.Provider>
   )

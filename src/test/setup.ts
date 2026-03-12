@@ -28,6 +28,18 @@ const sessionStorageMock = createStorage()
 vi.stubGlobal('localStorage', localStorageMock)
 vi.stubGlobal('sessionStorage', sessionStorageMock)
 
+// Stub matchMedia (used by useTheme module-level code)
+vi.stubGlobal('matchMedia', (query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: () => {},
+  removeListener: () => {},
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  dispatchEvent: () => false,
+}))
+
 // Cleanup after each test
 afterEach(() => {
   cleanup()
