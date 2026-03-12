@@ -112,7 +112,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                     <span>{formatDate(expense.expense_date)}</span>
                   </div>
                   <span className="text-muted-foreground">•</span>
-                  <Badge variant="outline" className="h-5">
+                  <Badge variant="outline" className="text-xs py-0.5 px-2">
                     <Tag size={10} className="mr-1" />
                     {expense.category}
                   </Badge>
