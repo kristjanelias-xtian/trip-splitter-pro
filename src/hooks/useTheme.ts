@@ -71,6 +71,19 @@ if (typeof window !== 'undefined') {
   })
 }
 
+/**
+ * Apply a theme to localStorage and DOM without triggering external sync.
+ * Used by UserPreferencesContext to apply server-side theme on sign-in.
+ */
+export function applyThemeFromServer(newTheme: Theme) {
+  currentTheme = newTheme
+  try {
+    localStorage.setItem(STORAGE_KEY, newTheme)
+  } catch {}
+  applyTheme(resolveTheme(newTheme))
+  notifyListeners()
+}
+
 export function useTheme() {
   const theme = useSyncExternalStore(subscribe, getSnapshot)
 

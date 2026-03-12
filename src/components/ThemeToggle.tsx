@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Sun, Monitor, Moon } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 
 const options = [
   { value: 'light' as const, icon: Sun, label: 'Light' },
@@ -15,6 +16,7 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ size = 'default', iconOnly = false }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme()
+  const { saveThemePreference } = useUserPreferences()
 
   const isCompact = size === 'compact'
 
@@ -23,7 +25,7 @@ export function ThemeToggle({ size = 'default', iconOnly = false }: ThemeToggleP
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
-          onClick={() => setTheme(value)}
+          onClick={() => { setTheme(value); saveThemePreference(value) }}
           aria-label={label}
           title={label}
           className={`flex items-center gap-1.5 rounded-md transition-colors ${
