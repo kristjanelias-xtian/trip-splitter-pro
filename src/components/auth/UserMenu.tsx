@@ -59,7 +59,7 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-48">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{displayName}</p>
           {(userProfile?.email || user.email) && (
