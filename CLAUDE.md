@@ -87,7 +87,7 @@ git branch -d fix/description
 
 ### Newer tables
 - `user_profiles` — `bank_account_holder`, `bank_iban` (migration 008/012)
-- `user_preferences` — per-user `preferred_mode` (`quick`|`full`) + `default_trip_id` (migration 010)
+- `user_preferences` — per-user `preferred_mode` (`quick`|`full`) + `default_trip_id` (migration 010) + `theme_preference` (`light`|`dark`|`system`, migration 037)
 - `activities` — activity planner: date, time_slot (morning/afternoon/evening), title, link, responsible_participant_id (migration 016)
 - `stays` — accommodation: name, link, comment, check_in_date, check_out_date, latitude, longitude (migrations 017–018)
 
@@ -327,7 +327,7 @@ Applied to: `ExpenseForm` (via `stickyFooter` prop, used by `ExpenseWizard` desk
 
 ### Dark Mode / Theme (`src/hooks/useTheme.ts`)
 
-`useTheme()` hook manages theme state (`light`/`dark`/`system`) persisted in `localStorage` key `spl1t:theme`. Applies `.dark` class to `<html>`. `ThemeToggle` component (`src/components/ThemeToggle.tsx`) renders a segmented control with icon + text labels; accepts `size` prop (`default`/`compact`). Shown in UserMenu dropdown, ManageTripPage settings, and HomePage footer. All colors use CSS custom properties in `index.css` with light/dark variants via `.dark` selector.
+`useTheme()` hook manages theme state (`light`/`dark`/`system`) persisted in `localStorage` key `spl1t:theme`. Applies `.dark` class to `<html>`. For authenticated users, theme is also synced to `user_preferences.theme_preference` via `UserPreferencesContext` — loaded on sign-in (`applyThemeFromServer`), saved on change (`saveThemePreference`). localStorage is the fast local source of truth; Supabase is the cross-device sync layer. `ThemeToggle` component (`src/components/ThemeToggle.tsx`) renders a segmented control with icon + text labels; accepts `size` prop (`default`/`compact`). Shown in UserMenu dropdown, ManageTripPage settings, and HomePage footer. All colors use CSS custom properties in `index.css` with light/dark variants via `.dark` selector.
 
 ### Participant Short Names (`src/lib/participantUtils.ts`)
 
