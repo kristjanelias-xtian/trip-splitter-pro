@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { lazy, Suspense, useState, useCallback, useMemo } from 'react'
+import { lazy, Suspense, useState, useCallback, useEffect, useMemo } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Lightbulb, Receipt, FileDown, Share2, Landmark, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -15,7 +15,7 @@ import { exportTripSummaryToPDF } from '@/services/pdfExport'
 import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
@@ -36,8 +36,18 @@ export function DashboardPage() {
   const { settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { myParticipant } = useMyParticipant()
   const bankPrompt = useBankDetailsPrompt()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
   const [retrying, setRetrying] = useState(false)
+
+  // Auto-open bank details dialog when linked from email with ?action=bank-details
+  useEffect(() => {
+    if (searchParams.get('action') === 'bank-details') {
+      bankPrompt.setDialogOpen(true)
+      searchParams.delete('action')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(
     () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),

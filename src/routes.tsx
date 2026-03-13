@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { QuickLayout } from './components/QuickLayout'
 import { TripRouteGuard } from './components/TripRouteGuard'
@@ -25,6 +25,7 @@ import { Loader2 } from 'lucide-react'
 function TripModeRedirect() {
   const { mode } = useUserPreferences()
   const { user, loading: authLoading } = useAuth()
+  const { search } = useLocation()
 
   // Wait for auth to resolve before routing — prevents flash where auth users briefly see dashboard
   if (authLoading) {
@@ -37,10 +38,11 @@ function TripModeRedirect() {
 
   // Unauth users always get Full mode — Quick view requires auth + participant linking
   if (!user) {
-    return <Navigate to="dashboard" replace />
+    return <Navigate to={`dashboard${search}`} replace />
   }
 
-  return <Navigate to={mode === 'quick' ? 'quick' : 'dashboard'} replace />
+  const target = mode === 'quick' ? 'quick' : 'dashboard'
+  return <Navigate to={`${target}${search}`} replace />
 }
 
 export function AppRoutes() {
