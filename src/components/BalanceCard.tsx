@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { motion } from 'framer-motion'
 import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from 'lucide-react'
-import { ParticipantBalance } from '@/services/balanceCalculator'
-import { formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { Card } from '@/components/ui/card'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
 import type { Participant } from '@/types/participant'
@@ -27,14 +26,14 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
   const hasReceived = balance.totalSettledReceived > 0
 
   const getBalanceStatus = () => {
-    if (balance.balance > 0.01) {
+    if (balance.balance > SETTLED_THRESHOLD) {
       return {
         text: 'To receive',
         icon: <ArrowDownToLine size={16} className="text-positive" />,
         bgClass: 'bg-positive/5',
         borderClass: 'border-positive/20'
       }
-    } else if (balance.balance < -0.01) {
+    } else if (balance.balance < -SETTLED_THRESHOLD) {
       return {
         text: 'To pay',
         icon: <ArrowUpFromLine size={16} className="text-destructive" />,
@@ -127,7 +126,7 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
           <div className="flex items-center gap-2 text-sm">
             {status.icon}
             <span className="text-muted-foreground">
-              {Math.abs(balance.balance) < 0.01 ? (
+              {Math.abs(balance.balance) <= SETTLED_THRESHOLD ? (
                 'All settled up!'
               ) : balance.balance > 0 ? (
                 <>Others owe <strong className={`${balanceColorClass} tabular-nums`}>{formatBalance(balance.balance, currency)}</strong></>

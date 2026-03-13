@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { Receipt, Wallet, Users, Check, ArrowRight } from 'lucide-react'
 import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Badge } from '@/components/ui/badge'
-import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, convertToBaseCurrency, calculateExpenseShares, buildEntityMap, calculateWithinGroupBalances, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { Expense } from '@/types/expense'
 import { Participant } from '@/types/participant'
 import { Settlement } from '@/types/settlement'
@@ -131,7 +131,7 @@ export function CostBreakdownDialog({
               Within-group balances
             </h4>
             {(() => {
-              const allEven = withinGroupBalances.every(b => Math.abs(b.balance) < 0.01)
+              const allEven = withinGroupBalances.every(b => Math.abs(b.balance) <= SETTLED_THRESHOLD)
               const hasActivity = withinGroupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
               if (!hasActivity) {
                 return <p className="text-xs text-muted-foreground">No shared expenses yet</p>

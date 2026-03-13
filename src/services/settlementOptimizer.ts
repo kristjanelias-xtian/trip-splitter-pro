@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { ParticipantBalance } from './balanceCalculator'
+import { ParticipantBalance, SETTLED_THRESHOLD } from './balanceCalculator'
 
 export interface SettlementTransaction {
   fromId: string
@@ -29,12 +29,12 @@ function settleGreedy(nonZero: ParticipantBalance[]): SettlementTransaction[] {
 
   const getDebtors = () =>
     working
-      .filter(b => b.balance < -0.01)
+      .filter(b => b.balance < -SETTLED_THRESHOLD)
       .sort((a, b) => a.balance - b.balance)
 
   const getCreditors = () =>
     working
-      .filter(b => b.balance > 0.01)
+      .filter(b => b.balance > SETTLED_THRESHOLD)
       .sort((a, b) => b.balance - a.balance)
 
   let debtors = getDebtors()
@@ -146,7 +146,7 @@ export function calculateOptimalSettlement(
   currency: string = 'EUR',
   mode: SettlementMode = 'optimal'
 ): OptimalSettlementPlan {
-  const nonZero = balances.filter(b => Math.abs(b.balance) > 0.01)
+  const nonZero = balances.filter(b => Math.abs(b.balance) > SETTLED_THRESHOLD)
 
   if (nonZero.length === 0) {
     return { transactions: [], totalTransactions: 0, currency }
@@ -194,7 +194,7 @@ export function formatSettlementTransaction(
  * Check if all balances are settled (within a small tolerance)
  */
 export function areBalancesSettled(balances: ParticipantBalance[]): boolean {
-  return balances.every(b => Math.abs(b.balance) < 0.01)
+  return balances.every(b => Math.abs(b.balance) <= SETTLED_THRESHOLD)
 }
 
 /**

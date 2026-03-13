@@ -6,7 +6,7 @@ import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
-import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
+import { calculateBalances, buildEntityMap, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { getTripPhase, type TripPhase } from '@/lib/activeTripDetection'
 
@@ -48,7 +48,7 @@ export function usePostTripNudge() {
 
   const hasOutstandingBalances = useMemo(() => {
     if (!balanceCalc) return false
-    return balanceCalc.balances.some(b => Math.abs(b.balance) > 0.01)
+    return balanceCalc.balances.some(b => Math.abs(b.balance) > SETTLED_THRESHOLD)
   }, [balanceCalc])
 
   const isCreator = !!user && !!currentTrip?.created_by && user.id === currentTrip.created_by
@@ -83,7 +83,7 @@ export function usePostTripNudge() {
   const remindersEnabled = currentTrip?.enable_settlement_reminders !== false
 
   const showCreatorBanner = phase === 'ended' && isCreator && hasOutstandingBalances && !dismissed && remindersEnabled
-  const showDebtorBanner = phase === 'ended' && myBalance !== null && myBalance < -0.01 && !dismissed && remindersEnabled
+  const showDebtorBanner = phase === 'ended' && myBalance !== null && myBalance < -SETTLED_THRESHOLD && !dismissed && remindersEnabled
 
   return {
     phase,
