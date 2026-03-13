@@ -13,7 +13,7 @@ const logger = createLogger('send-email')
 const metrics = createMetrics('send-email')
 
 const APP_URL = 'https://split.xtian.me'
-const FROM_ADDRESS = 'Spl1t <noreply@xtian.me>'
+const FROM_ADDRESS = 'Spl1t <spl1t@xtian.me>'
 
 const BRAND = {
   coral:       '#e8613a',
