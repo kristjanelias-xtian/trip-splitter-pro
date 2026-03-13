@@ -17,6 +17,7 @@ import { BalanceCard } from '@/components/BalanceCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link, useSearchParams } from 'react-router-dom'
+import { SignInButton } from '@/components/auth/SignInButton'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
@@ -42,6 +43,7 @@ export function DashboardPage() {
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
   const [retrying, setRetrying] = useState(false)
   const bankDetailsHandled = useRef(false)
+  const showBankDetailsSignIn = searchParams.get('action') === 'bank-details' && !user
 
   // Auto-open bank details dialog when linked from email with ?action=bank-details
   // Waits for user to be authenticated — re-runs after sign-in
@@ -154,6 +156,18 @@ export function DashboardPage() {
       </div>
 
       <OnboardingPrompts />
+
+      {showBankDetailsSignIn && (
+        <Card className="border-amber-500/30 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <Landmark size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <p className="text-sm text-amber-800 dark:text-amber-200 flex-1">
+              Sign in to add your bank details so others know where to send payments.
+            </p>
+            <SignInButton type="standard" />
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <PageLoadingState />
