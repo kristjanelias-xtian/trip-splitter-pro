@@ -527,14 +527,14 @@ Deno.serve(async (req) => {
       tripId = body.trip_id
     } else if (body.type === 'bank_details_nudge') {
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
-      const settlementsUrl = `${APP_URL}/t/${body.trip_code}/settlements`
+      const bankDetailsUrl = `${APP_URL}/t/${body.trip_code}?action=bank-details`
       subject = `Add your bank details for "${body.trip_name}"`
       html = bankDetailsNudgeEmailHtml({
         recipientName: body.recipient_name,
         organiserName: body.organiser_name,
         tripName: body.trip_name,
         tripUrl,
-        settlementsUrl,
+        settlementsUrl: bankDetailsUrl,
       })
       toEmail = body.recipient_email
       toName = body.recipient_name
