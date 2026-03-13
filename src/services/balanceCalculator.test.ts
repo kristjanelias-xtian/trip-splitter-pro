@@ -589,7 +589,7 @@ describe('calculateWithinGroupBalances', () => {
       }),
     ]
     const balances = calculateWithinGroupBalances(expenses, allParticipants, 'Smith')
-    const allEven = balances.every(b => Math.abs(b.balance) < 0.01)
+    const allEven = balances.every(b => Math.abs(b.balance) <= 0.05)
     expect(allEven).toBe(true)
   })
 

@@ -4,6 +4,12 @@ import { Participant } from '@/types/participant'
 import { Settlement } from '@/types/settlement'
 import { buildShortNameMap } from '@/lib/participantUtils'
 
+/**
+ * Balances within this threshold of zero are treated as settled.
+ * Covers rounding artifacts from currency conversions and percentage splits.
+ */
+export const SETTLED_THRESHOLD = 0.05
+
 export interface ParticipantBalance {
   id: string
   name: string

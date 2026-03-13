@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { UserCheck, ChevronDown, Check } from 'lucide-react'
-import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
 import { Expense } from '@/types/expense'
 import { Settlement } from '@/types/settlement'
@@ -38,7 +38,7 @@ export function QuickGroupMembersSheet({
   }
 
   function statusText(balance: number): string {
-    if (Math.abs(balance) < 0.005) return 'Settled up'
+    if (Math.abs(balance) <= SETTLED_THRESHOLD) return 'Settled up'
     const amount = formatBalance(Math.abs(balance), currency)
     return balance > 0 ? `Owed ${amount}` : `Owes ${amount}`
   }
@@ -68,7 +68,7 @@ export function QuickGroupMembersSheet({
       {balances.map((b, i) => {
         const isMe = b.id === myParticipantId
         const linked = isLinked(b.id)
-        const settled = Math.abs(b.balance) < 0.005
+        const settled = Math.abs(b.balance) <= SETTLED_THRESHOLD
         const isExpanded = expandedGroups.has(b.id)
         const groupName = b.isFamily ? getGroupName(b.id) : null
 
@@ -151,7 +151,7 @@ function WithinGroupBreakdown({
   const groupBalances = calculateWithinGroupBalances(
     expenses, participants, groupName, currency, exchangeRates, settlements
   )
-  const allEven = groupBalances.every(b => Math.abs(b.balance) < 0.01)
+  const allEven = groupBalances.every(b => Math.abs(b.balance) <= SETTLED_THRESHOLD)
   const hasGroupExpenses = groupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
   const groupMembers = participants.filter(p => p.wallet_group === groupName)
   const hasChildren = groupMembers.some(p => !p.is_adult) && groupMembers.some(p => p.is_adult)

@@ -2,7 +2,7 @@
 import { Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Event } from '@/types/trip'
-import { ParticipantBalance, formatBalance, getBalanceColorClass } from '@/services/balanceCalculator'
+import { ParticipantBalance, formatBalance, getBalanceColorClass, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 
 interface TripCardProps {
@@ -52,7 +52,7 @@ export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }:
                     Active
                   </span>
                 )}
-                {isEnded && balance && Math.abs(balance.balance) > 0.01 && (
+                {isEnded && balance && Math.abs(balance.balance) > SETTLED_THRESHOLD && (
                   <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">
                     Needs settling
                   </span>
@@ -60,7 +60,7 @@ export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }:
               </div>
               {balance ? (
                 <p className={`text-lg font-bold tabular-nums ${getBalanceColorClass(balance.balance)}`}>
-                  {balance.balance === 0
+                  {Math.abs(balance.balance) <= SETTLED_THRESHOLD
                     ? 'Settled up'
                     : balance.balance > 0
                       ? `You are owed ${formatBalance(balance.balance)}`
