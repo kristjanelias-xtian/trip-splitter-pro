@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -64,15 +64,19 @@ export function QuickGroupDetailPage() {
   const [retrying, setRetrying] = useState(false)
   const bankPrompt = useBankDetailsPrompt()
   const [searchParams, setSearchParams] = useSearchParams()
+  const bankDetailsHandled = useRef(false)
 
   // Auto-open bank details dialog when linked from email with ?action=bank-details
+  // Waits for user to be authenticated — re-runs after sign-in
   useEffect(() => {
-    if (searchParams.get('action') === 'bank-details') {
-      bankPrompt.setDialogOpen(true)
-      searchParams.delete('action')
-      setSearchParams(searchParams, { replace: true })
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (bankDetailsHandled.current) return
+    if (searchParams.get('action') !== 'bank-details') return
+    if (!user) return
+    bankDetailsHandled.current = true
+    bankPrompt.setDialogOpen(true)
+    searchParams.delete('action')
+    setSearchParams(searchParams, { replace: true })
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Open receipt capture sheet when navigated here with openScan state
   useEffect(() => {

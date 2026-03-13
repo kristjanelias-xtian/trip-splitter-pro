@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { lazy, Suspense, useState, useCallback, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Lightbulb, Receipt, FileDown, Share2, Landmark, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -7,6 +7,7 @@ import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
+import { useAuth } from '@/contexts/AuthContext'
 import { useBankDetailsPrompt } from '@/hooks/useBankDetailsPrompt'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
@@ -35,19 +36,24 @@ export function DashboardPage() {
   const { expenses, loading: eLoading, error: eError, refreshExpenses } = useExpenseContext()
   const { settlements, loading: sLoading, error: sError, refreshSettlements } = useSettlementContext()
   const { myParticipant } = useMyParticipant()
+  const { user } = useAuth()
   const bankPrompt = useBankDetailsPrompt()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedBalance, setSelectedBalance] = useState<ParticipantBalance | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const bankDetailsHandled = useRef(false)
 
   // Auto-open bank details dialog when linked from email with ?action=bank-details
+  // Waits for user to be authenticated — re-runs after sign-in
   useEffect(() => {
-    if (searchParams.get('action') === 'bank-details') {
-      bankPrompt.setDialogOpen(true)
-      searchParams.delete('action')
-      setSearchParams(searchParams, { replace: true })
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (bankDetailsHandled.current) return
+    if (searchParams.get('action') !== 'bank-details') return
+    if (!user) return
+    bankDetailsHandled.current = true
+    bankPrompt.setDialogOpen(true)
+    searchParams.delete('action')
+    setSearchParams(searchParams, { replace: true })
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = useCallback(
     () => Promise.all([refreshParticipants(), refreshExpenses(), refreshSettlements()]).then(() => {}),
