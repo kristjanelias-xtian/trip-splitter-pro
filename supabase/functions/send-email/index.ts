@@ -127,12 +127,22 @@ type SendEmailBody =
       trip_code: string
       recipient_name: string
       recipient_email: string
-      amount: number
+      amount?: number
       currency: string
-      pay_to_name: string
+      pay_to_name?: string
+      payments?: Array<{ amount: number; pay_to_name: string }>
       organiser_name: string
       receipts?: ReceiptEmailData[]
       expense_count?: number
+    }
+  | {
+      type: 'bank_details_nudge'
+      trip_id: string
+      trip_name: string
+      trip_code: string
+      recipient_name: string
+      recipient_email: string
+      organiser_name: string
     }
   | {
       type: 'issue_report'
@@ -252,14 +262,16 @@ function paymentReminderEmailHtml(params: {
   recipientName: string
   organiserName: string
   tripName: string
-  formattedAmount: string
-  payToName: string
+  formattedAmount?: string
+  payToName?: string
+  payments?: Array<{ formattedAmount: string; payToName: string; rawAmount: number }>
+  currency: string
   tripUrl: string
   settlementsUrl: string
   receipts?: ReceiptEmailData[]
   expenseCount?: number
 }): string {
-  const { recipientName, organiserName, tripName, formattedAmount, payToName, tripUrl, settlementsUrl, receipts, expenseCount } = params
+  const { recipientName, organiserName, tripName, formattedAmount, payToName, payments, currency, tripUrl, settlementsUrl, receipts, expenseCount } = params
   const hasReceipts = receipts && receipts.length > 0
   let receiptSection = ''
   if (hasReceipts) {
@@ -290,11 +302,23 @@ function paymentReminderEmailHtml(params: {
                 This is a friendly reminder from <strong style="color:${BRAND.textPrimary};">${escapeHtml(organiserName)}</strong> about an outstanding balance from <strong style="color:${BRAND.textPrimary};">${escapeHtml(tripName)}</strong>.
               </p>
               <!-- Amount Box — coral tint -->
+              ${payments && payments.length > 1 ? `
+              <div style="background:${BRAND.coralLight};border:2px solid ${BRAND.coral};border-radius:12px;padding:24px;margin-bottom:24px;">
+                <p style="margin:0 0 16px;color:${BRAND.coral};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:center;">Outstanding balances</p>
+                ${payments.map(p => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+                  <span style="color:${BRAND.textPrimary};font-size:18px;font-weight:700;">${escapeHtml(p.formattedAmount)}</span>
+                  <span style="color:${BRAND.textMuted};font-size:14px;">&rarr; ${escapeHtml(p.payToName)}</span>
+                </div>`).join('')}
+                <div style="border-top:1px solid ${BRAND.coral};margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+                  <span style="color:${BRAND.textPrimary};font-size:18px;font-weight:700;">${escapeHtml(formatPrice(payments.reduce((sum, p) => sum + p.rawAmount, 0), currency))} total</span>
+                </div>
+              </div>` : `
               <div style="background:${BRAND.coralLight};border:2px solid ${BRAND.coral};border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
                 <p style="margin:0 0 4px;color:${BRAND.coral};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">You owe</p>
-                <p style="margin:0 0 4px;color:${BRAND.textPrimary};font-size:36px;font-weight:700;">${escapeHtml(formattedAmount)}</p>
-                <p style="margin:0;color:${BRAND.textMuted};font-size:14px;">to <strong style="color:${BRAND.textPrimary};">${escapeHtml(payToName)}</strong></p>
-              </div>
+                <p style="margin:0 0 4px;color:${BRAND.textPrimary};font-size:36px;font-weight:700;">${escapeHtml(formattedAmount || '')}</p>
+                <p style="margin:0;color:${BRAND.textMuted};font-size:14px;">to <strong style="color:${BRAND.textPrimary};">${escapeHtml(payToName || '')}</strong></p>
+              </div>`}
               ${receiptSection}
               <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -347,6 +371,41 @@ function issueReportEmailHtml(params: {
     subtitle: 'New Issue Report',
     bodyContent,
     footerHtml: `<p style="margin:0;color:${BRAND.textMuted};font-size:12px;">Spl<span style="color:${BRAND.coral};">1</span>t &middot; Issue tracking</p>`,
+  })
+}
+
+function bankDetailsNudgeEmailHtml(params: {
+  recipientName: string
+  organiserName: string
+  tripName: string
+  tripUrl: string
+  settlementsUrl: string
+}): string {
+  const { recipientName, organiserName, tripName, tripUrl, settlementsUrl } = params
+  const bodyContent = `
+              <h2 style="margin:0 0 8px;color:${BRAND.textPrimary};font-size:20px;font-weight:600;">Hey ${escapeHtml(recipientName)}!</h2>
+              <p style="margin:0 0 24px;color:${BRAND.textMuted};font-size:15px;line-height:1.6;">
+                People from <strong style="color:${BRAND.textPrimary};">${escapeHtml(tripName)}</strong> want to pay you, but they need your bank details.
+              </p>
+              <p style="margin:0 0 28px;color:${BRAND.textMuted};font-size:15px;line-height:1.6;">
+                Sign in and add your bank account details so everyone knows where to send payments.
+              </p>
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:0 0 24px;">
+                    <a href="${settlementsUrl}" style="display:inline-block;background:${BRAND.coral};color:${BRAND.white};font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                      Add bank details &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>`
+  return baseEmailHtml({
+    title: `Add your bank details for ${escapeHtml(tripName)}`,
+    subtitle: 'Bank Details Request',
+    bodyContent,
+    footerOrganiser: escapeHtml(organiserName),
+    tripUrl,
   })
 }
 
@@ -418,16 +477,32 @@ Deno.serve(async (req) => {
         .single()
       tripId = inv?.trip_id ?? null
     } else if (body.type === 'payment_reminder') {
-      const formattedAmount = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: body.currency,
-      }).format(body.amount)
       const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
+
+      // Build formatted payments array for multi-payment or single-payment
+      let formattedPayments: Array<{ formattedAmount: string; payToName: string; rawAmount: number }> | undefined
+      let formattedAmount: string | undefined
+      let payToName: string | undefined
+
+      if (body.payments && body.payments.length > 0) {
+        formattedPayments = body.payments.map(p => ({
+          formattedAmount: new Intl.NumberFormat('en-US', { style: 'currency', currency: body.currency }).format(p.amount),
+          payToName: p.pay_to_name,
+          rawAmount: p.amount,
+        }))
+        // For remind URL, use first payment as primary
+        formattedAmount = formattedPayments[0].formattedAmount
+        payToName = body.payments[0].pay_to_name
+      } else if (body.amount != null && body.pay_to_name) {
+        formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: body.currency }).format(body.amount)
+        payToName = body.pay_to_name
+      }
+
       const remindParams = new URLSearchParams({
         name: body.recipient_name,
-        amount: String(body.amount),
+        amount: String(body.payments?.[0]?.amount ?? body.amount ?? 0),
         currency: body.currency,
-        to: body.pay_to_name,
+        to: payToName ?? '',
         trip: body.trip_name,
       })
       const settlementsUrl = `${APP_URL}/remind/${body.trip_code}?${remindParams.toString()}`
@@ -438,7 +513,9 @@ Deno.serve(async (req) => {
         organiserName: body.organiser_name,
         tripName: body.trip_name,
         formattedAmount,
-        payToName: body.pay_to_name,
+        payToName,
+        payments: formattedPayments,
+        currency: body.currency,
         tripUrl,
         settlementsUrl,
         receipts: body.receipts,
@@ -447,6 +524,21 @@ Deno.serve(async (req) => {
       toEmail = body.recipient_email
       toName = body.recipient_name
       emailType = 'payment_reminder'
+      tripId = body.trip_id
+    } else if (body.type === 'bank_details_nudge') {
+      const tripUrl = `${APP_URL}/t/${body.trip_code}/quick`
+      const settlementsUrl = `${APP_URL}/t/${body.trip_code}/settlements`
+      subject = `Add your bank details for "${body.trip_name}"`
+      html = bankDetailsNudgeEmailHtml({
+        recipientName: body.recipient_name,
+        organiserName: body.organiser_name,
+        tripName: body.trip_name,
+        tripUrl,
+        settlementsUrl,
+      })
+      toEmail = body.recipient_email
+      toName = body.recipient_name
+      emailType = 'bank_details_nudge'
       tripId = body.trip_id
     } else if (body.type === 'issue_report') {
       const adminEmail = Deno.env.get('ADMIN_NOTIFICATION_EMAIL')

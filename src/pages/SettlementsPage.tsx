@@ -84,9 +84,9 @@ export function SettlementsPage() {
     return map
   }, [participants])
 
-  // Build a map of entity ID → emails for the "from" side of transactions
-  const fromEmailMap = useMemo(() => {
-    if (!currentTrip) return {}
+  // Build maps of entity ID → emails for "from" and "to" sides of transactions
+  const { fromEmailMap, toEmailMap } = useMemo(() => {
+    if (!currentTrip) return { fromEmailMap: {}, toEmailMap: {} }
     const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
     const map: Record<string, { name: string; email: string }[]> = {}
     for (const p of participants) {
@@ -95,7 +95,8 @@ export function SettlementsPage() {
       if (!map[entityId]) map[entityId] = []
       map[entityId].push({ name: p.name, email: p.email })
     }
-    return map
+    // Both from and to use the same underlying map — all participants with emails
+    return { fromEmailMap: map, toEmailMap: map }
   }, [participants, currentTrip])
 
   if (!currentTrip) {
@@ -317,37 +318,107 @@ export function SettlementsPage() {
   const { toast } = useToast()
   const [remindAllOpen, setRemindAllOpen] = useState(false)
   const [remindAllSending, setRemindAllSending] = useState(false)
-  const remindableTransactions = useMemo(() => {
-    return optimalSettlement.transactions.filter(t => {
+  // Deduplicate remindable transactions by debtor entity ID
+  const remindableDebtors = useMemo(() => {
+    const map = new Map<string, {
+      name: string
+      emails: string[]
+      payments: Array<{ amount: number; toName: string }>
+    }>()
+    for (const t of optimalSettlement.transactions) {
       const emails = fromEmailMap[t.fromId]
-      return emails && emails.length > 0
-    })
+      if (!emails || emails.length === 0) continue
+      const existing = map.get(t.fromId)
+      if (existing) {
+        existing.payments.push({ amount: t.amount, toName: t.toName })
+      } else {
+        map.set(t.fromId, {
+          name: t.fromName,
+          emails: emails.map(e => e.email),
+          payments: [{ amount: t.amount, toName: t.toName }],
+        })
+      }
+    }
+    return map
   }, [optimalSettlement.transactions, fromEmailMap])
 
   const canRemindAll = !!user
     && currentTrip.enable_settlement_reminders !== false
-    && remindableTransactions.length > 0
+    && remindableDebtors.size > 0
 
-  const unreachableCount = optimalSettlement.transactions.length - remindableTransactions.length
+  const unreachableCount = optimalSettlement.transactions.length
+    - Array.from(remindableDebtors.values()).reduce((sum, d) => sum + d.payments.length, 0)
 
   const handleRemindAll = async () => {
+    if (!currentTrip || !user) return
     setRemindAllSending(true)
+    const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
     try {
+      const entries = Array.from(remindableDebtors.entries())
       const results = await Promise.allSettled(
-        remindableTransactions.map(t => {
-          const emails = fromEmailMap[t.fromId].map(e => e.email)
-          return handleRemind(t, emails)
-        })
+        entries.map(([, debtor]) =>
+          Promise.allSettled(
+            debtor.emails.map(email =>
+              supabase.functions.invoke('send-email', {
+                body: {
+                  type: 'payment_reminder',
+                  trip_id: currentTrip.id,
+                  trip_name: currentTrip.name,
+                  trip_code: currentTrip.trip_code,
+                  recipient_name: debtor.name,
+                  recipient_email: email,
+                  currency: currentTrip.default_currency,
+                  payments: debtor.payments.map(p => ({
+                    amount: p.amount,
+                    pay_to_name: p.toName,
+                  })),
+                  organiser_name: organiserName,
+                },
+              })
+            )
+          )
+        )
       )
       const failures = results.filter(r => r.status === 'rejected')
+      const debtorCount = remindableDebtors.size
       if (failures.length === 0) {
-        toast({ title: 'Reminders sent', description: `Sent to ${remindableTransactions.length} ${remindableTransactions.length === 1 ? 'person' : 'people'}.` })
+        toast({ title: 'Reminders sent', description: `Sent to ${debtorCount} ${debtorCount === 1 ? 'person' : 'people'}.` })
       } else {
-        toast({ variant: 'destructive', title: 'Some reminders failed', description: `${failures.length} of ${remindableTransactions.length} failed to send.` })
+        toast({ variant: 'destructive', title: 'Some reminders failed', description: `${failures.length} of ${debtorCount} failed to send.` })
       }
     } finally {
       setRemindAllSending(false)
       setRemindAllOpen(false)
+    }
+  }
+
+  const handleNudgeBankDetails = async (entityId: string, emails: string[]): Promise<void> => {
+    if (!currentTrip || !user) return
+    const organiserName = userProfile?.display_name || user.email?.split('@')[0] || 'Organiser'
+    const participant = participants.find(p => {
+      const entityMap = buildEntityMap(participants, currentTrip.tracking_mode)
+      return (entityMap.participantToEntityId.get(p.id) ?? p.id) === entityId
+    })
+    const recipientName = participant?.name || 'there'
+
+    const results = await Promise.allSettled(
+      emails.map(email =>
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'bank_details_nudge',
+            trip_id: currentTrip.id,
+            trip_name: currentTrip.name,
+            trip_code: currentTrip.trip_code,
+            recipient_name: recipientName,
+            recipient_email: email,
+            organiser_name: organiserName,
+          },
+        })
+      )
+    )
+    const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error))
+    if (failures.length === emails.length) {
+      throw new Error('Failed to send bank details nudge')
     }
   }
 
@@ -363,11 +434,6 @@ export function SettlementsPage() {
             </p>
           </div>
           <div className="flex gap-1">
-            {canRemindAll && (
-              <Button onClick={() => setRemindAllOpen(true)} variant="ghost" size="icon" title="Remind All">
-                <Bell size={18} />
-              </Button>
-            )}
             {expenses.length > 0 && (
               <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export PDF">
                 <FileDown size={18} />
@@ -469,16 +535,18 @@ export function SettlementsPage() {
                 bankDetailsMap={bankDetailsMap}
                 linkedParticipantIds={linkedParticipantIds}
                 fromEmailMap={currentTrip.enable_settlement_reminders !== false ? fromEmailMap : undefined}
+                toEmailMap={currentTrip.enable_settlement_reminders !== false ? toEmailMap : undefined}
                 onRemind={user && currentTrip.enable_settlement_reminders !== false ? handleRemind : undefined}
+                onNudgeBankDetails={user && currentTrip.enable_settlement_reminders !== false ? handleNudgeBankDetails : undefined}
                 avatarMap={avatarMap}
               />
             </CardContent>
           </Card>
         )}
 
-        {/* Record a payment button */}
+        {/* Action buttons below settlement plan */}
         {participants.length > 0 && (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <Button
               onClick={() => { setPrefill(null); setShowRecordDialog(true) }}
               variant="outline"
@@ -486,6 +554,16 @@ export function SettlementsPage() {
             >
               Log a custom payment
             </Button>
+            {canRemindAll && (
+              <Button
+                onClick={() => setRemindAllOpen(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Bell size={14} className="mr-1.5" />
+                Remind All
+              </Button>
+            )}
           </div>
         )}
 
@@ -627,26 +705,26 @@ export function SettlementsPage() {
             <AlertDialogTitle>Send reminders to all debtors?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <p>Payment reminders will be sent to:</p>
+                <p>One email per person with all their outstanding payments:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  {remindableTransactions.map((t, i) => {
-                    const emails = fromEmailMap[t.fromId]
-                    return (
-                      <li key={i} className="text-sm">
-                        <span className="font-medium text-foreground">{t.fromName}</span>
-                        <span className="text-muted-foreground"> — {emails.map(e => e.email).join(', ')}</span>
-                      </li>
-                    )
-                  })}
+                  {Array.from(remindableDebtors.entries()).map(([id, debtor]) => (
+                    <li key={id} className="text-sm">
+                      <span className="font-medium text-foreground">{debtor.name}</span>
+                      <span className="text-muted-foreground"> — {debtor.emails.join(', ')}</span>
+                      {debtor.payments.length > 1 && (
+                        <span className="text-muted-foreground"> ({debtor.payments.length} payments)</span>
+                      )}
+                    </li>
+                  ))}
                 </ul>
                 {unreachableCount > 0 && (
                   <p className="text-xs text-muted-foreground">
                     {unreachableCount} {unreachableCount === 1 ? 'participant has' : 'participants have'} no email address and will be skipped.
                   </p>
                 )}
-                {remindableTransactions.length > 20 && (
+                {remindableDebtors.size > 20 && (
                   <p className="text-xs text-amber-600">
-                    Large batch — this will send {remindableTransactions.length} emails.
+                    Large batch — this will send {remindableDebtors.size} emails.
                   </p>
                 )}
               </div>

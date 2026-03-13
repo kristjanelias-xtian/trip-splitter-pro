@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
-import { HandCoins, X } from 'lucide-react'
+import { HandCoins, X, Bell } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { usePostTripNudge } from '@/hooks/usePostTripNudge'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
@@ -11,9 +11,11 @@ import { Button } from '@/components/ui/button'
 interface PostTripNudgeBannerProps {
   /** Quick mode: opens settle-up sheet instead of navigating */
   onSettleUp?: () => void
+  /** Creator: triggers batch remind-all flow */
+  onRemindAll?: () => void
 }
 
-export function PostTripNudgeBanner({ onSettleUp }: PostTripNudgeBannerProps) {
+export function PostTripNudgeBanner({ onSettleUp, onRemindAll }: PostTripNudgeBannerProps) {
   const navigate = useNavigate()
   const { currentTrip } = useCurrentTrip()
   const { mode } = useUserPreferences()
@@ -69,6 +71,12 @@ export function PostTripNudgeBanner({ onSettleUp }: PostTripNudgeBannerProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {showCreatorBanner && onRemindAll && (
+            <Button size="sm" variant="outline" onClick={onRemindAll}>
+              <Bell size={14} className="mr-1" />
+              Remind
+            </Button>
+          )}
           <Button size="sm" onClick={handleAction}>
             {showCreatorBanner ? 'View' : 'Settle'}
           </Button>

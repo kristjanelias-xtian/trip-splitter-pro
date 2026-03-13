@@ -18,11 +18,13 @@ interface SettlementPlanProps {
   bankDetailsMap?: Record<string, BankDetails>
   linkedParticipantIds?: Set<string>
   fromEmailMap?: Record<string, { name: string; email: string }[]>
+  toEmailMap?: Record<string, { name: string; email: string }[]>
   onRemind?: (transaction: SettlementTransaction, emails: string[]) => Promise<void>
+  onNudgeBankDetails?: (entityId: string, emails: string[]) => Promise<void>
   avatarMap?: Record<string, string | null>
 }
 
-export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, linkedParticipantIds, fromEmailMap, onRemind, avatarMap }: SettlementPlanProps) {
+export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, linkedParticipantIds, fromEmailMap, toEmailMap, onRemind, onNudgeBankDetails, avatarMap }: SettlementPlanProps) {
   const [mode, setMode] = useState<'optimal' | 'greedy'>('optimal')
   const showToggle = greedyPlan && greedyPlan.totalTransactions !== plan.totalTransactions
   const activePlan = mode === 'greedy' && greedyPlan ? greedyPlan : plan
@@ -101,7 +103,9 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
             bankDetails={bankDetailsMap?.[transaction.toId]}
             linkedParticipantIds={linkedParticipantIds}
             fromEmails={fromEmailMap?.[transaction.fromId]}
+            toEmails={toEmailMap?.[transaction.toId]}
             onRemind={onRemind ? (emails) => onRemind(transaction, emails) : undefined}
+            onNudgeBankDetails={onNudgeBankDetails}
             avatarMap={avatarMap}
           />
         ))}
@@ -118,7 +122,9 @@ interface SettlementTransactionCardProps {
   bankDetails?: BankDetails
   linkedParticipantIds?: Set<string>
   fromEmails?: { name: string; email: string }[]
+  toEmails?: { name: string; email: string }[]
   onRemind?: (emails: string[]) => Promise<void>
+  onNudgeBankDetails?: (entityId: string, emails: string[]) => Promise<void>
   avatarMap?: Record<string, string | null>
 }
 
@@ -130,13 +136,17 @@ function SettlementTransactionCard({
   bankDetails,
   linkedParticipantIds,
   fromEmails,
+  toEmails,
   onRemind,
+  onNudgeBankDetails,
   avatarMap,
 }: SettlementTransactionCardProps) {
   const [confirmingRemind, setConfirmingRemind] = useState(false)
   const [sending, setSending] = useState(false)
   const [remindResult, setRemindResult] = useState<'sent' | 'error' | null>(null)
   const [checkedEmails, setCheckedEmails] = useState<Record<string, boolean>>({})
+  const [nudgeSending, setNudgeSending] = useState(false)
+  const [nudgeResult, setNudgeResult] = useState<'sent' | 'error' | null>(null)
 
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -273,9 +283,41 @@ function SettlementTransactionCard({
           </div>
         )}
         {!bankDetails && linkedParticipantIds?.has(transaction.toId) && (
-          <p className="text-xs text-muted-foreground italic pl-5">
-            Ask {transaction.toName} to add their bank details
-          </p>
+          <div className="pl-5">
+            {toEmails && toEmails.length > 0 && onNudgeBankDetails && nudgeResult !== 'sent' ? (
+              <button
+                onClick={async () => {
+                  setNudgeSending(true)
+                  setNudgeResult(null)
+                  try {
+                    await onNudgeBankDetails(transaction.toId, toEmails.map(e => e.email))
+                    setNudgeResult('sent')
+                  } catch {
+                    setNudgeResult('error')
+                  } finally {
+                    setNudgeSending(false)
+                  }
+                }}
+                disabled={nudgeSending}
+                className="text-xs text-accent hover:underline disabled:opacity-50"
+              >
+                {nudgeSending ? 'Sending…' : `Nudge ${transaction.toName} to add bank details`}
+              </button>
+            ) : nudgeResult === 'sent' ? (
+              <p className="text-xs text-positive flex items-center gap-1">
+                <Check size={12} />
+                Nudge sent to {transaction.toName}
+              </p>
+            ) : nudgeResult === 'error' ? (
+              <p className="text-xs text-destructive">
+                Failed to send nudge. Please try again.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Ask {transaction.toName} to add their bank details
+              </p>
+            )}
+          </div>
         )}
 
         {/* Remind confirmation inline */}
