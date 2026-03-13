@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getActiveTripId } from './activeTripDetection'
+import { getActiveTripId, getTripPhase } from './activeTripDetection'
 import { buildTrip } from '@/test/factories'
 
 describe('getActiveTripId', () => {
@@ -89,5 +89,52 @@ describe('getActiveTripId', () => {
       end_date: '2025-07-15',
     })
     expect(getActiveTripId([trip])).toBe('ends-today')
+  })
+})
+
+describe('getTripPhase', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    // Set "today" to 2025-07-15
+    vi.setSystemTime(new Date('2025-07-15T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('returns "active" for a trip happening today', () => {
+    const trip = buildTrip({ start_date: '2025-07-10', end_date: '2025-07-20' })
+    expect(getTripPhase(trip)).toBe('active')
+  })
+
+  it('returns "active" on start date (inclusive)', () => {
+    const trip = buildTrip({ start_date: '2025-07-15', end_date: '2025-07-20' })
+    expect(getTripPhase(trip)).toBe('active')
+  })
+
+  it('returns "active" on end date (inclusive)', () => {
+    const trip = buildTrip({ start_date: '2025-07-10', end_date: '2025-07-15' })
+    expect(getTripPhase(trip)).toBe('active')
+  })
+
+  it('returns "ended" the day after end date', () => {
+    const trip = buildTrip({ start_date: '2025-07-10', end_date: '2025-07-14' })
+    expect(getTripPhase(trip)).toBe('ended')
+  })
+
+  it('returns "upcoming" for a future trip', () => {
+    const trip = buildTrip({ start_date: '2025-07-20', end_date: '2025-07-25' })
+    expect(getTripPhase(trip)).toBe('upcoming')
+  })
+
+  it('returns "ended" for a single-day trip that was yesterday', () => {
+    const trip = buildTrip({ start_date: '2025-07-14', end_date: '2025-07-14' })
+    expect(getTripPhase(trip)).toBe('ended')
+  })
+
+  it('returns "active" for a single-day trip that is today', () => {
+    const trip = buildTrip({ start_date: '2025-07-15', end_date: '2025-07-15' })
+    expect(getTripPhase(trip)).toBe('active')
   })
 })

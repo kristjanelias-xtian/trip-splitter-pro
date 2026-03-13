@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
-import { getActiveTripId } from '@/lib/activeTripDetection'
+import { getActiveTripId, getTripPhase } from '@/lib/activeTripDetection'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 import { TripCard } from '@/components/TripCard'
@@ -196,6 +196,7 @@ export function HomePage() {
             trip={trip}
             balance={myBalance}
             isActive={trip.id === activeTripId}
+            isEnded={getTripPhase(trip) === 'ended'}
             onClick={() => handleOpenTrip(trip.trip_code)}
             actions={
               <GroupActions

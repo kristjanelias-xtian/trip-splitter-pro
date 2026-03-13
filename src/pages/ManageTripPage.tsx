@@ -129,9 +129,10 @@ export function ManageTripPage() {
     enable_activities: 'Activity planning',
     enable_shopping: 'Shopping list',
     default_split_all: 'Split between everyone',
+    enable_settlement_reminders: 'Settlement reminders',
   }
 
-  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all', value: boolean) => {
+  const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all' | 'enable_settlement_reminders', value: boolean) => {
     setTogglingFeatures(prev => new Set(prev).add(feature))
     try {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
@@ -380,6 +381,17 @@ export function ManageTripPage() {
               checked={currentTrip.default_split_all ?? true}
               onCheckedChange={(checked) => handleToggleFeature('default_split_all', checked)}
               disabled={togglingFeatures.has('default_split_all')}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Settlement Reminders</Label>
+              <p className="text-xs text-muted-foreground">Show nudges and allow sending payment reminders after the trip ends</p>
+            </div>
+            <Switch
+              checked={currentTrip.enable_settlement_reminders ?? true}
+              onCheckedChange={(checked) => handleToggleFeature('enable_settlement_reminders', checked)}
+              disabled={togglingFeatures.has('enable_settlement_reminders')}
             />
           </div>
         </CardContent>

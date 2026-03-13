@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
-import { Receipt, FileDown, Trash2 } from 'lucide-react'
+import { Receipt, FileDown, Trash2, Bell } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -312,6 +313,44 @@ export function SettlementsPage() {
     exportSettlementPlanToPDF(currentTrip, optimalSettlement, balanceCalculation.balances)
   }
 
+  // Remind All state
+  const { toast } = useToast()
+  const [remindAllOpen, setRemindAllOpen] = useState(false)
+  const [remindAllSending, setRemindAllSending] = useState(false)
+  const remindableTransactions = useMemo(() => {
+    return optimalSettlement.transactions.filter(t => {
+      const emails = fromEmailMap[t.fromId]
+      return emails && emails.length > 0
+    })
+  }, [optimalSettlement.transactions, fromEmailMap])
+
+  const canRemindAll = !!user
+    && currentTrip.enable_settlement_reminders !== false
+    && remindableTransactions.length > 0
+
+  const unreachableCount = optimalSettlement.transactions.length - remindableTransactions.length
+
+  const handleRemindAll = async () => {
+    setRemindAllSending(true)
+    try {
+      const results = await Promise.allSettled(
+        remindableTransactions.map(t => {
+          const emails = fromEmailMap[t.fromId].map(e => e.email)
+          return handleRemind(t, emails)
+        })
+      )
+      const failures = results.filter(r => r.status === 'rejected')
+      if (failures.length === 0) {
+        toast({ title: 'Reminders sent', description: `Sent to ${remindableTransactions.length} ${remindableTransactions.length === 1 ? 'person' : 'people'}.` })
+      } else {
+        toast({ variant: 'destructive', title: 'Some reminders failed', description: `${failures.length} of ${remindableTransactions.length} failed to send.` })
+      }
+    } finally {
+      setRemindAllSending(false)
+      setRemindAllOpen(false)
+    }
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -323,11 +362,18 @@ export function SettlementsPage() {
               Optimal settlement plan and payment recording for {currentTrip.name}
             </p>
           </div>
-          {expenses.length > 0 && (
-            <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export PDF">
-              <FileDown size={18} />
-            </Button>
-          )}
+          <div className="flex gap-1">
+            {canRemindAll && (
+              <Button onClick={() => setRemindAllOpen(true)} variant="ghost" size="icon" title="Remind All">
+                <Bell size={18} />
+              </Button>
+            )}
+            {expenses.length > 0 && (
+              <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export PDF">
+                <FileDown size={18} />
+              </Button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -422,8 +468,8 @@ export function SettlementsPage() {
                 onSettle={handleRecordSettlement}
                 bankDetailsMap={bankDetailsMap}
                 linkedParticipantIds={linkedParticipantIds}
-                fromEmailMap={fromEmailMap}
-                onRemind={user ? handleRemind : undefined}
+                fromEmailMap={currentTrip.enable_settlement_reminders !== false ? fromEmailMap : undefined}
+                onRemind={user && currentTrip.enable_settlement_reminders !== false ? handleRemind : undefined}
                 avatarMap={avatarMap}
               />
             </CardContent>
@@ -569,6 +615,47 @@ export function SettlementsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteSettlement} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remind All confirmation */}
+      <AlertDialog open={remindAllOpen} onOpenChange={setRemindAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send reminders to all debtors?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Payment reminders will be sent to:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {remindableTransactions.map((t, i) => {
+                    const emails = fromEmailMap[t.fromId]
+                    return (
+                      <li key={i} className="text-sm">
+                        <span className="font-medium text-foreground">{t.fromName}</span>
+                        <span className="text-muted-foreground"> — {emails.map(e => e.email).join(', ')}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {unreachableCount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {unreachableCount} {unreachableCount === 1 ? 'participant has' : 'participants have'} no email address and will be skipped.
+                  </p>
+                )}
+                {remindableTransactions.length > 20 && (
+                  <p className="text-xs text-amber-600">
+                    Large batch — this will send {remindableTransactions.length} emails.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remindAllSending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemindAll} disabled={remindAllSending}>
+              {remindAllSending ? 'Sending...' : 'Send reminders'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

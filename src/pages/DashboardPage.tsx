@@ -20,6 +20,7 @@ import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { CostBreakdownDialog } from '@/components/CostBreakdownDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
+import { PostTripNudgeBanner } from '@/components/PostTripNudgeBanner'
 import { ParticipantBalance } from '@/services/balanceCalculator'
 import type { Participant } from '@/types/participant'
 
@@ -208,6 +209,9 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Post-trip settlement nudge */}
+      <PostTripNudgeBanner />
 
       {/* Balances */}
       <div>
