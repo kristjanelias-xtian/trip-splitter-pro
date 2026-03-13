@@ -29,6 +29,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { useBankDetailsPrompt } from '@/hooks/useBankDetailsPrompt'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
+import { PostTripNudgeBanner } from '@/components/PostTripNudgeBanner'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
   Loader2, Users, Landmark, X
@@ -205,6 +206,9 @@ export function QuickGroupDetailPage() {
               </CardContent>
             </Card>
           )}
+          <div className="mb-4">
+            <PostTripNudgeBanner onSettleUp={() => setSettlementOpen(true)} />
+          </div>
         </div>
       )}
 

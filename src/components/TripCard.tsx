@@ -9,6 +9,7 @@ interface TripCardProps {
   trip: Event
   balance?: ParticipantBalance | null
   isActive?: boolean
+  isEnded?: boolean
   onClick: () => void
   actions?: React.ReactNode
 }
@@ -20,7 +21,7 @@ function formatCardDate(isoDate: string): string {
   })
 }
 
-export function TripCard({ trip, balance, isActive, onClick, actions }: TripCardProps) {
+export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }: TripCardProps) {
   const pattern = getTripGradientPattern(trip.name)
   const hasDate = trip.start_date || trip.end_date
   const dateLabel = hasDate
@@ -49,6 +50,11 @@ export function TripCard({ trip, balance, isActive, onClick, actions }: TripCard
                 {isActive && (
                   <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                     Active
+                  </span>
+                )}
+                {isEnded && balance && Math.abs(balance.balance) > 0.01 && (
+                  <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">
+                    Needs settling
                   </span>
                 )}
               </div>

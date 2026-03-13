@@ -1,6 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Trip } from '@/types/trip'
 
+export type TripPhase = 'upcoming' | 'active' | 'ended'
+
+/**
+ * Determine the current phase of a trip based on its dates.
+ * A trip is "active" on both its start_date and end_date (inclusive).
+ * It becomes "ended" the day after end_date.
+ */
+export function getTripPhase(trip: Trip): TripPhase {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const start = new Date(trip.start_date)
+  start.setHours(0, 0, 0, 0)
+
+  const end = new Date(trip.end_date)
+  end.setHours(23, 59, 59, 999)
+
+  if (today > end) return 'ended'
+  if (today >= start) return 'active'
+  return 'upcoming'
+}
+
 /**
  * Auto-detect the "active" trip based on dates:
  * 1. Today falls within start_date..end_date → that trip (if multiple, pick the one ending soonest)

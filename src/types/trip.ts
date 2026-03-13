@@ -16,6 +16,7 @@ export interface Event {
   enable_shopping: boolean
   default_split_all: boolean
   account_for_family_size: boolean
+  enable_settlement_reminders?: boolean
   created_by?: string
   created_at: string
 }
@@ -46,6 +47,7 @@ export interface UpdateEventInput {
   enable_shopping?: boolean
   default_split_all?: boolean
   account_for_family_size?: boolean
+  enable_settlement_reminders?: boolean
 }
 
 // Backward-compatible aliases — use Event, CreateEventInput, UpdateEventInput in new code
