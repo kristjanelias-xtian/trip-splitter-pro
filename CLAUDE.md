@@ -220,7 +220,7 @@ Both layouts use the same responsive header pattern:
 - **Desktop (in-trip):** Single-row header. Back arrow + trip name (clickable `<Link>` to home with `fromTrip` state) on left. Scan button + `ModeToggle` + avatar on right (`hidden lg:flex`).
 - **Home page:** Single-row. Logo on left, avatar on right. No scan/toggle (the page has its own scan CTA).
 
-Header container: `max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8`. Main content padding: `pt-[108px] lg:pt-16` (two-row) or `pt-16` (single-row).
+Header container: `max-w-lg lg:max-w-7xl mx-auto px-4 lg:px-8`. Main content padding: `pt-[120px] lg:pt-16` (two-row) or `pt-16` (single-row).
 
 Trip gradient pattern: `getTripGradientPattern(trip.name)` returns gradient + decorative icons. Text on gradient uses inline `textShadow: '0 1px 4px rgba(0,0,0,0.9)'` and overlay `from-black/50`.
 

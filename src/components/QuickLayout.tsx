@@ -185,7 +185,7 @@ export function QuickLayout() {
       </header>
 
       {/* Main content — extra top padding when two-row header is active */}
-      <main className={`pwa-safe-top-offset ${isInTrip && !isSubPage ? 'pt-[108px] lg:pt-16' : 'pt-16'}`}>
+      <main className={`pwa-safe-top-offset ${isInTrip && !isSubPage ? 'pt-[120px] lg:pt-16' : 'pt-16'}`}>
         <QuickPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
