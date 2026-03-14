@@ -59,7 +59,7 @@ export function QuickLayout() {
     <PullToRefreshProvider>
     <div className="min-h-screen bg-background">
       {/* Simplified header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 pwa-safe-top ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
         {/* Gradient background when in a trip */}
         {pattern && (
           <>
@@ -185,7 +185,7 @@ export function QuickLayout() {
       </header>
 
       {/* Main content — extra top padding when two-row header is active */}
-      <main className={isInTrip && !isSubPage ? 'pt-[108px] lg:pt-16' : 'pt-16'}>
+      <main className={`pwa-safe-top-offset ${isInTrip && !isSubPage ? 'pt-[108px] lg:pt-16' : 'pt-16'}`}>
         <QuickPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>

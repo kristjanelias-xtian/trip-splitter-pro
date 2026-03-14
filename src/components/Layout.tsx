@@ -132,7 +132,7 @@ export function Layout() {
     <PullToRefreshProvider>
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 pwa-safe-top ${pattern ? 'bg-black' : 'bg-card border-b border-border soft-shadow-sm'}`}>
         {/* Gradient background when in a trip */}
         {pattern && (
           <>
@@ -243,7 +243,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6 pwa-safe-bottom-margin pwa-safe-top-offset ${tripCode ? 'lg:ml-64' : ''} ${tripCode && currentTrip ? 'mt-[108px] lg:mt-20' : 'mt-20'}`}>
         <LayoutPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>

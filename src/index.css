@@ -213,6 +213,14 @@
 
   /* PWA standalone: add safe-area padding to bottom nav for iPhone home indicator */
   @media (display-mode: standalone) {
+    .pwa-safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .pwa-safe-top-offset {
+      margin-top: env(safe-area-inset-top, 0px);
+    }
+
     .pwa-safe-bottom {
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
