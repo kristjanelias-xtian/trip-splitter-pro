@@ -9,8 +9,10 @@ import {
 } from '@/lib/userPreferencesStorage'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { applyThemeFromServer } from '@/hooks/useTheme'
+import i18n from '@/i18n'
 
 type Theme = 'light' | 'dark' | 'system'
+type Language = 'en' | 'et'
 
 interface UserPreferencesContextType {
   mode: AppMode
@@ -18,6 +20,7 @@ interface UserPreferencesContextType {
   setMode: (mode: AppMode) => Promise<void>
   setDefaultTripId: (tripId: string | null) => Promise<void>
   saveThemePreference: (theme: Theme) => Promise<void>
+  saveLanguagePreference: (language: Language) => Promise<void>
   loading: boolean
 }
 
@@ -87,6 +90,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         if (serverTheme) {
           applyThemeFromServer(serverTheme)
         }
+
+        // Sync language from server if set
+        const serverLanguage = data.language_preference as Language | null
+        if (serverLanguage) {
+          i18n.changeLanguage(serverLanguage)
+        }
       }
       hasInitialized.current = true
       setLoading(false)
@@ -126,8 +135,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     await upsertPreferences({ theme_preference: theme })
   }, [upsertPreferences])
 
+  const saveLanguagePreference = useCallback(async (language: Language) => {
+    await upsertPreferences({ language_preference: language })
+  }, [upsertPreferences])
+
   return (
-    <UserPreferencesContext.Provider value={{ mode, defaultTripId, setMode, setDefaultTripId, saveThemePreference, loading }}>
+    <UserPreferencesContext.Provider value={{ mode, defaultTripId, setMode, setDefaultTripId, saveThemePreference, saveLanguagePreference, loading }}>
       {children}
     </UserPreferencesContext.Provider>
   )
