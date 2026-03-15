@@ -177,38 +177,38 @@ export function DashboardPage() {
         <PageErrorState error={contextError} onRetry={handleRetry} retrying={retrying} />
       ) : <>
       {/* Trip Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm text-muted-foreground mb-1">{t('dashboard.totalExpenses')}</div>
-            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
+          <CardContent className="p-3 md:pt-6 md:px-6 md:pb-6">
+            <div className="text-xs md:text-sm text-muted-foreground mb-0.5 md:mb-1">{t('dashboard.totalExpenses')}</div>
+            <div className="text-base md:text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currentTrip.default_currency,
               }).format(balanceCalculation.totalExpenses)}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
               {t('dashboard.expense', { count: expenses.length })}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm text-muted-foreground mb-1">{t('dashboard.participants')}</div>
-            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
+          <CardContent className="p-3 md:pt-6 md:px-6 md:pb-6">
+            <div className="text-xs md:text-sm text-muted-foreground mb-0.5 md:mb-1">{t('dashboard.participants')}</div>
+            <div className="text-base md:text-2xl font-bold text-foreground tabular-nums">
               {participants.length}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
               {t('dashboard.participant', { count: participants.length })}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm text-muted-foreground mb-1">{t('dashboard.unsettledBalance')}</div>
-            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
+          <CardContent className="p-3 md:pt-6 md:px-6 md:pb-6">
+            <div className="text-xs md:text-sm text-muted-foreground mb-0.5 md:mb-1">{t('dashboard.unsettledBalance')}</div>
+            <div className="text-base md:text-2xl font-bold text-foreground tabular-nums">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currentTrip.default_currency,
@@ -218,19 +218,19 @@ export function DashboardPage() {
                   .reduce((sum, b) => sum + b.balance, 0))
               )}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
               {t('dashboard.totalAmountOwed')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-sm text-muted-foreground mb-1">{t('dashboard.settlements')}</div>
-            <div className="text-xl md:text-2xl font-bold text-foreground tabular-nums">
+          <CardContent className="p-3 md:pt-6 md:px-6 md:pb-6">
+            <div className="text-xs md:text-sm text-muted-foreground mb-0.5 md:mb-1">{t('dashboard.settlements')}</div>
+            <div className="text-base md:text-2xl font-bold text-foreground tabular-nums">
               {settlements.length}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
               <Link
                 to={`/t/${tripCode}/settlements`}
                 className="text-accent hover:underline"
