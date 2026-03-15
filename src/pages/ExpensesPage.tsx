@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, Search, Receipt, FileDown, SlidersHorizontal, User, Tag } from 'lucide-react'
@@ -42,6 +43,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export function ExpensesPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense, refreshExpenses } = useExpenseContext()
   const { participants } = useParticipantContext()
@@ -141,11 +143,11 @@ export function ExpensesPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Expenses</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('expenses.title')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              Please select a trip to manage expenses
+              {t('expenses.noTripSelected')}
             </p>
           </CardContent>
         </Card>
@@ -158,10 +160,10 @@ export function ExpensesPage() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-y-2">
-          <h2 className="text-xl font-bold text-foreground">Expenses</h2>
+          <h2 className="text-xl font-bold text-foreground">{t('expenses.title')}</h2>
           <div className="flex items-center gap-1.5">
             {expenses.length > 0 && (
-              <Button onClick={handleExportExcel} variant="ghost" size="icon" title="Export Excel">
+              <Button onClick={handleExportExcel} variant="ghost" size="icon" title={t('expenses.exportExcel')}>
                 <FileDown size={18} />
               </Button>
             )}
@@ -170,7 +172,7 @@ export function ExpensesPage() {
                 onClick={() => setFiltersVisible(v => !v)}
                 variant={hasActiveFilters ? 'secondary' : 'ghost'}
                 size="icon"
-                title="Toggle filters"
+                title={t('expenses.toggleFilters')}
               >
                 <SlidersHorizontal size={18} />
               </Button>
@@ -180,7 +182,7 @@ export function ExpensesPage() {
             </div>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus size={16} className="mr-2" />
-              {showForm ? 'Cancel' : 'Add Expense'}
+              {showForm ? t('common.cancel') : t('expenses.addExpense')}
             </Button>
           </div>
         </div>
@@ -233,14 +235,14 @@ export function ExpensesPage() {
               <div className="space-y-2">
                 <Label htmlFor="search" className="flex items-center gap-2">
                   <Search size={14} />
-                  Search
+                  {t('common.search')}
                 </Label>
                 <Input
                   type="text"
                   id="search"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search expenses..."
+                  placeholder={t('expenses.searchExpenses')}
                 />
               </div>
 
@@ -248,20 +250,20 @@ export function ExpensesPage() {
               <div className="space-y-2">
                 <Label htmlFor="category" className="flex items-center gap-2">
                   <Tag size={14} />
-                  Category
+                  {t('common.category')}
                 </Label>
                 <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ExpenseCategory | 'all')}>
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Food">Food</SelectItem>
-                    <SelectItem value="Accommodation">Accommodation</SelectItem>
-                    <SelectItem value="Transport">Transport</SelectItem>
-                    <SelectItem value="Activities">Activities</SelectItem>
-                    <SelectItem value="Training">Training</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="all">{t('expenses.allCategories')}</SelectItem>
+                    <SelectItem value="Food">{t('expenses.categoryFood')}</SelectItem>
+                    <SelectItem value="Accommodation">{t('expenses.categoryAccommodation')}</SelectItem>
+                    <SelectItem value="Transport">{t('expenses.categoryTransport')}</SelectItem>
+                    <SelectItem value="Activities">{t('expenses.categoryActivities')}</SelectItem>
+                    <SelectItem value="Training">{t('expenses.categoryTraining')}</SelectItem>
+                    <SelectItem value="Other">{t('expenses.categoryOther')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -270,14 +272,14 @@ export function ExpensesPage() {
               <div className="space-y-2">
                 <Label htmlFor="paid-by" className="flex items-center gap-2">
                   <User size={14} />
-                  Paid by
+                  {t('expenses.paidBy')}
                 </Label>
                 <Select value={selectedPaidBy} onValueChange={setSelectedPaidBy}>
                   <SelectTrigger id="paid-by">
-                    <SelectValue placeholder="Select person" />
+                    <SelectValue placeholder={t('expenses.selectPerson')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Everyone</SelectItem>
+                    <SelectItem value="all">{t('common.everyone')}</SelectItem>
                     {participants
                       .filter(p => p.is_adult)
                       .sort((a, b) => a.name.localeCompare(b.name))
@@ -301,18 +303,18 @@ export function ExpensesPage() {
                 <Receipt size={48} className="mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground mb-4">
                   {expenses.length === 0
-                    ? 'No expenses yet. Add your first expense to get started!'
-                    : 'No expenses match your filters.'}
+                    ? t('expenses.noExpensesYet')
+                    : t('expenses.noExpensesMatchFilters')}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    Showing {filteredExpenses.length} of {expenses.length} expenses
+                    {t('expenses.showingExpenses', { filtered: filteredExpenses.length, total: expenses.length })}
                   </p>
                   <p className="text-sm font-medium text-foreground tabular-nums">
-                    Total: {new Intl.NumberFormat('en-US', {
+                    {t('common.total')}: {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: currentTrip.default_currency,
                     }).format(filteredExpenses.reduce((sum, exp) => sum + convertToBaseCurrency(exp.amount, exp.currency, currentTrip.default_currency, currentTrip.exchange_rates), 0))}
@@ -372,15 +374,15 @@ export function ExpensesPage() {
       <AlertDialog open={!!deletingExpenseId} onOpenChange={(open) => !open && setDeletingExpenseId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
+            <AlertDialogTitle>{t('expenses.deleteExpense')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this expense? This action cannot be undone.
+              {t('expenses.deleteExpenseConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteExpense} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

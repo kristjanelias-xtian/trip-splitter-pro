@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut, Landmark } from 'lucide-react'
+import { LogOut, Landmark, Globe } from 'lucide-react'
 import { BankDetailsDialog } from './BankDetailsDialog'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -19,6 +20,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ onGradient = false, compact = false }: UserMenuProps) {
+  const { t, i18n } = useTranslation()
   const { user, userProfile, signOut } = useAuth()
   const [showBankDetails, setShowBankDetails] = useState(false)
 
@@ -69,7 +71,15 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setShowBankDetails(true)} className="gap-2">
           <Landmark size={16} />
-          Bank Details
+          {t('settings.bankDetails')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => i18n.changeLanguage(i18n.language === 'et' ? 'en' : 'et')}
+          className="gap-2"
+        >
+          <Globe size={16} />
+          {i18n.language === 'et' ? 'English' : 'Eesti'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5">
@@ -78,7 +88,7 @@ export function UserMenu({ onGradient = false, compact = false }: UserMenuProps)
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => { signOut() }} className="gap-2 text-destructive focus:text-destructive">
           <LogOut size={16} />
-          Sign out
+          {t('auth.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
 

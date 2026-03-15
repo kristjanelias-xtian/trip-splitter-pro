@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, LogIn, Landmark } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { SignInButton } from '@/components/auth/SignInButton'
@@ -14,6 +15,7 @@ interface OnboardingPromptsProps {
 }
 
 export function OnboardingPrompts({ hasPaidExpense = false }: OnboardingPromptsProps) {
+  const { t } = useTranslation()
   const { user, userProfile, loading } = useAuth()
   const [loginDismissed, setLoginDismissed] = useState(
     () => localStorage.getItem(LOGIN_DISMISS_KEY) === 'true'
@@ -33,9 +35,9 @@ export function OnboardingPrompts({ hasPaidExpense = false }: OnboardingPromptsP
         <div className="flex items-start gap-3">
           <LogIn size={20} className="text-accent mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground mb-1">Sign in for a better experience</p>
+            <p className="text-sm font-medium text-foreground mb-1">{t('auth.signInForBetter')}</p>
             <p className="text-xs text-muted-foreground mb-3">
-              Quick Mode for faster expense entry, bank details in settlement plans, and link yourself to trips across devices.
+              {t('auth.signInBenefits')}
             </p>
             <SignInButton type="standard" />
           </div>
@@ -63,12 +65,12 @@ export function OnboardingPrompts({ hasPaidExpense = false }: OnboardingPromptsP
           <div className="flex items-start gap-3">
             <Landmark size={20} className="text-accent mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-foreground mb-1">Add your bank details</p>
+              <p className="text-sm font-medium text-foreground mb-1">{t('bank.addBankDetails')}</p>
               <p className="text-xs text-muted-foreground mb-3">
-                Others will see your account info in settlement plans, making it easy to send payments.
+                {t('bank.addBankDetailsDesc')}
               </p>
               <Button size="sm" onClick={() => setShowBankDialog(true)}>
-                Add Bank Details
+                {t('bank.addBankDetails')}
               </Button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { CreateTripInput } from '@/types/trip'
 import { Button } from '@/components/ui/button'
@@ -21,10 +22,12 @@ export function TripForm({
   onSubmit,
   onCancel,
   initialValues,
-  submitLabel = 'Create Trip',
+  submitLabel,
   isLoading: externalLoading,
   isEditMode = false,
 }: TripFormProps) {
+  const { t } = useTranslation()
+  const resolvedSubmitLabel = submitLabel ?? t('trip.createTrip')
   const [name, setName] = useState(initialValues?.name || '')
   const [startDate, setStartDate] = useState(initialValues?.start_date || new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date || new Date().toISOString().split('T')[0])
@@ -42,12 +45,12 @@ export function TripForm({
     setError(null)
 
     if (!name.trim()) {
-      setError('Please enter a trip name')
+      setError(t('trip.tripNameRequired', { type: t('trip.tripLabel').toLowerCase() }))
       return
     }
 
     if (new Date(endDate) < new Date(startDate)) {
-      setError('End date must be on or after start date')
+      setError(t('trip.endDateAfterStart'))
       return
     }
 
@@ -64,7 +67,7 @@ export function TripForm({
         enable_shopping: enableShopping,
       })
     } catch (err) {
-      setError('Failed to save trip. Please try again.')
+      setError(t('trip.failedToSave'))
     } finally {
       setLoading(false)
     }
@@ -89,13 +92,13 @@ export function TripForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="name">Trip Name</Label>
+        <Label htmlFor="name">{t('trip.tripName', { type: t('trip.tripLabel') })}</Label>
         <Input
           type="text"
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g., Summer Vacation 2025"
+          placeholder={t('trip.tripNamePlaceholder')}
           required
           disabled={isSubmitting}
         />
@@ -103,7 +106,7 @@ export function TripForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="start_date">Start Date</Label>
+          <Label htmlFor="start_date">{t('trip.startDate')}</Label>
           <Input
             type="date"
             id="start_date"
@@ -115,7 +118,7 @@ export function TripForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="end_date">End Date</Label>
+          <Label htmlFor="end_date">{t('trip.endDate')}</Label>
           <Input
             type="date"
             id="end_date"
@@ -129,7 +132,7 @@ export function TripForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="defaultCurrency">Default Currency</Label>
+        <Label htmlFor="defaultCurrency">{t('trip.defaultCurrency')}</Label>
         <Input
           id="defaultCurrency"
           value={defaultCurrency}
@@ -140,17 +143,17 @@ export function TripForm({
           disabled={isSubmitting}
         />
         <p className="text-xs text-muted-foreground">
-          All balances and settlements will be shown in this currency
+          {t('trip.defaultCurrencyHint')}
         </p>
       </div>
 
       {!isEditMode && (
         <div className="space-y-4">
-          <Label>Features</Label>
+          <Label>{t('common.features')}</Label>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Meal Planning</span>
-              <p className="text-xs text-muted-foreground">Plan meals and assign cooking responsibilities</p>
+              <span className="text-sm font-medium">{t('trip.mealPlanning')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.mealPlanningDesc')}</p>
             </div>
             <Switch
               checked={enableMeals}
@@ -160,8 +163,8 @@ export function TripForm({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Activity Planning</span>
-              <p className="text-xs text-muted-foreground">Plan activities for each day of your trip</p>
+              <span className="text-sm font-medium">{t('trip.activityPlanning')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.activityPlanningDesc')}</p>
             </div>
             <Switch
               checked={enableActivities}
@@ -171,8 +174,8 @@ export function TripForm({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Shopping List</span>
-              <p className="text-xs text-muted-foreground">Collaborative shopping list with real-time updates</p>
+              <span className="text-sm font-medium">{t('trip.shoppingList')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.shoppingListDesc')}</p>
             </div>
             <Switch
               checked={enableShopping}
@@ -190,7 +193,7 @@ export function TripForm({
           className="flex-1"
           size="lg"
         >
-          {isSubmitting ? 'Saving...' : submitLabel}
+          {isSubmitting ? t('common.saving') : resolvedSubmitLabel}
         </Button>
         {onCancel && (
           <Button
@@ -200,7 +203,7 @@ export function TripForm({
             variant="outline"
             size="lg"
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
         )}
       </div>

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Receipt, Wallet, Users, Check, ArrowRight } from 'lucide-react'
 import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,7 @@ export function CostBreakdownDialog({
   exchangeRates,
   settlements = [],
 }: CostBreakdownDialogProps) {
+  const { t } = useTranslation()
   const entityMap = useMemo(() => buildEntityMap(participants, trackingMode), [participants, trackingMode])
 
   const { paidExpenses, shareExpenses } = useMemo(() => {
@@ -117,7 +119,7 @@ export function CostBreakdownDialog({
       maxWidth="sm:max-w-xl"
       headerExtra={
         <p className="text-sm text-muted-foreground px-4 pb-3 text-center">
-          Balance: <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
+          {t('balance.balance')} <span className={`font-semibold ${balanceColorClass}`}>{formatBalance(balance.balance, defaultCurrency)}</span>
         </p>
       }
     >
@@ -128,19 +130,19 @@ export function CostBreakdownDialog({
           <div className="p-3 rounded-lg bg-muted/30">
             <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
               <Users size={16} />
-              Within-group balances
+              {t('balance.withinGroupBalances')}
             </h4>
             {(() => {
               const allEven = withinGroupBalances.every(b => Math.abs(b.balance) <= SETTLED_THRESHOLD)
               const hasActivity = withinGroupBalances.some(b => b.totalPaid > 0 || b.totalShare > 0)
               if (!hasActivity) {
-                return <p className="text-xs text-muted-foreground">No shared expenses yet</p>
+                return <p className="text-xs text-muted-foreground">{t('balance.noSharedExpenses')}</p>
               }
               if (allEven) {
                 return (
                   <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                     <Check size={14} />
-                    <span className="text-sm">Evenly split</span>
+                    <span className="text-sm">{t('balance.evenlySplit')}</span>
                   </div>
                 )
               }
@@ -151,7 +153,7 @@ export function CostBreakdownDialog({
                       <span>{b.name}</span>
                       <div className="flex items-baseline gap-2">
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          Covered {fmt(b.totalPaid)} · Share {fmt(b.totalShare)}
+                          {t('balance.covered', { amount: fmt(b.totalPaid) })} · {t('balance.shareAmount', { amount: fmt(b.totalShare) })}
                         </span>
                         <span className={`tabular-nums font-medium ${getBalanceColorClass(b.balance)}`}>
                           {formatBalance(b.balance, defaultCurrency)}
@@ -164,7 +166,7 @@ export function CostBreakdownDialog({
             })()}
             {withinGroupSettlements.length > 0 && (
               <div className="mt-3 pt-2 border-t border-border/50">
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">Settlements</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">{t('balance.settlementsLabel')}</p>
                 <div className="space-y-1">
                   {withinGroupSettlements.map(s => {
                     const converted = convertToBaseCurrency(s.amount, s.currency, defaultCurrency, exchangeRates)
@@ -183,15 +185,15 @@ export function CostBreakdownDialog({
               </div>
             )}
             {hasChildren && (
-              <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
+              <p className="text-xs text-muted-foreground mt-2">{t('balance.childrenShareNote')}</p>
             )}
             <div className="mt-2 pt-2 border-t border-border/50 space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Group paid</span>
+                <span className="text-muted-foreground">{t('balance.groupPaid')}</span>
                 <span className="tabular-nums font-medium">{fmt(balance.totalPaid)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Group share</span>
+                <span className="text-muted-foreground">{t('balance.groupShare')}</span>
                 <span className="tabular-nums font-medium">{fmt(balance.totalShare)}</span>
               </div>
             </div>
@@ -202,11 +204,11 @@ export function CostBreakdownDialog({
         <div>
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
             <Wallet size={16} />
-            Expenses paid
+            {t('balance.expensesPaid')}
             <span className="text-muted-foreground font-normal">({paidExpenses.length})</span>
           </h4>
           {paidExpenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground pl-6">No expenses paid.</p>
+            <p className="text-sm text-muted-foreground pl-6">{t('balance.noExpensesPaid')}</p>
           ) : (
             <div className="space-y-2">
               {paidExpenses.map(expense => {
@@ -235,7 +237,7 @@ export function CostBreakdownDialog({
                 )
               })}
               <div className="flex justify-between pl-6 pt-2 text-sm font-semibold text-foreground">
-                <span>Total paid</span>
+                <span>{t('balance.totalPaid')}</span>
                 <span className="tabular-nums">{fmt(balance.totalPaid)}</span>
               </div>
             </div>
@@ -246,11 +248,11 @@ export function CostBreakdownDialog({
         <div className="mt-2">
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
             <Receipt size={16} />
-            Your share of expenses
+            {t('balance.yourShareOfExpenses')}
             <span className="text-muted-foreground font-normal">({shareExpenses.length})</span>
           </h4>
           {shareExpenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground pl-6">No expense shares.</p>
+            <p className="text-sm text-muted-foreground pl-6">{t('balance.noExpenseShares')}</p>
           ) : (
             <div className="space-y-2">
               {shareExpenses.map(({ expense, share }) => {
@@ -273,7 +275,7 @@ export function CostBreakdownDialog({
                 )
               })}
               <div className="flex justify-between pl-6 pt-2 text-sm font-semibold text-foreground">
-                <span>Total share</span>
+                <span>{t('balance.totalShare')}</span>
                 <span className="tabular-nums">{fmt(balance.totalShare)}</span>
               </div>
             </div>

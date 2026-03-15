@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Event } from '@/types/trip'
@@ -22,6 +23,7 @@ function formatCardDate(isoDate: string): string {
 }
 
 export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }: TripCardProps) {
+  const { t } = useTranslation()
   const pattern = getTripGradientPattern(trip.name)
   const hasDate = trip.start_date || trip.end_date
   const dateLabel = hasDate
@@ -53,27 +55,27 @@ export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }:
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                     </span>
-                    Active
+                    {t('trip.active')}
                   </span>
                 )}
                 {isEnded && balance && Math.abs(balance.balance) > SETTLED_THRESHOLD && (
                   <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">
-                    Needs settling
+                    {t('balance.needsSettling')}
                   </span>
                 )}
               </div>
               {balance ? (
                 <p className={`text-lg font-bold tabular-nums ${getBalanceColorClass(balance.balance)}`}>
                   {Math.abs(balance.balance) <= SETTLED_THRESHOLD
-                    ? 'Settled up'
+                    ? t('balance.settledUpLabel')
                     : balance.balance > 0
-                      ? `You are owed ${formatBalance(balance.balance)}`
-                      : `You owe ${formatBalance(balance.balance).replace('-', '')}`
+                      ? t('balance.youAreOwed', { amount: formatBalance(balance.balance) })
+                      : t('balance.youOwe', { amount: formatBalance(balance.balance).replace('-', '') })
                   }
                 </p>
               ) : balance === null ? (
                 <p className="text-sm text-muted-foreground">
-                  Link yourself to see your balance
+                  {t('balance.linkToSeeBalance')}
                 </p>
               ) : null}
               {dateLabel && (

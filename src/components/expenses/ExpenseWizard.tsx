@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CreateExpenseInput,
   ExpenseCategory,
@@ -42,6 +43,7 @@ export function ExpenseWizard({
   initialValues,
   mode = 'create',
 }: ExpenseWizardProps) {
+  const { t } = useTranslation()
   const isMobile = useMediaQuery('(max-width: 767px)')
 
   // Desktop: always use Dialog (both create and edit)
@@ -50,14 +52,14 @@ export function ExpenseWizard({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
           <DialogTitle className="sr-only">
-            {mode === 'edit' ? 'Edit Expense' : 'Add Expense'}
+            {mode === 'edit' ? t('expenses.editExpense') : t('expenses.addExpense')}
           </DialogTitle>
           <div className="flex-1 min-h-0 flex flex-col px-6 py-6">
             <ExpenseForm
               onSubmit={onSubmit}
               onCancel={() => onOpenChange(false)}
               initialValues={initialValues}
-              submitLabel={mode === 'edit' ? 'Update Expense' : 'Add Expense'}
+              submitLabel={mode === 'edit' ? t('expenses.updateExpense') : t('expenses.addExpense')}
               stickyFooter
             />
           </div>
@@ -95,6 +97,7 @@ function MobileEditSheet({
   onSubmit,
   initialValues,
 }: Omit<ExpenseWizardProps, 'mode'>) {
+  const { t } = useTranslation()
   const keyboard = useKeyboardHeight()
   const scrollRef = useIOSScrollFix()
 
@@ -118,7 +121,7 @@ function MobileEditSheet({
         <div className="shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="w-8" />
-            <SheetTitle className="text-base font-semibold">Edit Expense</SheetTitle>
+            <SheetTitle className="text-base font-semibold">{t('expenses.editExpense')}</SheetTitle>
             <button
               onClick={() => onOpenChange(false)}
               aria-label="Close"
@@ -135,7 +138,7 @@ function MobileEditSheet({
             onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
             initialValues={initialValues}
-            submitLabel="Update Expense"
+            submitLabel={t('expenses.updateExpense')}
             stickyFooter
             scrollRef={scrollRef}
           />
@@ -151,6 +154,7 @@ function MobileWizard({
   onSubmit,
   initialValues,
 }: Omit<ExpenseWizardProps, 'mode'>) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
@@ -348,7 +352,7 @@ function MobileWizard({
 
     try {
       if (selectedParticipants.length === 0) {
-        setError('Please select at least one person to split between')
+        setError(t('expenses.validationSplitBetween'))
         setIsSubmitting(false)
         return
       }
@@ -360,14 +364,14 @@ function MobileWizard({
         for (const id of selectedParticipants) {
           const value = parseFloat(participantSplitValues[id] || '0')
           if (isNaN(value) || value <= 0) {
-            setError('Please enter valid percentages for all selected participants')
+            setError(t('expenses.validationPercentages'))
             setIsSubmitting(false)
             return
           }
           totalPercentage += value
         }
         if (Math.abs(totalPercentage - 100) > 0.01) {
-          setError(`Percentages must sum to 100% (currently ${totalPercentage.toFixed(1)}%)`)
+          setError(t('expenses.validationPercentageSum', { current: totalPercentage.toFixed(1) }))
           setIsSubmitting(false)
           return
         }
@@ -376,14 +380,14 @@ function MobileWizard({
         for (const id of selectedParticipants) {
           const value = parseFloat(participantSplitValues[id] || '0')
           if (isNaN(value) || value <= 0) {
-            setError('Please enter valid amounts for all selected participants')
+            setError(t('expenses.validationAmounts'))
             setIsSubmitting(false)
             return
           }
           totalAmount += value
         }
         if (Math.abs(totalAmount - amountNum) > 0.01) {
-          setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
+          setError(t('expenses.validationAmountSum', { currency, total: amountNum.toFixed(2), current: totalAmount.toFixed(2) }))
           setIsSubmitting(false)
           return
         }
@@ -420,7 +424,7 @@ function MobileWizard({
       await onSubmit(expenseInput)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create expense.')
+      setError(err instanceof Error ? err.message : t('expenses.failedToCreate'))
       setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       isSubmittingRef.current = false
@@ -488,7 +492,7 @@ function MobileWizard({
         <div className="shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="w-8" />
-            <SheetTitle className="text-base font-semibold">Add Expense</SheetTitle>
+            <SheetTitle className="text-base font-semibold">{t('expenses.addExpense')}</SheetTitle>
             <button
               onClick={() => onOpenChange(false)}
               aria-label="Close"
@@ -517,7 +521,7 @@ function MobileWizard({
                   disabled={isSubmitting}
                   className="shrink-0 text-xs underline underline-offset-2 opacity-80 hover:opacity-100 disabled:opacity-40"
                 >
-                  Try again
+                  {t('common.tryAgain')}
                 </button>
               </div>
               {errorDetail && (

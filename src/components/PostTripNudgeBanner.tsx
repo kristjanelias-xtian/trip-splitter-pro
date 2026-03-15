@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { HandCoins, X, Bell } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { usePostTripNudge } from '@/hooks/usePostTripNudge'
@@ -16,6 +17,7 @@ interface PostTripNudgeBannerProps {
 }
 
 export function PostTripNudgeBanner({ onSettleUp, onRemindAll }: PostTripNudgeBannerProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { currentTrip } = useCurrentTrip()
   const { mode } = useUserPreferences()
@@ -52,19 +54,19 @@ export function PostTripNudgeBanner({ onSettleUp, onRemindAll }: PostTripNudgeBa
             {showCreatorBanner ? (
               <>
                 <p className="font-medium text-sm">
-                  {transactionsNeeded} {transactionsNeeded === 1 ? 'payment' : 'payments'} still outstanding
+                  {t('postTripNudge.paymentsOutstanding', { count: transactionsNeeded })}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatBalance(totalOwed, currency).replace('-', '')} to collect
+                  {t('postTripNudge.toCollect', { amount: formatBalance(totalOwed, currency).replace('-', '') })}
                 </p>
               </>
             ) : (
               <>
                 <p className="font-medium text-sm">
-                  You owe {formatBalance(Math.abs(myBalance!), currency)} from {currentTrip.name}
+                  {t('postTripNudge.youOweFromTrip', { amount: formatBalance(Math.abs(myBalance!), currency), name: currentTrip.name })}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Trip has ended — time to settle up
+                  {t('postTripNudge.tripEndedSettleUp')}
                 </p>
               </>
             )}
@@ -74,11 +76,11 @@ export function PostTripNudgeBanner({ onSettleUp, onRemindAll }: PostTripNudgeBa
           {showCreatorBanner && onRemindAll && (
             <Button size="sm" variant="outline" onClick={onRemindAll}>
               <Bell size={14} className="mr-1" />
-              Remind
+              {t('settlementPlan.remind')}
             </Button>
           )}
           <Button size="sm" onClick={handleAction}>
-            {showCreatorBanner ? 'View' : 'Settle'}
+            {showCreatorBanner ? t('common.view') : t('common.settle')}
           </Button>
           <button
             onClick={dismiss}

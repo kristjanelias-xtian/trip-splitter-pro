@@ -1,5 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 import '@testing-library/jest-dom'
+
+// Mock react-i18next for all tests
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      if (params) {
+        return Object.entries(params).reduce(
+          (str, [k, v]) => str.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
+          key
+        )
+      }
+      return key
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' },
+  }),
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+}))
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 

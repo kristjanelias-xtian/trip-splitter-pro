@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -19,6 +20,7 @@ interface IndividualsSetupProps {
 }
 
 export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: IndividualsSetupProps = {}) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { participants, createParticipant, updateParticipant, deleteParticipant } = useParticipantContext()
 
@@ -44,7 +46,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
       if (duplicate) {
-        setError('This email is already used by another participant in this trip.')
+        setError(t('participants.duplicateEmail'))
         return
       }
     }
@@ -66,7 +68,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
   }
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Remove this participant?')) {
+    if (window.confirm(t('common.confirmRemoveParticipant'))) {
       await deleteParticipant(id)
     }
   }
@@ -83,7 +85,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
         p => p.id !== participant.id && p.email?.toLowerCase() === newEmail.toLowerCase()
       )
       if (duplicate) {
-        setError('This email is already used by another participant in this trip.')
+        setError(t('participants.duplicateEmail'))
         return
       }
     }
@@ -104,7 +106,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
     >
       <Card>
         <CardHeader>
-          <CardTitle>Add Participants</CardTitle>
+          <CardTitle>{t('participants.addParticipants')}</CardTitle>
         </CardHeader>
         <CardContent>
           {error && (
@@ -112,27 +114,27 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
           )}
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Participant Name</Label>
+              <Label htmlFor="name">{t('participants.participantName')}</Label>
               <Input
                 type="text"
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., John Doe"
+                placeholder={t('participants.participantNamePlaceholder')}
                 required
                 disabled={adding}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Label htmlFor="email">{t('participants.emailOptional')} <span className="text-muted-foreground font-normal">{t('participants.emailOptionalLabel')}</span></Label>
               <Input
                 type="email"
                 inputMode="email"
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g., john@example.com"
+                placeholder={t('participants.emailPlaceholder')}
                 disabled={adding}
               />
             </div>
@@ -148,7 +150,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                 htmlFor="isAdult"
                 className="text-sm text-foreground cursor-pointer"
               >
-                Adult (can pay for expenses)
+                {t('participants.isAdult')}
               </label>
             </div>
 
@@ -158,7 +160,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
               className="w-full"
             >
               <UserPlus size={16} className="mr-2" />
-              {adding ? 'Adding...' : 'Add Participant'}
+              {adding ? t('common.adding') : t('participants.addParticipant')}
             </Button>
           </form>
         </CardContent>
@@ -167,7 +169,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
       {participants.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Participants ({participants.length})</CardTitle>
+            <CardTitle>{t('participants.participantsCount', { count: participants.length })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -184,7 +186,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                         {participant.name}
                       </span>
                       <Badge variant={participant.is_adult ? 'soft' : 'outline'}>
-                        {participant.is_adult ? 'Adult' : 'Child'}
+                        {participant.is_adult ? t('common.adult') : t('common.child')}
                       </Badge>
                       {participant.user_id && (
                         <span title="Account linked" className="shrink-0">
@@ -198,7 +200,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        title={participant.email ? `Email: ${participant.email}` : 'Add email'}
+                        title={participant.email ? t('participants.emailLabel', { email: participant.email }) : t('participants.setEmail')}
                       >
                         <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
                       </Button>
@@ -221,7 +223,7 @@ export function IndividualsSetup({ onComplete: _onComplete, hasSetup: _hasSetup 
                         inputMode="email"
                         value={editEmailValue}
                         onChange={(e) => setEditEmailValue(e.target.value)}
-                        placeholder="Email address"
+                        placeholder={t('participants.emailAddressPlaceholder')}
                         className="h-8 text-sm flex-1"
                         disabled={savingEmailId === participant.id}
                       />

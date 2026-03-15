@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -56,6 +57,7 @@ function compressImage(file: File): Promise<Blob> {
 const MAX_SCREENSHOTS = 5
 
 export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { user } = useAuth()
   const [subject, setSubject] = useState('')
@@ -155,8 +157,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
       }
 
       toast({
-        title: 'Feedback sent',
-        description: 'Thank you! Your report has been submitted.',
+        title: t('report.feedbackSent'),
+        description: t('report.feedbackSentDesc'),
       })
 
       resetForm()
@@ -164,8 +166,8 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
     } catch (err) {
       logger.error('Error submitting issue:', { error: String(err) })
       toast({
-        title: 'Failed to send feedback',
-        description: 'Please try again later.',
+        title: t('report.failedToSend'),
+        description: t('report.failedToSendDesc'),
         variant: 'destructive',
       })
     } finally {
@@ -177,22 +179,22 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title="Report an Issue"
+      title={t('report.title')}
       hasInputs
       maxWidth="max-w-md"
       headerExtra={
         <p className="text-sm text-muted-foreground px-4 pb-3 mt-0">
-          Found a bug or have feedback? Let us know and we'll look into it.
+          {t('report.subtitle')}
         </p>
       }
       scrollClassName="px-6 py-4"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="issue-subject">Subject</Label>
+          <Label htmlFor="issue-subject">{t('report.subject')}</Label>
           <Input
             id="issue-subject"
-            placeholder="Brief description of the issue"
+            placeholder={t('report.subjectPlaceholder')}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             required
@@ -200,10 +202,10 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="issue-description">Details (optional)</Label>
+          <Label htmlFor="issue-description">{t('report.details')}</Label>
           <Textarea
             id="issue-description"
-            placeholder="What happened? What did you expect to happen?"
+            placeholder={t('report.detailsPlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
@@ -211,7 +213,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
         </div>
 
         <div className="space-y-2">
-          <Label>Screenshots (optional)</Label>
+          <Label>{t('report.screenshots')}</Label>
           <input
             ref={fileInputRef}
             type="file"
@@ -249,7 +251,7 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
               onClick={() => fileInputRef.current?.click()}
             >
               <ImagePlus size={16} />
-              {screenshots.length === 0 ? 'Attach Screenshots' : 'Add More'}
+              {screenshots.length === 0 ? t('report.attachScreenshots') : t('report.addMore')}
             </Button>
           )}
         </div>
@@ -261,16 +263,16 @@ export function ReportIssueDialog({ open, onOpenChange }: ReportIssueDialogProps
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={submitting || !subject.trim()}>
             {submitting ? (
               <>
                 <Loader2 size={16} className="mr-2 animate-spin" />
-                Sending...
+                {t('common.sending')}
               </>
             ) : (
-              'Send Report'
+              t('report.sendReport')
             )}
           </Button>
         </div>

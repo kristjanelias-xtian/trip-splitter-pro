@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as XLSX from 'xlsx'
+import i18n from '@/i18n'
 import type { Trip } from '@/types/trip'
 import type { Expense } from '@/types/expense'
 import type { Participant } from '@/types/participant'
@@ -25,18 +26,18 @@ export function exportExpensesToExcel(
 
     if (expense.distribution.type === 'individuals') {
       const names = expense.distribution.participants
-        .map(id => participants.find(p => p.id === id)?.name || 'Unknown')
+        .map(id => participants.find(p => p.id === id)?.name || i18n.t('common.unknown'))
         .join(', ')
       splitWith = names
     }
 
     return {
-      Date: new Date(expense.expense_date).toLocaleDateString(),
-      Description: expense.description,
-      Category: expense.category,
-      Amount: expense.amount,
-      Currency: expense.currency,
-      'Paid By': payer?.name || 'Unknown',
+      [i18n.t('common.date')]: new Date(expense.expense_date).toLocaleDateString(),
+      [i18n.t('expenses.description')]: expense.description,
+      [i18n.t('common.category')]: expense.category,
+      [i18n.t('expenses.amount')]: expense.amount,
+      [i18n.t('receipt.currency')]: expense.currency,
+      [i18n.t('expenses.paidBy')]: payer?.name || i18n.t('common.unknown'),
       'Split With': splitWith,
       Comment: expense.comment || ''
     }
@@ -56,15 +57,15 @@ export function exportExpensesToExcel(
     { wch: 30 }, // Comment
   ]
 
-  XLSX.utils.book_append_sheet(workbook, expensesWorksheet, 'Expenses')
+  XLSX.utils.book_append_sheet(workbook, expensesWorksheet, i18n.t('expenses.title'))
 
   // Sheet 2: Balances
   const balancesData = balances.map(balance => ({
     'Participant': balance.name,
-    'Total Paid': balance.totalPaid,
-    'Total Share': balance.totalShare,
+    [i18n.t('balance.totalPaid')]: balance.totalPaid,
+    [i18n.t('balance.totalShare')]: balance.totalShare,
     Balance: balance.balance,
-    Status: balance.balance > 0 ? 'Owed' : balance.balance < 0 ? 'Owes' : 'Settled'
+    [i18n.t('common.status')]: balance.balance > 0 ? i18n.t('balance.othersOwe') : balance.balance < 0 ? i18n.t('balance.owes') : i18n.t('balance.settled')
   }))
 
   const balancesWorksheet = XLSX.utils.json_to_sheet(balancesData)
@@ -76,7 +77,7 @@ export function exportExpensesToExcel(
     { wch: 10 }, // Status
   ]
 
-  XLSX.utils.book_append_sheet(workbook, balancesWorksheet, 'Balances')
+  XLSX.utils.book_append_sheet(workbook, balancesWorksheet, i18n.t('dashboard.currentBalances'))
 
   // Sheet 3: Settlements
   if (settlements.length > 0) {
@@ -85,11 +86,11 @@ export function exportExpensesToExcel(
       const to = participants.find(p => p.id === settlement.to_participant_id)
 
       return {
-        Date: new Date(settlement.settlement_date).toLocaleDateString(),
-        From: from?.name || 'Unknown',
-        To: to?.name || 'Unknown',
-        Amount: settlement.amount,
-        Currency: settlement.currency,
+        [i18n.t('common.date')]: new Date(settlement.settlement_date).toLocaleDateString(),
+        From: from?.name || i18n.t('common.unknown'),
+        To: to?.name || i18n.t('common.unknown'),
+        [i18n.t('expenses.amount')]: settlement.amount,
+        [i18n.t('receipt.currency')]: settlement.currency,
         Note: settlement.note || ''
       }
     })
@@ -104,7 +105,7 @@ export function exportExpensesToExcel(
       { wch: 40 }, // Note
     ]
 
-    XLSX.utils.book_append_sheet(workbook, settlementsWorksheet, 'Settlements')
+    XLSX.utils.book_append_sheet(workbook, settlementsWorksheet, i18n.t('settlements.title'))
   }
 
   // Sheet 4: Summary
@@ -123,9 +124,9 @@ export function exportExpensesToExcel(
     { Metric: 'End Date', Value: trip.end_date ? new Date(trip.end_date).toLocaleDateString() : 'N/A' },
     { Metric: 'Tracking Mode', Value: 'Individuals' },
     { Metric: '', Value: '' }, // Empty row
-    { Metric: 'Total Expenses', Value: totalExpenses.toFixed(2) },
-    { Metric: 'Number of Expenses', Value: expenses.length.toString() },
-    { Metric: 'Participants', Value: participants.length.toString() },
+    { Metric: i18n.t('dashboard.totalExpenses'), Value: totalExpenses.toFixed(2) },
+    { Metric: i18n.t('expenses.title'), Value: expenses.length.toString() },
+    { Metric: i18n.t('manage.participants'), Value: participants.length.toString() },
     { Metric: '', Value: '' }, // Empty row
     { Metric: 'Category Breakdown', Value: '' },
     ...Object.entries(expensesByCategory).map(([category, amount]) => ({

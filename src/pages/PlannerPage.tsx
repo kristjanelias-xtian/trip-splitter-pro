@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useEffect, lazy, Suspense, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { CalendarDays, Map } from 'lucide-react'
@@ -19,6 +20,7 @@ import { generateDateRange } from '@/lib/dateUtils'
 const StayMap = lazy(() => import('@/components/StayMap'))
 
 export function PlannerPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { meals, loading: mealsLoading, error: mealError, getMealsWithIngredients, refreshMeals } = useMealContext()
   const { loading: activitiesLoading, error: activityError, getActivitiesForDate, refreshActivities } = useActivityContext()
@@ -65,11 +67,11 @@ export function PlannerPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Day Planner</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('planner.title')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip selected. Please select a trip to start planning.
+              {t('planner.noTripSelected')}
             </p>
           </CardContent>
         </Card>
@@ -121,7 +123,7 @@ export function PlannerPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Day Planner</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('planner.title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {currentTrip.name} &bull; {formatTripDateRange(currentTrip.start_date, currentTrip.end_date)}
         </p>
@@ -156,14 +158,14 @@ export function PlannerPage() {
             className="gap-2"
           >
             <Map size={16} />
-            {showMap ? 'Hide Map' : 'Show Map'}
+            {showMap ? t('planner.hideMap') : t('planner.showMap')}
           </Button>
           {showMap && (
             <Suspense
               fallback={
                 <Card>
                   <CardContent className="pt-6">
-                    <p className="text-muted-foreground text-center py-8">Loading map...</p>
+                    <p className="text-muted-foreground text-center py-8">{t('common.loadingMap')}</p>
                   </CardContent>
                 </Card>
               }
@@ -193,10 +195,10 @@ export function PlannerPage() {
             <div className="text-center py-8">
               <CalendarDays size={48} className="mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-foreground mb-2">
-                No days planned yet
+                {t('planner.noDaysPlanned')}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Start planning activities and meals for your trip by tapping a day
+                {t('planner.noDaysPlannedDesc')}
               </p>
             </div>
           </CardContent>

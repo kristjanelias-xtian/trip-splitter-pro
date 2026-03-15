@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+import i18n from '../i18n'
+
 /**
  * Wraps a promise with a timeout. If the promise doesn't resolve within
  * the specified milliseconds, the returned promise rejects with a timeout error.
@@ -10,7 +12,7 @@
 export function withTimeout<T>(
   promise: PromiseLike<T>,
   ms: number,
-  message = 'Request timed out',
+  message = i18n.t('errors.requestTimedOut'),
   controller?: AbortController
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {

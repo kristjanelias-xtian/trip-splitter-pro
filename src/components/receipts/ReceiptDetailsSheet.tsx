@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ScanLine, ChevronDown, ChevronUp, Image, Pencil } from 'lucide-react'
 import { ReceiptTask } from '@/types/receipt'
@@ -16,6 +17,7 @@ interface ReceiptDetailsSheetProps {
 }
 
 export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, onReprocess }: ReceiptDetailsSheetProps) {
+  const { t } = useTranslation()
   const items = task.extracted_items ?? []
   const currency = task.extracted_currency ?? '—'
 
@@ -47,7 +49,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
       className="w-full gap-2"
     >
       <Pencil size={16} />
-      Edit mapping
+      {t('receipt.editMapping')}
     </Button>
   ) : undefined
 
@@ -55,7 +57,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title={<span className="flex items-center gap-2 min-w-0"><ScanLine size={18} className="shrink-0" /><span className="truncate">Receipt{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}</span></span>}
+      title={<span className="flex items-center gap-2 min-w-0"><ScanLine size={18} className="shrink-0" /><span className="truncate">{t('receipt.receiptDetails')}{task.extracted_merchant ? ` — ${task.extracted_merchant}` : ''}</span></span>}
       maxWidth="max-w-2xl"
       footer={footer}
       scrollClassName=""
@@ -70,7 +72,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
             >
               <span className="flex items-center gap-1.5">
                 <Image size={14} />
-                Receipt photo
+                {t('receipt.receiptPhoto')}
               </span>
               {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
@@ -85,11 +87,11 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
         )}
 
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">No items extracted.</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t('receipt.noItemsExtracted')}</p>
         ) : (
           <div className="space-y-1">
             <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-xs font-medium text-muted-foreground pb-1 border-b border-border">
-              <span>Item</span>
+              <span>{t('common.item')}</span>
               <span className="text-center">Qty</span>
               <span className="text-right">Price</span>
             </div>
@@ -105,7 +107,7 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
 
         {task.extracted_total != null && (
           <div className="flex items-center justify-between font-semibold text-sm border-t border-border pt-2">
-            <span>Total</span>
+            <span>{t('common.total')}</span>
             <span className="tabular-nums">{currency} {task.extracted_total.toFixed(2)}</span>
           </div>
         )}

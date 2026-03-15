@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -21,6 +22,7 @@ export function WizardNavigation({
   canProceed,
   isSubmitting = false,
 }: WizardNavigationProps) {
+  const { t } = useTranslation()
   const isFirstStep = currentStep === 1
   const isLastStep = currentStep === totalSteps
 
@@ -36,7 +38,7 @@ export function WizardNavigation({
           disabled={isSubmitting}
         >
           <ChevronLeft size={18} className="mr-2" />
-          Back
+          {t('common.back')}
         </Button>
       )}
 
@@ -48,12 +50,12 @@ export function WizardNavigation({
         disabled={!canProceed || isSubmitting}
       >
         {isSubmitting ? (
-          'Adding...'
+          t('common.adding')
         ) : isLastStep ? (
-          'Add Expense'
+          t('expenses.addExpense')
         ) : (
           <>
-            Next
+            {t('common.next')}
             <ChevronRight size={18} className="ml-2" />
           </>
         )}

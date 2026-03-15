@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Receipt, FileDown, Trash2, Bell } from 'lucide-react'
@@ -35,6 +36,7 @@ import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
 export function SettlementsPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { user, userProfile } = useAuth()
   const { participants, loading: pLoading, error: pError, refreshParticipants } = useParticipantContext()
@@ -102,11 +104,11 @@ export function SettlementsPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('settlements.title')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip selected. Please select a trip to view settlements.
+              {t('settlements.noTripSelected')}
             </p>
           </CardContent>
         </Card>
@@ -382,9 +384,9 @@ export function SettlementsPage() {
       const failures = results.filter(r => r.status === 'rejected')
       const debtorCount = remindableDebtors.size
       if (failures.length === 0) {
-        toast({ title: 'Reminders sent', description: `Sent to ${debtorCount} ${debtorCount === 1 ? 'person' : 'people'}.` })
+        toast({ title: t('settlements.remindersSent'), description: t('settlements.remindersSentDesc', { count: debtorCount }) })
       } else {
-        toast({ variant: 'destructive', title: 'Some reminders failed', description: `${failures.length} of ${debtorCount} failed to send.` })
+        toast({ variant: 'destructive', title: t('settlements.someRemindersFailed'), description: t('settlements.someRemindersFailedDesc', { failed: failures.length, total: debtorCount }) })
       }
     } finally {
       setRemindAllSending(false)
@@ -428,14 +430,14 @@ export function SettlementsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Settlements</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('settlements.title')}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Optimal settlement plan and payment recording for {currentTrip.name}
+              {t('settlements.subtitle', { name: currentTrip.name })}
             </p>
           </div>
           <div className="flex gap-1">
             {expenses.length > 0 && (
-              <Button onClick={handleExportPDF} variant="ghost" size="icon" title="Export PDF">
+              <Button onClick={handleExportPDF} variant="ghost" size="icon" title={t('settlements.exportPdf')}>
                 <FileDown size={18} />
               </Button>
             )}
@@ -462,17 +464,17 @@ export function SettlementsPage() {
                       .reduce((sum, b) => sum + Math.abs(b.balance), 0)
                   )}
                 </div>
-                <div className="text-[10px] text-muted-foreground">to settle</div>
+                <div className="text-[10px] text-muted-foreground">{t('settlements.toSettle')}</div>
               </div>
               <div>
                 <div className="text-base font-bold tabular-nums">{optimalSettlement.totalTransactions}</div>
                 <div className="text-[10px] text-muted-foreground">
-                  {optimalSettlement.totalTransactions === 0 ? 'all settled!' : 'needed'}
+                  {optimalSettlement.totalTransactions === 0 ? t('settlements.allSettledShort') : t('settlements.needed')}
                 </div>
               </div>
               <div>
                 <div className="text-base font-bold tabular-nums">{settlements.length}</div>
-                <div className="text-[10px] text-muted-foreground">recorded</div>
+                <div className="text-[10px] text-muted-foreground">{t('settlements.recorded')}</div>
               </div>
             </div>
           </CardContent>
@@ -482,7 +484,7 @@ export function SettlementsPage() {
         <div className="hidden md:grid md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Total to Settle</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('settlements.totalToSettle')}</div>
               <div className="text-2xl font-bold text-foreground tabular-nums">
                 {new Intl.NumberFormat('en-US', {
                   style: 'currency',
@@ -494,31 +496,31 @@ export function SettlementsPage() {
                 )}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Total amount owed by all debtors
+                {t('settlements.totalAmountOwed')}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Settlements Needed</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('settlements.settlementsNeeded')}</div>
               <div className="text-2xl font-bold text-foreground tabular-nums">
                 {optimalSettlement.totalTransactions}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {optimalSettlement.totalTransactions === 0 ? 'All settled!' : 'transactions required'}
+                {optimalSettlement.totalTransactions === 0 ? t('settlements.allSettled') : t('settlements.transactionsRequired')}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Settlements Recorded</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('settlements.settlementsRecorded')}</div>
               <div className="text-2xl font-bold text-foreground tabular-nums">
                 {settlements.length}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Total payments recorded
+                {t('settlements.totalPaymentsRecorded')}
               </div>
             </CardContent>
           </Card>
@@ -552,7 +554,7 @@ export function SettlementsPage() {
               variant="outline"
               size="sm"
             >
-              Log a custom payment
+              {t('settlements.logCustomPayment')}
             </Button>
             {canRemindAll && (
               <Button
@@ -561,7 +563,7 @@ export function SettlementsPage() {
                 size="sm"
               >
                 <Bell size={14} className="mr-1.5" />
-                Remind All
+                {t('settlements.remindAll')}
               </Button>
             )}
           </div>
@@ -572,7 +574,7 @@ export function SettlementsPage() {
           <Card>
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                Settlement History
+                {t('settlements.settlementHistory')}
               </h3>
               <div className="space-y-2">
                 {settlements.map((settlement) => {
@@ -587,11 +589,11 @@ export function SettlementsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium text-foreground">
-                            {fromParticipant?.name || 'Unknown'}
+                            {fromParticipant?.name || t('common.unknown')}
                           </span>
                           <span className="text-muted-foreground">→</span>
                           <span className="font-medium text-foreground">
-                            {toParticipant?.name || 'Unknown'}
+                            {toParticipant?.name || t('common.unknown')}
                           </span>
                         </div>
                         {settlement.note && (
@@ -614,7 +616,7 @@ export function SettlementsPage() {
                       {(settlement.created_by == null || settlement.created_by === user?.id) && (
                         <button
                           onClick={() => setDeletingId(settlement.id)}
-                          aria-label="Delete settlement"
+                          aria-label={t('settlements.deleteSettlement')}
                           className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                         >
                           <Trash2 size={15} />
@@ -635,7 +637,7 @@ export function SettlementsPage() {
               <div className="text-center py-8">
                 <Receipt size={48} className="mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">
-                  No expenses recorded yet. Add expenses first to see settlement recommendations.
+                  {t('settlements.noExpensesYet')}
                 </p>
               </div>
             </CardContent>
@@ -648,7 +650,7 @@ export function SettlementsPage() {
       <ResponsiveOverlay
         open={showRecordDialog}
         onClose={closeDialog}
-        title="Settle Up"
+        title={t('settlements.settleUp')}
         hasInputs
         footer={
           <div className="flex gap-3">
@@ -657,15 +659,15 @@ export function SettlementsPage() {
               disabled={submitting}
               className="flex-1"
             >
-              {submitting ? 'Confirming...' : 'Confirm Payment'}
+              {submitting ? t('settlements.confirming') : t('settlements.confirmPayment')}
             </Button>
-            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+            <Button variant="outline" onClick={closeDialog}>{t('common.cancel')}</Button>
           </div>
         }
         scrollClassName="p-4"
       >
         <p className="text-sm text-muted-foreground mb-4">
-          Log a payment between participants.
+          {t('settlements.logPaymentDescription')}
         </p>
         <SettlementForm
           ref={formRef}
@@ -684,15 +686,15 @@ export function SettlementsPage() {
       <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete settlement?</AlertDialogTitle>
+            <AlertDialogTitle>{t('settlements.deleteSettlement')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the recorded payment. Balances will be recalculated.
+              {t('settlements.deleteSettlementConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteSettlement} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -702,38 +704,38 @@ export function SettlementsPage() {
       <AlertDialog open={remindAllOpen} onOpenChange={setRemindAllOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Send reminders to all debtors?</AlertDialogTitle>
+            <AlertDialogTitle>{t('settlements.remindAllTitle')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <p>One email per person with all their outstanding payments:</p>
+                <p>{t('settlements.remindAllDescription')}</p>
                 <ul className="list-disc pl-5 space-y-1">
                   {Array.from(remindableDebtors.entries()).map(([id, debtor]) => (
                     <li key={id} className="text-sm">
                       <span className="font-medium text-foreground">{debtor.name}</span>
                       <span className="text-muted-foreground"> — {debtor.emails.join(', ')}</span>
                       {debtor.payments.length > 1 && (
-                        <span className="text-muted-foreground"> ({debtor.payments.length} payments)</span>
+                        <span className="text-muted-foreground"> ({t('settlements.payments', { count: debtor.payments.length })})</span>
                       )}
                     </li>
                   ))}
                 </ul>
                 {unreachableCount > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {unreachableCount} {unreachableCount === 1 ? 'participant has' : 'participants have'} no email address and will be skipped.
+                    {t('settlements.noEmailSkipped', { count: unreachableCount })}
                   </p>
                 )}
                 {remindableDebtors.size > 20 && (
                   <p className="text-xs text-amber-600">
-                    Large batch — this will send {remindableDebtors.size} emails.
+                    {t('settlements.largeBatchWarning', { count: remindableDebtors.size })}
                   </p>
                 )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={remindAllSending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={remindAllSending}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleRemindAll} disabled={remindAllSending}>
-              {remindAllSending ? 'Sending...' : 'Send reminders'}
+              {remindAllSending ? t('common.sending') : t('settlements.sendReminders')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

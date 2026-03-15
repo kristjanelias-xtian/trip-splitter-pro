@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   UtensilsCrossed,
@@ -31,6 +32,7 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: ExpenseCardProps) {
+  const { t } = useTranslation()
   const { participants } = useParticipantContext()
   const { currentTrip } = useCurrentTrip()
   const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
@@ -55,7 +57,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
   }
 
   const getPaidByName = () => {
-    return shortNames.get(expense.paid_by) || 'Unknown'
+    return shortNames.get(expense.paid_by) || t('common.unknown')
   }
 
   const getDistributionText = () => {
@@ -65,9 +67,9 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
       .map(id => shortNames.get(id))
       .filter(Boolean)
     if (names.length === participants.length) {
-      return 'Everyone'
+      return t('common.everyone')
     }
-    return names.length > 0 ? names.join(', ') : 'Unknown'
+    return names.length > 0 ? names.join(', ') : t('common.unknown')
   }
 
   const getCategoryIcon = (category: string) => {
@@ -99,11 +101,11 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                 </h3>
 
                 <p className="text-sm text-muted-foreground">
-                  Paid by <span className="font-medium text-foreground">{getPaidByName()}</span>
+                  {t('expenses.paidByLabel', { name: getPaidByName() })}
                 </p>
 
                 <p className="text-xs text-muted-foreground">
-                  Split: {getDistributionText()}
+                  {t('expenses.split', { names: getDistributionText() })}
                 </p>
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -114,7 +116,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                   <span className="text-muted-foreground">•</span>
                   <Badge variant="outline" className="text-xs py-0.5 px-2">
                     <Tag size={10} className="mr-1" />
-                    {expense.category}
+                    {t(`expenses.category${expense.category}`)}
                   </Badge>
                 </div>
 
@@ -145,7 +147,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                   variant="ghost"
                   size="sm"
                   className="h-10 w-10 p-0 text-muted-foreground"
-                  title="View receipt"
+                  title={t('expenses.viewReceipt')}
                 >
                   <ScanLine size={16} />
                 </Button>
@@ -155,7 +157,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                 variant="ghost"
                 size="sm"
                 className="h-10 w-10 p-0"
-                title="Edit expense"
+                title={t('expenses.editExpenseTitle')}
               >
                 <Edit size={16} />
               </Button>
@@ -164,7 +166,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                 variant="ghost"
                 size="sm"
                 className="h-10 w-10 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                title="Delete expense"
+                title={t('expenses.deleteExpenseTitle')}
               >
                 <Trash2 size={16} />
               </Button>

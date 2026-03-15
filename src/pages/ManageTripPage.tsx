@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Edit, Trash2, Info, X, Plus, ArrowLeft } from 'lucide-react'
@@ -41,6 +42,7 @@ import { isAdminUser } from '@/lib/adminAuth'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function ManageTripPage() {
+  const { t, i18n } = useTranslation()
   const { currentTrip, tripCode } = useCurrentTrip()
   const { updateTrip, deleteTrip } = useTripContext()
   const { user } = useAuth()
@@ -70,11 +72,11 @@ export function ManageTripPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Manage</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('layout.manage')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip or event selected.
+              {t('manage.noTripSelected')}
             </p>
           </CardContent>
         </Card>
@@ -82,7 +84,7 @@ export function ManageTripPage() {
     )
   }
 
-  const entityLabel = currentTrip.event_type === 'event' ? 'Event' : 'Trip'
+  const entityLabel = currentTrip.event_type === 'event' ? t('trip.eventLabel') : t('trip.tripLabel')
   const isEvent = currentTrip.event_type === 'event'
   const canDelete = !!user && (
     (!!currentTrip.created_by && user.id === currentTrip.created_by) ||
@@ -103,21 +105,21 @@ export function ManageTripPage() {
       if (success) {
         setShowEditDialog(false)
         toast({
-          title: `${entityLabel} updated`,
-          description: 'Your details have been saved.',
+          title: t('manage.tripUpdated', { label: entityLabel }),
+          description: t('manage.tripUpdatedDesc'),
         })
       } else {
         toast({
           variant: 'destructive',
-          title: 'Update failed',
-          description: `Failed to update ${entityLabel.toLowerCase()}. Please try again.`,
+          title: t('manage.updateFailed'),
+          description: t('manage.updateFailedDesc', { label: entityLabel.toLowerCase() }),
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: `An error occurred while updating the ${entityLabel.toLowerCase()}.`,
+        title: t('manage.errorOccurred'),
+        description: t('manage.errorOccurredDesc', { label: entityLabel.toLowerCase() }),
       })
     } finally {
       setIsUpdating(false)
@@ -125,11 +127,11 @@ export function ManageTripPage() {
   }
 
   const featureLabels: Record<string, string> = {
-    enable_meals: 'Meal planning',
-    enable_activities: 'Activity planning',
-    enable_shopping: 'Shopping list',
-    default_split_all: 'Split between everyone',
-    enable_settlement_reminders: 'Settlement reminders',
+    enable_meals: t('manage.mealPlanning'),
+    enable_activities: t('manage.activityPlanning'),
+    enable_shopping: t('manage.shoppingList'),
+    default_split_all: t('manage.splitBetweenEveryone'),
+    enable_settlement_reminders: t('manage.settlementReminders'),
   }
 
   const handleToggleFeature = async (feature: 'enable_meals' | 'enable_activities' | 'enable_shopping' | 'default_split_all' | 'enable_settlement_reminders', value: boolean) => {
@@ -138,21 +140,21 @@ export function ManageTripPage() {
       const success = await updateTrip(currentTrip.id, { [feature]: value })
       if (success) {
         toast({
-          title: 'Feature updated',
-          description: `${featureLabels[feature]} ${value ? 'enabled' : 'disabled'}.`,
+          title: t('manage.featureUpdated'),
+          description: value ? t('manage.featureEnabled', { feature: featureLabels[feature] }) : t('manage.featureDisabled', { feature: featureLabels[feature] }),
         })
       } else {
         toast({
           variant: 'destructive',
-          title: 'Update failed',
-          description: 'Failed to update feature toggle.',
+          title: t('manage.updateFailed'),
+          description: t('manage.featureUpdateFailed'),
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'An error occurred while updating the feature.',
+        title: t('manage.errorOccurred'),
+        description: t('manage.featureUpdateError'),
       })
     } finally {
       setTogglingFeatures(prev => { const next = new Set(prev); next.delete(feature); return next })
@@ -180,21 +182,21 @@ export function ManageTripPage() {
 
       if (success) {
         toast({
-          title: 'Currency settings saved',
-          description: 'Exchange rates have been updated.',
+          title: t('manage.currencySettingsSaved'),
+          description: t('manage.currencySettingsSavedDesc'),
         })
       } else {
         toast({
           variant: 'destructive',
-          title: 'Save failed',
-          description: 'Failed to save currency settings.',
+          title: t('manage.currencySaveFailed'),
+          description: t('manage.currencySaveFailedDesc'),
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'An error occurred while saving currency settings.',
+        title: t('manage.errorOccurred'),
+        description: t('manage.currencySaveError'),
       })
     } finally {
       setIsSavingCurrency(false)
@@ -211,8 +213,8 @@ export function ManageTripPage() {
         removeFromMyTrips(currentTrip.trip_code)
 
         toast({
-          title: `${entityLabel} deleted`,
-          description: `The ${entityLabel.toLowerCase()} has been permanently deleted.`,
+          title: t('manage.tripDeleted', { label: entityLabel }),
+          description: t('manage.tripDeletedDesc', { label: entityLabel.toLowerCase() }),
         })
 
         // Navigate to home page
@@ -220,15 +222,15 @@ export function ManageTripPage() {
       } else {
         toast({
           variant: 'destructive',
-          title: 'Delete failed',
-          description: `Failed to delete ${entityLabel.toLowerCase()}. Please try again.`,
+          title: t('manage.deleteFailed'),
+          description: t('manage.deleteFailedDesc', { label: entityLabel.toLowerCase() }),
         })
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: `An error occurred while deleting the ${entityLabel.toLowerCase()}.`,
+        title: t('manage.errorOccurred'),
+        description: t('manage.deleteError', { label: entityLabel.toLowerCase() }),
       })
     } finally {
       setIsDeleting(false)
@@ -246,20 +248,20 @@ export function ManageTripPage() {
           className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
         >
           <ArrowLeft size={14} />
-          Back to Quick View
+          {t('manage.backToQuickView')}
         </Button>
       )}
 
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Manage {entityLabel}</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('manage.title', { label: entityLabel })}</h2>
         <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
       </div>
 
       {/* Participants Section — top position for easy onboarding */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">
-          Participants
+          {t('manage.participants')}
         </h3>
         {participantsLoading ? (
           <PageLoadingState />
@@ -273,10 +275,10 @@ export function ManageTripPage() {
             <Card className="border-dashed border-primary/40 bg-primary/5">
               <CardContent className="pt-4 pb-4">
                 <p className="text-sm text-primary font-medium">
-                  Add participants to get started
+                  {t('manage.addParticipantsToGetStarted')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Participants are required before you can add expenses.
+                  {t('manage.participantsRequiredForExpenses')}
                 </p>
               </CardContent>
             </Card>
@@ -288,22 +290,22 @@ export function ManageTripPage() {
       {/* Details Card */}
       <Card>
         <CardHeader>
-          <CardTitle>{entityLabel} Details</CardTitle>
-          <CardDescription>View and edit your {entityLabel.toLowerCase()} information</CardDescription>
+          <CardTitle>{t('manage.tripDetails', { label: entityLabel })}</CardTitle>
+          <CardDescription>{t('manage.tripDetailsDescription', { label: entityLabel.toLowerCase() })}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground">Name</Label>
+              <Label className="text-muted-foreground">{t('common.name')}</Label>
               <p className="text-sm font-medium">{currentTrip.name}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">Code</Label>
+              <Label className="text-muted-foreground">{t('manage.code')}</Label>
               <p className="text-sm font-mono font-medium">{tripCode}</p>
             </div>
             {isEvent ? (
               <div>
-                <Label className="text-muted-foreground">Date</Label>
+                <Label className="text-muted-foreground">{t('common.date')}</Label>
                 <p className="text-sm font-medium">
                   {format(new Date(currentTrip.start_date), 'PPP')}
                 </p>
@@ -311,13 +313,13 @@ export function ManageTripPage() {
             ) : (
               <>
                 <div>
-                  <Label className="text-muted-foreground">Start Date</Label>
+                  <Label className="text-muted-foreground">{t('manage.startDate')}</Label>
                   <p className="text-sm font-medium">
                     {format(new Date(currentTrip.start_date), 'PPP')}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">End Date</Label>
+                  <Label className="text-muted-foreground">{t('manage.endDate')}</Label>
                   <p className="text-sm font-medium">
                     {format(new Date(currentTrip.end_date), 'PPP')}
                   </p>
@@ -327,7 +329,7 @@ export function ManageTripPage() {
           </div>
           <Button onClick={() => setShowEditDialog(true)} className="mt-4">
             <Edit size={16} className="mr-2" />
-            Edit Details
+            {t('manage.editDetails')}
           </Button>
         </CardContent>
       </Card>
@@ -335,14 +337,14 @@ export function ManageTripPage() {
       {/* Features Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Features</CardTitle>
-          <CardDescription>Enable or disable optional features for this {entityLabel.toLowerCase()}</CardDescription>
+          <CardTitle>{t('common.features')}</CardTitle>
+          <CardDescription>{t('manage.featuresDescription', { label: entityLabel.toLowerCase() })}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Meal Planning</Label>
-              <p className="text-xs text-muted-foreground">Plan meals for each day</p>
+              <Label>{t('manage.mealPlanning')}</Label>
+              <p className="text-xs text-muted-foreground">{t('manage.mealPlanningDesc')}</p>
             </div>
             <Switch
               checked={currentTrip.enable_meals}
@@ -352,8 +354,8 @@ export function ManageTripPage() {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Activity Planning</Label>
-              <p className="text-xs text-muted-foreground">Plan activities for each day</p>
+              <Label>{t('manage.activityPlanning')}</Label>
+              <p className="text-xs text-muted-foreground">{t('manage.activityPlanningDesc')}</p>
             </div>
             <Switch
               checked={currentTrip.enable_activities}
@@ -363,8 +365,8 @@ export function ManageTripPage() {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Shopping List</Label>
-              <p className="text-xs text-muted-foreground">Collaborative shopping list with real-time updates</p>
+              <Label>{t('manage.shoppingList')}</Label>
+              <p className="text-xs text-muted-foreground">{t('manage.shoppingListDesc')}</p>
             </div>
             <Switch
               checked={currentTrip.enable_shopping}
@@ -374,8 +376,8 @@ export function ManageTripPage() {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Split Between Everyone</Label>
-              <p className="text-xs text-muted-foreground">New expenses default to splitting between all participants</p>
+              <Label>{t('manage.splitBetweenEveryone')}</Label>
+              <p className="text-xs text-muted-foreground">{t('manage.splitBetweenEveryoneDesc')}</p>
             </div>
             <Switch
               checked={currentTrip.default_split_all ?? true}
@@ -385,8 +387,8 @@ export function ManageTripPage() {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Settlement Reminders</Label>
-              <p className="text-xs text-muted-foreground">Show nudges and allow sending payment reminders after the trip ends</p>
+              <Label>{t('manage.settlementReminders')}</Label>
+              <p className="text-xs text-muted-foreground">{t('manage.settlementRemindersDesc')}</p>
             </div>
             <Switch
               checked={currentTrip.enable_settlement_reminders ?? true}
@@ -400,12 +402,12 @@ export function ManageTripPage() {
       {/* Currency Settings Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Currency Settings</CardTitle>
-          <CardDescription>Set the default currency and exchange rates</CardDescription>
+          <CardTitle>{t('manage.currencySettings')}</CardTitle>
+          <CardDescription>{t('manage.currencySettingsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="defaultCurrency">Default Currency</Label>
+            <Label htmlFor="defaultCurrency">{t('manage.defaultCurrency')}</Label>
             <Input
               id="defaultCurrency"
               value={currencyDefault}
@@ -415,14 +417,14 @@ export function ManageTripPage() {
               className="w-32 uppercase"
             />
             <p className="text-xs text-muted-foreground">
-              All balances and settlements will be displayed in this currency
+              {t('manage.defaultCurrencyHint')}
             </p>
           </div>
 
           <div className="space-y-3">
-            <Label>Exchange Rates</Label>
+            <Label>{t('manage.exchangeRates')}</Label>
             <p className="text-xs text-muted-foreground">
-              Set how much 1 {currencyDefault || '...'} equals in other currencies
+              {t('manage.exchangeRatesHint', { currency: currencyDefault || '...' })}
             </p>
             {currencyRows.map((row, index) => (
               <div key={index} className="flex items-center gap-3">
@@ -469,7 +471,7 @@ export function ManageTripPage() {
               onClick={() => setCurrencyRows(rows => [...rows, { code: '', rate: '' }])}
             >
               <Plus size={16} className="mr-1" />
-              Add Currency
+              {t('manage.addCurrency')}
             </Button>
           </div>
 
@@ -477,7 +479,7 @@ export function ManageTripPage() {
             onClick={handleSaveCurrencySettings}
             disabled={isSavingCurrency}
           >
-            {isSavingCurrency ? 'Saving...' : 'Save Currency Settings'}
+            {isSavingCurrency ? t('common.saving') : t('manage.saveCurrencySettings')}
           </Button>
         </CardContent>
       </Card>
@@ -488,10 +490,29 @@ export function ManageTripPage() {
       {/* Appearance Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
+          <CardTitle>{t('manage.appearance')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <ThemeToggle />
+          <div>
+            <Label className="text-sm font-medium mb-2 block">{t('settings.language')}</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={i18n.language === 'en' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => i18n.changeLanguage('en')}
+              >
+                English
+              </Button>
+              <Button
+                variant={i18n.language === 'et' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => i18n.changeLanguage('et')}
+              >
+                Eesti
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -504,36 +525,35 @@ export function ManageTripPage() {
       {canDelete && (
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>Irreversible actions</CardDescription>
+            <CardTitle className="text-destructive">{t('manage.dangerZone')}</CardTitle>
+            <CardDescription>{t('manage.irreversibleActions')}</CardDescription>
           </CardHeader>
           <CardContent>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
                   <Trash2 size={16} className="mr-2" />
-                  Delete {entityLabel}
+                  {t('manage.deleteTrip', { label: entityLabel })}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('manage.deleteConfirmTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete <strong>"{currentTrip.name}"</strong> and all
-                    associated data including expenses, settlements, and shopping items.
+                    {t('manage.deleteConfirmDescription', { name: currentTrip.name })}
                     <br />
                     <br />
-                    <strong>This action cannot be undone.</strong>
+                    <strong>{t('manage.cannotBeUndone')}</strong>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteTrip}
                     disabled={isDeleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {isDeleting ? 'Deleting...' : `Delete ${entityLabel}`}
+                    {isDeleting ? t('common.deleting') : t('manage.deleteTrip', { label: entityLabel })}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -546,11 +566,11 @@ export function ManageTripPage() {
       <ResponsiveOverlay
         open={showEditDialog}
         onClose={() => setShowEditDialog(false)}
-        title={`Edit ${entityLabel} Details`}
+        title={t('manage.editDialogTitle', { label: entityLabel })}
         hasInputs
         headerExtra={
           <DialogDescription className="px-4 pb-3 mt-0 text-center">
-            Update the name, dates, or currency
+            {t('manage.editDialogDescription')}
           </DialogDescription>
         }
       >
@@ -560,8 +580,7 @@ export function ManageTripPage() {
             <Alert>
               <Info size={16} className="mt-0.5" />
               <AlertDescription>
-                <strong>Note:</strong> Changing dates may hide meals that fall outside the
-                new date range. Those meals will remain in the database.
+                <strong>Note:</strong> {t('manage.dateChangeWarning')}
               </AlertDescription>
             </Alert>
           )}
@@ -576,7 +595,7 @@ export function ManageTripPage() {
             }}
             onSubmit={handleEditTrip}
             onCancel={() => setShowEditDialog(false)}
-            submitLabel="Save Changes"
+            submitLabel={t('manage.saveChanges')}
             isLoading={isUpdating}
             isEditMode
           />

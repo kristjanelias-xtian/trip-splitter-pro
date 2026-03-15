@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useTripContext } from '@/contexts/TripContext'
 import { EventForm } from '@/components/EventForm'
 import { CreateEventInput } from '@/types/trip'
@@ -12,6 +13,7 @@ interface QuickCreateSheetProps {
 }
 
 export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { createTrip } = useTripContext()
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -28,7 +30,7 @@ export function QuickCreateSheet({ open, onOpenChange }: QuickCreateSheetProps) 
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title="Create New"
+      title={t('quick.createNew')}
       hasInputs
       scrollClassName="px-6 py-4"
     >

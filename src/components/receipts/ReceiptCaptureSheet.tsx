@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Camera, Upload, Loader2, X, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
@@ -66,6 +67,7 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCaptureSheetProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -205,7 +207,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
     <ResponsiveOverlay
       open={open}
       onClose={() => handleOpenChange(false)}
-      title={<span className="flex items-center gap-2"><ScanLine size={20} />Scan Receipt</span>}
+      title={<span className="flex items-center gap-2"><ScanLine size={20} />{t('receipt.scanReceipt')}</span>}
       hasInputs
       preventOutsideClose={scanning}
       scrollClassName=""
@@ -217,9 +219,9 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
             <Camera size={40} className="text-muted-foreground" />
           </div>
           <div className="text-center">
-            <p className="font-medium text-foreground">Add a receipt photo</p>
+            <p className="font-medium text-foreground">{t('receipt.addReceiptPhoto')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Take a photo or upload from your library
+              {t('receipt.takePhotoOrUpload')}
             </p>
           </div>
 
@@ -230,7 +232,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
               onClick={() => cameraInputRef.current?.click()}
             >
               <Camera size={16} />
-              Take Photo
+              {t('receipt.takePhoto')}
             </Button>
             <Button
               variant="outline"
@@ -238,7 +240,7 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload size={16} />
-              Choose from Library
+              {t('receipt.chooseFromLibrary')}
             </Button>
           </div>
 
@@ -264,14 +266,14 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
           <div className="relative rounded-lg overflow-hidden border border-border">
             <img
               src={previewUrl}
-              alt="Receipt preview"
+              alt={t('receipt.receiptPreview')}
               className="w-full max-h-64 object-contain bg-muted"
             />
             {!scanning && (
               <button
                 onClick={handleReset}
                 className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
-                aria-label="Remove image"
+                aria-label={t('receipt.removeImage')}
               >
                 <X size={16} />
               </button>
@@ -296,19 +298,19 @@ export function ReceiptCaptureSheet({ open, onOpenChange, onScanned }: ReceiptCa
             {scanning ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Analyzing receipt...
+                {t('receipt.analyzingReceipt')}
               </>
             ) : (
               <>
                 <ScanLine size={16} />
-                Scan Receipt
+                {t('receipt.scanReceipt')}
               </>
             )}
           </Button>
 
           {scanning && (
             <p className="text-xs text-muted-foreground text-center">
-              This usually takes 5–10 seconds
+              {t('receipt.usuallyTakes')}
             </p>
           )}
         </div>

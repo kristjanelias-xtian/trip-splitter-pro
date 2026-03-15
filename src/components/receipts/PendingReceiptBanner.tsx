@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ReceiptTask, ExtractedItem, MappedItem } from '@/types/receipt'
@@ -23,6 +24,7 @@ interface PendingReceiptBannerProps {
 }
 
 export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismiss }: PendingReceiptBannerProps) {
+  const { t } = useTranslation()
   if (tasks.length === 0) return null
 
   return (
@@ -36,7 +38,7 @@ export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismi
             <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 min-w-0">
               <ScanLine size={16} className="shrink-0" />
               <div className="min-w-0">
-                <span className="font-medium">Unreviewed receipt</span>
+                <span className="font-medium">{t('receipt.unreviewed')}</span>
                 {task.extracted_merchant && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 truncate mt-0.5">
                     {task.extracted_merchant}
@@ -61,7 +63,7 @@ export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismi
                   })
                 }
               >
-                Review
+                {t('receipt.review')}
               </Button>
               <Button
                 size="sm"
@@ -69,7 +71,7 @@ export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismi
                 className="h-7 text-xs text-muted-foreground"
                 onClick={() => onDismiss(task.id)}
               >
-                Dismiss
+                {t('common.dismiss')}
               </Button>
             </div>
           </div>

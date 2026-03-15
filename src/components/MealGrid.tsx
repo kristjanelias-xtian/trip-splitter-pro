@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sunrise, Sun, Moon, Plus } from 'lucide-react'
 import { MealWithIngredients, MealType, MEAL_TYPE_LABELS } from '@/types/meal'
 import { MealCard } from './MealCard'
@@ -36,6 +37,7 @@ const MEAL_HEADER_BG = {
 }
 
 export function MealGrid({ date, meals }: MealGridProps) {
+  const { t } = useTranslation()
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null)
 
@@ -85,7 +87,7 @@ export function MealGrid({ date, meals }: MealGridProps) {
           ) : (
             <div className="flex flex-col items-center justify-center text-center py-8">
               <Icon size={40} className={`${colorClass} opacity-20 mb-3`} />
-              <p className="text-sm text-muted-foreground mb-4">No meal planned</p>
+              <p className="text-sm text-muted-foreground mb-4">{t('planner.noMealPlanned')}</p>
               <Button
                 onClick={() => handleAddMeal(mealType)}
                 variant="outline"
@@ -93,7 +95,7 @@ export function MealGrid({ date, meals }: MealGridProps) {
                 className="gap-2"
               >
                 <Plus size={14} />
-                Add {MEAL_TYPE_LABELS[mealType]}
+                {t('planner.addMealType', { type: MEAL_TYPE_LABELS[mealType] })}
               </Button>
             </div>
           )}
@@ -115,7 +117,7 @@ export function MealGrid({ date, meals }: MealGridProps) {
       <ResponsiveOverlay
         open={showAddForm}
         onClose={() => setShowAddForm(false)}
-        title={`Add ${selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : 'Meal'} - ${formatDialogDate(date)}`}
+        title={t('planner.addMealTitle', { type: selectedMealType ? MEAL_TYPE_LABELS[selectedMealType] : t('planner.addMeal'), date: formatDialogDate(date) })}
         hasInputs
       >
         <MealForm

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby, MoreHorizontal } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -79,6 +80,7 @@ async function sendInvitation(params: {
 }
 
 export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup = false }: ParticipantsSetupProps = {}) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { participants, createParticipant, updateParticipant, deleteParticipant } = useParticipantContext()
   const { user, userProfile } = useAuth()
@@ -250,7 +252,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
     if (emailLower) {
       const duplicate = participants.some(p => p.email?.toLowerCase() === emailLower)
       if (duplicate) {
-        setError('This email is already used by another participant in this trip.')
+        setError(t('participants.duplicateEmail'))
         return
       }
     }
@@ -287,7 +289,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   }
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Remove this participant?')) {
+    if (window.confirm(t('common.confirmRemoveParticipant'))) {
       await deleteParticipant(id)
     }
   }
@@ -304,7 +306,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
         p => p.id !== participant.id && p.email?.toLowerCase() === newEmail.toLowerCase()
       )
       if (duplicate) {
-        setError('This email is already used by another participant in this trip.')
+        setError(t('participants.duplicateEmail'))
         return
       }
     }
@@ -424,10 +426,10 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           <button
             type="button"
             onClick={() => updateParticipant(participant.id, { is_adult: !participant.is_adult })}
-            title={`Click to change to ${participant.is_adult ? 'Child' : 'Adult'}`}
+            title={participant.is_adult ? t('common.child') : t('common.adult')}
           >
             <Badge variant={participant.is_adult ? 'soft' : 'outline'} className="cursor-pointer hover:opacity-80 transition-opacity">
-              {participant.is_adult ? 'Adult' : 'Child'}
+              {participant.is_adult ? t('common.adult') : t('common.child')}
             </Badge>
           </button>
           {participant.user_id && (
@@ -446,30 +448,30 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Edit</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">{t('common.edit')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleStartEditNickname(participant)}>
                   <Pencil size={14} className="mr-2" />
-                  {participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
+                  {participant.nickname ? t('participants.nicknameLabel', { name: participant.nickname }) : t('participants.setNickname')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleStartEditGroup(participant)}>
                   <Users size={14} className="mr-2" />
-                  {participant.wallet_group ? `Group: ${participant.wallet_group}` : 'Set group'}
+                  {participant.wallet_group ? t('participants.groupLabel', { name: participant.wallet_group }) : t('participants.setGroup')}
                 </DropdownMenuItem>
                 {!participant.user_id && (
                   <DropdownMenuItem onClick={() => handleStartEditEmail(participant)}>
                     <Mail size={14} className="mr-2" />
-                    {participant.email ? `Email: ${participant.email}` : 'Set email'}
+                    {participant.email ? t('participants.emailLabel', { email: participant.email }) : t('participants.setEmail')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Actions</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">{t('common.actions')}</DropdownMenuLabel>
                 {participant.email && user && (
                   <DropdownMenuItem
                     onClick={() => handleSendInvite(participant)}
                     disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
                   >
                     <Send size={14} className="mr-2" />
-                    {sentInviteIds.has(participant.id) ? 'Invite sent' : 'Send invite'}
+                    {sentInviteIds.has(participant.id) ? t('participants.inviteSent') : t('participants.sendInvite')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -477,7 +479,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                   className="text-destructive focus:text-destructive"
                 >
                   <X size={14} className="mr-2" />
-                  Remove
+                  {t('common.remove')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -490,7 +492,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              title={participant.nickname ? `Nickname: ${participant.nickname}` : 'Set nickname'}
+              title={participant.nickname ? t('participants.nicknameLabel', { name: participant.nickname }) : t('participants.setNickname')}
             >
               <Pencil size={15} className={participant.nickname ? 'text-accent' : 'text-muted-foreground'} />
             </Button>
@@ -499,7 +501,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              title={participant.wallet_group ? `Group: ${participant.wallet_group}` : 'Set shared wallet group'}
+              title={participant.wallet_group ? t('participants.groupLabel', { name: participant.wallet_group }) : t('participants.setGroup')}
             >
               <Users size={15} className={participant.wallet_group ? 'text-accent' : 'text-muted-foreground'} />
             </Button>
@@ -509,7 +511,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                title={participant.email ? `Email: ${participant.email}` : 'Add email'}
+                title={participant.email ? t('participants.emailLabel', { email: participant.email }) : t('participants.setEmail')}
               >
                 <Mail size={15} className={participant.email ? 'text-accent' : 'text-muted-foreground'} />
               </Button>
@@ -520,7 +522,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                title="Send invite email"
+                title={t('participants.sendInvite')}
                 disabled={sendingInviteId === participant.id || sentInviteIds.has(participant.id)}
               >
                 {sentInviteIds.has(participant.id) ? (
@@ -549,7 +551,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             type="text"
             value={editNicknameValue}
             onChange={(e) => setEditNicknameValue(e.target.value)}
-            placeholder="Short name / nickname"
+            placeholder={t('participants.nicknamePlaceholder')}
             className="h-8 text-sm flex-1"
             disabled={savingNicknameId === participant.id}
           />
@@ -580,7 +582,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             type="text"
             value={editGroupValue}
             onChange={(e) => setEditGroupValue(e.target.value)}
-            placeholder="Shared wallet group (e.g., The Smiths)"
+            placeholder={t('participants.groupPlaceholder')}
             className="h-8 text-sm flex-1"
             list="wallet-groups"
             disabled={savingGroupId === participant.id}
@@ -613,7 +615,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             inputMode="email"
             value={editEmailValue}
             onChange={(e) => setEditEmailValue(e.target.value)}
-            placeholder="Email address"
+            placeholder={t('participants.emailAddressPlaceholder')}
             className="h-8 text-sm flex-1"
             disabled={savingEmailId === participant.id}
           />
@@ -643,7 +645,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           onClick={() => handleStartEditNickname(participant)}
           className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          aka {participant.nickname}
+          {t('participants.aka', { name: participant.nickname })}
         </button>
       )}
 
@@ -694,7 +696,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
 
       <Card>
         <CardHeader>
-          <CardTitle>Add Participants</CardTitle>
+          <CardTitle>{t('participants.addParticipants')}</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Recent contacts from past trips */}
@@ -706,7 +708,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
               >
                 <Users size={14} />
-                <span>Recent companions</span>
+                <span>{t('participants.recentCompanions')}</span>
                 <ChevronRight
                   size={14}
                   className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
@@ -742,7 +744,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                         onClick={() => !added && handleAddRecent(contact)}
                         disabled={added}
                         title={tooltip}
-                        aria-label={added ? `${displayName} already added` : `Add ${displayName}`}
+                        aria-label={added ? t('participants.alreadyAdded', { name: displayName }) : t('participants.addContact', { name: displayName })}
                         className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1.5 rounded-full border text-sm transition-colors ${
                           added
                             ? 'bg-primary/10 border-primary/20 text-primary/60 cursor-default'
@@ -779,9 +781,9 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {hasMore ? (
-                    <>Showing {visibleContacts.length} of {totalCount} · <button type="button" onClick={handleShowMore} className="underline hover:text-foreground transition-colors">Show more</button></>
+                    <>{t('participants.showingContacts', { shown: visibleContacts.length, total: totalCount })} · <button type="button" onClick={handleShowMore} className="underline hover:text-foreground transition-colors">{t('common.showMore')}</button></>
                   ) : (
-                    <>{totalCount} companions</>
+                    <>{t('participants.companionCount', { count: totalCount })}</>
                   )}
                 </p>
                   </>
@@ -797,7 +799,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
               )}
               <form onSubmit={handleAdd} className="space-y-4">
                 <div className="space-y-2 relative">
-                  <Label htmlFor="name">Participant Name</Label>
+                  <Label htmlFor="name">{t('participants.participantName')}</Label>
                   <Input
                     ref={nameInputRef}
                     type="text"
@@ -805,7 +807,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     onKeyDown={handleNameKeyDown}
-                    placeholder="e.g., John Doe"
+                    placeholder={t('participants.participantNamePlaceholder')}
                     required
                     disabled={adding}
                     autoComplete="off"
@@ -842,7 +844,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                             <div className="text-xs text-muted-foreground">{contact.email}</div>
                           )}
                           {contact.user_id && (
-                            <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                            <div className="text-xs text-primary">✓ {t('participants.hasSplitAccount')}</div>
                           )}
                         </button>
                       ))}
@@ -851,7 +853,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Label htmlFor="email">{t('participants.emailOptional')} <span className="text-muted-foreground font-normal">{t('participants.emailOptionalLabel')}</span></Label>
                   <Input
                     ref={emailInputRef}
                     type="email"
@@ -859,27 +861,27 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g., john@example.com"
+                    placeholder={t('participants.emailPlaceholder')}
                     disabled={adding}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Add now or let them link themselves via the trip link
+                    {t('participants.emailHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="walletGroup">Shared Wallet <span className="text-muted-foreground font-normal">(optional — group people who share costs)</span></Label>
+                  <Label htmlFor="walletGroup">{t('participants.sharedWallet')} <span className="text-muted-foreground font-normal">{t('participants.sharedWalletHint')}</span></Label>
                   <Input
                     type="text"
                     id="walletGroup"
                     value={walletGroup}
                     onChange={(e) => setWalletGroup(e.target.value)}
-                    placeholder="e.g., The Smiths"
+                    placeholder={t('participants.sharedWalletPlaceholder')}
                     disabled={adding}
                     list="wallet-groups"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    People in the same group settle as a unit — e.g. a couple or parents with kids.
+                    {t('participants.sharedWalletDesc')}
                   </p>
                 </div>
 
@@ -894,7 +896,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     htmlFor="isAdult"
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    Adult (can pay for expenses)
+                    {t('participants.isAdult')}
                   </label>
                 </div>
 
@@ -904,7 +906,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                   className="w-full"
                 >
                   <UserPlus size={16} className="mr-2" />
-                  {adding ? 'Adding...' : 'Add Participant'}
+                  {adding ? t('common.adding') : t('participants.addParticipant')}
                 </Button>
               </form>
             </>
@@ -915,7 +917,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
       {participants.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Participants ({participants.length})</CardTitle>
+            <CardTitle>{t('participants.participantsCount', { count: participants.length })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -927,7 +929,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                         <Users size={14} className="text-foreground" />
                         <span className="text-sm font-semibold text-foreground">{group.label}</span>
                         <span className="text-xs text-muted-foreground">
-                          {group.participants.length} {group.participants.length === 1 ? 'member' : 'members'}
+                          {t('participants.member', { count: group.participants.length })}
                         </span>
                       </div>
                       <div className="space-y-2">

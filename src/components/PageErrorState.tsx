@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ interface PageErrorStateProps {
 }
 
 export function PageErrorState({ error, onRetry, retrying = false }: PageErrorStateProps) {
+  const { t } = useTranslation()
   return (
     <Card className="border-destructive/50">
       <CardContent className="pt-6 text-center">
@@ -27,7 +29,7 @@ export function PageErrorState({ error, onRetry, retrying = false }: PageErrorSt
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          Retry
+          {t('common.retry')}
         </Button>
       </CardContent>
     </Card>

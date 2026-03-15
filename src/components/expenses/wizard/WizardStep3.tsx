@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Check } from 'lucide-react'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
@@ -64,6 +65,7 @@ export function WizardStep3({
   amount,
   currency,
 }: WizardStep2Props) {
+  const { t } = useTranslation()
   const shortNames = useMemo(() => buildShortNameMap(participants), [participants])
   const [showDetails, setShowDetails] = useState(false)
 
@@ -95,7 +97,7 @@ export function WizardStep3({
       groups.push({ label, isWalletGroup: true, members })
     }
     if (standalone.length > 0) {
-      groups.push({ label: grouped.size > 0 ? 'Others' : null, isWalletGroup: false, members: standalone })
+      groups.push({ label: grouped.size > 0 ? t('common.others') : null, isWalletGroup: false, members: standalone })
     }
 
     return groups
@@ -123,14 +125,14 @@ export function WizardStep3({
       {/* Participant chips */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <Label className="text-base font-medium">Split between</Label>
+          <Label className="text-base font-medium">{t('expenses.splitBetween')}</Label>
           <button
             type="button"
             onClick={allSelected ? onDeselectAll : onSelectAll}
             disabled={disabled}
             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            {allSelected ? 'Deselect all' : 'Select all'}
+            {allSelected ? t('expenses.deselectAll') : t('expenses.selectAll')}
           </button>
         </div>
         <div className="rounded-lg border border-input p-3 space-y-3">
@@ -192,9 +194,9 @@ export function WizardStep3({
 
       {/* Split method pills */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">Split method</Label>
+        <Label className="text-base font-medium">{t('expenses.splitMethod')}</Label>
         <div className="flex gap-1.5">
-          {([['equal', 'Equal'], ['percentage', 'By %'], ['amount', 'By Amount']] as const).map(([mode, label]) => (
+          {([['equal', t('expenses.splitEqual')], ['percentage', t('expenses.splitByPercent')], ['amount', t('expenses.splitByAmount')]] as const).map(([mode, label]) => (
             <button
               key={mode}
               type="button"
@@ -223,9 +225,9 @@ export function WizardStep3({
           />
           <div>
             <label htmlFor="accountForFamilySize-wizard" className="text-sm text-foreground cursor-pointer">
-              Split equally between groups
+              {t('expenses.splitEquallyBetweenGroups')}
             </label>
-            <p className="text-xs text-muted-foreground">Each group pays the same share, regardless of how many members it has</p>
+            <p className="text-xs text-muted-foreground">{t('expenses.splitEquallyBetweenGroupsDesc')}</p>
           </div>
         </div>
       )}
@@ -258,8 +260,8 @@ export function WizardStep3({
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           {showDetails ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          More details
-          <span className="text-xs">(date, comment)</span>
+          {t('expenses.moreDetails')}
+          <span className="text-xs">{t('expenses.dateCommentHint')}</span>
         </button>
 
         <AnimatePresence>
@@ -274,7 +276,7 @@ export function WizardStep3({
               {/* Date */}
               <div className="space-y-2">
                 <Label htmlFor="expenseDate" className="text-sm font-medium">
-                  Date
+                  {t('expenses.expenseDate')}
                 </Label>
                 <Input
                   type="date"
@@ -289,13 +291,13 @@ export function WizardStep3({
               {/* Comment */}
               <div className="space-y-2">
                 <Label htmlFor="comment" className="text-sm font-medium">
-                  Comment (optional)
+                  {t('expenses.commentOptional')}
                 </Label>
                 <Textarea
                   id="comment"
                   value={comment}
                   onChange={(e) => onCommentChange(e.target.value)}
-                  placeholder="Additional notes..."
+                  placeholder={t('expenses.commentPlaceholder')}
                   rows={2}
                   className="text-base resize-none"
                   disabled={disabled}

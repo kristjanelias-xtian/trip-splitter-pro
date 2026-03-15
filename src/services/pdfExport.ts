@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import i18n from '@/i18n'
 import type { Trip } from '@/types/trip'
 import type { Expense } from '@/types/expense'
 import type { ParticipantBalance } from '@/services/balanceCalculator'
@@ -19,7 +20,7 @@ export function exportSettlementPlanToPDF(
 
   // Title
   doc.setFontSize(20)
-  doc.text('Settlement Plan', 14, 20)
+  doc.text(i18n.t('export.settlementPlan'), 14, 20)
 
   // Trip Info
   doc.setFontSize(12)
@@ -29,20 +30,20 @@ export function exportSettlementPlanToPDF(
 
   // Summary Stats
   doc.setFontSize(14)
-  doc.text('Summary', 14, 48)
+  doc.text(i18n.t('layout.overview'), 14, 48)
 
   const totalToSettle = balances
     .filter(b => b.balance < 0)
     .reduce((sum, b) => sum + Math.abs(b.balance), 0)
 
   doc.setFontSize(10)
-  doc.text(`Total Amount to Settle: €${totalToSettle.toFixed(2)}`, 14, 56)
-  doc.text(`Transactions Required: ${optimization.totalTransactions}`, 14, 62)
+  doc.text(`${i18n.t('settlements.totalToSettle')}: €${totalToSettle.toFixed(2)}`, 14, 56)
+  doc.text(`${i18n.t('settlements.settlementsNeeded')}: ${optimization.totalTransactions}`, 14, 62)
 
   if (optimization.totalTransactions === 0) {
     doc.setFontSize(12)
     doc.setTextColor(34, 139, 34) // Green
-    doc.text('✓ All balances are settled!', 14, 74)
+    doc.text(`✓ ${i18n.t('settlements.allSettled')}`, 14, 74)
     doc.save(`settlement-plan-${trip.name.replace(/\s+/g, '-').toLowerCase()}.pdf`)
     return
   }
@@ -50,11 +51,11 @@ export function exportSettlementPlanToPDF(
   // Settlement Transactions Table
   doc.setFontSize(14)
   doc.setTextColor(0, 0, 0)
-  doc.text('Required Payments', 14, 74)
+  doc.text(i18n.t('settlements.settlementsNeeded'), 14, 74)
 
   autoTable(doc, {
     startY: 80,
-    head: [['#', 'From', 'To', 'Amount']],
+    head: [['#', 'From', 'To', i18n.t('expenses.amount')]],
     body: optimization.transactions.map((tx: any, index: number) => [
       (index + 1).toString(),
       tx.fromName,
@@ -69,20 +70,20 @@ export function exportSettlementPlanToPDF(
   // Current Balances Table
   const finalY = (doc as any).lastAutoTable.finalY + 10
   doc.setFontSize(14)
-  doc.text('Current Balances', 14, finalY)
+  doc.text(i18n.t('dashboard.currentBalances'), 14, finalY)
 
   // Sort balances: positive first (owed money), then negative (owes money)
   const sortedBalances = [...balances].sort((a, b) => b.balance - a.balance)
 
   autoTable(doc, {
     startY: finalY + 6,
-    head: [['Participant', 'Total Paid', 'Total Share', 'Balance', 'Status']],
+    head: [['Participant', i18n.t('balance.totalPaid'), i18n.t('balance.totalShare'), 'Balance', i18n.t('common.status')]],
     body: sortedBalances.map(b => [
       b.name,
       `€${b.totalPaid.toFixed(2)}`,
       `€${b.totalShare.toFixed(2)}`,
       `€${Math.abs(b.balance).toFixed(2)}`,
-      b.balance > 0 ? 'Owed' : b.balance < 0 ? 'Owes' : 'Settled'
+      b.balance > 0 ? i18n.t('balance.othersOwe') : b.balance < 0 ? i18n.t('balance.owes') : i18n.t('balance.settled')
     ]),
     theme: 'grid',
     headStyles: { fillColor: [106, 153, 78] }, // Sage color
@@ -131,7 +132,7 @@ export function exportTripSummaryToPDF(
 
   // Title
   doc.setFontSize(20)
-  doc.text('Trip Summary', 14, 20)
+  doc.text(i18n.t('export.tripSummary'), 14, 20)
 
   // Trip Info
   doc.setFontSize(12)
@@ -150,12 +151,12 @@ export function exportTripSummaryToPDF(
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
 
   doc.setFontSize(14)
-  doc.text('Overview', 14, 54)
+  doc.text(i18n.t('layout.overview'), 14, 54)
 
   doc.setFontSize(10)
-  doc.text(`Total Expenses: €${totalExpenses.toFixed(2)}`, 14, 62)
-  doc.text(`Number of Expenses: ${expenses.length}`, 14, 68)
-  doc.text(`Participants: ${participants.length}`, 14, 74)
+  doc.text(`${i18n.t('dashboard.totalExpenses')}: €${totalExpenses.toFixed(2)}`, 14, 62)
+  doc.text(`${i18n.t('expenses.title')}: ${expenses.length}`, 14, 68)
+  doc.text(`${i18n.t('manage.participants')}: ${participants.length}`, 14, 74)
 
   // Expenses by Category
   const expensesByCategory = expenses.reduce((acc, expense) => {
@@ -167,11 +168,11 @@ export function exportTripSummaryToPDF(
   }, {} as Record<string, number>)
 
   doc.setFontSize(14)
-  doc.text('Expenses by Category', 14, 86)
+  doc.text(i18n.t('charts.expensesByCategory'), 14, 86)
 
   autoTable(doc, {
     startY: 92,
-    head: [['Category', 'Total', 'Percentage']],
+    head: [[i18n.t('common.category'), i18n.t('common.total'), 'Percentage']],
     body: Object.entries(expensesByCategory).map(([category, amount]) => [
       category,
       `€${amount.toFixed(2)}`,
@@ -189,16 +190,16 @@ export function exportTripSummaryToPDF(
 
   const finalY = (doc as any).lastAutoTable.finalY + 10
   doc.setFontSize(14)
-  doc.text('Top Expenses', 14, finalY)
+  doc.text(i18n.t('charts.topExpenses', { count: 10 }), 14, finalY)
 
   autoTable(doc, {
     startY: finalY + 6,
-    head: [['Description', 'Paid By', 'Category', 'Amount']],
+    head: [[i18n.t('expenses.description'), i18n.t('expenses.paidBy'), i18n.t('common.category'), i18n.t('expenses.amount')]],
     body: topExpenses.map(e => {
       const payer = participants.find(p => p.id === e.paid_by)
       return [
         e.description,
-        payer?.name || 'Unknown',
+        payer?.name || i18n.t('common.unknown'),
         e.category,
         `€${e.amount.toFixed(2)}`
       ]
@@ -216,13 +217,13 @@ export function exportTripSummaryToPDF(
   // Current Balances
   const balancesY = (doc as any).lastAutoTable.finalY + 10
   doc.setFontSize(14)
-  doc.text('Current Balances', 14, balancesY)
+  doc.text(i18n.t('dashboard.currentBalances'), 14, balancesY)
 
   const sortedBalances = [...balances].sort((a, b) => b.balance - a.balance)
 
   autoTable(doc, {
     startY: balancesY + 6,
-    head: [['Participant', 'Total Paid', 'Total Share', 'Balance']],
+    head: [['Participant', i18n.t('balance.totalPaid'), i18n.t('balance.totalShare'), 'Balance']],
     body: sortedBalances.map(b => [
       b.name,
       `€${b.totalPaid.toFixed(2)}`,
@@ -264,14 +265,14 @@ export function exportExpenseListToPDF(
 
   // Title
   doc.setFontSize(20)
-  doc.text('Expense Details', 14, 20)
+  doc.text(i18n.t('expenses.title'), 14, 20)
 
   // Trip Info
   doc.setFontSize(12)
   doc.text(`${trip.name}`, 14, 30)
   doc.setFontSize(10)
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 36)
-  doc.text(`Total Expenses: ${expenses.length}`, 14, 42)
+  doc.text(`${i18n.t('dashboard.totalExpenses')}: ${expenses.length}`, 14, 42)
 
   // Sort expenses by date (newest first)
   const sortedExpenses = [...expenses].sort(
@@ -280,17 +281,17 @@ export function exportExpenseListToPDF(
 
   // Expenses Table
   doc.setFontSize(14)
-  doc.text('All Expenses', 14, 54)
+  doc.text(i18n.t('expenses.title'), 14, 54)
 
   autoTable(doc, {
     startY: 60,
-    head: [['Date', 'Description', 'Paid By', 'Category', 'Amount']],
+    head: [[i18n.t('common.date'), i18n.t('expenses.description'), i18n.t('expenses.paidBy'), i18n.t('common.category'), i18n.t('expenses.amount')]],
     body: sortedExpenses.map(e => {
       const payer = participants.find(p => p.id === e.paid_by)
       return [
         new Date(e.expense_date).toLocaleDateString(),
         e.description.length > 30 ? e.description.substring(0, 30) + '...' : e.description,
-        payer?.name || 'Unknown',
+        payer?.name || i18n.t('common.unknown'),
         e.category,
         `€${e.amount.toFixed(2)}`
       ]

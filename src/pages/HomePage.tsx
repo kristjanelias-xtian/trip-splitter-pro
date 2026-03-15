@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { useNavigate } from 'react-router-dom'
@@ -61,6 +62,7 @@ const DEMO_TRIP_CODE = 'livigno-2025'
  *   - useCurrentTrip auto-adds every visited trip to localStorage
  */
 export function HomePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
   const { loading: tripsLoading, refreshTrips, emailDiscoveredTripIds } = useTripContext()
@@ -146,7 +148,7 @@ export function HomePage() {
   }
 
   const handleRemoveLocalTrip = (tripCode: string, tripName: string) => {
-    if (confirm(`Remove "${tripName}" from My Trips?\n\nThis won't delete the trip, you can access it again via the share link.`)) {
+    if (confirm(t('common.confirm_remove', { name: tripName }))) {
       removeFromMyTrips(tripCode)
       setLocalTrips(getMyTrips())
     }
@@ -159,14 +161,14 @@ export function HomePage() {
         <div className="text-center py-12">
           <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            Nothing yet
+            {t('home.nothingYet')}
           </h3>
           <p className="text-muted-foreground mb-6">
-            Create a new trip, access one via a shared link, or sign in to access your trips from anywhere
+            {t('home.emptyDescription')}
           </p>
           <Button onClick={handleCreateTrip} variant="outline" className="gap-2">
             <Plus size={18} />
-            Create Your First
+            {t('home.createYourFirst')}
           </Button>
           <div className="mt-3">
             <button
@@ -174,7 +176,7 @@ export function HomePage() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Sparkles size={14} />
-              Try a demo
+              {t('home.tryDemo')}
             </button>
           </div>
         </div>
@@ -229,21 +231,21 @@ export function HomePage() {
       <>
         {sortedMyTrips.length > 0 && (
           <>
-            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">My Trips</h2>}
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('home.myTrips')}</h2>}
             {renderTripGrid(sortedMyTrips)}
           </>
         )}
 
         {sortedInvitedTrips.length > 0 && (
           <div className={sortedMyTrips.length > 0 ? 'mt-8' : ''}>
-            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Invited</h2>}
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('home.invited')}</h2>}
             {renderTripGrid(sortedInvitedTrips)}
           </div>
         )}
 
         {sortedVisitedTrips.length > 0 && (
           <div className={sortedMyTrips.length > 0 || sortedInvitedTrips.length > 0 ? 'mt-8' : ''}>
-            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Visited</h2>}
+            {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('home.visited')}</h2>}
             {renderTripGrid(sortedVisitedTrips)}
           </div>
         )}
@@ -252,7 +254,7 @@ export function HomePage() {
         <div className="mt-6 text-center">
           <Button variant="outline" onClick={handleCreateTrip} className="gap-2">
             <Plus size={16} />
-            New Trip or Event
+            {t('home.newTripOrEvent')}
           </Button>
         </div>
 
@@ -267,7 +269,7 @@ export function HomePage() {
                 size={16}
                 className={`transition-transform ${showHidden ? 'rotate-180' : ''}`}
               />
-              {hiddenTrips.length} hidden {hiddenTrips.length === 1 ? 'group' : 'groups'}
+              {t('home.hiddenGroups', { count: hiddenTrips.length })}
             </button>
 
             {showHidden && (
@@ -287,7 +289,7 @@ export function HomePage() {
                       onClick={() => handleShow(trip.trip_code)}
                     >
                       <Eye size={14} />
-                      Show
+                      {t('common.show')}
                     </Button>
                   </div>
                 ))}
@@ -326,9 +328,9 @@ export function HomePage() {
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <Calendar size={12} />
                       <span>
-                        Last opened {new Date(trip.lastAccessed).toLocaleDateString('en-US', {
+                        {t('home.lastOpened', { date: new Date(trip.lastAccessed).toLocaleDateString('en-US', {
                           month: 'short', day: 'numeric',
-                        })}
+                        }) })}
                       </span>
                     </div>
                   </div>
@@ -366,8 +368,7 @@ export function HomePage() {
         ))}
       </div>
       <p className="mt-6 text-xs text-center text-muted-foreground">
-        Your trip links are saved on this device only.{' '}
-        Sign in to access them from anywhere.
+        {t('home.localTripsNote')}
       </p>
     </>
     )
@@ -394,14 +395,14 @@ export function HomePage() {
               )}
               <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                  Hi, {firstName}
+                  {t('home.greeting', { name: firstName })}
                 </h1>
-                <p className="text-sm text-muted-foreground">Your events & trips</p>
+                <p className="text-sm text-muted-foreground">{t('home.subtitle')}</p>
               </div>
             </div>
           ) : (
             <h1 className="text-2xl font-bold text-foreground">
-              Events & Trips
+              {t('home.eventsAndTrips')}
             </h1>
           )}
         </div>
@@ -424,9 +425,9 @@ export function HomePage() {
                 <ScanLine size={20} />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-sm leading-tight">Scan a Receipt</p>
+                <p className="font-semibold text-sm leading-tight">{t('home.scanReceipt')}</p>
                 <p className="text-xs text-primary-foreground/70 mt-0.5">
-                  {visibleTrips.length === 0 ? 'Creates a new group automatically' : 'Add expenses from a photo'}
+                  {visibleTrips.length === 0 ? t('home.scanSubtitleNoTrips') : t('home.scanSubtitleWithTrips')}
                 </p>
               </div>
             </div>
@@ -439,7 +440,7 @@ export function HomePage() {
           <div className="flex gap-3 mb-8">
             <Button onClick={handleCreateTrip} className="gap-2">
               <Plus size={18} />
-              Create New
+              {t('home.createNew')}
             </Button>
           </div>
         )}
@@ -461,7 +462,7 @@ export function HomePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              What's New · v1.2.0
+              {t('home.whatsNew')}
               <ExternalLink size={12} />
             </a>
           )}

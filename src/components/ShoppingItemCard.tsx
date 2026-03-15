@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Edit, Trash2 } from 'lucide-react'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
@@ -27,6 +28,7 @@ interface ShoppingItemCardProps {
 }
 
 export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
+  const { t } = useTranslation()
   const { toggleItemCompleted, deleteShoppingItem } = useShoppingContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -143,7 +145,7 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
       </motion.div>
 
       {/* Edit Form */}
-      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Item" hasInputs>
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title={t('shopping.editItem')} hasInputs>
         <ShoppingItemForm
           item={item}
           onSuccess={() => setShowEditForm(false)}
@@ -155,20 +157,20 @@ export function ShoppingItemCard({ item }: ShoppingItemCardProps) {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Item?</AlertDialogTitle>
+            <AlertDialogTitle>{t('shopping.deleteItem')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{item.name}"?
+              {t('shopping.deleteItemConfirmShort', { name: item.name })}
               {item.meal_ids.length > 0 && (
                 <span className="block mt-2">
-                  This item is linked to {item.meal_ids.length} meal(s).
+                  {t('shopping.linkedToMeals', { count: item.meal_ids.length })}
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

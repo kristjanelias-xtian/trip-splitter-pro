@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
+import './i18n'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BrowserRouter } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,13 +18,14 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 /** Listens for unhandled promise rejections and shows a toast */
 function UnhandledErrorToaster() {
   const { toast } = useToast()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail
       toast({
-        title: 'Unexpected error',
-        description: detail?.message ?? 'An unexpected error occurred',
+        title: t('errors.unexpectedErrorTitle'),
+        description: detail?.message ?? t('errors.unexpectedErrorDesc'),
         variant: 'destructive',
       })
     }

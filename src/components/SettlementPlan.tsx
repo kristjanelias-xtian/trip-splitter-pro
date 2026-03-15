@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PartyPopper, Lightbulb, Check, Bell, X } from 'lucide-react'
 import { OptimalSettlementPlan, SettlementTransaction } from '@/services/settlementOptimizer'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ interface SettlementPlanProps {
 }
 
 export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, linkedParticipantIds, fromEmailMap, toEmailMap, onRemind, onNudgeBankDetails, avatarMap }: SettlementPlanProps) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState<'optimal' | 'greedy'>('optimal')
   const showToggle = greedyPlan && greedyPlan.totalTransactions !== plan.totalTransactions
   const activePlan = mode === 'greedy' && greedyPlan ? greedyPlan : plan
@@ -34,10 +36,10 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
       <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
         <PartyPopper size={48} className="mx-auto text-positive mb-2" />
         <h3 className="text-lg font-semibold text-foreground mb-1">
-          All Settled!
+          {t('settlementPlan.allSettledTitle')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          Everyone is squared up. No payments needed.
+          {t('settlementPlan.allSettledDesc')}
         </p>
       </div>
     )
@@ -48,7 +50,7 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3">
         <h3 className="text-lg font-semibold text-foreground shrink-0">
-          Settlement Plan
+          {t('settlementPlan.settlementPlan')}
         </h3>
         <div className="flex items-center gap-3">
           {showToggle && (
@@ -61,7 +63,7 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Fewer
+                {t('settlementPlan.fewer')}
               </button>
               <button
                 onClick={() => setMode('greedy')}
@@ -71,12 +73,12 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Standard
+                {t('settlementPlan.standard')}
               </button>
             </div>
           )}
           <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {activePlan.totalTransactions} {activePlan.totalTransactions === 1 ? 'transaction' : 'transactions'}
+            {t('settlementPlan.transaction', { count: activePlan.totalTransactions })}
           </span>
         </div>
       </div>
@@ -86,8 +88,8 @@ export function SettlementPlan({ plan, greedyPlan, onSettle, bankDetailsMap, lin
         <Lightbulb size={16} className="text-accent mt-0.5 flex-shrink-0" />
         <p className="text-sm text-foreground">
           {mode === 'optimal'
-            ? 'This plan uses the minimum number of transactions to settle all balances.'
-            : 'Standard settlement plan — each person settles with the largest counterparty first.'}
+            ? t('settlementPlan.optimalPlanInfo')
+            : t('settlementPlan.standardPlanInfo')}
         </p>
       </div>
 
@@ -141,6 +143,7 @@ function SettlementTransactionCard({
   onNudgeBankDetails,
   avatarMap,
 }: SettlementTransactionCardProps) {
+  const { t } = useTranslation()
   const [confirmingRemind, setConfirmingRemind] = useState(false)
   const [sending, setSending] = useState(false)
   const [remindResult, setRemindResult] = useState<'sent' | 'error' | null>(null)
@@ -198,7 +201,7 @@ function SettlementTransactionCard({
           <div className="hidden md:flex flex-col gap-1 shrink-0">
             {onSettle && (
               <Button onClick={onSettle} size="sm" className="h-7 text-xs">
-                Settle
+                {t('settlementPlan.settle')}
               </Button>
             )}
             {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
@@ -218,7 +221,7 @@ function SettlementTransactionCard({
                 title={`Send payment reminder to ${transaction.fromName}`}
               >
                 <Bell size={12} className="mr-1" />
-                Remind
+                {t('settlementPlan.remind')}
               </Button>
             )}
             {confirmingRemind && (
@@ -239,7 +242,7 @@ function SettlementTransactionCard({
           <div className="flex gap-1.5">
             {onSettle && (
               <Button onClick={onSettle} size="sm" className="h-7 text-xs">
-                Settle
+                {t('settlementPlan.settle')}
               </Button>
             )}
             {fromEmails && fromEmails.length > 0 && onRemind && !confirmingRemind && (
@@ -259,7 +262,7 @@ function SettlementTransactionCard({
                 title={`Send payment reminder to ${transaction.fromName}`}
               >
                 <Bell size={12} className="mr-1" />
-                Remind
+                {t('settlementPlan.remind')}
               </Button>
             )}
             {confirmingRemind && (
@@ -278,8 +281,8 @@ function SettlementTransactionCard({
         {/* Bank Details */}
         {bankDetails && (bankDetails.iban || bankDetails.holder) && (
           <div className="text-xs text-muted-foreground pl-5 space-y-0.5">
-            {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
-            {bankDetails.iban && <p>IBAN: {bankDetails.iban}</p>}
+            {bankDetails.holder && <p>{t('settlementPlan.account', { name: bankDetails.holder })}</p>}
+            {bankDetails.iban && <p>{t('settlementPlan.ibanLabel', { iban: bankDetails.iban })}</p>}
           </div>
         )}
         {!bankDetails && linkedParticipantIds?.has(transaction.toId) && (
@@ -301,20 +304,20 @@ function SettlementTransactionCard({
                 disabled={nudgeSending}
                 className="text-xs text-accent hover:underline disabled:opacity-50"
               >
-                {nudgeSending ? 'Sending…' : `Nudge ${transaction.toName} to add bank details`}
+                {nudgeSending ? t('common.sending') : t('settlementPlan.nudgeBankDetails', { name: transaction.toName })}
               </button>
             ) : nudgeResult === 'sent' ? (
               <p className="text-xs text-positive flex items-center gap-1">
                 <Check size={12} />
-                Nudge sent to {transaction.toName}
+                {t('settlementPlan.nudgeSent', { name: transaction.toName })}
               </p>
             ) : nudgeResult === 'error' ? (
               <p className="text-xs text-destructive">
-                Failed to send nudge. Please try again.
+                {t('settlementPlan.nudgeFailed')}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground italic">
-                Ask {transaction.toName} to add their bank details
+                {t('settlementPlan.askToAddBankDetails', { name: transaction.toName })}
               </p>
             )}
           </div>
@@ -324,7 +327,7 @@ function SettlementTransactionCard({
         {confirmingRemind && fromEmails && fromEmails.length > 0 && (
           <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2 ml-5">
             <p className="text-sm text-foreground">
-              Send payment reminder to <strong>{transaction.fromName}</strong>?
+              {t('settlementPlan.sendReminderConfirm', { name: transaction.fromName })}
             </p>
             {fromEmails.length === 1 ? (
               <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
@@ -350,7 +353,7 @@ function SettlementTransactionCard({
                 onClick={handleSendReminder}
                 disabled={sending || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
               >
-                {sending ? 'Sending…' : 'Send'}
+                {sending ? t('common.sending') : t('common.send')}
               </Button>
               <Button
                 size="sm"
@@ -359,7 +362,7 @@ function SettlementTransactionCard({
                 onClick={() => { setConfirmingRemind(false); setRemindResult(null) }}
                 disabled={sending}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -369,12 +372,12 @@ function SettlementTransactionCard({
         {remindResult === 'sent' && (
           <p className="text-xs text-positive flex items-center gap-1 pl-5">
             <Check size={12} />
-            Reminder sent to {transaction.fromName}
+            {t('settlementPlan.reminderSent', { name: transaction.fromName })}
           </p>
         )}
         {remindResult === 'error' && (
           <p className="text-xs text-destructive pl-5">
-            Failed to send reminder. Please try again.
+            {t('settlementPlan.reminderFailed')}
           </p>
         )}
       </div>

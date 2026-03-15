@@ -7,6 +7,7 @@ import {
   ShoppingCart, BarChart3, Settings2, ScanLine, Settings, Zap, Shield, ArrowLeft
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTripContext } from '@/contexts/TripContext'
@@ -49,6 +50,7 @@ const iconMap: Record<string, React.ElementType> = {
 }
 
 export function Layout() {
+  const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const { currentTrip, tripCode } = useCurrentTrip()
@@ -71,22 +73,22 @@ export function Layout() {
 
   // Desktop navigation - all items visible
   const getDesktopNavItems = () => {
-    const items: { path: string; label: string; requiresTrip: boolean }[] = []
+    const items: { path: string; label: string; iconKey: string; requiresTrip: boolean }[] = []
 
     if (tripCode) {
       items.push(
-        { path: `/t/${tripCode}/dashboard`, label: 'Dashboard', requiresTrip: true },
-        { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
-        { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
+        { path: `/t/${tripCode}/dashboard`, label: t('dashboard.title'), iconKey: 'Dashboard', requiresTrip: true },
+        { path: `/t/${tripCode}/expenses`, label: t('layout.expenses'), iconKey: 'Expenses', requiresTrip: true },
+        { path: `/t/${tripCode}/settlements`, label: t('layout.settlements'), iconKey: 'Settlements', requiresTrip: true },
       )
       if (currentTrip?.enable_meals || currentTrip?.enable_activities) {
-        items.push({ path: `/t/${tripCode}/planner`, label: 'Day Planner', requiresTrip: true })
+        items.push({ path: `/t/${tripCode}/planner`, label: t('planner.title'), iconKey: 'Day Planner', requiresTrip: true })
       }
       if (currentTrip?.enable_shopping) {
-        items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
+        items.push({ path: `/t/${tripCode}/shopping`, label: t('layout.shopping'), iconKey: 'Shopping', requiresTrip: true })
       }
       items.push(
-        { path: `/t/${tripCode}/manage`, label: manageLabel, requiresTrip: true },
+        { path: `/t/${tripCode}/manage`, label: manageLabel, iconKey: manageLabel, requiresTrip: true },
       )
     }
 
@@ -97,20 +99,20 @@ export function Layout() {
   const getMobileNavItems = () => {
     if (!tripCode) {
       return [
-        { path: '/', label: 'Trips', requiresTrip: false },
+        { path: '/', label: t('home.eventsAndTrips'), iconKey: 'Trips', requiresTrip: false },
       ]
     }
 
     const items = [
-      { path: `/t/${tripCode}/dashboard`, label: 'Overview', requiresTrip: true },
-      { path: `/t/${tripCode}/expenses`, label: 'Expenses', requiresTrip: true },
-      { path: `/t/${tripCode}/settlements`, label: 'Settlements', requiresTrip: true },
+      { path: `/t/${tripCode}/dashboard`, label: t('layout.overview'), iconKey: 'Overview', requiresTrip: true },
+      { path: `/t/${tripCode}/expenses`, label: t('layout.expenses'), iconKey: 'Expenses', requiresTrip: true },
+      { path: `/t/${tripCode}/settlements`, label: t('layout.settlements'), iconKey: 'Settlements', requiresTrip: true },
     ]
     if (currentTrip?.enable_meals || currentTrip?.enable_activities) {
-      items.push({ path: `/t/${tripCode}/planner`, label: 'Planner', requiresTrip: true })
+      items.push({ path: `/t/${tripCode}/planner`, label: t('layout.planner'), iconKey: 'Planner', requiresTrip: true })
     }
     if (currentTrip?.enable_shopping) {
-      items.push({ path: `/t/${tripCode}/shopping`, label: 'Shopping', requiresTrip: true })
+      items.push({ path: `/t/${tripCode}/shopping`, label: t('layout.shopping'), iconKey: 'Shopping', requiresTrip: true })
     }
     return items
   }
@@ -172,7 +174,7 @@ export function Layout() {
                       {currentTrip.name}
                     </h1>
                     <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
-                      {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
+                      {currentTrip.event_type === 'event' ? t('trip.eventLabel') : t('trip.tripLabel')}
                     </p>
                   </div>
                 </Link>
@@ -225,15 +227,15 @@ export function Layout() {
                 <div className={`grid grid-cols-3 gap-1.5 pb-2 border-t pt-1.5 lg:hidden ${onGradient ? 'border-white/15' : 'border-border/60'}`}>
                   <button onClick={handleScanTap} className={pillClass}>
                     <ScanLine size={14} />
-                    Scan
+                    {t('layout.scanReceipt')}
                   </button>
                   <button onClick={() => navigate(`/t/${tripCode}/manage`)} className={pillClass}>
                     <Settings size={14} />
-                    Manage
+                    {t('layout.manage')}
                   </button>
                   <button onClick={() => { void setMode('quick'); navigate(`/t/${tripCode}/quick`) }} className={modePillClass}>
                     <Zap size={14} />
-                    Quick view
+                    {t('quick.quickView')}
                   </button>
                 </div>
               )
@@ -269,7 +271,7 @@ export function Layout() {
       {tripCode && <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border soft-shadow-lg lg:hidden z-40 pwa-safe-bottom">
         <div className="flex justify-around items-center h-16">
           {mobileNavItems.map((item) => {
-            const Icon = iconMap[item.label as keyof typeof iconMap]
+            const Icon = iconMap[item.iconKey as keyof typeof iconMap]
             const active = isActive(item.path)
 
             return (
@@ -313,7 +315,7 @@ export function Layout() {
       {tripCode && <aside className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-card border-r border-border soft-shadow">
         <nav className="px-3 py-6 space-y-1">
           {desktopNavItems.map((item) => {
-            const Icon = iconMap[item.label as keyof typeof iconMap]
+            const Icon = iconMap[item.iconKey as keyof typeof iconMap]
             const active = isActive(item.path)
 
             return (
