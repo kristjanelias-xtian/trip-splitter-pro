@@ -42,6 +42,12 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }, 0)
   }, [transactions])
 
+  useEffect(() => {
+    if (walletCode && !loading) {
+      localStorage.setItem(`kopikas:balance:${walletCode}`, String(balance))
+    }
+  }, [walletCode, balance, loading])
+
   const lastAllowance = useMemo(() => {
     return transactions.find((tx) => tx.type === 'allowance') ?? null
   }, [transactions])

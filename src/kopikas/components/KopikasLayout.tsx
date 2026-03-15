@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom'
 import { KopikasRouteGuard } from './KopikasRouteGuard'
 import { PetProvider } from '../contexts/PetContext'
 import { KopikasTabBar } from './KopikasTabBar'
+import { NamePetSheet } from './NamePetSheet'
 import { useWallet } from '../hooks/useWallet'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -14,6 +15,14 @@ function KopikasInner() {
     document.title = 'Kopikas'
   }, [])
 
+  useEffect(() => {
+    // Default to dark mode for Kopikas (optimized for pet visuals)
+    if (!localStorage.getItem('spl1t:theme')) {
+      localStorage.setItem('spl1t:theme', 'dark')
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
   return (
     <PetProvider walletId={wallet?.id ?? null} transactions={transactions}>
       <div className="min-h-screen bg-background text-foreground">
@@ -21,6 +30,7 @@ function KopikasInner() {
           <Outlet />
         </main>
         <KopikasTabBar />
+        <NamePetSheet />
       </div>
     </PetProvider>
   )
