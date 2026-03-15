@@ -7,6 +7,7 @@ import { Pet } from '../components/Pet'
 import { PetSpeechBubble } from '../components/PetSpeechBubble'
 import { TransactionList } from '../components/TransactionList'
 import { ManualAddSheet } from '../components/ManualAddSheet'
+import { ScanFlow } from '../components/ScanFlow'
 import { Loader2 } from 'lucide-react'
 
 export function KopikasHome() {
@@ -15,6 +16,7 @@ export function KopikasHome() {
   const { pet, mood, loading: petLoading } = usePet()
   const navigate = useNavigate()
   const [manualAddOpen, setManualAddOpen] = useState(false)
+  const [scanOpen, setScanOpen] = useState(false)
 
   if (walletLoading || petLoading) {
     return (
@@ -58,7 +60,7 @@ export function KopikasHome() {
       {/* Action buttons */}
       <div className="grid grid-cols-3 gap-3 mb-8">
         <button
-          onClick={() => {/* ScanFlow will be added in Task 29 */}}
+          onClick={() => setScanOpen(true)}
           className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
         >
           <span className="text-2xl">📸</span>
@@ -95,6 +97,7 @@ export function KopikasHome() {
       </div>
 
       <ManualAddSheet open={manualAddOpen} onClose={() => setManualAddOpen(false)} />
+      <ScanFlow open={scanOpen} onClose={() => setScanOpen(false)} />
     </div>
   )
 }

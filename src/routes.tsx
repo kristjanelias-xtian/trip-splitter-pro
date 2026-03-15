@@ -25,6 +25,7 @@ import { Analytics } from './kopikas/pages/Analytics'
 import { PetDetail } from './kopikas/pages/PetDetail'
 import { History } from './kopikas/pages/History'
 import { ParentView } from './kopikas/pages/ParentView'
+import { CreateWallet } from './kopikas/pages/CreateWallet'
 import { useUserPreferences } from './contexts/UserPreferencesContext'
 import { useAuth } from './contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
@@ -70,6 +71,7 @@ export function AppRoutes() {
       </Route>
 
       {/* Kopikas routes — outside Spl1t layouts */}
+      <Route path="kopikas/create" element={<ErrorBoundary><CreateWallet /></ErrorBoundary>} />
       <Route path="kopikas/:walletCode" element={<KopikasLayout />}>
         <Route index element={<ErrorBoundary><KopikasHome /></ErrorBoundary>} />
         <Route path="analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
