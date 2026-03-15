@@ -31,7 +31,7 @@ export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }:
     : null
 
   return (
-    <Card className="overflow-hidden relative">
+    <Card className={`overflow-hidden relative ${isActive ? 'ring-1 ring-primary/30' : ''}`}>
       <div
         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
         style={{ background: pattern.gradient }}
@@ -48,7 +48,11 @@ export function TripCard({ trip, balance, isActive, isEnded, onClick, actions }:
                   {trip.name}
                 </h3>
                 {isActive && (
-                  <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                  <span className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                    </span>
                     Active
                   </span>
                 )}

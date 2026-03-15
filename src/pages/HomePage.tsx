@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
-import { getActiveTripId, getTripPhase } from '@/lib/activeTripDetection'
+import { getActiveTripId, getTripPhase, sortTripBalances } from '@/lib/activeTripDetection'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 import { TripCard } from '@/components/TripCard'
@@ -102,6 +102,10 @@ export function HomePage() {
   const visitedTrips = visibleTrips.filter(({ trip, myBalance }) =>
     !emailDiscoveredTripIds.has(trip.id) && trip.created_by !== user?.id && myBalance === null
   )
+
+  const sortedMyTrips = useMemo(() => sortTripBalances(myTrips), [myTrips])
+  const sortedInvitedTrips = useMemo(() => sortTripBalances(invitedTrips), [invitedTrips])
+  const sortedVisitedTrips = useMemo(() => sortTripBalances(visitedTrips), [visitedTrips])
 
   const activeTripId = useMemo(
     () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
@@ -223,29 +227,29 @@ export function HomePage() {
       return renderEmptyState()
     }
 
-    const sectionCount = [myTrips, invitedTrips, visitedTrips].filter(s => s.length > 0).length
+    const sectionCount = [sortedMyTrips, sortedInvitedTrips, sortedVisitedTrips].filter(s => s.length > 0).length
     const showHeadings = sectionCount > 1
 
     return (
       <>
-        {myTrips.length > 0 && (
+        {sortedMyTrips.length > 0 && (
           <>
             {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">My Trips</h2>}
-            {renderTripGrid(myTrips)}
+            {renderTripGrid(sortedMyTrips)}
           </>
         )}
 
-        {invitedTrips.length > 0 && (
-          <div className={myTrips.length > 0 ? 'mt-8' : ''}>
+        {sortedInvitedTrips.length > 0 && (
+          <div className={sortedMyTrips.length > 0 ? 'mt-8' : ''}>
             {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Invited</h2>}
-            {renderTripGrid(invitedTrips)}
+            {renderTripGrid(sortedInvitedTrips)}
           </div>
         )}
 
-        {visitedTrips.length > 0 && (
-          <div className={myTrips.length > 0 || invitedTrips.length > 0 ? 'mt-8' : ''}>
+        {sortedVisitedTrips.length > 0 && (
+          <div className={sortedMyTrips.length > 0 || sortedInvitedTrips.length > 0 ? 'mt-8' : ''}>
             {showHeadings && <h2 className="text-sm font-medium text-muted-foreground mb-3">Visited</h2>}
-            {renderTripGrid(visitedTrips)}
+            {renderTripGrid(sortedVisitedTrips)}
           </div>
         )}
 
