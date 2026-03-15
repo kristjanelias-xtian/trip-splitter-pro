@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowRight, PartyPopper, Bell, Check, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useExpenseContext } from '@/contexts/ExpenseContext'
@@ -37,6 +38,7 @@ interface Prefill {
 }
 
 export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementSheetProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { expenses } = useExpenseContext()
   const { participants } = useParticipantContext()
@@ -299,8 +301,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     try {
       await createSettlement(input)
       toast({
-        title: 'Payment recorded',
-        description: `${input.currency} ${input.amount.toFixed(2)} payment logged`,
+        title: t('toast.paymentRecorded'),
+        description: t('toast.paymentRecordedDesc', { currency: input.currency, amount: input.amount.toFixed(2) }),
       })
       setView('suggestions')
       setPrefill(null)
@@ -310,7 +312,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
       logger.error('QuickSettlementSheet: failed to record payment', { error: message })
       toast({
         variant: 'destructive',
-        title: 'Failed to record payment',
+        title: t('toast.failedToRecordPayment'),
         description: message,
       })
       throw err
@@ -340,7 +342,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
     }).format(amount)
   }
 
-  const titleText = view === 'suggestions' ? 'Settle up' : 'Settle Up'
+  const titleText = t('quick.settleUp')
 
   const formContent = (
     <SettlementForm
@@ -365,33 +367,33 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
             <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
               <PartyPopper size={48} className="mx-auto text-positive mb-2" />
               <h3 className="text-lg font-semibold text-foreground mb-1">
-                All Settled!
+                {t('quick.allSettledTitle')}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Everyone is squared up. No payments needed.
+                {t('quick.allSettledDesc')}
               </p>
             </div>
           ) : !myParticipant ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground text-sm">
-                Link yourself to a participant to see suggested payments.
+                {t('quick.linkToSeeSuggested')}
               </p>
             </div>
           ) : activeTransactions.length === 0 ? (
             <div className="bg-positive/10 border border-positive/30 rounded-lg p-6 text-center">
               <PartyPopper size={48} className="mx-auto text-positive mb-2" />
               <h3 className="text-lg font-semibold text-foreground mb-1">
-                You're all settled!
+                {t('quick.youreAllSettled')}
               </h3>
               <p className="text-sm text-muted-foreground">
-                You have no pending payments.
+                {t('quick.youreAllSettledDesc')}
               </p>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
-                  Suggested payments to settle up:
+                  {t('quick.suggestedPayments')}
                 </p>
                 {showModeToggle && (
                   <div className="flex rounded-full border border-border bg-muted/50 p-0.5 text-xs shrink-0">
@@ -403,7 +405,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      Fewer
+                      {t('quick.fewer')}
                     </button>
                     <button
                       onClick={() => setSettlementMode('greedy')}
@@ -413,7 +415,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      Standard
+                      {t('quick.standard')}
                     </button>
                   </div>
                 )}
@@ -432,18 +434,18 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-sm">
                         <span className="font-medium truncate">
-                          {iOwe ? 'You' : tx.fromName}
+                          {iOwe ? t('common.you') : tx.fromName}
                         </span>
                         <ArrowRight size={16} className="text-muted-foreground flex-shrink-0" />
                         <span className="font-medium truncate">
-                          {iOwe ? tx.toName : 'You'}
+                          {iOwe ? tx.toName : t('common.you')}
                         </span>
                       </div>
                       <p className={`text-lg font-bold tabular-nums mt-0.5 ${iOwe ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                         {formatAmount(tx.amount)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {iOwe ? 'You owe' : 'Owed to you'}
+                        {iOwe ? t('quick.youOweAmount') : t('quick.owedToYou')}
                       </p>
                       {iOwe && (() => {
                         const bankDetails = bankDetailsMap[tx.toId]
@@ -451,7 +453,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         if (bankDetails && (bankDetails.iban || bankDetails.holder)) {
                           return (
                             <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                              {bankDetails.holder && <p>Account: {bankDetails.holder}</p>}
+                              {bankDetails.holder && <p>{t('quick.accountLabel', { name: bankDetails.holder })}</p>}
                               {bankDetails.iban && <p className="font-mono">{bankDetails.iban}</p>}
                             </div>
                           )
@@ -459,13 +461,13 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         if (isLinked) {
                           return (
                             <p className="mt-2 text-xs text-muted-foreground italic">
-                              Ask {tx.toName} to add their bank details
+                              {t('quick.askToAddBankDetails', { name: tx.toName })}
                             </p>
                           )
                         }
                         return (
                           <p className="mt-2 text-xs text-muted-foreground italic">
-                            Ask {tx.toName} to join Spl1t to share payment details
+                            {t('quick.askToJoinSplit', { name: tx.toName })}
                           </p>
                         )
                       })()}
@@ -474,8 +476,8 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         if (myBank) {
                           return (
                             <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                              <p className="font-medium text-foreground/70">Your payment details:</p>
-                              {userProfile?.bank_account_holder && <p>Account: {userProfile.bank_account_holder}</p>}
+                              <p className="font-medium text-foreground/70">{t('quick.yourPaymentDetails')}</p>
+                              {userProfile?.bank_account_holder && <p>{t('quick.accountLabel', { name: userProfile.bank_account_holder })}</p>}
                               {userProfile?.bank_iban && <p className="font-mono">{userProfile.bank_iban}</p>}
                             </div>
                           )
@@ -485,7 +487,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                             onClick={() => setBankDialogOpen(true)}
                             className="mt-2 text-xs text-primary hover:underline"
                           >
-                            Add your bank details so others can pay you →
+                            {t('quick.addBankDetailsLink')}
                           </button>
                         )
                       })()}
@@ -494,7 +496,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                       {isConfirmingRemind && fromEmails && fromEmails.length > 0 && (
                         <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
                           <p className="text-sm text-foreground">
-                            Send payment reminder to <strong>{tx.fromName}</strong>?
+                            {t('quick.sendReminderConfirm', { name: tx.fromName })}
                           </p>
                           {fromEmails.length === 1 ? (
                             <p className="text-xs text-muted-foreground">{fromEmails[0].email}</p>
@@ -520,7 +522,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                               onClick={() => handleRemind(tx, i)}
                               disabled={sendingRemind || (fromEmails.length > 1 && fromEmails.every(e => checkedEmails[e.email] === false))}
                             >
-                              {sendingRemind ? 'Sending…' : 'Send'}
+                              {sendingRemind ? t('common.sending') : t('common.send')}
                             </Button>
                             <Button
                               size="sm"
@@ -529,7 +531,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                               onClick={() => { setConfirmingRemindIdx(null) }}
                               disabled={sendingRemind}
                             >
-                              Cancel
+                              {t('common.cancel')}
                             </Button>
                           </div>
                         </div>
@@ -538,12 +540,12 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                       {remindResult === 'sent' && (
                         <p className="mt-2 text-xs text-positive flex items-center gap-1">
                           <Check size={12} />
-                          Reminder sent to {tx.fromName}
+                          {t('quick.reminderSent', { name: tx.fromName })}
                         </p>
                       )}
                       {remindResult === 'error' && (
                         <p className="mt-2 text-xs text-destructive">
-                          Failed to send reminder. Please try again.
+                          {t('quick.reminderFailed')}
                         </p>
                       )}
                     </div>
@@ -553,7 +555,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                         size="sm"
                         onClick={() => handleRecord(tx)}
                       >
-                        Settle
+                        {t('common.settle')}
                       </Button>
                       {canRemind && !isConfirmingRemind && remindResult !== 'sent' && (
                         <Button
@@ -569,10 +571,10 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
                               setCheckedEmails(init)
                             }
                           }}
-                          title={`Send payment reminder to ${tx.fromName}`}
+                          title={t('quick.sendReminderConfirm', { name: tx.fromName })}
                         >
                           <Bell size={14} className="mr-1" />
-                          Remind
+                          {t('settlementPlan.remind')}
                         </Button>
                       )}
                       {isConfirmingRemind && (
@@ -598,7 +600,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               className="w-full"
               onClick={handleRecordDifferent}
             >
-              Log a custom payment
+              {t('quick.logCustomPayment')}
             </Button>
           </div>
         </div>
@@ -620,14 +622,14 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
               onClick={() => formRef.current?.submit()}
               className="flex-1"
             >
-              Confirm Payment
+              {t('quick.confirmPayment')}
             </Button>
             <Button
               type="button"
               onClick={() => setView('suggestions')}
               variant="outline"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         ) : undefined}

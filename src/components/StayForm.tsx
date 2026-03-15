@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useStayContext } from '@/contexts/StayContext'
@@ -18,6 +19,7 @@ interface StayFormProps {
 }
 
 export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { createStay, updateStay } = useStayContext()
 
@@ -41,17 +43,17 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
     setError(null)
 
     if (!formData.name.trim()) {
-      setError('Please enter an accommodation name')
+      setError(t('planner.pleaseEnterAccommodationName'))
       return
     }
 
     if (!formData.check_in_date || !formData.check_out_date) {
-      setError('Please enter both check-in and check-out dates')
+      setError(t('planner.pleaseEnterDates'))
       return
     }
 
     if (formData.check_out_date <= formData.check_in_date) {
-      setError('Check-out date must be after check-in date')
+      setError(t('planner.checkOutAfterCheckIn'))
       return
     }
 
@@ -76,7 +78,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to update accommodation')
+          setError(t('planner.failedToUpdateAccommodation'))
         }
       } else {
         const createData: CreateStayInput = {
@@ -94,12 +96,12 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to add accommodation')
+          setError(t('planner.failedToAddAccommodation'))
         }
       }
     } catch (error) {
       logger.error('Error saving stay:', { error: String(error) })
-      setError('An error occurred while saving')
+      setError(t('planner.errorSavingAccommodation'))
     } finally {
       setSubmitting(false)
     }
@@ -124,13 +126,13 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="stay-name">Accommodation Name</Label>
+        <Label htmlFor="stay-name">{t('planner.accommodationName')}</Label>
         <Input
           type="text"
           id="stay-name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="e.g., Beach Resort, Airbnb Downtown"
+          placeholder={t('planner.accommodationNamePlaceholder')}
           style={{ fontSize: '1rem' }}
           required
           disabled={submitting}
@@ -138,7 +140,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="stay-link">Booking Link (Optional)</Label>
+        <Label htmlFor="stay-link">{t('planner.bookingLinkOptional')}</Label>
         <Input
           type="url"
           id="stay-link"
@@ -151,12 +153,12 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="stay-comment">Comment (Optional)</Label>
+        <Label htmlFor="stay-comment">{t('planner.commentOptional')}</Label>
         <Textarea
           id="stay-comment"
           value={formData.comment}
           onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-          placeholder="Check-in instructions, address, notes..."
+          placeholder={t('planner.commentPlaceholder')}
           rows={2}
           style={{ fontSize: '1rem' }}
           disabled={submitting}
@@ -165,7 +167,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Coordinates (Optional)</Label>
+        <Label>{t('planner.coordinatesOptional')}</Label>
         <div className="grid grid-cols-2 gap-4">
           <Input
             type="text"
@@ -173,7 +175,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             id="stay-latitude"
             value={formData.latitude}
             onChange={(e) => setFormData({ ...formData, latitude: e.target.value.replace(',', '.') })}
-            placeholder="Latitude"
+            placeholder={t('planner.latitude')}
             pattern="-?[0-9]*[.,]?[0-9]*"
             style={{ fontSize: '1rem' }}
             disabled={submitting}
@@ -184,18 +186,18 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
             id="stay-longitude"
             value={formData.longitude}
             onChange={(e) => setFormData({ ...formData, longitude: e.target.value.replace(',', '.') })}
-            placeholder="Longitude"
+            placeholder={t('planner.longitude')}
             pattern="-?[0-9]*[.,]?[0-9]*"
             style={{ fontSize: '1rem' }}
             disabled={submitting}
           />
         </div>
-        <p className="text-xs text-muted-foreground">Add coordinates to show on the planner map</p>
+        <p className="text-xs text-muted-foreground">{t('planner.coordinatesHint')}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="stay-checkin">Check-in Date</Label>
+          <Label htmlFor="stay-checkin">{t('planner.checkInDate')}</Label>
           <Input
             type="date"
             id="stay-checkin"
@@ -209,7 +211,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="stay-checkout">Check-out Date</Label>
+          <Label htmlFor="stay-checkout">{t('planner.checkOutDate')}</Label>
           <Input
             type="date"
             id="stay-checkout"
@@ -232,14 +234,14 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           disabled={submitting}
           className="flex-1"
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
           disabled={submitting}
           className="flex-1"
         >
-          {submitting ? 'Saving...' : stay ? 'Update Accommodation' : 'Add Accommodation'}
+          {submitting ? t('common.saving') : stay ? t('planner.updateAccommodation') : t('planner.addAccommodation')}
         </Button>
       </div>
     </motion.form>

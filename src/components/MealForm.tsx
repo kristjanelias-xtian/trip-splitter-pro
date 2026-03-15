@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Sun, CloudSun, Moon, Plus, X, Utensils, Home, Receipt } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -62,6 +63,7 @@ export function MealForm({
   onSuccess,
   onCancel,
 }: MealFormProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { createMeal, updateMeal, refreshMeals } = useMealContext()
   const participantContext = useParticipantContext()
@@ -178,7 +180,7 @@ export function MealForm({
   if (!participantContext || participantContext.loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-muted-foreground">Loading participants...</div>
+        <div className="text-sm text-muted-foreground">{t('planner.loadingParticipants')}</div>
       </div>
     )
   }
@@ -195,12 +197,12 @@ export function MealForm({
     setError(null)
 
     if (!formData.title.trim()) {
-      setError('Please enter a meal title')
+      setError(t('planner.pleasEnterMealTitle'))
       return
     }
 
     if (!mealDate) {
-      setError('Date is required')
+      setError(t('planner.dateRequired'))
       return
     }
 
@@ -263,7 +265,7 @@ export function MealForm({
           await refreshMeals()
           onSuccess()
         } else {
-          setError('Failed to update meal')
+          setError(t('planner.failedToUpdateMeal'))
         }
       } else {
         // Create mode
@@ -300,12 +302,12 @@ export function MealForm({
           await refreshMeals()
           onSuccess()
         } else {
-          setError('Failed to create meal')
+          setError(t('planner.failedToCreateMeal'))
         }
       }
     } catch (error) {
       logger.error('Error saving meal:', { error: String(error) })
-      setError('An error occurred while saving')
+      setError(t('planner.errorSavingMeal'))
     } finally {
       setSubmitting(false)
     }
@@ -399,44 +401,44 @@ export function MealForm({
 
       {/* Meal Type Selector */}
       <div className="space-y-2">
-        <Label>Meal Type</Label>
+        <Label>{t('planner.mealType')}</Label>
         <Tabs value={mealFormType} onValueChange={(value) => setMealFormType(value as MealFormType)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="regular">
               <Utensils size={16} className="mr-1 hidden sm:inline" />
-              Regular
+              {t('planner.regular')}
             </TabsTrigger>
             <TabsTrigger value="restaurant">
               <Receipt size={16} className="mr-1 hidden sm:inline" />
-              Restaurant
+              {t('planner.restaurant')}
             </TabsTrigger>
             <TabsTrigger value="at-home">
               <Home size={16} className="mr-1 hidden sm:inline" />
-              At Home
+              {t('planner.atHome')}
             </TabsTrigger>
           </TabsList>
         </Tabs>
         {mealFormType === 'restaurant' && (
           <p className="text-xs text-muted-foreground">
-            Restaurant meals don't require cooking assignments or ingredients.
+            {t('planner.restaurantMealsHint')}
           </p>
         )}
         {mealFormType === 'at-home' && (
           <p className="text-xs text-muted-foreground">
-            At-home meals are for when everyone eats separately.
+            {t('planner.atHomeMealsHint')}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Meal Title</Label>
+        <Label htmlFor="title">{t('planner.mealTitle')}</Label>
         <div className="relative">
           <Input
             type="text"
             id="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="e.g., Pasta Carbonara"
+            placeholder={t('planner.mealTitlePlaceholder')}
             required
             disabled={submitting}
             className="pl-10"
@@ -449,12 +451,12 @@ export function MealForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description (Optional)</Label>
+        <Label htmlFor="description">{t('planner.descriptionOptional')}</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Notes, recipe, dietary considerations..."
+          placeholder={t('planner.descriptionPlaceholder')}
           rows={3}
           disabled={submitting}
           required={false}
@@ -463,17 +465,17 @@ export function MealForm({
 
       {mealFormType === 'regular' && (
         <div className="space-y-2">
-          <Label htmlFor="responsible">Who's Cooking? (Optional)</Label>
+          <Label htmlFor="responsible">{t('planner.whosCooking')}</Label>
           <Select
             value={formData.responsible_participant_id}
             onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
             disabled={submitting}
           >
             <SelectTrigger id="responsible">
-              <SelectValue placeholder="-- None --" />
+              <SelectValue placeholder={t('planner.none')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">-- None --</SelectItem>
+              <SelectItem value="none">{t('planner.none')}</SelectItem>
               {adults.map((participant) => (
                 <SelectItem key={participant.id} value={participant.id}>
                   {participant.name}
@@ -488,7 +490,7 @@ export function MealForm({
       {mealFormType === 'regular' && (
         <div className="space-y-3 border-t border-border pt-4">
           <div className="flex items-center justify-between">
-            <Label>Ingredients (Optional)</Label>
+            <Label>{t('planner.ingredientsOptional')}</Label>
             <Button
               type="button"
               onClick={addIngredient}
@@ -498,12 +500,12 @@ export function MealForm({
               disabled={submitting || loadingIngredients}
             >
               <Plus size={14} />
-              Add Ingredient
+              {t('planner.addIngredient')}
             </Button>
           </div>
 
           {loadingIngredients && meal && (
-            <p className="text-sm text-muted-foreground">Loading ingredients...</p>
+            <p className="text-sm text-muted-foreground">{t('planner.loadingIngredients')}</p>
           )}
 
           {!loadingIngredients && formData.ingredients.length > 0 && (
@@ -514,7 +516,7 @@ export function MealForm({
                     type="text"
                     value={ingredient.name}
                     onChange={(e) => updateIngredientField(index, 'name', e.target.value)}
-                    placeholder="Name"
+                    placeholder={t('planner.ingredientNamePlaceholder')}
                     disabled={submitting}
                     className="flex-1"
                   />
@@ -522,7 +524,7 @@ export function MealForm({
                     type="text"
                     value={ingredient.quantity || ''}
                     onChange={(e) => updateIngredientField(index, 'quantity', e.target.value)}
-                    placeholder="Qty"
+                    placeholder={t('planner.ingredientQtyPlaceholder')}
                     disabled={submitting}
                     className="w-24"
                   />
@@ -558,7 +560,7 @@ export function MealForm({
 
           {!loadingIngredients && formData.ingredients.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No ingredients added yet. Click "Add Ingredient" to add items to your shopping list.
+              {t('planner.noIngredientsHint')}
             </p>
           )}
         </div>
@@ -572,14 +574,14 @@ export function MealForm({
           disabled={submitting}
           className="flex-1"
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
           disabled={submitting}
           className="flex-1"
         >
-          {submitting ? 'Saving...' : meal ? 'Update Meal' : 'Add Meal'}
+          {submitting ? t('common.saving') : meal ? t('planner.updateMeal') : t('planner.addMeal')}
         </Button>
       </div>
     </motion.form>

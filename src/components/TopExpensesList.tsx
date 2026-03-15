@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TrendingUp } from 'lucide-react'
 import type { Expense } from '@/types/expense'
 import type { Participant } from '@/types/participant'
@@ -16,6 +17,7 @@ interface TopExpensesListProps {
 }
 
 export function TopExpensesList({ expenses, participants, limit = 5, currency = 'EUR', exchangeRates = {} }: TopExpensesListProps) {
+  const { t } = useTranslation()
   const topExpenses = useMemo(() => {
     return expenses
       .slice()
@@ -36,12 +38,12 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp size={20} />
-            Top {limit} Expenses
+            {t('charts.topExpenses', { count: limit })}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32 text-muted-foreground">
-            No expenses to display
+            {t('charts.noExpensesToDisplay')}
           </div>
         </CardContent>
       </Card>
@@ -53,7 +55,7 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp size={20} />
-          Top {Math.min(limit, expenses.length)} Expenses
+          {t('charts.topExpenses', { count: Math.min(limit, expenses.length) })}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -72,7 +74,7 @@ export function TopExpensesList({ expenses, participants, limit = 5, currency = 
                     {expense.description}
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
-                    <span>Paid by {expense.payerName} • {new Date(expense.expense_date).toLocaleDateString()}</span>
+                    <span>{t('charts.paidBy', { name: expense.payerName })} • {new Date(expense.expense_date).toLocaleDateString()}</span>
                     <Badge variant="outline" className="text-xs">
                       {expense.category}
                     </Badge>

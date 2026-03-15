@@ -30,12 +30,14 @@ import { useToast } from '@/hooks/use-toast'
 import { useBankDetailsPrompt } from '@/hooks/useBankDetailsPrompt'
 import { BankDetailsDialog } from '@/components/auth/BankDetailsDialog'
 import { PostTripNudgeBanner } from '@/components/PostTripNudgeBanner'
+import { useTranslation } from 'react-i18next'
 import {
   DollarSign, CreditCard, FileText, ScanLine,
   Loader2, Users, Landmark, X
 } from 'lucide-react'
 
 export function QuickGroupDetailPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
@@ -99,7 +101,7 @@ export function QuickGroupDetailPage() {
     }
   }
 
-  const entityLabel = currentTrip?.event_type === 'event' ? 'Event' : 'Trip'
+  const entityLabel = currentTrip?.event_type === 'event' ? t('trip.eventLabel') : t('trip.tripLabel')
 
   if (tripLoading) {
     return (
@@ -116,9 +118,9 @@ export function QuickGroupDetailPage() {
       <div className="max-w-lg mx-auto px-4 py-6">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground mb-4">{entityLabel} not found</p>
+            <p className="text-muted-foreground mb-4">{t('quick.tripNotFound', { label: entityLabel })}</p>
             <Button onClick={() => navigate('/')} variant="outline" size="sm">
-              My Groups
+              {t('quick.myGroups')}
             </Button>
           </CardContent>
         </Card>
@@ -159,10 +161,10 @@ export function QuickGroupDetailPage() {
             {!user ? (
               <>
                 <p className="text-muted-foreground mb-2">
-                  Quick view tracks your personal balance.
+                  {t('quick.quickViewTracksBalance')}
                 </p>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  Sign in to link yourself to a participant, or view the full trip overview.
+                  {t('quick.signInToLink')}
                 </p>
                 <div className="flex flex-col items-center gap-3">
                   <SignInButton type="standard" />
@@ -170,14 +172,14 @@ export function QuickGroupDetailPage() {
                     to={`/t/${currentTrip.trip_code}/dashboard`}
                     className="text-sm text-accent hover:underline"
                   >
-                    View full trip overview
+                    {t('quick.viewFullTripOverview')}
                   </Link>
                 </div>
               </>
             ) : (
               <>
                 <p className="text-muted-foreground mb-4">
-                  Link yourself to a participant to see your balance
+                  {t('quick.linkToSeeBalance')}
                 </p>
                 <LinkParticipantDialog />
               </>
@@ -194,7 +196,7 @@ export function QuickGroupDetailPage() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Users size={13} />
-                <span>{balanceCalc.balances.length} members</span>
+                <span>{t('quick.members', { count: balanceCalc.balances.length })}</span>
               </button>
             </div>
           )}
@@ -204,15 +206,15 @@ export function QuickGroupDetailPage() {
                 <div className="flex items-start gap-3">
                   <Landmark size={18} className="text-amber-600 mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-sm">Add your bank details</p>
-                    <p className="text-xs text-muted-foreground">So others know where to pay you</p>
+                    <p className="font-medium text-sm">{t('quick.addBankDetails')}</p>
+                    <p className="text-xs text-muted-foreground">{t('quick.soOthersCanPay')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button size="sm" onClick={() => bankPrompt.setDialogOpen(true)}>Add</Button>
+                  <Button size="sm" onClick={() => bankPrompt.setDialogOpen(true)}>{t('common.add')}</Button>
                   <button
                     onClick={bankPrompt.dismiss}
-                    aria-label="Dismiss"
+                    aria-label={t('common.dismiss')}
                     className="text-muted-foreground hover:text-foreground transition-colors p-1"
                   >
                     <X size={14} />
@@ -242,10 +244,10 @@ export function QuickGroupDetailPage() {
         <Card className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
           <CardContent className="pt-4 pb-4 flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Set up your group</p>
-              <p className="text-xs text-muted-foreground">Add the people sharing costs</p>
+              <p className="font-medium text-sm">{t('quick.setupGroup')}</p>
+              <p className="text-xs text-muted-foreground">{t('quick.addPeopleSharingCosts')}</p>
             </div>
-            <Button size="sm" onClick={() => setParticipantSetupOpen(true)}>Add</Button>
+            <Button size="sm" onClick={() => setParticipantSetupOpen(true)}>{t('common.add')}</Button>
           </CardContent>
         </Card>
       )}
@@ -254,27 +256,27 @@ export function QuickGroupDetailPage() {
       <div className="space-y-3 mb-6">
         <QuickActionButton
           icon={ScanLine}
-          label="Scan a receipt"
-          description="Let AI read and split itemised bills"
+          label={t('quick.scanReceipt')}
+          description={t('quick.scanReceiptDesc')}
           onClick={() => setReceiptCaptureOpen(true)}
           emphasis
         />
         <QuickActionButton
           icon={DollarSign}
-          label="Add an expense"
-          description="Split a bill with the group"
+          label={t('quick.addExpense')}
+          description={t('quick.addExpenseDesc')}
           onClick={() => setExpenseOpen(true)}
         />
         <QuickActionButton
           icon={CreditCard}
-          label="Settle up"
-          description="Record a payment between people"
+          label={t('quick.settleUp')}
+          description={t('quick.settleUpDesc')}
           onClick={() => setSettlementOpen(true)}
         />
         <QuickActionButton
           icon={FileText}
-          label="View expenses & payments"
-          description="See transaction history"
+          label={t('quick.viewExpensesPayments')}
+          description={t('quick.viewExpensesPaymentsDesc')}
           onClick={() => setHistoryOpen(true)}
         />
       </div>
@@ -297,7 +299,7 @@ export function QuickGroupDetailPage() {
         onOpenChange={setReceiptCaptureOpen}
         onScanned={(_taskId) => {
           setReceiptCaptureOpen(false)
-          toast({ title: 'Receipt scanned', description: 'Review it using the banner above.' })
+          toast({ title: t('quick.receiptScanned'), description: t('quick.receiptScannedDesc') })
         }}
       />
 

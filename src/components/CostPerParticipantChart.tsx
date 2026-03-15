@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { ParticipantBalance } from '@/services/balanceCalculator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +11,7 @@ interface CostPerParticipantChartProps {
 }
 
 export function CostPerParticipantChart({ balances, currency = 'EUR' }: CostPerParticipantChartProps) {
+  const { t } = useTranslation()
   const chartData = useMemo(() => {
     return balances
       .map(balance => ({
@@ -24,11 +26,11 @@ export function CostPerParticipantChart({ balances, currency = 'EUR' }: CostPerP
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Cost per Participant</CardTitle>
+          <CardTitle>{t('charts.costPerParticipant')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
-            No data to display
+            {t('charts.noDataToDisplay')}
           </div>
         </CardContent>
       </Card>
@@ -42,7 +44,7 @@ export function CostPerParticipantChart({ balances, currency = 'EUR' }: CostPerP
         <div className="bg-card border border-border rounded-lg shadow-lg p-3">
           <p className="font-semibold text-foreground">{data.fullName}</p>
           <p className="text-sm text-muted-foreground">
-            Total Share: {new Intl.NumberFormat('en-US', {
+            {t('charts.totalShare')} {new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: currency,
             }).format(data.totalShare)}
@@ -56,7 +58,7 @@ export function CostPerParticipantChart({ balances, currency = 'EUR' }: CostPerP
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cost per Participant</CardTitle>
+        <CardTitle>{t('charts.costPerParticipant')}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>

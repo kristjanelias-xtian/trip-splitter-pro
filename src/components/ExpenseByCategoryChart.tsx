@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import type { Expense } from '@/types/expense'
 import { convertToBaseCurrency } from '@/services/balanceCalculator'
@@ -34,6 +35,7 @@ function getCategoryColor(name: string, index: number): string {
 }
 
 export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRates = {} }: ExpenseByCategoryChartProps) {
+  const { t } = useTranslation()
   const chartData = useMemo(() => {
     // Group expenses by category and sum converted amounts
     const categoryTotals = expenses.reduce((acc, expense) => {
@@ -66,11 +68,11 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Expenses by Category</CardTitle>
+          <CardTitle>{t('charts.expensesByCategory')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
-            No expenses to display
+            {t('charts.noExpensesToDisplay')}
           </div>
         </CardContent>
       </Card>
@@ -99,7 +101,7 @@ export function ExpenseByCategoryChart({ expenses, currency = 'EUR', exchangeRat
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Expenses by Category</CardTitle>
+        <CardTitle>{t('charts.expensesByCategory')}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={260}>

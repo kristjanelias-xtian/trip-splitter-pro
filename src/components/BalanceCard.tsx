@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
@@ -14,6 +15,7 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }: BalanceCardProps) {
+  const { t } = useTranslation()
   const balanceColorClass = getBalanceColorClass(balance.balance)
   const formattedBalance = formatBalance(balance.balance, currency)
   const fmt = (value: number) => new Intl.NumberFormat('en-US', {
@@ -28,21 +30,21 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
   const getBalanceStatus = () => {
     if (balance.balance > SETTLED_THRESHOLD) {
       return {
-        text: 'To receive',
+        text: t('balance.toReceive'),
         icon: <ArrowDownToLine size={16} className="text-positive" />,
         bgClass: 'bg-positive/5',
         borderClass: 'border-positive/20'
       }
     } else if (balance.balance < -SETTLED_THRESHOLD) {
       return {
-        text: 'To pay',
+        text: t('balance.toPay'),
         icon: <ArrowUpFromLine size={16} className="text-destructive" />,
         bgClass: 'bg-destructive/5',
         borderClass: 'border-destructive/20'
       }
     } else {
       return {
-        text: 'Settled',
+        text: t('balance.settled'),
         icon: <CheckCircle2 size={16} className="text-accent" />,
         bgClass: 'bg-accent/5',
         borderClass: 'border-accent/20'
@@ -101,20 +103,20 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
         {/* Breakdown */}
         <div className="space-y-1 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Out of pocket:</span>
+            <span>{t('balance.outOfPocket')}</span>
             <span className="font-medium text-foreground tabular-nums">{formattedPaid}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
-            <span>Share:</span>
+            <span>{t('balance.share')}</span>
             <span className="font-medium text-foreground tabular-nums">{formattedShare}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
-            <span>Settled:</span>
+            <span>{t('balance.settledLabel')}</span>
             <span className="font-medium text-foreground tabular-nums text-right">
               {!hasSent && !hasReceived ? '—' : (
                 <>
-                  {hasReceived && <span className="block">{fmt(balance.totalSettledReceived)} received</span>}
-                  {hasSent && <span className="block">{fmt(balance.totalSettledSent)} sent</span>}
+                  {hasReceived && <span className="block">{t('balance.received', { amount: fmt(balance.totalSettledReceived) })}</span>}
+                  {hasSent && <span className="block">{t('balance.sent', { amount: fmt(balance.totalSettledSent) })}</span>}
                 </>
               )}
             </span>
@@ -127,11 +129,11 @@ export function BalanceCard({ balance, currency = 'EUR', onClick, groupMembers }
             {status.icon}
             <span className="text-muted-foreground">
               {Math.abs(balance.balance) <= SETTLED_THRESHOLD ? (
-                'All settled up!'
+                t('balance.allSettledUp')
               ) : balance.balance > 0 ? (
-                <>Others owe <strong className={`${balanceColorClass} tabular-nums`}>{formatBalance(balance.balance, currency)}</strong></>
+                <>{t('balance.othersOwe')} <strong className={`${balanceColorClass} tabular-nums`}>{formatBalance(balance.balance, currency)}</strong></>
               ) : (
-                <>Owes <strong className={`${balanceColorClass} tabular-nums`}>{formatBalance(Math.abs(balance.balance), currency)}</strong></>
+                <>{t('balance.owes')} <strong className={`${balanceColorClass} tabular-nums`}>{formatBalance(Math.abs(balance.balance), currency)}</strong></>
               )}
             </span>
           </div>

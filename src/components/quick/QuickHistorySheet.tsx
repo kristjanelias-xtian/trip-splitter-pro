@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FileText } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
@@ -21,6 +22,7 @@ interface QuickHistorySheetProps {
 }
 
 export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { myParticipant } = useMyParticipant()
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
@@ -60,16 +62,16 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
   }, [transactions, filter])
 
   const filterButtons: { key: FilterType; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'expenses', label: 'Expenses' },
-    { key: 'payments', label: 'Payments' },
+    { key: 'all', label: t('quick.filterAll') },
+    { key: 'expenses', label: t('quick.filterExpenses') },
+    { key: 'payments', label: t('quick.filterPayments') },
   ]
 
   return (
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title="Expenses & Payments"
+      title={t('quick.expensesAndPayments')}
     >
       {/* Filters */}
       <div className="flex gap-2 mb-4">
@@ -87,7 +89,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
           </button>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground mb-4">Showing only expenses you're included in.</p>
+      <p className="text-xs text-muted-foreground mb-4">{t('quick.showingOnlyYours')}</p>
 
       {/* Transaction list */}
       {loading ? (
@@ -98,7 +100,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">
-              Link yourself to a participant to see transaction history.
+              {t('quick.linkToSeeHistory')}
             </p>
           </CardContent>
         </Card>
@@ -106,7 +108,7 @@ export function QuickHistorySheet({ open, onOpenChange }: QuickHistorySheetProps
         <Card>
           <CardContent className="pt-6 text-center py-8">
             <FileText size={32} className="mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No transactions yet</p>
+            <p className="text-muted-foreground">{t('quick.noTransactionsYet')}</p>
           </CardContent>
         </Card>
       ) : (

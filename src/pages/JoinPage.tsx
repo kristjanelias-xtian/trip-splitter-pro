@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
+import { useTranslation } from 'react-i18next'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface InvitationData {
@@ -25,6 +26,7 @@ interface InvitationData {
 type PageState = 'loading' | 'found' | 'not_found' | 'accepted' | 'linking'
 
 export function JoinPage() {
+  const { t } = useTranslation()
   const { token } = useParams<{ token: string }>()
   const { user } = useAuth()
   const { refreshTrips } = useTripContext()
@@ -179,7 +181,7 @@ export function JoinPage() {
         navigate(isMobile ? `/t/${invitation!.trip_code}/quick` : `/t/${invitation!.trip_code}/manage`, { replace: true })
       } catch (err) {
         logger.error('Failed to link user to participant', { error: String(err) })
-        setLinkError('Failed to link your account. Please try again.')
+        setLinkError(t('join.linkFailed'))
         setPageState('found')
       }
     }
@@ -198,7 +200,7 @@ export function JoinPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Loading your invitation…</p>
+          <p className="text-muted-foreground text-sm">{t('join.loadingInvitation')}</p>
         </div>
       </div>
     )
@@ -210,10 +212,10 @@ export function JoinPage() {
         <div className="max-w-sm w-full text-center">
           <div className="text-4xl mb-4">🔗</div>
           <h1 className="text-xl font-semibold text-foreground mb-2">
-            Link not found
+            {t('join.linkNotFound')}
           </h1>
           <p className="text-muted-foreground text-sm">
-            This invite link is invalid or has expired. Ask your organiser to send a new one.
+            {t('join.inviteLinkInvalid')}
           </p>
         </div>
       </div>
@@ -225,7 +227,7 @@ export function JoinPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Linking your account…</p>
+          <p className="text-muted-foreground text-sm">{t('join.linkingAccount')}</p>
         </div>
       </div>
     )
@@ -242,14 +244,14 @@ export function JoinPage() {
           >
             Spl<span style={{ color: '#E8714A', WebkitTextFillColor: '#E8714A' }}>1</span>t
           </h1>
-          <p className="text-xs text-muted-foreground">Fair cost splitting for groups</p>
+          <p className="text-xs text-muted-foreground">{t('join.fairCostSplitting')}</p>
         </div>
 
         {/* Welcome Card */}
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
           {/* Card Header */}
           <div className="bg-accent/10 border-b border-border px-6 py-5">
-            <p className="text-sm text-muted-foreground mb-1">You've been added to</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('join.youveBeenAddedTo')}</p>
             <h2 className="text-lg font-semibold text-foreground leading-tight">
               {invitation?.trip_name}
             </h2>
@@ -259,10 +261,10 @@ export function JoinPage() {
             {/* Greeting */}
             <div>
               <p className="text-xl font-semibold text-foreground">
-                Hi {invitation?.participant_name}!
+                {t('join.greeting', { name: invitation?.participant_name })}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Your expenses have been tracked. Click below to see your balance.
+                {t('join.expensesTracked')}
               </p>
             </div>
 
@@ -279,7 +281,7 @@ export function JoinPage() {
               className="w-full"
               size="lg"
             >
-              Open {invitation?.trip_name} →
+              {t('join.openTrip', { name: invitation?.trip_name })}
             </Button>
 
             {/* Divider */}
@@ -291,7 +293,7 @@ export function JoinPage() {
                   </div>
                   <div className="relative flex justify-center">
                     <span className="bg-card px-3 text-xs text-muted-foreground">
-                      Optional
+                      {t('common.optional')}
                     </span>
                   </div>
                 </div>
@@ -300,10 +302,10 @@ export function JoinPage() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      Link your Google account
+                      {t('auth.linkGoogleAccount')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      See all your splits across events in one place
+                      {t('auth.linkGoogleDesc')}
                     </p>
                   </div>
                   <div className="flex justify-center">
@@ -315,14 +317,14 @@ export function JoinPage() {
 
             {user && pageState === 'accepted' && (
               <p className="text-sm text-center text-muted-foreground">
-                Your account is already linked.
+                {t('auth.accountLinked')}
               </p>
             )}
           </div>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          No account needed — just click "Open" above.
+          {t('auth.noAccountNeeded')}
         </p>
       </div>
     </div>

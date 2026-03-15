@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, ChevronDown, Smartphone } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,57 +11,44 @@ interface InstallGuideProps {
 }
 
 function IOSInstructions() {
+  const { t } = useTranslation()
   return (
     <ol className="list-decimal list-inside space-y-2 text-xs text-muted-foreground">
-      <li>
-        Tap the <strong className="text-foreground">Share</strong> button
-        (the box with the arrow) at the bottom of Safari
-      </li>
-      <li>
-        Scroll down and tap <strong className="text-foreground">"Add to Home Screen"</strong>
-      </li>
-      <li>
-        Tap <strong className="text-foreground">"Add"</strong> — done!
-      </li>
+      <li>{t('settings.iosStep1')}</li>
+      <li>{t('settings.iosStep2')}</li>
+      <li>{t('settings.iosStep3')}</li>
     </ol>
   )
 }
 
 function AndroidInstructions() {
+  const { t } = useTranslation()
   return (
     <ol className="list-decimal list-inside space-y-2 text-xs text-muted-foreground">
-      <li>
-        Tap the <strong className="text-foreground">three dots</strong> (&#8942;)
-        in Chrome's top-right corner
-      </li>
-      <li>
-        Tap <strong className="text-foreground">"Add to Home screen"</strong>
-      </li>
-      <li>
-        Tap <strong className="text-foreground">"Add"</strong> — done!
-      </li>
+      <li>{t('settings.androidStep1')}</li>
+      <li>{t('settings.androidStep2')}</li>
+      <li>{t('settings.androidStep3')}</li>
     </ol>
   )
 }
 
 function GenericInstructions() {
+  const { t } = useTranslation()
   return (
     <p className="text-xs text-muted-foreground">
-      Open your browser menu and look for{' '}
-      <strong className="text-foreground">"Add to Home Screen"</strong> or{' '}
-      <strong className="text-foreground">"Install app"</strong>.
+      {t('settings.genericInstall')}
     </p>
   )
 }
 
 function PlatformInstructions({ isIOS, isAndroid }: { isIOS: boolean; isAndroid: boolean }) {
+  const { t } = useTranslation()
   return (
     <div className="mt-3 space-y-3">
       {isIOS ? <IOSInstructions /> : isAndroid ? <AndroidInstructions /> : <GenericInstructions />}
       {(isIOS || isAndroid) && (
         <p className="text-xs text-muted-foreground/70 italic">
-          Make sure you're on the home page when you do this, so the app
-          always opens in the right place.
+          {t('settings.homePageHint')}
         </p>
       )}
     </div>
@@ -68,6 +56,7 @@ function PlatformInstructions({ isIOS, isAndroid }: { isIOS: boolean; isAndroid:
 }
 
 export function InstallGuide({ variant, onDismiss }: InstallGuideProps) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const { isIOS, isAndroid } = usePWAInstall()
 
@@ -79,7 +68,7 @@ export function InstallGuide({ variant, onDismiss }: InstallGuideProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <p className="text-sm font-medium text-foreground">
-                Open Spl1t like an app
+                {t('settings.openLikeApp')}
               </p>
               <button
                 onClick={onDismiss}
@@ -90,14 +79,14 @@ export function InstallGuide({ variant, onDismiss }: InstallGuideProps) {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Open instantly from your phone — no browser needed
+              {t('settings.openInstantly')}
             </p>
             {!expanded && (
               <button
                 onClick={() => setExpanded(true)}
                 className="mt-2 text-xs font-medium text-foreground hover:underline"
               >
-                Show me
+                {t('settings.showMe')}
               </button>
             )}
             {expanded && (
@@ -120,14 +109,14 @@ export function InstallGuide({ variant, onDismiss }: InstallGuideProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Smartphone size={16} className="text-muted-foreground shrink-0" />
-              <CardTitle>Open Spl1t like an app</CardTitle>
+              <CardTitle>{t('settings.openLikeApp')}</CardTitle>
             </div>
             <ChevronDown
               size={16}
               className={`text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
             />
           </div>
-          <CardDescription>Works like a regular app — no browser needed</CardDescription>
+          <CardDescription>{t('settings.worksLikeApp')}</CardDescription>
         </CardHeader>
       </button>
       {expanded && (

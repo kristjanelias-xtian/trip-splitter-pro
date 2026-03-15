@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Lightbulb } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -80,6 +81,7 @@ export function WizardStep1({
   category,
   onCategoryChange,
 }: WizardStep1Props) {
+  const { t } = useTranslation()
   const currencies = availableCurrencies && availableCurrencies.length > 0
     ? availableCurrencies
     : ['EUR', 'USD', 'GBP', 'THB']
@@ -102,14 +104,14 @@ export function WizardStep1({
       {/* Description */}
       <div className="space-y-2">
         <Label htmlFor="description" className="text-base font-medium">
-          Description
+          {t('expenses.description')}
         </Label>
         <Input
           type="text"
           id="description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder="e.g., Dinner at restaurant"
+          placeholder={t('expenses.descriptionPlaceholder')}
           className="h-12 text-base"
           autoCapitalize="sentences"
           required
@@ -120,7 +122,7 @@ export function WizardStep1({
       {/* Amount and Currency */}
       <div className="space-y-2">
         <Label htmlFor="amount" className="text-base font-medium">
-          Amount
+          {t('expenses.amount')}
         </Label>
         <div className="flex gap-3">
           <div className="relative flex-1">
@@ -167,7 +169,7 @@ export function WizardStep1({
       {/* Paid by */}
       <div className="space-y-2">
         <Label htmlFor="paidBy" className="text-base font-medium">
-          Paid by
+          {t('expenses.paidBy')}
         </Label>
         <Select
           value={paidBy}
@@ -175,7 +177,7 @@ export function WizardStep1({
           disabled={disabled}
         >
           <SelectTrigger id="paidBy" className="h-12 text-base">
-            <SelectValue placeholder="Choose who paid..." />
+            <SelectValue placeholder={t('expenses.chooseWhoPaid')} />
           </SelectTrigger>
           <SelectContent>
             {adults.map((adult) => (
@@ -196,8 +198,8 @@ export function WizardStep1({
           >
             <Lightbulb size={12} className="text-accent shrink-0" />
             <span className="truncate">
-              <strong className="font-medium text-foreground">{suggestedPayer.name}</strong>
-              {' '}should pay next{' '}
+              <strong className="font-medium text-foreground">{t('expenses.shouldPayNext', { name: suggestedPayer.name })}</strong>
+              {' '}
               <span className={getBalanceColorClass(suggestedPayer.balance)}>
                 ({formatBalance(suggestedPayer.balance, tripCurrency)})
               </span>
@@ -208,7 +210,7 @@ export function WizardStep1({
 
       {/* Category pills */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">Category</Label>
+        <Label className="text-base font-medium">{t('common.category')}</Label>
         <div className="flex flex-wrap gap-1.5">
           {CATEGORIES.map(cat => (
             <button
@@ -222,7 +224,7 @@ export function WizardStep1({
                   : 'bg-background text-muted-foreground border-input hover:border-primary/50'
               }`}
             >
-              {cat}
+              {t(`expenses.category${cat}`)}
             </button>
           ))}
         </div>

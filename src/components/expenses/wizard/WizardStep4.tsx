@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,7 @@ export function WizardStep4({
   onParticipantSplitChange,
   disabled = false,
 }: WizardStep3Props) {
+  const { t } = useTranslation()
   const computeTotal = () => {
     let total = 0
     for (const id of selectedParticipants) {
@@ -71,13 +73,13 @@ export function WizardStep4({
     >
       <div className="space-y-3">
         <Label className="text-base font-medium">
-          {splitMode === 'percentage' ? 'Percentages' : 'Amounts'}
+          {splitMode === 'percentage' ? t('expenses.percentages') : t('expenses.amounts')}
         </Label>
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-sm text-muted-foreground">
             {splitMode === 'percentage'
-              ? 'Enter percentages for each party (must sum to 100%)'
-              : `Enter amounts for each party (must sum to ${currency} ${amount || '0.00'})`
+              ? t('expenses.percentageHint')
+              : t('expenses.amountHint', { currency, amount: amount || '0.00' })
             }
           </p>
           <button
@@ -86,7 +88,7 @@ export function WizardStep4({
             onClick={handleDistributeEvenly}
             disabled={disabled}
           >
-            Split evenly
+            {t('expenses.splitEvenly')}
           </button>
         </div>
 
@@ -96,7 +98,7 @@ export function WizardStep4({
             .map(participant => (
               <div key={participant.id} className="flex items-center justify-between min-h-[44px] gap-3">
                 <span className="text-sm text-foreground flex-1">
-                  {participant.name} {participant.is_adult ? '' : '(child)'}
+                  {participant.name} {participant.is_adult ? '' : t('common.childLabel')}
                 </span>
                 <Input
                   type="text"

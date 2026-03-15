@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useActivityContext } from '@/contexts/ActivityContext'
@@ -37,6 +38,7 @@ export function ActivityForm({
   onSuccess,
   onCancel,
 }: ActivityFormProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { createActivity, updateActivity } = useActivityContext()
   const participantContext = useParticipantContext()
@@ -65,7 +67,7 @@ export function ActivityForm({
   if (!participantContext || participantContext.loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-muted-foreground">Loading participants...</div>
+        <div className="text-sm text-muted-foreground">{t('planner.loadingParticipants')}</div>
       </div>
     )
   }
@@ -78,7 +80,7 @@ export function ActivityForm({
     setError(null)
 
     if (!formData.title.trim()) {
-      setError('Please enter an activity title')
+      setError(t('planner.pleaseEnterActivityTitle'))
       return
     }
 
@@ -102,7 +104,7 @@ export function ActivityForm({
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to update activity')
+          setError(t('planner.failedToUpdateActivity'))
         }
       } else {
         const createData: CreateActivityInput = {
@@ -120,12 +122,12 @@ export function ActivityForm({
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to create activity')
+          setError(t('planner.failedToCreateActivity'))
         }
       }
     } catch (error) {
       logger.error('Error saving activity:', { error: String(error) })
-      setError('An error occurred while saving')
+      setError(t('planner.errorSavingActivity'))
     } finally {
       setSubmitting(false)
     }
@@ -151,25 +153,25 @@ export function ActivityForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="activity-title">Activity Title</Label>
+        <Label htmlFor="activity-title">{t('planner.activityTitle')}</Label>
         <Input
           type="text"
           id="activity-title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="e.g., Temple visit, Island hopping"
+          placeholder={t('planner.activityTitlePlaceholder')}
           required
           disabled={submitting}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="activity-description">Description (Optional)</Label>
+        <Label htmlFor="activity-description">{t('planner.activityDescriptionOptional')}</Label>
         <Textarea
           id="activity-description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Notes, details, booking info..."
+          placeholder={t('planner.activityDescriptionPlaceholder')}
           rows={3}
           disabled={submitting}
           required={false}
@@ -177,19 +179,19 @@ export function ActivityForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="activity-location">Location (Optional)</Label>
+        <Label htmlFor="activity-location">{t('planner.activityLocationOptional')}</Label>
         <Input
           type="text"
           id="activity-location"
           value={formData.location}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          placeholder="e.g., Wat Pho, Phi Phi Island"
+          placeholder={t('planner.activityLocationPlaceholder')}
           disabled={submitting}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="activity-link">Link (Optional)</Label>
+        <Label htmlFor="activity-link">{t('planner.activityLinkOptional')}</Label>
         <Input
           type="url"
           id="activity-link"
@@ -201,17 +203,17 @@ export function ActivityForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="activity-responsible">Responsible Person (Optional)</Label>
+        <Label htmlFor="activity-responsible">{t('planner.responsiblePersonOptional')}</Label>
         <Select
           value={formData.responsible_participant_id}
           onValueChange={(value) => setFormData({ ...formData, responsible_participant_id: value })}
           disabled={submitting}
         >
           <SelectTrigger id="activity-responsible">
-            <SelectValue placeholder="-- None --" />
+            <SelectValue placeholder={t('planner.none')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">-- None --</SelectItem>
+            <SelectItem value="none">{t('planner.none')}</SelectItem>
             {adults.map((participant) => (
               <SelectItem key={participant.id} value={participant.id}>
                 {participant.name}
@@ -222,7 +224,7 @@ export function ActivityForm({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {TIME_SLOT_LABELS[timeSlot]} activity
+        {t('planner.timeSlotActivity', { slot: TIME_SLOT_LABELS[timeSlot] })}
       </p>
 
       <div className="flex gap-3 pt-2">
@@ -233,14 +235,14 @@ export function ActivityForm({
           disabled={submitting}
           className="flex-1"
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
           disabled={submitting}
           className="flex-1"
         >
-          {submitting ? 'Saving...' : activity ? 'Update Activity' : 'Add Activity'}
+          {submitting ? t('common.saving') : activity ? t('planner.updateActivity') : t('planner.addActivity')}
         </Button>
       </div>
     </motion.form>

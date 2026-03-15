@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Trash2, MapPin, User, ExternalLink } from 'lucide-react'
 import { useActivityContext } from '@/contexts/ActivityContext'
@@ -25,6 +26,7 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity }: ActivityCardProps) {
+  const { t } = useTranslation()
   const { deleteActivity } = useActivityContext()
   const { participants } = useParticipantContext()
   const [showEditForm, setShowEditForm] = useState(false)
@@ -98,7 +100,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       </motion.div>
 
       {/* Edit Form */}
-      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Activity" hasInputs>
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title={t('planner.editActivity')} hasInputs>
         <ActivityForm
           activity={activity}
           date={activity.activity_date}
@@ -112,15 +114,15 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Activity?</AlertDialogTitle>
+            <AlertDialogTitle>{t('planner.deleteActivity')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{activity.title}"?
+              {t('planner.deleteActivityConfirm', { title: activity.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

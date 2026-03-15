@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Component, ErrorInfo, ReactNode } from 'react'
+import i18n from '@/i18n'
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -91,14 +92,14 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <RefreshCw className="h-12 w-12 text-primary mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  New version available
+                  {i18n.t('errors.newVersionAvailable')}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                  Spl1t has been updated. Please refresh to load the latest version.
+                  {i18n.t('errors.newVersionDesc')}
                 </p>
                 <Button onClick={this.handleRefresh} variant="default">
                   <RefreshCw size={16} className="mr-2" />
-                  Refresh page
+                  {i18n.t('errors.refreshPage')}
                 </Button>
               </div>
             </CardContent>
@@ -112,33 +113,33 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Something went wrong
+                {i18n.t('errors.somethingWentWrong')}
               </h3>
               <p className="text-sm text-muted-foreground mb-4 max-w-md">
                 {exhaustedRetries
-                  ? 'This error keeps happening. Try going home or refreshing the page.'
-                  : (this.state.error?.message || 'An unexpected error occurred. Please try again.')}
+                  ? i18n.t('errors.errorKeepsHappening')
+                  : (this.state.error?.message || i18n.t('errors.unexpectedError'))}
               </p>
               {exhaustedRetries ? (
                 <div className="flex gap-3">
                   <Button onClick={this.handleGoHome} variant="default">
                     <Home size={16} className="mr-2" />
-                    Go to home
+                    {i18n.t('errors.goToHome')}
                   </Button>
                   <Button onClick={this.handleRefresh} variant="outline">
                     <RefreshCw size={16} className="mr-2" />
-                    Refresh page
+                    {i18n.t('errors.refreshPage')}
                   </Button>
                 </div>
               ) : (
                 <Button onClick={this.handleReset} variant="outline">
-                  Try Again
+                  {i18n.t('common.tryAgain')}
                 </Button>
               )}
               {exhaustedRetries && this.state.error && (
                 <details className="mt-4 text-left w-full max-w-md">
                   <summary className="text-xs text-muted-foreground cursor-pointer">
-                    Error details
+                    {i18n.t('errors.errorDetails')}
                   </summary>
                   <pre className="mt-2 text-xs text-muted-foreground bg-muted p-3 rounded overflow-x-auto whitespace-pre-wrap break-words">
                     {this.state.error.message}

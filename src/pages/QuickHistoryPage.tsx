@@ -10,11 +10,13 @@ import { TransactionItem } from '@/components/quick/TransactionItem'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { Card, CardContent } from '@/components/ui/card'
+import { useTranslation } from 'react-i18next'
 import { FileText } from 'lucide-react'
 
 type FilterType = 'all' | 'expenses' | 'payments'
 
 export function QuickHistoryPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { myParticipant } = useMyParticipant()
   const { participants, loading: participantsLoading, error: participantError, refreshParticipants } = useParticipantContext()
@@ -54,14 +56,14 @@ export function QuickHistoryPage() {
   }, [transactions, filter])
 
   const filterButtons: { key: FilterType; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'expenses', label: 'Expenses' },
-    { key: 'payments', label: 'Payments' },
+    { key: 'all', label: t('quick.filterAll') },
+    { key: 'expenses', label: t('quick.filterExpenses') },
+    { key: 'payments', label: t('quick.filterPayments') },
   ]
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      <h2 className="text-xl font-bold text-foreground mb-4">Expenses & Payments</h2>
+      <h2 className="text-xl font-bold text-foreground mb-4">{t('quick.expensesAndPayments')}</h2>
 
       {/* Filters */}
       <div className="flex gap-2 mb-4">
@@ -79,7 +81,7 @@ export function QuickHistoryPage() {
           </button>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground mb-4">Showing only expenses you're included in.</p>
+      <p className="text-xs text-muted-foreground mb-4">{t('quick.showingOnlyYours')}</p>
 
       {/* Transaction list */}
       {loading ? (
@@ -90,7 +92,7 @@ export function QuickHistoryPage() {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">
-              Link yourself to a participant to see transaction history.
+              {t('quick.linkToSeeHistory')}
             </p>
           </CardContent>
         </Card>
@@ -98,7 +100,7 @@ export function QuickHistoryPage() {
         <Card>
           <CardContent className="pt-6 text-center py-8">
             <FileText size={32} className="mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No transactions yet</p>
+            <p className="text-muted-foreground">{t('quick.noTransactionsYet')}</p>
           </CardContent>
         </Card>
       ) : (

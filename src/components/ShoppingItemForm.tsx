@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useShoppingContext } from '@/contexts/ShoppingContext'
@@ -34,6 +35,7 @@ interface ShoppingItemFormProps {
 }
 
 export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: ShoppingItemFormProps) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { createShoppingItem, updateShoppingItem } = useShoppingContext()
   const { meals } = useMealContext()
@@ -63,7 +65,7 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
     setError(null)
 
     if (!formData.name.trim()) {
-      setError('Please enter an item name')
+      setError(t('shopping.itemNameRequired'))
       return
     }
 
@@ -81,7 +83,7 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to update item')
+          setError(t('shopping.failedToUpdate'))
         }
       } else {
         const createData: CreateShoppingItemInput = {
@@ -96,11 +98,11 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
         if (result) {
           onSuccess()
         } else {
-          setError('Failed to create item')
+          setError(t('shopping.failedToCreate'))
         }
       }
     } catch (error) {
-      setError('An error occurred while saving')
+      setError(t('shopping.errorSaving'))
     } finally {
       setSubmitting(false)
     }
@@ -136,13 +138,13 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
 
       <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
         <div className="space-y-2">
-          <Label htmlFor="name">Item Name</Label>
+          <Label htmlFor="name">{t('shopping.itemName')}</Label>
           <Input
             type="text"
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g., Tomatoes"
+            placeholder={t('shopping.itemNamePlaceholder')}
             className="text-base"
             required
             disabled={submitting}
@@ -150,20 +152,20 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity</Label>
+          <Label htmlFor="quantity">{t('shopping.quantity')}</Label>
           <Input
             type="text"
             id="quantity"
             value={formData.quantity}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-            placeholder="e.g., 2 kg"
+            placeholder={t('shopping.quantityPlaceholder')}
             className="text-base"
             disabled={submitting}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category">{t('common.category')}</Label>
           <Select
             value={formData.category}
             onValueChange={(value) => setFormData({ ...formData, category: value as ShoppingCategory })}
@@ -193,9 +195,9 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
 
         return (
           <div className="space-y-2">
-            <Label>Link to Meals (Optional)</Label>
+            <Label>{t('shopping.linkToMeals')}</Label>
             <p className="text-xs text-muted-foreground">
-              Restaurant and at-home meals are excluded
+              {t('shopping.restaurantExcluded')}
             </p>
             <div className="max-h-40 overflow-y-auto rounded-lg border border-input p-3 space-y-2">
               {linkableMeals.map((meal) => (
@@ -222,7 +224,7 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
       {item && (
         <div className="bg-accent/50 border border-accent rounded-lg p-3">
           <p className="text-sm text-accent-foreground">
-            To link this item to meals, manage links from the meal planning page.
+            {t('shopping.manageMealLinksHint')}
           </p>
         </div>
       )}
@@ -235,14 +237,14 @@ export function ShoppingItemForm({ item, initialMealIds, onSuccess, onCancel }: 
           disabled={submitting}
           className="flex-1"
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
           disabled={submitting}
           className="flex-1"
         >
-          {submitting ? 'Saving...' : item ? 'Update' : 'Add Item'}
+          {submitting ? t('common.saving') : item ? t('common.update') : t('shopping.addItem')}
         </Button>
       </div>
     </motion.form>

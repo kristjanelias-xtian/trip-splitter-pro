@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { UserCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -14,6 +15,7 @@ interface LinkParticipantDialogProps {
 }
 
 export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDialogProps) {
+  const { t } = useTranslation()
   const { user, userProfile } = useAuth()
   const { participants, linkUserToParticipant, error, clearError } = useParticipantContext()
   const { isLinked } = useMyParticipant()
@@ -36,7 +38,7 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
       setOpen(false)
       onLinked?.()
     } else {
-      const msg = error || 'Failed to link — please try again'
+      const msg = error || t('linkParticipant.linkFailed')
       setLinkError(msg)
       logger.error('LinkParticipantDialog: link failed', { participantId, error: msg })
     }
@@ -57,25 +59,25 @@ export function LinkParticipantDialog({ trigger, onLinked }: LinkParticipantDial
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
             <UserCheck size={16} />
-            This is me
+            {t('linkParticipant.thisIsMe')}
           </Button>
         )}
       </span>
 
-      <ResponsiveOverlay open={open} onClose={() => handleOpenChange(false)} title="Which participant are you?" maxWidth="max-w-sm">
+      <ResponsiveOverlay open={open} onClose={() => handleOpenChange(false)} title={t('linkParticipant.whichParticipant')} maxWidth="max-w-sm">
         <p className="text-sm text-muted-foreground mb-4">
-          Link yourself to a participant so we can show your personal balance and pre-fill forms.
+          {t('linkParticipant.linkDescription')}
         </p>
         {linkError && (
           <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 mb-4">
-            <p className="text-sm font-medium text-destructive">Failed to link — please try again</p>
+            <p className="text-sm font-medium text-destructive">{t('linkParticipant.linkFailed')}</p>
             <p className="text-xs text-destructive/80 mt-1">{linkError}</p>
           </div>
         )}
         <div className="space-y-2">
           {adultParticipants.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No unlinked participants available. All participants are already claimed.
+              {t('linkParticipant.noUnlinked')}
             </p>
           ) : (
             adultParticipants.map(participant => (

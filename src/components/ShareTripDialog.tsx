@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import QRCode from 'qrcode'
 import { Copy, Share2, Check, Mail, MessageCircle, Send } from 'lucide-react'
 import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
@@ -16,6 +17,7 @@ interface ShareTripDialogProps {
 }
 
 export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialogProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
   const [copied, setCopied] = useState(false)
@@ -44,22 +46,22 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
       await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       toast({
-        title: 'Link copied!',
-        description: 'Share link has been copied to clipboard',
+        title: t('share.linkCopied'),
+        description: t('share.linkCopiedDesc'),
       })
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       logger.error('Error copying to clipboard:', { error: String(err) })
       toast({
-        title: 'Copy failed',
-        description: 'Please copy the link manually',
+        title: t('share.copyFailed'),
+        description: t('share.copyFailedDesc'),
         variant: 'destructive',
       })
     }
   }
 
   const handleShareVia = (method: 'whatsapp' | 'email' | 'sms') => {
-    const message = `Join our trip "${tripName}" on Split: ${shareUrl}`
+    const message = t('share.joinTripMessage', { name: tripName, url: shareUrl })
 
     let url = ''
     switch (method) {
@@ -67,7 +69,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
         url = `https://wa.me/?text=${encodeURIComponent(message)}`
         break
       case 'email':
-        url = `mailto:?subject=${encodeURIComponent(`Join ${tripName}`)}&body=${encodeURIComponent(message)}`
+        url = `mailto:?subject=${encodeURIComponent(t('share.joinSubject', { name: tripName }))}&body=${encodeURIComponent(message)}`
         break
       case 'sms':
         url = `sms:?body=${encodeURIComponent(message)}`
@@ -81,8 +83,8 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
     if ('share' in navigator) {
       try {
         await navigator.share({
-          title: `Join ${tripName}`,
-          text: `Join our trip "${tripName}" on Split`,
+          title: t('share.joinSubject', { name: tripName }),
+          text: t('share.joinTripMessage', { name: tripName, url: shareUrl }),
           url: shareUrl,
         })
       } catch (err) {
@@ -102,14 +104,14 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
         {trigger || (
           <Button variant="outline" className="gap-2">
             <Share2 size={16} />
-            Share Trip
+            {t('share.shareTrip')}
           </Button>
         )}
       </span>
 
-      <ResponsiveOverlay open={open} onClose={() => setOpen(false)} title="Share Trip" maxWidth="sm:max-w-md">
+      <ResponsiveOverlay open={open} onClose={() => setOpen(false)} title={t('share.shareTrip')} maxWidth="sm:max-w-md">
         <p className="text-sm text-muted-foreground mb-4">
-          Share this link with your group members. Anyone with the link can view and contribute to this trip.
+          {t('share.shareDescription')}
         </p>
 
         <div className="space-y-4">
@@ -117,7 +119,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
           {qrCodeUrl && (
             <div className="flex justify-center py-4">
               <div className="bg-white p-4 rounded-lg shadow-sm border border-border">
-                <img src={qrCodeUrl} alt="Trip QR Code" className="w-48 h-48" />
+                <img src={qrCodeUrl} alt={t('share.tripQrCode')} className="w-48 h-48" />
               </div>
             </div>
           )}
@@ -141,7 +143,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
 
           {/* Share Buttons */}
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Share via:</p>
+            <p className="text-sm text-muted-foreground">{t('share.shareVia')}</p>
             <div className="grid grid-cols-2 gap-2">
               {'share' in navigator && (
                 <Button
@@ -150,7 +152,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
                   onClick={handleNativeShare}
                 >
                   <Share2 size={16} />
-                  Share
+                  {t('share.share')}
                 </Button>
               )}
               <Button
@@ -159,7 +161,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
                 onClick={() => handleShareVia('whatsapp')}
               >
                 <MessageCircle size={16} />
-                WhatsApp
+                {t('share.whatsApp')}
               </Button>
               <Button
                 variant="outline"
@@ -167,7 +169,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
                 onClick={() => handleShareVia('email')}
               >
                 <Mail size={16} />
-                Email
+                {t('common.email')}
               </Button>
               <Button
                 variant="outline"
@@ -175,7 +177,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
                 onClick={() => handleShareVia('sms')}
               >
                 <Send size={16} />
-                SMS
+                {t('share.sms')}
               </Button>
             </div>
           </div>
@@ -183,8 +185,7 @@ export function ShareTripDialog({ tripCode, tripName, trigger }: ShareTripDialog
           {/* Info */}
           <div className="bg-muted/50 p-3 rounded-lg">
             <p className="text-xs text-muted-foreground">
-              <strong>Privacy Note:</strong> Anyone with this link can access the trip.
-              Only share with trusted group members.
+              {t('share.privacyNote')}
             </p>
           </div>
         </div>

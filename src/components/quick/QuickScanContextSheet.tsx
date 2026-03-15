@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Plus, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
@@ -18,6 +19,7 @@ export function QuickScanContextSheet({
   trips,
   onNewGroup,
 }: QuickScanContextSheetProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const handleSelectTrip = (tripCode: string) => {
@@ -34,9 +36,9 @@ export function QuickScanContextSheet({
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title={<span className="flex items-center gap-2"><ScanLine size={20} />Scan a Receipt</span>}
+      title={<span className="flex items-center gap-2"><ScanLine size={20} />{t('receipt.scanAReceipt')}</span>}
       headerExtra={
-        <p className="text-sm text-muted-foreground px-4 pb-3">Which group is this for?</p>
+        <p className="text-sm text-muted-foreground px-4 pb-3">{t('quick.whichGroupForReceipt')}</p>
       }
     >
       <div className="space-y-2">
@@ -57,7 +59,7 @@ export function QuickScanContextSheet({
           onClick={handleNewGroup}
         >
           <Plus size={16} />
-          New Group
+          {t('quick.newGroup')}
         </Button>
       </div>
     </ResponsiveOverlay>

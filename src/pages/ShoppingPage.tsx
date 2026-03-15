@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useCallback } from 'react'
 import { useRegisterRefresh } from '@/hooks/useRegisterRefresh'
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
@@ -18,6 +19,7 @@ type SortColumn = 'status' | 'name' | 'category'
 type SortDirection = 'asc' | 'desc'
 
 export function ShoppingPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { shoppingItems, loading, error: shoppingError, getShoppingItemsWithMeals, refreshShoppingItems } = useShoppingContext()
   const [itemsWithMeals, setItemsWithMeals] = useState<ShoppingItemWithMeals[]>([])
@@ -45,11 +47,11 @@ export function ShoppingPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Shopping List</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('shopping.title')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip selected. Please select a trip to view shopping list.
+              {t('shopping.noTripSelected')}
             </p>
           </CardContent>
         </Card>
@@ -91,13 +93,13 @@ export function ShoppingPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Shopping List</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('shopping.title')}</h2>
             <p className="text-sm text-muted-foreground mt-1">{currentTrip.name}</p>
           </div>
 
           <Button onClick={() => setShowAddForm(true)}>
             <Plus size={16} className="mr-2" />
-            Add Item
+            {t('shopping.addItem')}
           </Button>
         </div>
 
@@ -105,14 +107,14 @@ export function ShoppingPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Total Items</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('shopping.totalItems')}</div>
               <div className="text-2xl font-bold text-foreground tabular-nums">{totalItems}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Completed</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('shopping.completed')}</div>
               <div className="text-2xl font-bold text-positive tabular-nums">
                 {completedItems}
               </div>
@@ -121,14 +123,14 @@ export function ShoppingPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Remaining</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('shopping.remaining')}</div>
               <div className="text-2xl font-bold text-foreground tabular-nums">{remainingItems}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground mb-1">Progress</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('shopping.progress')}</div>
               <div className="text-2xl font-bold text-accent tabular-nums">{completionPercentage}%</div>
             </CardContent>
           </Card>
@@ -150,14 +152,14 @@ export function ShoppingPage() {
                   <div className="text-center py-8">
                     <ShoppingCart size={48} className="mx-auto text-muted-foreground/50 mb-4" />
                     <p className="text-lg font-medium text-foreground mb-2">
-                      No shopping items yet
+                      {t('shopping.noShoppingItemsYet')}
                     </p>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Add items to your shopping list or link them to planned meals
+                      {t('shopping.noShoppingItemsDesc')}
                     </p>
                     <Button onClick={() => setShowAddForm(true)}>
                       <Plus size={16} className="mr-2" />
-                      Add First Item
+                      {t('shopping.addFirstItem')}
                     </Button>
                   </div>
                 </CardContent>
@@ -173,7 +175,7 @@ export function ShoppingPage() {
                             onClick={() => handleSort('status')}
                             className="flex items-center hover:text-foreground transition-colors"
                           >
-                            <span className="sr-only">Status</span>
+                            <span className="sr-only">{t('common.status')}</span>
                             <SortIcon column="status" />
                           </button>
                         </th>
@@ -182,7 +184,7 @@ export function ShoppingPage() {
                             onClick={() => handleSort('name')}
                             className="flex items-center hover:text-foreground transition-colors"
                           >
-                            Item
+                            {t('common.item')}
                             <SortIcon column="name" />
                           </button>
                         </th>
@@ -191,12 +193,12 @@ export function ShoppingPage() {
                             onClick={() => handleSort('category')}
                             className="flex items-center hover:text-foreground transition-colors"
                           >
-                            Category
+                            {t('common.category')}
                             <SortIcon column="category" />
                           </button>
                         </th>
                         <th className="text-right p-3 font-medium text-sm w-20 md:w-24">
-                          Actions
+                          {t('common.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -240,7 +242,7 @@ export function ShoppingPage() {
       </div>
 
       {/* Add Shopping Item Form */}
-      <ResponsiveOverlay open={showAddForm} onClose={() => setShowAddForm(false)} title="Add Shopping Item" hasInputs>
+      <ResponsiveOverlay open={showAddForm} onClose={() => setShowAddForm(false)} title={t('shopping.addShoppingItem')} hasInputs>
         <ShoppingItemForm
           onSuccess={() => setShowAddForm(false)}
           onCancel={() => setShowAddForm(false)}

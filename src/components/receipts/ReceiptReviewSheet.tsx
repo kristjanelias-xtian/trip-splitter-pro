@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
@@ -145,6 +146,7 @@ export function ReceiptReviewSheet({
   mappedItems,
   onDone,
 }: ReceiptReviewSheetProps) {
+  const { t } = useTranslation()
   const keyboard = useKeyboardHeight()
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollIntoView(contentRef, { enabled: keyboard.isVisible, offset: 20 })
@@ -159,7 +161,7 @@ export function ReceiptReviewSheet({
   // Surface receipt context errors as toasts
   useEffect(() => {
     if (receiptError) {
-      toast({ title: 'Receipt error', description: receiptError, variant: 'destructive' })
+      toast({ title: t('receipt.receiptError'), description: receiptError, variant: 'destructive' })
       clearReceiptError()
     }
   }, [receiptError])
@@ -380,7 +382,7 @@ export function ReceiptReviewSheet({
           expense_date: new Date().toISOString().split('T')[0],
         })
         if (!expense) {
-          toast({ title: 'Failed to create expense', variant: 'destructive' })
+          toast({ title: t('toast.failedToCreateExpense'), variant: 'destructive' })
           setSubmitting(false)
           return
         }
@@ -398,7 +400,7 @@ export function ReceiptReviewSheet({
       await completeReceiptTask(taskId, expenseId, mappedItemsToSave)
 
       toast({
-        title: existingExpenseId ? 'Receipt updated' : 'Receipt added',
+        title: existingExpenseId ? t('receipt.receiptUpdated') : t('receipt.receiptAdded'),
         description: `${description} — ${activeCurrency} ${totalAmount.toFixed(2)}`,
       })
 
@@ -406,7 +408,7 @@ export function ReceiptReviewSheet({
       onDone()
     } catch (err) {
       logger.error('Receipt review submit failed', { error: String(err), task_id: taskId })
-      toast({ title: 'Error adding expense', description: String(err), variant: 'destructive' })
+      toast({ title: t('toast.errorAddingExpense'), description: String(err), variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
@@ -423,7 +425,7 @@ export function ReceiptReviewSheet({
           >
             <span className="flex items-center gap-1.5">
               <Image size={14} />
-              Receipt photo
+              {t('receipt.receiptPhoto')}
             </span>
             {showThumbnail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -440,29 +442,29 @@ export function ReceiptReviewSheet({
       {/* Merchant + Category */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="merchant" className="text-xs">Merchant</Label>
+          <Label htmlFor="merchant" className="text-xs">{t('receipt.merchant')}</Label>
           <Input
             id="merchant"
             value={merchantName}
             onChange={e => setMerchantName(e.target.value)}
-            placeholder="Restaurant, store..."
+            placeholder={t('receipt.merchantPlaceholder')}
             className="h-9 text-sm"
             style={{ fontSize: '1rem' }}
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="category" className="text-xs">Category</Label>
+          <Label htmlFor="category" className="text-xs">{t('common.category')}</Label>
           <Select value={category} onValueChange={val => setCategory(val as ExpenseCategory)}>
             <SelectTrigger id="category" className="h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Food">Food</SelectItem>
-              <SelectItem value="Accommodation">Accommodation</SelectItem>
-              <SelectItem value="Transport">Transport</SelectItem>
-              <SelectItem value="Activities">Activities</SelectItem>
-              <SelectItem value="Training">Training</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="Food">{t('expenses.categoryFood')}</SelectItem>
+              <SelectItem value="Accommodation">{t('expenses.categoryAccommodation')}</SelectItem>
+              <SelectItem value="Transport">{t('expenses.categoryTransport')}</SelectItem>
+              <SelectItem value="Activities">{t('expenses.categoryActivities')}</SelectItem>
+              <SelectItem value="Training">{t('expenses.categoryTraining')}</SelectItem>
+              <SelectItem value="Other">{t('expenses.categoryOther')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -470,10 +472,10 @@ export function ReceiptReviewSheet({
 
       {/* Paid by */}
       <div className="space-y-1">
-        <Label htmlFor="paidby" className="text-xs">Paid by</Label>
+        <Label htmlFor="paidby" className="text-xs">{t('expenses.paidBy')}</Label>
         <Select value={paidBy} onValueChange={setPaidBy}>
           <SelectTrigger id="paidby" className="h-9 text-sm">
-            <SelectValue placeholder="Who paid?" />
+            <SelectValue placeholder={t('expenses.chooseWhoPaid')} />
           </SelectTrigger>
           <SelectContent>
             {adultParticipants.map(p => (
@@ -489,7 +491,7 @@ export function ReceiptReviewSheet({
           className="flex items-center justify-between w-full text-sm font-medium text-foreground"
           onClick={() => setShowAllItems(v => !v)}
         >
-          <span>Items ({editableItems.length})</span>
+          <span>{t('receipt.items', { count: editableItems.length })}</span>
           {showAllItems ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -518,7 +520,7 @@ export function ReceiptReviewSheet({
         <div className="flex items-start gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           <span>
-            {unassignedItems.length} item{unassignedItems.length > 1 ? 's' : ''} not assigned to anyone
+            {t('receipt.unassignedWarning', { count: unassignedItems.length })}
           </span>
         </div>
       )}
@@ -527,7 +529,7 @@ export function ReceiptReviewSheet({
       <div className="border border-border rounded-lg p-3 space-y-3">
         {/* Currency selector */}
         <div className="space-y-1">
-          <Label htmlFor="receipt-currency" className="text-xs">Currency</Label>
+          <Label htmlFor="receipt-currency" className="text-xs">{t('receipt.currency')}</Label>
           <Select value={activeCurrency} onValueChange={setActiveCurrency}>
             <SelectTrigger id="receipt-currency" className="h-9 text-sm">
               <SelectValue />
@@ -545,7 +547,7 @@ export function ReceiptReviewSheet({
           <div className="space-y-2">
             <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <span>{activeCurrency} is not in your trip's currencies. Enter the exchange rate to convert balances correctly.</span>
+              <span>{t('receipt.exchangeRateWarning', { currency: activeCurrency })}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">1 {baseCurrency} =</span>
@@ -559,18 +561,18 @@ export function ReceiptReviewSheet({
               />
               <span className="text-sm font-medium">{activeCurrency}</span>
             </div>
-            <p className="text-xs text-muted-foreground">This rate will be saved to your trip.</p>
+            <p className="text-xs text-muted-foreground">{t('receipt.exchangeRateSavedHint')}</p>
           </div>
         )}
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Items total</span>
+          <span>{t('receipt.itemsTotal')}</span>
           <span>{activeCurrency} {itemsTotal.toFixed(2)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label htmlFor="confirmed-total" className="text-xs">Total charged ({activeCurrency})</Label>
+            <Label htmlFor="confirmed-total" className="text-xs">{t('receipt.totalCharged', { currency: activeCurrency })}</Label>
             <Input
               id="confirmed-total"
               inputMode="decimal"
@@ -582,7 +584,7 @@ export function ReceiptReviewSheet({
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="tip" className="text-xs">Tip ({activeCurrency})</Label>
+            <Label htmlFor="tip" className="text-xs">{t('receipt.tip', { currency: activeCurrency })}</Label>
             <Input
               id="tip"
               inputMode="decimal"
@@ -596,7 +598,7 @@ export function ReceiptReviewSheet({
         </div>
 
         <div className="flex items-center justify-between font-semibold text-sm border-t border-border pt-2">
-          <span>Total expense</span>
+          <span>{t('receipt.totalExpense')}</span>
           <span>{activeCurrency} {totalExpense.toFixed(2)}</span>
         </div>
       </div>
@@ -614,15 +616,15 @@ export function ReceiptReviewSheet({
         {submitting ? (
           <>
             <Loader2 size={16} className="animate-spin" />
-            {existingExpenseId ? 'Updating expense...' : 'Adding expense...'}
+            {existingExpenseId ? t('receipt.updatingExpense') : t('receipt.addingExpense')}
           </>
         ) : (
-          `${existingExpenseId ? 'Update' : 'Add'} Expense — ${activeCurrency} ${totalExpense.toFixed(2)}`
+          t('receipt.addExpenseButton', { action: existingExpenseId ? t('common.update') : t('common.add'), currency: activeCurrency, amount: totalExpense.toFixed(2) })
         )}
       </Button>
       {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
         <p className="text-xs text-muted-foreground text-center mt-2">
-          Assign all items to submit
+          {t('receipt.assignAllToSubmit')}
         </p>
       )}
     </>
@@ -632,7 +634,7 @@ export function ReceiptReviewSheet({
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title="Review Receipt"
+      title={t('receipt.reviewReceipt')}
       hasInputs
       maxWidth="max-w-2xl"
       footer={footerContent}
@@ -667,6 +669,7 @@ function ItemRow({
   onToggleAll,
   onExpand,
 }: ItemRowProps) {
+  const { t } = useTranslation()
   const allAssigned = participants.length > 0 && participants.every(p => item.assignedIds.has(p.id))
 
   return (
@@ -676,7 +679,7 @@ function ItemRow({
         <Input
           value={item.name}
           onChange={e => onNameChange(e.target.value)}
-          placeholder="Item name"
+          placeholder={t('receipt.itemNamePlaceholder')}
           className="flex-1 h-8 text-sm"
           style={{ fontSize: '1rem' }}
         />
@@ -685,7 +688,7 @@ function ItemRow({
             type="button"
             onClick={onExpand}
             className="shrink-0 flex items-center gap-0.5 text-xs text-muted-foreground border border-border rounded px-1.5 py-1 hover:bg-accent"
-            title={`Split into ${item.qty} individual items`}
+            title={t('receipt.splitItem', { count: item.qty })}
           >
             <SplitSquareHorizontal size={12} />
             ×{item.qty}
@@ -730,10 +733,10 @@ function ItemRow({
                 ? 'bg-foreground text-background border-foreground'
                 : 'bg-muted text-muted-foreground border-border',
             ].join(' ')}
-            title="Toggle all"
+            title={t('receipt.toggleAll')}
           >
             <Users size={10} />
-            All
+            {t('common.all')}
           </button>
         )}
       </div>

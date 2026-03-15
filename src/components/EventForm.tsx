@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Calendar, Zap } from 'lucide-react'
 import { CreateEventInput } from '@/types/trip'
@@ -22,10 +23,12 @@ export function EventForm({
   onSubmit,
   onCancel,
   initialValues,
-  submitLabel = 'Create',
+  submitLabel,
   isLoading: externalLoading,
   isEditMode = false,
 }: EventFormProps) {
+  const { t } = useTranslation()
+  const resolvedSubmitLabel = submitLabel ?? t('trip.create')
   const today = new Date().toISOString().split('T')[0]
   const [eventType, setEventType] = useState<'trip' | 'event'>(initialValues?.event_type || 'trip')
   const [name, setName] = useState(initialValues?.name || '')
@@ -46,14 +49,14 @@ export function EventForm({
     setError(null)
 
     if (!name.trim()) {
-      setError(`Please enter a ${eventType === 'event' ? 'event' : 'trip'} name`)
+      setError(t('trip.tripNameRequired', { type: eventType === 'event' ? t('trip.eventLabel').toLowerCase() : t('trip.tripLabel').toLowerCase() }))
       return
     }
 
     // For events, end_date = start_date. For trips, validate range.
     const resolvedEndDate = eventType === 'event' ? startDate : endDate
     if (eventType === 'trip' && new Date(endDate) < new Date(startDate)) {
-      setError('End date must be on or after start date')
+      setError(t('trip.endDateAfterStart'))
       return
     }
 
@@ -71,7 +74,7 @@ export function EventForm({
         enable_shopping: enableShopping,
       })
     } catch (err) {
-      setError(`Failed to save. Please try again.`)
+      setError(t('trip.failedToSave'))
     } finally {
       setLoading(false)
     }
@@ -98,7 +101,7 @@ export function EventForm({
       {/* Type selector — only shown when creating (not editing) */}
       {!isEditMode && (
         <div className="space-y-2">
-          <Label>Type</Label>
+          <Label>{t('common.type')}</Label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -112,8 +115,8 @@ export function EventForm({
             >
               <Calendar size={20} className={eventType === 'trip' ? 'text-primary' : 'text-muted-foreground'} />
               <div>
-                <div className="font-medium text-foreground text-sm">Trip</div>
-                <div className="text-xs text-muted-foreground">Multi-day</div>
+                <div className="font-medium text-foreground text-sm">{t('trip.tripType')}</div>
+                <div className="text-xs text-muted-foreground">{t('trip.multiDay')}</div>
               </div>
             </button>
 
@@ -129,8 +132,8 @@ export function EventForm({
             >
               <Zap size={20} className={eventType === 'event' ? 'text-primary' : 'text-muted-foreground'} />
               <div>
-                <div className="font-medium text-foreground text-sm">Event</div>
-                <div className="text-xs text-muted-foreground">One occasion</div>
+                <div className="font-medium text-foreground text-sm">{t('trip.eventType')}</div>
+                <div className="text-xs text-muted-foreground">{t('trip.oneOccasion')}</div>
               </div>
             </button>
           </div>
@@ -138,13 +141,13 @@ export function EventForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="name">{eventType === 'event' ? 'Event' : 'Trip'} Name</Label>
+        <Label htmlFor="name">{t('trip.tripName', { type: eventType === 'event' ? t('trip.eventLabel') : t('trip.tripLabel') })}</Label>
         <Input
           type="text"
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={eventType === 'event' ? 'e.g., Team Dinner, Wedding Party' : 'e.g., Summer Vacation 2025'}
+          placeholder={eventType === 'event' ? t('trip.eventNamePlaceholder') : t('trip.tripNamePlaceholder')}
           required
           disabled={isSubmitting}
         />
@@ -153,7 +156,7 @@ export function EventForm({
       {eventType === 'trip' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="start_date">Start Date</Label>
+            <Label htmlFor="start_date">{t('trip.startDate')}</Label>
             <Input
               type="date"
               id="start_date"
@@ -165,7 +168,7 @@ export function EventForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="end_date">End Date</Label>
+            <Label htmlFor="end_date">{t('trip.endDate')}</Label>
             <Input
               type="date"
               id="end_date"
@@ -179,7 +182,7 @@ export function EventForm({
         </div>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="event_date">Date</Label>
+          <Label htmlFor="event_date">{t('trip.eventDate')}</Label>
           <Input
             type="date"
             id="event_date"
@@ -192,7 +195,7 @@ export function EventForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="defaultCurrency">Default Currency</Label>
+        <Label htmlFor="defaultCurrency">{t('trip.defaultCurrency')}</Label>
         <Input
           id="defaultCurrency"
           value={defaultCurrency}
@@ -204,18 +207,18 @@ export function EventForm({
           disabled={isSubmitting}
         />
         <p className="text-xs text-muted-foreground">
-          All balances and settlements will be shown in this currency
+          {t('trip.defaultCurrencyHint')}
         </p>
       </div>
 
       {/* Feature toggles — shown for trips only when creating; hidden for events by default */}
       {!isEditMode && eventType === 'trip' && (
         <div className="space-y-4">
-          <Label>Features</Label>
+          <Label>{t('common.features')}</Label>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Meal Planning</span>
-              <p className="text-xs text-muted-foreground">Plan meals and assign cooking responsibilities</p>
+              <span className="text-sm font-medium">{t('trip.mealPlanning')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.mealPlanningDesc')}</p>
             </div>
             <Switch
               checked={enableMeals}
@@ -225,8 +228,8 @@ export function EventForm({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Activity Planning</span>
-              <p className="text-xs text-muted-foreground">Plan activities for each day of your trip</p>
+              <span className="text-sm font-medium">{t('trip.activityPlanning')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.activityPlanningDesc')}</p>
             </div>
             <Switch
               checked={enableActivities}
@@ -236,8 +239,8 @@ export function EventForm({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-medium">Shopping List</span>
-              <p className="text-xs text-muted-foreground">Collaborative shopping list with real-time updates</p>
+              <span className="text-sm font-medium">{t('trip.shoppingList')}</span>
+              <p className="text-xs text-muted-foreground">{t('trip.shoppingListDesc')}</p>
             </div>
             <Switch
               checked={enableShopping}
@@ -255,7 +258,7 @@ export function EventForm({
           className="flex-1"
           size="lg"
         >
-          {isSubmitting ? 'Saving...' : submitLabel}
+          {isSubmitting ? t('common.saving') : resolvedSubmitLabel}
         </Button>
         {onCancel && (
           <Button
@@ -265,7 +268,7 @@ export function EventForm({
             variant="outline"
             size="lg"
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
         )}
       </div>

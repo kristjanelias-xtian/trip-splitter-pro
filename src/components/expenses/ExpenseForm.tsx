@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef, useMemo, FormEvent, type RefObject } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, ChevronDown, ChevronRight, Check } from 'lucide-react'
 import { ParticipantAvatar } from '@/components/ParticipantAvatar'
@@ -51,10 +52,12 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   initialValues,
-  submitLabel = 'Add Expense',
+  submitLabel,
   stickyFooter = false,
   scrollRef,
 }: ExpenseFormProps) {
+  const { t } = useTranslation()
+  const resolvedSubmitLabel = submitLabel ?? t('expenses.addExpense')
   const { currentTrip } = useCurrentTrip()
   const { participants, getAdultParticipants } = useParticipantContext()
   const { expenses } = useExpenseContext()
@@ -252,23 +255,23 @@ export function ExpenseForm({
     setError(null)
 
     if (!description.trim()) {
-      setError('Please enter a description')
+      setError(t('expenses.validationDescription'))
       return
     }
 
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) {
-      setError('Please enter a valid amount greater than 0')
+      setError(t('expenses.validationAmount'))
       return
     }
 
     if (!paidBy) {
-      setError('Please select who paid')
+      setError(t('expenses.validationPaidBy'))
       return
     }
 
     if (selectedParticipants.length === 0) {
-      setError('Please select at least one person to split between')
+      setError(t('expenses.validationSplitBetween'))
       return
     }
 
@@ -278,13 +281,13 @@ export function ExpenseForm({
       for (const id of selectedParticipants) {
         const value = parseFloat(participantSplitValues[id] || '0')
         if (isNaN(value) || value <= 0) {
-          setError('Please enter valid percentages for all selected participants')
+          setError(t('expenses.validationPercentages'))
           return
         }
         totalPercentage += value
       }
       if (Math.abs(totalPercentage - 100) > 0.01) {
-        setError(`Percentages must sum to 100% (currently ${totalPercentage.toFixed(1)}%)`)
+        setError(t('expenses.validationPercentageSum', { current: totalPercentage.toFixed(1) }))
         return
       }
     } else if (splitMode === 'amount') {
@@ -292,13 +295,13 @@ export function ExpenseForm({
       for (const id of selectedParticipants) {
         const value = parseFloat(participantSplitValues[id] || '0')
         if (isNaN(value) || value <= 0) {
-          setError('Please enter valid amounts for all selected participants')
+          setError(t('expenses.validationAmounts'))
           return
         }
         totalAmount += value
       }
       if (Math.abs(totalAmount - amountNum) > 0.01) {
-        setError(`Custom amounts must sum to total (${currency} ${amountNum.toFixed(2)}). Currently: ${currency} ${totalAmount.toFixed(2)}`)
+        setError(t('expenses.validationAmountSum', { currency, total: amountNum.toFixed(2), current: totalAmount.toFixed(2) }))
         return
       }
     }
@@ -318,7 +321,7 @@ export function ExpenseForm({
     }
 
     if (!currentTrip) {
-      setError('No trip selected')
+      setError(t('common.noTripSelected'))
       return
     }
 
@@ -344,7 +347,7 @@ export function ExpenseForm({
       setSelectedParticipants(participants.map(p => p.id))
       setShowMoreDetails(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save expense.')
+      setError(err instanceof Error ? err.message : t('expenses.failedToSave'))
       setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       isSubmittingRef.current = false
@@ -377,7 +380,7 @@ export function ExpenseForm({
       groups.push({ label, isWalletGroup: true, members })
     }
     if (standalone.length > 0) {
-      groups.push({ label: grouped.size > 0 ? 'Others' : null, isWalletGroup: false, members: standalone })
+      groups.push({ label: grouped.size > 0 ? t('common.others') : null, isWalletGroup: false, members: standalone })
     }
 
     return groups
@@ -413,7 +416,7 @@ export function ExpenseForm({
               disabled={loading}
               className="shrink-0 text-xs h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
             >
-              Try again
+              {t('common.tryAgain')}
             </Button>
           </div>
           {errorDetail && (
@@ -424,13 +427,13 @@ export function ExpenseForm({
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t('expenses.description')}</Label>
         <Input
           type="text"
           id="description"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder="e.g., Dinner at restaurant"
+          placeholder={t('expenses.descriptionPlaceholder')}
           required
           disabled={loading}
         />
@@ -438,7 +441,7 @@ export function ExpenseForm({
 
       {/* Category (inline pills) */}
       <div className="space-y-1.5">
-        <Label>Category</Label>
+        <Label>{t('common.category')}</Label>
         <div className="flex flex-wrap gap-1.5">
           {CATEGORIES.map(cat => (
             <button
@@ -452,7 +455,7 @@ export function ExpenseForm({
                   : 'bg-background text-muted-foreground border-input hover:border-primary/50'
               }`}
             >
-              {cat}
+              {t(`expenses.category${cat}`)}
             </button>
           ))}
         </div>
@@ -462,7 +465,7 @@ export function ExpenseForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Amount and Currency */}
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="amount">{t('expenses.amount')}</Label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
@@ -507,14 +510,14 @@ export function ExpenseForm({
 
         {/* Who Paid */}
         <div className="space-y-2">
-          <Label htmlFor="paidBy">Who Paid?</Label>
+          <Label htmlFor="paidBy">{t('expenses.whoPaid')}</Label>
           <Select
             value={paidBy}
             onValueChange={setPaidBy}
             disabled={loading}
           >
             <SelectTrigger id="paidBy" className="h-10">
-              <SelectValue placeholder="Select person..." />
+              <SelectValue placeholder={t('expenses.selectPersonPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {adults.map(adult => (
@@ -532,8 +535,8 @@ export function ExpenseForm({
             >
               <Lightbulb size={12} className="text-accent shrink-0" />
               <span className="truncate">
-                <strong className="font-medium text-foreground">{suggestedPayer.name}</strong>
-                {' '}should pay next{' '}
+                <strong className="font-medium text-foreground">{t('expenses.shouldPayNext', { name: suggestedPayer.name })}</strong>
+                {' '}
                 <span className={getBalanceColorClass(suggestedPayer.balance)}>
                   ({formatBalance(suggestedPayer.balance, currentTrip?.default_currency || 'EUR')})
                 </span>
@@ -545,9 +548,9 @@ export function ExpenseForm({
 
       {/* Split Mode Selector */}
       <div className="space-y-1.5">
-        <Label>Split Method</Label>
+        <Label>{t('expenses.splitMethod')}</Label>
         <div className="flex gap-1.5">
-          {([['equal', 'Equal'], ['percentage', 'By %'], ['amount', 'By Amount']] as const).map(([mode, label]) => (
+          {([['equal', t('expenses.splitEqual')], ['percentage', t('expenses.splitByPercent')], ['amount', t('expenses.splitByAmount')]] as const).map(([mode, label]) => (
             <button
               key={mode}
               type="button"
@@ -566,8 +569,8 @@ export function ExpenseForm({
         {splitMode !== 'equal' && (
           <p className="text-xs text-muted-foreground">
             {splitMode === 'percentage'
-              ? 'Enter percentages for each party (must sum to 100%)'
-              : `Enter specific amounts for each party (must sum to ${currency} ${amount || '0.00'})`
+              ? t('expenses.percentageHint')
+              : t('expenses.amountHint', { currency, amount: amount || '0.00' })
             }
           </p>
         )}
@@ -576,14 +579,14 @@ export function ExpenseForm({
       {/* Split Between */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <Label>Split Between</Label>
+          <Label>{t('expenses.splitBetween')}</Label>
           <button
             type="button"
             onClick={selectedParticipants.length === participants.length ? handleDeselectAll : handleSelectAll}
             disabled={loading}
             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            {selectedParticipants.length === participants.length ? 'Deselect all' : 'Select all'}
+            {selectedParticipants.length === participants.length ? t('expenses.deselectAll') : t('expenses.selectAll')}
           </button>
         </div>
 
@@ -678,7 +681,7 @@ export function ExpenseForm({
                         htmlFor={`participant-${participant.id}`}
                         className="text-sm text-foreground cursor-pointer flex-1"
                       >
-                        {shortNames.get(participant.id) || participant.name} {participant.is_adult ? '' : '(child)'}
+                        {shortNames.get(participant.id) || participant.name} {participant.is_adult ? '' : t('common.childLabel')}
                       </label>
                       {selectedParticipants.includes(participant.id) && (
                         <Input
@@ -711,9 +714,9 @@ export function ExpenseForm({
             />
             <div>
               <label htmlFor="accountForFamilySize" className="text-sm text-foreground cursor-pointer">
-                Split equally between groups
+                {t('expenses.splitEquallyBetweenGroups')}
               </label>
-              <p className="text-xs text-muted-foreground">Each group pays the same share, regardless of how many members it has</p>
+              <p className="text-xs text-muted-foreground">{t('expenses.splitEquallyBetweenGroupsDesc')}</p>
             </div>
           </div>
         )}
@@ -755,12 +758,12 @@ export function ExpenseForm({
           {showMoreDetails ? (
             <>
               <ChevronDown size={16} />
-              <span>Less details</span>
+              <span>{t('expenses.lessDetails')}</span>
             </>
           ) : (
             <>
               <ChevronRight size={16} />
-              <span>More details</span>
+              <span>{t('expenses.moreDetails')}</span>
             </>
           )}
         </button>
@@ -777,7 +780,7 @@ export function ExpenseForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-2 p-px -m-px">
                 {/* Date */}
                 <div className="space-y-1">
-                  <Label htmlFor="expenseDate">Date</Label>
+                  <Label htmlFor="expenseDate">{t('expenses.expenseDate')}</Label>
                   <Input
                     type="date"
                     id="expenseDate"
@@ -789,13 +792,13 @@ export function ExpenseForm({
 
                 {/* Comment */}
                 <div className="space-y-1">
-                  <Label htmlFor="comment">Comment (Optional)</Label>
+                  <Label htmlFor="comment">{t('expenses.commentOptional')}</Label>
                   <Textarea
                     id="comment"
                     className="min-h-0"
                     value={comment}
                     onChange={e => setComment(e.target.value)}
-                    placeholder="Additional notes..."
+                    placeholder={t('expenses.commentPlaceholder')}
                     rows={1}
                     disabled={loading}
                   />
@@ -816,7 +819,7 @@ export function ExpenseForm({
         disabled={loading}
         className="flex-1"
       >
-        {loading ? 'Saving...' : submitLabel}
+        {loading ? t('common.saving') : resolvedSubmitLabel}
       </Button>
       {onCancel && (
         <Button
@@ -825,7 +828,7 @@ export function ExpenseForm({
           disabled={loading}
           variant="outline"
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
       )}
     </div>

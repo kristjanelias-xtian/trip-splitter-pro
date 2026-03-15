@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, FormEvent, useRef, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Clipboard, Check, ExternalLink, Lightbulb } from 'lucide-react'
 import { CreateSettlementInput } from '@/types/settlement'
@@ -38,6 +39,7 @@ interface SettlementFormProps {
 }
 
 function CopyButton({ value }: { value: string }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
     navigator.clipboard.writeText(value)
@@ -51,9 +53,9 @@ function CopyButton({ value }: { value: string }) {
       className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors shrink-0"
     >
       {copied ? (
-        <><Check size={12} className="text-positive" /> Copied!</>
+        <><Check size={12} className="text-positive" /> {t('common.copied')}</>
       ) : (
-        <><Clipboard size={12} /> Copy</>
+        <><Clipboard size={12} /> {t('common.copy')}</>
       )}
     </button>
   )
@@ -81,6 +83,7 @@ const BANK_SHORTCUTS = [
 ]
 
 export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormProps>(function SettlementForm({ onSubmit, onCancel, initialAmount, initialNote, initialFromId, initialToId, recipientBankDetails, recipientName, hideButtons }, ref) {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { participants } = useParticipantContext()
 
@@ -153,28 +156,28 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
     setError(null)
 
     if (!fromParticipantId) {
-      setError('Please select who paid')
+      setError(t('expenses.validationPaidBy'))
       return
     }
 
     if (!toParticipantId) {
-      setError('Please select who received the payment')
+      setError(t('expenses.validationPaidBy'))
       return
     }
 
     if (fromParticipantId === toParticipantId) {
-      setError('Cannot record a payment to yourself')
+      setError(t('expenses.validationPaidBy'))
       return
     }
 
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) {
-      setError('Please enter a valid amount greater than 0')
+      setError(t('expenses.validationAmount'))
       return
     }
 
     if (!currentTrip) {
-      setError('No trip selected')
+      setError(t('common.noTripSelected'))
       return
     }
 
@@ -197,7 +200,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
       setNote('')
       setSettlementDate(new Date().toISOString().split('T')[0])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record settlement.')
+      setError(err instanceof Error ? err.message : t('settlements.failedToRecord'))
       setErrorDetail(err instanceof Error ? (err.stack ?? null) : String(err))
     } finally {
       if (isMounted.current) setLoading(false)
@@ -272,7 +275,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
       {/* Amount + Date */}
       <div className="grid grid-cols-2 gap-3 items-end">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="amount">{t('expenses.amount')}</Label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
@@ -316,7 +319,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="settlementDate">Date</Label>
+          <Label htmlFor="settlementDate">{t('common.date')}</Label>
           <Input
             type="date"
             id="settlementDate"
@@ -330,7 +333,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
 
       {/* Note */}
       <div className="space-y-2">
-        <Label htmlFor="note">Note (Optional)</Label>
+        <Label htmlFor="note">{t('expenses.commentOptional')}</Label>
         <Textarea
           id="note"
           value={note}
@@ -346,14 +349,14 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
         <div className="space-y-3 pt-2">
           <div className="border-t border-border" />
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Payment details
+            {t('bank.paymentDetails')}
           </p>
 
           {/* Name row */}
           {recipientBankDetails.holder && (
             <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
               <div className="min-w-0">
-                <p className="text-[11px] uppercase text-muted-foreground">Name</p>
+                <p className="text-[11px] uppercase text-muted-foreground">{t('common.name')}</p>
                 <p className="text-sm font-semibold text-foreground truncate">
                   {recipientBankDetails.holder}
                 </p>
@@ -366,7 +369,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
           <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
             <div className="min-w-0">
               <p className="text-[11px] uppercase text-muted-foreground">
-                {recipientName ? `${recipientName}'s IBAN` : 'Recipient IBAN'}
+                {recipientName ? t('bank.recipientIban', { name: recipientName }) : t('bank.recipientIbanGeneric')}
               </p>
               <p className="font-mono text-sm font-semibold text-foreground truncate">
                 {recipientBankDetails.iban}
@@ -379,7 +382,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
           <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
             <div className="min-w-0">
               <p className="text-[11px] uppercase text-muted-foreground">
-                Amount ({currency})
+                {t('bank.amountCurrency', { currency })}
               </p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {parseFloat(amount || '0').toFixed(2)}
@@ -392,13 +395,13 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
           <div className="flex gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
             <Lightbulb size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-              Banks don't allow apps to pre-fill payments directly. Copy the details above and paste them in your bank app — or tap a shortcut below to open it.
+              {t('bank.bankAppNotice')}
             </p>
           </div>
 
           {/* Bank shortcuts */}
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Open your bank
+            {t('bank.openYourBank')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {BANK_SHORTCUTS.map(bank => (
@@ -430,7 +433,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
             disabled={loading}
             className="flex-1"
           >
-            {loading ? 'Confirming...' : 'Confirm Payment'}
+            {loading ? t('settlements.confirming') : t('settlements.confirmPayment')}
           </Button>
           {onCancel && (
             <Button
@@ -439,7 +442,7 @@ export const SettlementForm = forwardRef<SettlementFormHandle, SettlementFormPro
               disabled={loading}
               variant="outline"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
           )}
         </div>

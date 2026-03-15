@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, UserPlus, X, Users, Smartphone, ChevronRight, Check, Baby } from 'lucide-react'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
@@ -13,6 +14,7 @@ interface QuickParticipantPickerProps {
 }
 
 export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) {
+  const { t } = useTranslation()
   const { participants, createParticipant, deleteParticipant } = useParticipantContext()
   const { contacts } = useTripContacts(tripId)
 
@@ -236,7 +238,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-full"
           >
             <Users size={14} />
-            <span>Recent companions</span>
+            <span>{t('participants.recentCompanions')}</span>
             <ChevronRight
               size={14}
               className={`transition-transform ${recentExpanded ? 'rotate-90' : ''}`}
@@ -320,9 +322,9 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
             </div>
             <p className="text-xs text-muted-foreground">
               {hasMore ? (
-                <>Showing {visibleContacts.length} of {totalCount} · <button type="button" onClick={handleShowMore} className="underline hover:text-foreground transition-colors">Show more</button></>
+                <>{t('participants.showingContacts', { shown: visibleContacts.length, total: totalCount })} · <button type="button" onClick={handleShowMore} className="underline hover:text-foreground transition-colors">{t('common.showMore')}</button></>
               ) : (
-                <>{totalCount} companions</>
+                <>{t('participants.companionCount', { count: totalCount })}</>
               )}
             </p>
               </>
@@ -363,7 +365,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                 <div className="relative flex-1">
                   <Input
                     ref={nameInputRef}
-                    placeholder="Name"
+                    placeholder={t('common.name')}
                     value={name}
                     onChange={e => handleNameChange(e.target.value)}
                     onKeyDown={handleNameKeyDown}
@@ -401,7 +403,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                             <div className="text-xs text-muted-foreground">{contact.email}</div>
                           )}
                           {contact.user_id && (
-                            <div className="text-xs text-primary">✓ Has Spl1t account</div>
+                            <div className="text-xs text-primary">✓ {t('participants.hasSplitAccount')}</div>
                           )}
                         </button>
                       ))}
@@ -409,7 +411,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                   )}
                 </div>
                 <Button type="submit" size="sm" disabled={adding || !name.trim()}>
-                  {adding ? '…' : 'Add'}
+                  {adding ? '…' : t('common.add')}
                 </Button>
               </div>
               <div>
@@ -419,13 +421,13 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
                   id="picker-email"
                   type="email"
                   inputMode="email"
-                  placeholder="Email (optional)"
+                  placeholder={`${t('participants.emailOptional')} ${t('participants.emailOptionalLabel')}`}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   autoComplete="section-participant email"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Add now or let them link themselves via the trip link
+                  {t('participants.emailHint')}
                 </p>
               </div>
               {error && (
@@ -441,7 +443,7 @@ export function QuickParticipantPicker({ tripId }: QuickParticipantPickerProps) 
               className="text-xs text-muted-foreground flex items-center gap-1"
             >
               <X size={10} />
-              Dismiss
+              {t('common.dismiss')}
             </button>
           )}
         </>

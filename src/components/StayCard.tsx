@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Trash2, ExternalLink, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
@@ -25,6 +26,7 @@ interface StayCardProps {
 }
 
 export function StayCard({ stay }: StayCardProps) {
+  const { t } = useTranslation()
   const { deleteStay } = useStayContext()
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -88,7 +90,7 @@ export function StayCard({ stay }: StayCardProps) {
       </motion.div>
 
       {/* Edit Form */}
-      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Accommodation" hasInputs>
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title={t('planner.editAccommodation')} hasInputs>
         <StayForm
           stay={stay}
           onSuccess={() => setShowEditForm(false)}
@@ -100,15 +102,15 @@ export function StayCard({ stay }: StayCardProps) {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Accommodation?</AlertDialogTitle>
+            <AlertDialogTitle>{t('planner.deleteAccommodation')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{stay.name}"?
+              {t('planner.deleteAccommodationConfirm', { name: stay.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

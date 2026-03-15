@@ -2,6 +2,7 @@
 import { Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ScanLine, Settings, LayoutGrid, Shield } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { ParticipantProvider } from '@/contexts/ParticipantContext'
@@ -28,6 +29,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
 
 export function QuickLayout() {
+  const { t } = useTranslation()
   const { tripCode } = useParams<{ tripCode: string }>()
   const location = useLocation()
   const navigate = useNavigate()
@@ -104,7 +106,7 @@ export function QuickLayout() {
                       </h1>
                       {currentTrip && (
                         <p className={`text-xs leading-tight ${onGradient ? 'text-white/60' : 'text-muted-foreground'}`}>
-                          {currentTrip.event_type === 'event' ? 'Event' : 'Trip'}
+                          {currentTrip.event_type === 'event' ? t('trip.eventLabel') : t('trip.tripLabel')}
                         </p>
                       )}
                     </div>
@@ -154,7 +156,7 @@ export function QuickLayout() {
                   }`}
                 >
                   <ScanLine size={14} />
-                  Scan
+                  {t('layout.scanReceipt')}
                 </button>
                 <button
                   onClick={() => navigate(`/t/${tripCode}/manage`, { state: { fromQuick: true } })}
@@ -165,7 +167,7 @@ export function QuickLayout() {
                   }`}
                 >
                   <Settings size={14} />
-                  Manage
+                  {t('layout.manage')}
                 </button>
                 <button
                   onClick={() => { void setMode('full'); navigate(`/t/${tripCode}/dashboard`) }}
@@ -176,7 +178,7 @@ export function QuickLayout() {
                   }`}
                 >
                   <LayoutGrid size={14} />
-                  Full view
+                  {t('quick.fullView')}
                 </button>
               </div>
             )}

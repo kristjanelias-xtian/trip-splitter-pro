@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Camera, Upload, Loader2, X, ScanLine, ChevronRight } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -83,6 +84,7 @@ function todayISO(): string {
 }
 
 export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { createTrip, updateTrip } = useTripContext()
   const { createReceiptTask, refreshPendingReceipts } = useReceiptContext()
@@ -173,7 +175,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
 
       const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
       if (compressed.size > MAX_SIZE_BYTES) {
-        throw new Error('Image is too large. Please use a clearer, smaller photo.')
+        throw new Error(t('receipt.imageTooLarge'))
       }
 
       const base64 = await blobToBase64(compressed)
@@ -265,7 +267,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   const closeBtn = (
     <button
       onClick={handleClose}
-      aria-label="Close"
+      aria-label={t('common.close')}
       className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors"
     >
       <X className="w-4 h-4 text-muted-foreground" />
@@ -276,9 +278,9 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
     <>
       <ScanLine size={20} className="flex-shrink-0" />
       <span className="truncate">
-        {step === 'camera' && 'Scan a Receipt'}
-        {step === 'scanning' && 'Reading receipt…'}
-        {step === 'participants' && (createdTripName ?? 'Add People')}
+        {step === 'camera' && t('receipt.scanAReceipt')}
+        {step === 'scanning' && t('receipt.readingReceipt')}
+        {step === 'participants' && (createdTripName ?? t('receipt.addPeople'))}
       </span>
     </>
   )
@@ -294,19 +296,19 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
                 <Camera size={40} className="text-muted-foreground" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-foreground">Add a receipt photo</p>
+                <p className="font-medium text-foreground">{t('receipt.addReceiptPhoto')}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  A new group will be created automatically
+                  {t('receipt.newGroupCreatedAuto')}
                 </p>
               </div>
               <div className="flex flex-col gap-2 w-full max-w-xs">
                 <Button variant="default" className="gap-2" onClick={() => cameraInputRef.current?.click()}>
                   <Camera size={16} />
-                  Take Photo
+                  {t('receipt.takePhoto')}
                 </Button>
                 <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
                   <Upload size={16} />
-                  Choose from Library
+                  {t('receipt.chooseFromLibrary')}
                 </Button>
               </div>
               <input
@@ -330,13 +332,13 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
               <div className="relative rounded-lg overflow-hidden border border-border">
                 <img
                   src={previewUrl}
-                  alt="Receipt preview"
+                  alt={t('receipt.receiptPreview')}
                   className="w-full max-h-64 object-contain bg-muted"
                 />
                 <button
                   onClick={handleReset}
                   className="absolute top-2 right-2 rounded-full bg-background/80 p-1 border border-border"
-                  aria-label="Remove image"
+                  aria-label={t('receipt.removeImage')}
                 >
                   <X size={16} />
                 </button>
@@ -350,7 +352,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
 
               <Button onClick={handleScan} size="lg" className="gap-2">
                 <ScanLine size={16} />
-                Scan & Create Group
+                {t('receipt.scanAndCreateGroup')}
               </Button>
             </div>
           )}
@@ -364,12 +366,12 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
             <Loader2 size={36} className="animate-spin text-primary" />
           </div>
           <div>
-            <p className="font-medium text-foreground">Reading your receipt…</p>
+            <p className="font-medium text-foreground">{t('receipt.readingReceipt')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Creating your group and extracting items
+              {t('receipt.creatingGroupAndExtracting')}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">Usually takes 5–10 seconds</p>
+          <p className="text-xs text-muted-foreground">{t('receipt.usuallyTakes')}</p>
         </div>
       )}
 
@@ -377,13 +379,13 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
       {step === 'participants' && createdTripId && createdTripCode && createdTripName && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Add people to split the receipt with. You can always add more later.
+            {t('receipt.addPeopleDesc')}
           </p>
           <QuickParticipantPicker
             tripId={createdTripId}
           />
           <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDone}>
-            Skip for now
+            {t('common.skipForNow')}
           </Button>
         </div>
       )}
@@ -393,7 +395,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
   const stickyFooter = step === 'participants' ? (
     <div className="shrink-0 px-4 py-3 border-t border-border bg-background pwa-safe-bottom">
       <Button className="w-full gap-1" onClick={handleDone}>
-        Done
+        {t('common.done')}
         <ChevronRight size={14} />
       </Button>
     </div>

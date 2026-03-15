@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
 import { UtensilsCrossed, ChevronsDown, ChevronsUp } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
@@ -11,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { generateDateRange, getDayContext, getDayNumber } from '@/lib/dateUtils'
 
 export function MealsPage() {
+  const { t } = useTranslation()
   const { currentTrip } = useCurrentTrip()
   const { meals, loading, getMealsWithIngredients } = useMealContext()
   const [mealsWithIngredients, setMealsWithIngredients] = useState<MealWithIngredients[]>([])
@@ -48,11 +50,11 @@ export function MealsPage() {
   if (!currentTrip) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Meal Planner</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('planner.mealPlannerTitle')}</h2>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              No trip selected. Please select a trip to plan meals.
+              {t('planner.noTripSelectedMeals')}
             </p>
           </CardContent>
         </Card>
@@ -92,9 +94,9 @@ export function MealsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Meal Planner</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t('planner.mealPlannerTitle')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {currentTrip.name} • {tripDates.length} days
+            {currentTrip.name} • {t('planner.daysCount', { count: tripDates.length })}
           </p>
         </div>
 
@@ -109,12 +111,12 @@ export function MealsPage() {
             {allExpanded ? (
               <>
                 <ChevronsUp size={16} />
-                Collapse All
+                {t('planner.collapseAll')}
               </>
             ) : (
               <>
                 <ChevronsDown size={16} />
-                Expand All
+                {t('planner.expandAll')}
               </>
             )}
           </Button>
@@ -125,7 +127,7 @@ export function MealsPage() {
       {loading && (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center py-8">Loading meals...</p>
+            <p className="text-muted-foreground text-center py-8">{t('planner.loadingMeals')}</p>
           </CardContent>
         </Card>
       )}
@@ -167,10 +169,10 @@ export function MealsPage() {
             <div className="text-center py-8">
               <UtensilsCrossed size={48} className="mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-foreground mb-2">
-                No meals planned yet
+                {t('planner.noMealsPlannedYet')}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Start planning meals for your trip by expanding a day and clicking "Add Meal"
+                {t('planner.noMealsPlannedYetDesc')}
               </p>
             </div>
           </CardContent>

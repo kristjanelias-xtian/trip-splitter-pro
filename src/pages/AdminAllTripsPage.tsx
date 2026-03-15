@@ -25,12 +25,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useTranslation } from 'react-i18next'
 import { isAdminUser } from '@/lib/adminAuth'
 import { generateShareableUrl } from '@/lib/tripCodeGenerator'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
 
 export function AdminAllTripsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [allTrips, setAllTrips] = useState<Trip[]>([])
@@ -169,21 +171,21 @@ export function AdminAllTripsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert size={20} className="text-destructive" />
-              Access Denied
+              {t('admin.accessDenied')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
               {user
-                ? 'Your account does not have admin access.'
-                : 'You must be signed in to access this page.'}
+                ? t('admin.noAdminAccess')
+                : t('admin.mustSignIn')}
             </p>
             <Button
               variant="outline"
               className="mt-4"
               onClick={() => window.location.href = '/'}
             >
-              Go to home
+              {t('admin.goToHome')}
             </Button>
           </CardContent>
         </Card>
@@ -197,9 +199,9 @@ export function AdminAllTripsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">All Trips (Admin)</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('admin.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Total: {allTrips.length} {allTrips.length === 1 ? 'trip' : 'trips'}
+              {t('admin.totalTrips', { count: allTrips.length })}
             </p>
           </div>
         </div>
@@ -246,7 +248,7 @@ export function AdminAllTripsPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
-                    placeholder="Search by name or code..."
+                    placeholder={t('admin.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -255,12 +257,12 @@ export function AdminAllTripsPage() {
               </div>
               <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Sort by..." />
+                  <SelectValue placeholder={t('admin.sortBy')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="recent">Most Recent</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="recent">{t('admin.mostRecent')}</SelectItem>
+                  <SelectItem value="oldest">{t('admin.oldestFirst')}</SelectItem>
+                  <SelectItem value="name">{t('admin.nameAZ')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -274,10 +276,10 @@ export function AdminAllTripsPage() {
               <div className="text-center py-12">
                 <Calendar size={48} className="mx-auto text-muted-foreground/50 mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {searchQuery ? 'No trips found' : 'No trips yet'}
+                  {searchQuery ? t('admin.noTripsFound') : t('admin.noTripsYet')}
                 </h3>
                 <p className="text-muted-foreground">
-                  {searchQuery ? 'Try a different search term' : 'Trips will appear here as they are created'}
+                  {searchQuery ? t('admin.tryDifferentSearch') : t('admin.tripsWillAppear')}
                 </p>
               </div>
             </CardContent>
@@ -302,7 +304,7 @@ export function AdminAllTripsPage() {
                           {formatDate(trip.start_date)}
                         </span>
                         <span>·</span>
-                        <span>Created {formatDate(trip.created_at)}</span>
+                        <span>{t('admin.created')} {formatDate(trip.created_at)}</span>
                       </div>
                       {trip.created_by && ownerMap[trip.created_by] && (
                         <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
@@ -321,7 +323,7 @@ export function AdminAllTripsPage() {
                       }}
                     >
                       <ExternalLink size={14} />
-                      Open
+                      {t('common.open')}
                     </Button>
                   </div>
                 </CardContent>
@@ -334,12 +336,12 @@ export function AdminAllTripsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Trip Name</TableHead>
-                  <TableHead>Trip Code</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.tripName')}</TableHead>
+                  <TableHead>{t('admin.tripCode')}</TableHead>
+                  <TableHead>{t('admin.startDate')}</TableHead>
+                  <TableHead>{t('admin.owner')}</TableHead>
+                  <TableHead>{t('admin.created')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -403,8 +405,7 @@ export function AdminAllTripsPage() {
         {/* Info */}
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            <strong>Tip:</strong> Click any row to copy the trip URL to clipboard.
-            Click "Open" to view the trip in a new tab.
+            {t('admin.tip')}
           </p>
         </div>
         </>}

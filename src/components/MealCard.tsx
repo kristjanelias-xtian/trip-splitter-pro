@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { ChefHat, Trash2, ShoppingBasket, Utensils, Home, Receipt } from 'lucide-react'
 import { useMealContext } from '@/contexts/MealContext'
@@ -27,6 +28,7 @@ interface MealCardProps {
 }
 
 export function MealCard({ meal }: MealCardProps) {
+  const { t } = useTranslation()
   const { deleteMeal } = useMealContext()
   const { participants } = useParticipantContext()
   const { expenses } = useExpenseContext()
@@ -62,8 +64,8 @@ export function MealCard({ meal }: MealCardProps) {
 
   const ingredientProgress =
     meal.ingredients_total > 0
-      ? `${meal.ingredients_ready}/${meal.ingredients_total} ready`
-      : 'No ingredients yet'
+      ? t('planner.ingredientProgress', { ready: meal.ingredients_ready, total: meal.ingredients_total })
+      : t('planner.noIngredientsYet')
 
   const ingredientPercentage =
     meal.ingredients_total > 0
@@ -87,13 +89,13 @@ export function MealCard({ meal }: MealCardProps) {
                 {meal.is_restaurant && (
                   <Badge variant="default" className="bg-amber-600 hover:bg-amber-700 text-white">
                     <Utensils size={12} className="mr-1" />
-                    Restaurant
+                    {t('planner.restaurant')}
                   </Badge>
                 )}
                 {meal.everyone_at_home && (
                   <Badge variant="default" className="bg-sky-600 hover:bg-sky-700 text-white">
                     <Home size={12} className="mr-1" />
-                    At Home
+                    {t('planner.atHome')}
                   </Badge>
                 )}
               </div>
@@ -132,7 +134,7 @@ export function MealCard({ meal }: MealCardProps) {
               <div className="flex items-center gap-2 text-sm">
                 <Receipt size={14} className="text-amber-600" />
                 <div className="flex-1">
-                  <p className="text-muted-foreground text-xs">Linked Expense</p>
+                  <p className="text-muted-foreground text-xs">{t('planner.linkedExpense')}</p>
                   <p className="font-medium text-foreground">
                     {linkedExpense.description} - {linkedExpense.currency} {linkedExpense.amount.toFixed(2)}
                   </p>
@@ -146,7 +148,7 @@ export function MealCard({ meal }: MealCardProps) {
             <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
               <ShoppingBasket size={14} />
-              <span>Ingredients</span>
+              <span>{t('planner.ingredients')}</span>
             </div>
 
             {meal.ingredients_total > 0 ? (
@@ -167,7 +169,7 @@ export function MealCard({ meal }: MealCardProps) {
                 </div>
               </>
             ) : (
-              <p className="text-xs text-muted-foreground italic">No ingredients added yet</p>
+              <p className="text-xs text-muted-foreground italic">{t('planner.noIngredientsYet')}</p>
             )}
             </div>
           )}
@@ -175,7 +177,7 @@ export function MealCard({ meal }: MealCardProps) {
       </motion.div>
 
       {/* Edit Form */}
-      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title="Edit Meal" hasInputs>
+      <ResponsiveOverlay open={showEditForm} onClose={() => setShowEditForm(false)} title={t('planner.editMeal')} hasInputs>
         <MealForm
           meal={meal}
           onSuccess={() => setShowEditForm(false)}
@@ -187,15 +189,15 @@ export function MealCard({ meal }: MealCardProps) {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Meal?</AlertDialogTitle>
+            <AlertDialogTitle>{t('planner.deleteMeal')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{meal.title}"? The linked shopping items will remain in your shopping list.
+              {t('planner.deleteMealConfirm', { title: meal.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

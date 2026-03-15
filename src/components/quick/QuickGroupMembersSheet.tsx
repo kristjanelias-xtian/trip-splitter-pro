@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { UserCheck, ChevronDown, Check } from 'lucide-react'
 import { ParticipantBalance, formatBalance, getBalanceColorClass, calculateWithinGroupBalances, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 import { Participant } from '@/types/participant'
@@ -31,6 +32,7 @@ export function QuickGroupMembersSheet({
   exchangeRates = {},
   settlements = [],
 }: QuickGroupMembersSheetProps) {
+  const { t } = useTranslation()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   function isLinked(balanceId: string): boolean {
@@ -38,9 +40,9 @@ export function QuickGroupMembersSheet({
   }
 
   function statusText(balance: number): string {
-    if (Math.abs(balance) <= SETTLED_THRESHOLD) return 'Settled up'
+    if (Math.abs(balance) <= SETTLED_THRESHOLD) return t('quick.settledUp')
     const amount = formatBalance(Math.abs(balance), currency)
-    return balance > 0 ? `Owed ${amount}` : `Owes ${amount}`
+    return balance > 0 ? t('quick.owed', { amount }) : t('quick.owes', { amount })
   }
 
   function toggleGroup(id: string) {
@@ -62,7 +64,7 @@ export function QuickGroupMembersSheet({
     <ResponsiveOverlay
       open={open}
       onClose={() => onOpenChange(false)}
-      title={`Group (${balances.length} ${balances.length === 1 ? 'member' : 'members'})`}
+      title={t('participants.member', { count: balances.length })}
       scrollClassName=""
     >
       {balances.map((b, i) => {
@@ -89,7 +91,7 @@ export function QuickGroupMembersSheet({
                 )}
                 {isMe && (
                   <span className="text-xs bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded shrink-0">
-                    You
+                    {t('common.you')}
                   </span>
                 )}
                 {b.isFamily && (
@@ -148,6 +150,7 @@ function WithinGroupBreakdown({
   exchangeRates: Record<string, number>
   settlements: Settlement[]
 }) {
+  const { t } = useTranslation()
   const groupBalances = calculateWithinGroupBalances(
     expenses, participants, groupName, currency, exchangeRates, settlements
   )
@@ -158,13 +161,13 @@ function WithinGroupBreakdown({
 
   return (
     <div className="mx-6 mb-3 p-3 rounded-lg bg-muted/30">
-      <p className="text-xs font-medium text-muted-foreground mb-2">Within-group balances</p>
+      <p className="text-xs font-medium text-muted-foreground mb-2">{t('balance.withinGroupBalances')}</p>
       {!hasGroupExpenses ? (
-        <p className="text-xs text-muted-foreground">No shared expenses yet</p>
+        <p className="text-xs text-muted-foreground">{t('balance.noSharedExpenses')}</p>
       ) : allEven ? (
         <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
           <Check size={14} />
-          <span className="text-sm">Evenly split</span>
+          <span className="text-sm">{t('balance.evenlySplit')}</span>
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -179,7 +182,7 @@ function WithinGroupBreakdown({
         </div>
       )}
       {hasChildren && (
-        <p className="text-xs text-muted-foreground mt-2">Children's shares are split among adults</p>
+        <p className="text-xs text-muted-foreground mt-2">{t('balance.childrenShareNote')}</p>
       )}
     </div>
   )
