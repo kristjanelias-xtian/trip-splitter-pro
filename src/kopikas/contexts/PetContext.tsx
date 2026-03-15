@@ -67,7 +67,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .eq('wallet_id', walletId),
         15000,
         'Awarding bonuses timed out. Please check your connection and try again.'
-      )
+      ) as { error: any }
 
       if (error) {
         logger.error('Failed to award bonuses', { wallet_id: walletId, error: error.message })
@@ -175,7 +175,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .eq('wallet_id', walletId),
         15000,
         'Naming pet timed out. Please check your connection and try again.'
-      )
+      ) as { error: any }
 
       if (error) {
         logger.error('Failed to name pet', { wallet_id: walletId, error: error.message })
@@ -209,7 +209,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .eq('wallet_id', walletId),
         15000,
         'Awarding XP timed out. Please check your connection and try again.'
-      )
+      ) as { error: any }
 
       if (error) {
         logger.error('Failed to award XP', { wallet_id: walletId, error: error.message })
