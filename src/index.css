@@ -6,6 +6,8 @@
 
 @layer base {
   :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+
     /* Warm & Earthy Design System - Light Mode */
     --background: 30 17% 98%; /* Warm cream #FAF8F5 */
     --foreground: 225 15% 20%; /* Deep charcoal #2D3142 */
@@ -211,16 +213,13 @@
     }
   }
 
-  /* PWA standalone: add safe-area padding to bottom nav for iPhone home indicator */
+  /* Safe-area padding for notch/Dynamic Island — always applied (no-op when inset is 0) */
+  .pwa-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Bottom safe-area only in PWA standalone (home indicator) */
   @media (display-mode: standalone) {
-    .pwa-safe-top {
-      padding-top: env(safe-area-inset-top, 0px);
-    }
-
-    .pwa-safe-top-offset {
-      margin-top: env(safe-area-inset-top, 0px);
-    }
-
     .pwa-safe-bottom {
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
