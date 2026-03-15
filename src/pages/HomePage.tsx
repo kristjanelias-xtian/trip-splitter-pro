@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getMyTrips, removeFromMyTrips, type MyTripEntry } from '@/lib/myTripsStorage'
 import { getHiddenTripCodes, showTrip } from '@/lib/mutedTripsStorage'
-import { getActiveTripId, getTripPhase, sortTripBalances } from '@/lib/activeTripDetection'
+import { getTripPhase, sortTripBalances } from '@/lib/activeTripDetection'
 import { ShareTripDialog } from '@/components/ShareTripDialog'
 import { OnboardingPrompts } from '@/components/OnboardingPrompts'
 import { TripCard } from '@/components/TripCard'
@@ -107,11 +107,6 @@ export function HomePage() {
   const sortedInvitedTrips = useMemo(() => sortTripBalances(invitedTrips), [invitedTrips])
   const sortedVisitedTrips = useMemo(() => sortTripBalances(visitedTrips), [visitedTrips])
 
-  const activeTripId = useMemo(
-    () => getActiveTripId(visibleTrips.map(tb => tb.trip)),
-    [visibleTrips]
-  )
-
   const handleHidden = useCallback((tripCode: string) => {
     setHiddenCodes(prev => new Set([...prev, tripCode]))
   }, [])
@@ -199,7 +194,7 @@ export function HomePage() {
           <TripCard
             trip={trip}
             balance={myBalance}
-            isActive={trip.id === activeTripId}
+            isActive={getTripPhase(trip) === 'active'}
             isEnded={getTripPhase(trip) === 'ended'}
             onClick={() => handleOpenTrip(trip.trip_code)}
             actions={
