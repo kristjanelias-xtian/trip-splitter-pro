@@ -34,6 +34,9 @@ self.addEventListener('fetch', function (event) {
     return
   }
 
+  // Kopikas routes are never redirected — they are their own entry point
+  if (url.pathname.startsWith('/kopikas/')) return
+
   // Detect launch from home screen into a deep link.
   // A home screen launch has no referrer and the
   // request destination is a document.
