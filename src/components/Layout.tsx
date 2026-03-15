@@ -40,8 +40,7 @@ import { getHiddenTripCodes } from '@/lib/mutedTripsStorage'
 const iconMap: Record<string, React.ElementType> = {
   'Overview': Home,
   'Trips': Home,
-  'Manage Trip': Settings2,
-  'Manage Event': Settings2,
+  'Manage': Settings2,
   'Expenses': DollarSign,
   'Settlements': CreditCard,
   'Day Planner': CalendarDays,
@@ -70,7 +69,8 @@ export function Layout() {
     }
   }
 
-  const manageLabel = currentTrip?.event_type === 'event' ? 'Manage Event' : 'Manage Trip'
+  const entityLabel = currentTrip?.event_type === 'event' ? t('trip.eventLabel') : t('trip.tripLabel')
+  const manageLabel = t('manage.title', { label: entityLabel })
 
   // Desktop navigation - all items visible
   const getDesktopNavItems = () => {
@@ -89,7 +89,7 @@ export function Layout() {
         items.push({ path: `/t/${tripCode}/shopping`, label: t('layout.shopping'), iconKey: 'Shopping', requiresTrip: true })
       }
       items.push(
-        { path: `/t/${tripCode}/manage`, label: manageLabel, iconKey: manageLabel, requiresTrip: true },
+        { path: `/t/${tripCode}/manage`, label: manageLabel, iconKey: 'Manage', requiresTrip: true },
       )
     }
 
