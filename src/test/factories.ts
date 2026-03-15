@@ -3,6 +3,7 @@ import type { Participant } from '@/types/participant'
 import type { Expense, ExpenseDistribution } from '@/types/expense'
 import type { Settlement } from '@/types/settlement'
 import type { Event } from '@/types/trip'
+import type { Wallet, WalletTransaction, WalletPet } from '@/kopikas/types'
 
 let _id = 0
 function nextId(): string {
@@ -84,3 +85,48 @@ export function buildEvent(overrides: Partial<Event> = {}): Event {
 
 // Backward-compatible alias
 export const buildTrip = buildEvent
+
+export function buildWallet(overrides: Partial<Wallet> = {}): Wallet {
+  const id = overrides.id ?? nextId()
+  return {
+    id,
+    wallet_code: `test-wallet-${id}-Ab1234`,
+    name: `Kid ${id}`,
+    currency: 'EUR',
+    created_by: 'parent-user-1',
+    created_at: '2026-03-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+export function buildWalletTransaction(
+  overrides: Partial<WalletTransaction> = {}
+): WalletTransaction {
+  const id = overrides.id ?? nextId()
+  return {
+    id,
+    wallet_id: 'wallet-1',
+    type: 'expense',
+    amount: 5,
+    description: `Transaction ${id}`,
+    category: 'food',
+    receipt_image_path: null,
+    created_at: '2026-03-15T10:00:00Z',
+    ...overrides,
+  }
+}
+
+export function buildWalletPet(overrides: Partial<WalletPet> = {}): WalletPet {
+  return {
+    wallet_id: 'wallet-1',
+    name: 'Blob',
+    level: 1,
+    xp: 0,
+    starter_emoji: '🫧',
+    last_weekly_xp_check: null,
+    last_streak_xp_check: null,
+    created_at: '2026-03-01T00:00:00Z',
+    updated_at: '2026-03-15T00:00:00Z',
+    ...overrides,
+  }
+}
