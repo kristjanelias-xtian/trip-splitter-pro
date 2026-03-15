@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Trip } from '@/types/trip'
+import { ParticipantBalance, SETTLED_THRESHOLD } from '@/services/balanceCalculator'
 
 export type TripPhase = 'upcoming' | 'active' | 'ended'
 
@@ -67,4 +68,45 @@ export function getActiveTripId(trips: Trip[]): string | null {
   }
 
   return null
+}
+
+/**
+ * Sort trip-balance entries by relevance:
+ *   0 – Active (today in start..end), tiebreak: end_date ASC (ending soonest first)
+ *   1 – Upcoming (start > today), tiebreak: start_date ASC (nearest first)
+ *   2 – Ended + unsettled balance, tiebreak: end_date DESC (most recent first)
+ *   3 – Ended + settled / no balance, tiebreak: end_date DESC (most recent first)
+ */
+export function sortTripBalances<T extends { trip: Trip; myBalance: ParticipantBalance | null }>(
+  items: T[]
+): T[] {
+  return [...items].sort((a, b) => {
+    const pa = getSortPriority(a)
+    const pb = getSortPriority(b)
+    if (pa !== pb) return pa - pb
+
+    const phase = getTripPhase(a.trip)
+    if (phase === 'active') {
+      // ending soonest first
+      return new Date(a.trip.end_date).getTime() - new Date(b.trip.end_date).getTime()
+    }
+    if (phase === 'upcoming') {
+      // nearest start first
+      return new Date(a.trip.start_date).getTime() - new Date(b.trip.start_date).getTime()
+    }
+    // ended: most recent first
+    return new Date(b.trip.end_date).getTime() - new Date(a.trip.end_date).getTime()
+  })
+}
+
+function isUnsettled(balance: ParticipantBalance | null): boolean {
+  return balance !== null && Math.abs(balance.balance) > SETTLED_THRESHOLD
+}
+
+function getSortPriority(item: { trip: Trip; myBalance: ParticipantBalance | null }): number {
+  const phase = getTripPhase(item.trip)
+  if (phase === 'active') return 0
+  if (phase === 'upcoming') return 1
+  if (phase === 'ended' && isUnsettled(item.myBalance)) return 2
+  return 3
 }
