@@ -24,6 +24,7 @@ import { getTripGradientPattern } from '@/services/tripGradientService'
 import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { isAdminUser } from '@/lib/adminAuth'
 import { ModeToggle } from '@/components/quick/ModeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
 import { PullToRefreshProvider } from '@/contexts/PullToRefreshContext'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator'
@@ -140,6 +141,7 @@ export function QuickLayout() {
                     <ModeToggle onGradient={onGradient} />
                   </div>
                 )}
+                <LanguageToggle size="compact" onGradient={onGradient} />
                 {user ? <UserMenu onGradient={onGradient} compact /> : <SignInButton />}
               </div>
             </div>

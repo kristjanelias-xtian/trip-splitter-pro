@@ -28,6 +28,7 @@ import { ReportIssueButton } from '@/components/ReportIssueButton'
 import { isAdminUser } from '@/lib/adminAuth'
 import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { ModeToggle } from '@/components/quick/ModeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
 import { QuickScanContextSheet } from '@/components/quick/QuickScanContextSheet'
 import { QuickScanCreateFlow } from '@/components/quick/QuickScanCreateFlow'
 import { PullToRefreshProvider } from '@/contexts/PullToRefreshContext'
@@ -211,6 +212,7 @@ export function Layout() {
                     <ModeToggle onGradient={onGradient} />
                   </div>
                 )}
+                <LanguageToggle size="compact" onGradient={onGradient} />
                 {user ? <UserMenu onGradient={onGradient} /> : <SignInButton />}
               </div>
             </div>
