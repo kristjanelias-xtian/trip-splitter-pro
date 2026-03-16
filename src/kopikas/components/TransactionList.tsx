@@ -115,10 +115,14 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
   const handleAmountSave = async () => {
     if (!editingTx) return
     const parsed = parseFloat(editAmount.replace(',', '.'))
-    if (isNaN(parsed) || parsed <= 0) return
+    if (isNaN(parsed) || parsed <= 0) {
+      setEditingTx(null)
+      return
+    }
     const rounded = Math.round(parsed * 100) / 100
-    if (rounded === editingTx.amount) return
-    await updateTransactionAmount(editingTx.id, rounded)
+    if (rounded !== editingTx.amount) {
+      await updateTransactionAmount(editingTx.id, rounded)
+    }
     setEditingTx(null)
   }
 
