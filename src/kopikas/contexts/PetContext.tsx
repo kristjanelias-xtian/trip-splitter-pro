@@ -66,7 +66,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .update(updates)
           .eq('wallet_id', walletId),
         15000,
-        'Awarding bonuses timed out. Please check your connection and try again.'
+        'Boonuste andmine aegus. Kontrolli ühendust ja proovi uuesti.'
       ) as { error: any }
 
       if (error) {
@@ -100,7 +100,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .maybeSingle()
           .abortSignal(signal),
         15000,
-        'Loading pet timed out. Please check your connection and try again.'
+        'Lemmiku laadimine aegus. Kontrolli ühendust ja proovi uuesti.'
       )
 
       if (signal.aborted) return
@@ -132,7 +132,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
             .select()
             .single(),
           15000,
-          'Creating pet timed out. Please check your connection and try again.'
+          'Lemmiku loomine aegus. Kontrolli ühendust ja proovi uuesti.'
         )
 
         if (signal.aborted) return
@@ -174,7 +174,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .update({ name, updated_at: new Date().toISOString() })
           .eq('wallet_id', walletId),
         15000,
-        'Naming pet timed out. Please check your connection and try again.'
+        'Nime salvestamine aegus. Kontrolli ühendust ja proovi uuesti.'
       ) as { error: any }
 
       if (error) {
@@ -208,7 +208,7 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
           .update(updates)
           .eq('wallet_id', walletId),
         15000,
-        'Awarding XP timed out. Please check your connection and try again.'
+        'XP andmine aegus. Kontrolli ühendust ja proovi uuesti.'
       ) as { error: any }
 
       if (error) {

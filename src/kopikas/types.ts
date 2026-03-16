@@ -76,11 +76,11 @@ export interface CategoryCorrection {
 }
 
 export const PET_LEVELS = [
-  { level: 1, xpNeeded: 0, description: 'Small blob, simple eyes' },
-  { level: 2, xpNeeded: 100, description: 'Slightly bigger, gets a mouth' },
-  { level: 3, xpNeeded: 300, description: 'Gets blush marks, subtle glow' },
-  { level: 4, xpNeeded: 600, description: 'Gets a crown/hat accessory' },
-  { level: 5, xpNeeded: 1000, description: 'Full glow, sparkle trail, evolved form' },
+  { level: 1, xpNeeded: 0, description: 'Väike klõmps, lihtsad silmad' },
+  { level: 2, xpNeeded: 100, description: 'Natuke suurem, sai suu' },
+  { level: 3, xpNeeded: 300, description: 'Punased põsed, kerge sära' },
+  { level: 4, xpNeeded: 600, description: 'Sai krooni!' },
+  { level: 5, xpNeeded: 1000, description: 'Täis sära, sädemeid ja ilu!' },
 ] as const
 
 export const STARTER_EMOJIS = ['🫧', '🟣', '🔮', '💜'] as const
