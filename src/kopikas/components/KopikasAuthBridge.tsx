@@ -18,6 +18,7 @@ function KopikasAuthBridgeInner({ children }: { children: ReactNode }) {
     user,
     loading,
     signInWithGoogle: async () => {},
+    signInWithRedirect: async () => {},
     signOut: async () => {},
   }
   return (

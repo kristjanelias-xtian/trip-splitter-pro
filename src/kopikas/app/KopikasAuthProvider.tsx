@@ -8,6 +8,7 @@ export interface KopikasAuthContextValue {
   user: User | null
   loading: boolean
   signInWithGoogle: (credential: string) => Promise<void>
+  signInWithRedirect: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -43,6 +44,17 @@ export function KopikasAuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Fallback for mobile/PWA where GoogleLogin popups don't work
+  const signInWithRedirect = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+    if (error) {
+      logger.error('Google sign-in redirect failed', { error: error.message })
+    }
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -51,7 +63,7 @@ export function KopikasAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <KopikasAuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <KopikasAuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithRedirect, signOut }}>
       {children}
     </KopikasAuthContext.Provider>
   )
