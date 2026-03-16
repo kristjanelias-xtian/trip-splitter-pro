@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { KOPIKAS_CATEGORIES, getCategoryEmoji, getCategoryLabel } from './kopikasCategories'
 
 describe('kopikasCategories', () => {
-  it('has exactly 9 categories', () => {
-    expect(KOPIKAS_CATEGORIES).toHaveLength(9)
+  it('has exactly 10 categories', () => {
+    expect(KOPIKAS_CATEGORIES).toHaveLength(10)
   })
 
   it('returns emoji for known category', () => {

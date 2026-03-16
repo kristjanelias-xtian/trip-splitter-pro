@@ -19,7 +19,7 @@ export interface WalletMember {
 export type TransactionType = 'allowance' | 'expense'
 
 export type KopikasCategory =
-  | 'sweets' | 'food' | 'clothes' | 'beauty'
+  | 'sweets' | 'snack' | 'food' | 'clothes' | 'beauty'
   | 'fun' | 'school' | 'gifts' | 'charity' | 'other'
 
 export interface WalletTransaction {

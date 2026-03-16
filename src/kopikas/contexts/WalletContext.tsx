@@ -15,6 +15,7 @@ interface WalletContextValue {
   lastAllowance: WalletTransaction | null
   addTransaction: (input: CreateTransactionInput) => Promise<WalletTransaction | null>
   updateTransactionCategory: (txId: string, oldCategory: KopikasCategory, newCategory: KopikasCategory, description: string | null) => Promise<boolean>
+  updateTransactionAmount: (txId: string, newAmount: number) => Promise<boolean>
   deleteWallet: () => Promise<boolean>
   refreshTransactions: () => Promise<void>
   clearError: () => void
@@ -239,6 +240,45 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }
   }
 
+  const updateTransactionAmount = async (txId: string, newAmount: number): Promise<boolean> => {
+    const tx = transactions.find((t) => t.id === txId)
+    if (!tx || tx.amount === newAmount || newAmount <= 0) return false
+    const oldAmount = tx.amount
+
+    // Optimistic update
+    setTransactions((prev) =>
+      prev.map((t) => t.id === txId ? { ...t, amount: newAmount } : t)
+    )
+
+    try {
+      const { error: updateError } = await withTimeout(
+        (supabase.from('wallet_transactions' as any) as any)
+          .update({ amount: newAmount })
+          .eq('id', txId),
+        15000,
+        'Summa muutmine aegus.'
+      ) as { error: any }
+
+      if (updateError) {
+        logger.error('Failed to update transaction amount', { tx_id: txId, error: updateError.message })
+        setError('Summa muutmine ebaõnnestus.')
+        setTransactions((prev) =>
+          prev.map((t) => t.id === txId ? { ...t, amount: oldAmount } : t)
+        )
+        return false
+      }
+
+      return true
+    } catch (err) {
+      logger.error('Failed to update transaction amount', { tx_id: txId, error: err instanceof Error ? err.message : String(err) })
+      setError('Summa muutmine ebaõnnestus.')
+      setTransactions((prev) =>
+        prev.map((t) => t.id === txId ? { ...t, amount: oldAmount } : t)
+      )
+      return false
+    }
+  }
+
   const deleteWallet = async (): Promise<boolean> => {
     if (!wallet) return false
     try {
@@ -273,6 +313,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     lastAllowance,
     addTransaction,
     updateTransactionCategory,
+    updateTransactionAmount,
     deleteWallet,
     refreshTransactions,
     clearError,

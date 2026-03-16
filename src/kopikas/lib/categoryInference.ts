@@ -2,7 +2,8 @@
 import type { KopikasCategory } from '../types'
 
 const KEYWORD_MAP: [KopikasCategory, string[]][] = [
-  ['sweets', ['komm', 'šokolaad', 'chocolate', 'candy', 'haribo', 'jäätis', 'ice cream', 'kook', 'cake', 'küpsis', 'cookie', 'maiustus', 'lollipop', 'gummy', 'chips', 'krõps']],
+  ['sweets', ['komm', 'šokolaad', 'chocolate', 'candy', 'haribo', 'jäätis', 'ice cream', 'kook', 'cake', 'küpsis', 'cookie', 'maiustus', 'lollipop', 'gummy']],
+  ['snack', ['snäkk', 'snack', 'chips', 'krõps', 'pähkel', 'nuts', 'popcorn', 'popkorn', 'näkits', 'cracker']],
   ['food', ['pizza', 'burger', 'söök', 'lõuna', 'lunch', 'dinner', 'breakfast', 'hommik', 'õhtu', 'toit', 'leib', 'piim', 'milk', 'bread', 'sushi', 'pasta', 'supp', 'soup', 'salat', 'salad', 'kohv', 'coffee', 'tee', 'juice', 'mahl']],
   ['clothes', ['pluus', 'shirt', 'dress', 'kleit', 'sokid', 'socks', 'müts', 'hat', 'jakk', 'jacket', 'riided', 'shoes', 'kingad', 'pants', 'püksid', 'hoodie']],
   ['beauty', ['huulepulk', 'lipstick', 'lip gloss', 'kreem', 'cream', 'parfüüm', 'perfume', 'lõhn', 'küünelakk', 'nail polish', 'šampoon', 'shampoo', 'mask', 'ilu']],

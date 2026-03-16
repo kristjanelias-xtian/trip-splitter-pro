@@ -10,6 +10,7 @@ interface EmojiBarChartProps {
 
 const BAR_COLORS: Record<KopikasCategory, string> = {
   sweets: 'bg-pink-400',
+  snack: 'bg-amber-400',
   food: 'bg-orange-400',
   clothes: 'bg-blue-400',
   beauty: 'bg-rose-400',
