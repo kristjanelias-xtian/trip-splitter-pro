@@ -41,7 +41,7 @@ export function KopikasHome() {
       {/* Pet section */}
       <div className="flex flex-col items-center gap-3 mb-8">
         <PetSpeechBubble mood={mood} />
-        <Pet mood={mood.tier} level={pet.level} starterEmoji={pet.starter_emoji} size="lg" />
+        <Pet mood={mood.tier} level={pet.level} size="lg" />
         <p className="text-sm text-muted-foreground">
           {pet.name} · Tase {pet.level}
         </p>

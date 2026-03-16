@@ -14,7 +14,7 @@ export function KopikasLandingPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 max-w-lg mx-auto">
         <div className="mb-6">
-          <Pet mood="ecstatic" level={5} starterEmoji="🫧" size="lg" />
+          <Pet mood="ecstatic" level={5} size="lg" />
         </div>
 
         <h2 className="text-2xl font-bold text-center mb-2">

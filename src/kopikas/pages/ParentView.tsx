@@ -125,7 +125,7 @@ export function ParentView() {
       {/* Pet status */}
       {pet && (
         <div className="p-4 rounded-xl border border-border bg-card flex items-center gap-4">
-          <Pet mood={mood.tier} level={pet.level} starterEmoji={pet.starter_emoji} size="sm" />
+          <Pet mood={mood.tier} level={pet.level} size="sm" />
           <div>
             <p className="font-medium">{pet.name || 'Kopikas'}</p>
             <p className="text-sm text-muted-foreground">

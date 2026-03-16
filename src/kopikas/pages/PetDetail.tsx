@@ -44,7 +44,7 @@ export function PetDetail() {
       {/* Large pet */}
       <div className="flex flex-col items-center gap-4 mb-8">
         <PetSpeechBubble mood={mood} />
-        <Pet mood={mood.tier} level={pet.level} starterEmoji={pet.starter_emoji} size="lg" />
+        <Pet mood={mood.tier} level={pet.level} size="lg" />
         <div className="text-center">
           <h1 className="text-xl font-bold">{pet.name}</h1>
           <p className="text-sm text-muted-foreground">Tase {pet.level}</p>
@@ -100,7 +100,6 @@ export function PetDetail() {
               <Pet
                 mood={l.level === pet.level ? mood.tier : 'happy'}
                 level={l.level}
-                starterEmoji={pet.starter_emoji}
                 size="sm"
               />
               <span className="text-xs text-muted-foreground">Tase {l.level}</span>
