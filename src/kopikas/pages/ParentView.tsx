@@ -23,7 +23,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, Share2, Check } from 'lucide-react'
 
 export function ParentView() {
   const { wallet, transactions, balance, loading: walletLoading, deleteWallet } = useWallet()
@@ -34,6 +34,7 @@ export function ParentView() {
   const [allowanceOpen, setAllowanceOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isMember, setIsMember] = useState<boolean | null>(null)
 
   // Check if current user is a wallet member
@@ -77,6 +78,22 @@ export function ParentView() {
       logger.error('Failed to join as parent', { error: error instanceof Error ? error.message : String(error) })
     } finally {
       setJoining(false)
+    }
+  }
+
+  const handleShare = async () => {
+    if (!wallet) return
+    const url = `${window.location.origin}${basePath}/${wallet.wallet_code}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: wallet.name, url })
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -125,6 +142,13 @@ export function ParentView() {
         <p className="text-sm text-muted-foreground mb-1">{wallet.name}</p>
         <p className="text-4xl font-bold tabular-nums">€{balance.toFixed(2)}</p>
       </div>
+
+      {/* Share child link */}
+      <button onClick={handleShare}
+        className="w-full py-3 rounded-xl border border-border text-foreground font-medium flex items-center justify-center gap-2 hover:bg-muted/50 transition-colors">
+        {copied ? <Check size={18} /> : <Share2 size={18} />}
+        {copied ? 'Kopeeritud!' : 'Jaga lapse linki'}
+      </button>
 
       {/* Add allowance */}
       <button onClick={() => setAllowanceOpen(true)}
