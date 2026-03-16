@@ -22,6 +22,12 @@ describe('inferKopikasCategory', () => {
     expect(inferKopikasCategory('asdf1234')).toBeNull()
   })
 
+  it('infers snack from snack keywords', () => {
+    expect(inferKopikasCategory('krõpsud')).toBe('snack')
+    expect(inferKopikasCategory('chips')).toBe('snack')
+    expect(inferKopikasCategory('snäkk')).toBe('snack')
+  })
+
   it('is case insensitive', () => {
     expect(inferKopikasCategory('HARIBO')).toBe('sweets')
   })

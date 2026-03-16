@@ -100,11 +100,27 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
 }
 
 export function TransactionList({ transactions, limit }: TransactionListProps) {
-  const { updateTransactionCategory } = useWalletContext()
+  const { updateTransactionCategory, updateTransactionAmount } = useWalletContext()
   const { awardXp } = usePet()
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [editingTx, setEditingTx] = useState<WalletTransaction | null>(null)
+  const [editAmount, setEditAmount] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const openEditSheet = (tx: WalletTransaction) => {
+    setEditingTx(tx)
+    setEditAmount(tx.amount.toFixed(2))
+  }
+
+  const handleAmountSave = async () => {
+    if (!editingTx) return
+    const parsed = parseFloat(editAmount.replace(',', '.'))
+    if (isNaN(parsed) || parsed <= 0) return
+    const rounded = Math.round(parsed * 100) / 100
+    if (rounded === editingTx.amount) return
+    await updateTransactionAmount(editingTx.id, rounded)
+    setEditingTx(null)
+  }
 
   const handleCategorySelect = async (category: KopikasCategory) => {
     if (!editingTx || !editingTx.category) return
@@ -151,7 +167,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                 className={`flex items-center gap-3 py-3 px-1 ${tx.type === 'expense' || tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
                 onClick={() => {
                   if (tx.type === 'expense' && tx.category) {
-                    setEditingTx(tx)
+                    openEditSheet(tx)
                   } else if (tx.receipt_image_path) {
                     setReceiptUrl(getReceiptUrl(tx.receipt_image_path))
                   }
@@ -223,7 +239,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                       className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors px-1 -mx-1"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (tx.category) setEditingTx(tx)
+                        if (tx.category) openEditSheet(tx)
                       }}
                     >
                       <span className="text-sm shrink-0">{getCategoryEmoji(tx.category!)}</span>
@@ -250,12 +266,12 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
         })}
       </ul>
 
-      {/* Category edit sheet */}
+      {/* Transaction edit sheet */}
       <Sheet open={!!editingTx} onOpenChange={(open) => { if (!open) setEditingTx(null) }}>
         <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '75dvh' }}>
           <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="w-8" />
-            <SheetTitle>Muuda kategooriat</SheetTitle>
+            <SheetTitle>Muuda tehingut</SheetTitle>
             <button onClick={() => setEditingTx(null)} aria-label="Close"
               className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
               <X className="w-4 h-4 text-muted-foreground" />
@@ -266,6 +282,32 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
               <p className="text-sm text-muted-foreground mb-4 text-center">
                 {editingTx.description || 'Kulu'}
               </p>
+
+              {/* Amount edit */}
+              <div className="mb-4">
+                <label className="text-xs text-muted-foreground mb-1 block">Summa</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value.replace(',', '.'))}
+                      className="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-background text-sm tabular-nums"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAmountSave}
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                  >
+                    Salvesta
+                  </button>
+                </div>
+              </div>
+
+              {/* Category picker */}
+              <label className="text-xs text-muted-foreground mb-2 block">Kategooria</label>
               <div className="grid grid-cols-3 gap-3">
                 {KOPIKAS_CATEGORIES.map(cat => (
                   <button

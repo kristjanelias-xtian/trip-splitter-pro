@@ -9,6 +9,7 @@ export interface CategoryDef {
 
 export const KOPIKAS_CATEGORIES: CategoryDef[] = [
   { key: 'sweets', label: 'Maiustused', emoji: '🍬' },
+  { key: 'snack', label: 'Snäkk', emoji: '🥨' },
   { key: 'food', label: 'Toit', emoji: '🍔' },
   { key: 'clothes', label: 'Riided', emoji: '👕' },
   { key: 'beauty', label: 'Ilu', emoji: '💄' },

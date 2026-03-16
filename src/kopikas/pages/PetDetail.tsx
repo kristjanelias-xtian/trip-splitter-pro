@@ -94,7 +94,7 @@ export function PetDetail() {
       {/* Evolution history */}
       <div>
         <h2 className="font-semibold mb-3">Evolutsioon</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2">
+        <div className="flex gap-4 overflow-x-auto pt-4 pb-2 -mt-4">
           {PET_LEVELS.filter(l => l.level <= pet.level).map(l => (
             <div key={l.level} className="flex flex-col items-center gap-1 shrink-0">
               <Pet
