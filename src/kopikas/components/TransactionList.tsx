@@ -124,9 +124,10 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
 
   const handleCategorySelect = async (category: KopikasCategory) => {
     if (!editingTx || !editingTx.category) return
+    if (editingTx.category === category) return
     const oldCategory = editingTx.category
-    setEditingTx(null)
-    if (oldCategory === category) return
+    // Update local state so the selection is visible immediately
+    setEditingTx({ ...editingTx, category })
     const success = await updateTransactionCategory(editingTx.id, oldCategory, category, editingTx.description)
     if (success) {
       await awardXp(getXpForAction('correct_category'))
@@ -278,15 +279,15 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
             </button>
           </div>
           {editingTx && (
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-              <p className="text-sm text-muted-foreground mb-4 text-center">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+              <p className="text-sm text-muted-foreground mb-3 text-center">
                 {editingTx.description || 'Kulu'}
               </p>
 
               {/* Amount edit */}
               <div className="mb-4">
                 <label className="text-xs text-muted-foreground mb-1 block">Summa</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 max-w-xs">
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                     <input
@@ -299,7 +300,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                   </div>
                   <button
                     onClick={handleAmountSave}
-                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium shrink-0"
                   >
                     Salvesta
                   </button>
@@ -308,20 +309,20 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
 
               {/* Category picker */}
               <label className="text-xs text-muted-foreground mb-2 block">Kategooria</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {KOPIKAS_CATEGORIES.map(cat => (
                   <button
                     key={cat.key}
                     onClick={() => handleCategorySelect(cat.key)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors relative
+                    className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border transition-colors relative
                       ${editingTx.category === cat.key
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:bg-muted'}`}
                   >
-                    <span className="text-2xl">{cat.emoji}</span>
-                    <span className="text-xs">{cat.label}</span>
+                    <span className="text-xl">{cat.emoji}</span>
+                    <span className="text-[11px]">{cat.label}</span>
                     {editingTx.category === cat.key && (
-                      <Check size={14} className="absolute top-1.5 right-1.5 text-primary" />
+                      <Check size={12} className="absolute top-1 right-1 text-primary" />
                     )}
                   </button>
                 ))}
