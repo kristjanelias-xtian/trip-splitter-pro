@@ -52,7 +52,6 @@ export function KopikasHomeSection({ userId }: KopikasHomeSectionProps) {
   }, [userId])
 
   if (loading) return null
-  if (wallets.length === 0) return null  // Don't show section if no wallets
 
   return (
     <div className="mt-8">
@@ -62,18 +61,28 @@ export function KopikasHomeSection({ userId }: KopikasHomeSectionProps) {
           Loo uus
         </Link>
       </div>
-      <div className="space-y-2">
-        {wallets.map(w => (
-          <Link
-            key={w.id}
-            to={`/kopikas/${w.wallet_code}/parent`}
-            className="block p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
-          >
-            <p className="font-medium">{w.name}</p>
-            <p className="text-sm text-muted-foreground">Kopikas rahakott</p>
-          </Link>
-        ))}
-      </div>
+      {wallets.length === 0 ? (
+        <Link
+          to="/kopikas/create"
+          className="block p-6 rounded-xl border border-dashed border-border hover:bg-muted/50 transition-colors text-center"
+        >
+          <span className="text-2xl block mb-2">🫧</span>
+          <p className="text-sm text-muted-foreground">Loo oma lapsele taskuraha rahakott</p>
+        </Link>
+      ) : (
+        <div className="space-y-2">
+          {wallets.map(w => (
+            <Link
+              key={w.id}
+              to={`/kopikas/${w.wallet_code}/parent`}
+              className="block p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+            >
+              <p className="font-medium">{w.name}</p>
+              <p className="text-sm text-muted-foreground">Kopikas rahakott</p>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
