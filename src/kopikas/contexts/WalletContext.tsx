@@ -14,6 +14,7 @@ interface WalletContextValue {
   balance: number
   lastAllowance: WalletTransaction | null
   addTransaction: (input: CreateTransactionInput) => Promise<WalletTransaction | null>
+  deleteWallet: () => Promise<boolean>
   refreshTransactions: () => Promise<void>
   clearError: () => void
 }
@@ -184,6 +185,31 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }
   }
 
+  const deleteWallet = async (): Promise<boolean> => {
+    if (!wallet) return false
+    try {
+      const { error: deleteError } = await withTimeout(
+        (supabase.from('wallets' as any) as any)
+          .delete()
+          .eq('id', wallet.id),
+        15000,
+        'Rahakoti kustutamine aegus. Kontrolli ühendust ja proovi uuesti.'
+      ) as { error: any }
+
+      if (deleteError) {
+        logger.error('Failed to delete wallet', { wallet_id: wallet.id, error: deleteError.message })
+        setError('Rahakoti kustutamine ebaõnnestus.')
+        return false
+      }
+
+      return true
+    } catch (err) {
+      logger.error('Failed to delete wallet', { wallet_id: wallet?.id, error: err instanceof Error ? err.message : String(err) })
+      setError('Rahakoti kustutamine ebaõnnestus.')
+      return false
+    }
+  }
+
   const value: WalletContextValue = {
     wallet,
     transactions,
@@ -192,6 +218,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     balance,
     lastAllowance,
     addTransaction,
+    deleteWallet,
     refreshTransactions,
     clearError,
   }
