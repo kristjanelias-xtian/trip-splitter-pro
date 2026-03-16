@@ -62,7 +62,10 @@ export function Layout() {
   const [scanCreateOpen, setScanCreateOpen] = useState(false)
 
   const handleScanTap = () => {
-    if (visibleTrips.length === 0) {
+    if (tripCode) {
+      // Already viewing a trip — go straight to scan without trip picker
+      navigate(`/t/${tripCode}/quick`, { state: { openScan: true, ts: Date.now() } })
+    } else if (visibleTrips.length === 0) {
       setScanCreateOpen(true)
     } else {
       setScanContextOpen(true)
