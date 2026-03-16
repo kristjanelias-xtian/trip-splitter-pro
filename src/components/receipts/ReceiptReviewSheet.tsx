@@ -67,6 +67,7 @@ interface EditableItem {
   price: string // string for controlled input
   qty: number
   assignedIds: Set<string>
+  manuallySet: boolean
 }
 
 function buildDistribution(
@@ -227,6 +228,7 @@ export function ReceiptReviewSheet({
         price: item.price.toFixed(2),
         qty: item.qty,
         assignedIds: mappedItemsByIndex.get(index) ?? new Set<string>(),
+        manuallySet: mappedItemsByIndex.has(index),
       }))
     )
     setConfirmedTotal(extractedTotal != null ? extractedTotal.toFixed(2) : '')
@@ -262,35 +264,43 @@ export function ReceiptReviewSheet({
       })
   }, [open, imagePath])
 
-  // Toggle a participant for an item
+  // Toggle a participant for an item, cascading to subsequent unmodified items
   const toggleParticipant = (itemIndex: number, participantId: string) => {
-    setEditableItems(prev =>
-      prev.map((item, i) => {
-        if (i !== itemIndex) return item
-        const next = new Set(item.assignedIds)
-        if (next.has(participantId)) {
-          next.delete(participantId)
-        } else {
-          next.add(participantId)
+    setEditableItems(prev => {
+      const next = [...prev]
+      const toggled = new Set(next[itemIndex].assignedIds)
+      if (toggled.has(participantId)) {
+        toggled.delete(participantId)
+      } else {
+        toggled.add(participantId)
+      }
+      next[itemIndex] = { ...next[itemIndex], assignedIds: toggled, manuallySet: true }
+      // Cascade to subsequent unmodified items
+      for (let i = itemIndex + 1; i < next.length; i++) {
+        if (!next[i].manuallySet) {
+          next[i] = { ...next[i], assignedIds: new Set(toggled) }
         }
-        return { ...item, assignedIds: next }
-      })
-    )
+      }
+      return next
+    })
   }
 
-  // Toggle all participants for an item
+  // Toggle all participants for an item, cascading to subsequent unmodified items
   const toggleAll = (itemIndex: number) => {
-    setEditableItems(prev =>
-      prev.map((item, i) => {
-        if (i !== itemIndex) return item
-        const allIds = participants.map(p => p.id)
-        const allAssigned = allIds.every(id => item.assignedIds.has(id))
-        return {
-          ...item,
-          assignedIds: allAssigned ? new Set() : new Set(allIds),
+    setEditableItems(prev => {
+      const next = [...prev]
+      const allIds = participants.map(p => p.id)
+      const allAssigned = allIds.every(id => next[itemIndex].assignedIds.has(id))
+      const newIds = allAssigned ? new Set<string>() : new Set(allIds)
+      next[itemIndex] = { ...next[itemIndex], assignedIds: newIds, manuallySet: true }
+      // Cascade to subsequent unmodified items
+      for (let i = itemIndex + 1; i < next.length; i++) {
+        if (!next[i].manuallySet) {
+          next[i] = { ...next[i], assignedIds: new Set(newIds) }
         }
-      })
-    )
+      }
+      return next
+    })
   }
 
   // Split a qty>1 item into individual rows so each unit can be assigned separately
@@ -304,6 +314,7 @@ export function ReceiptReviewSheet({
         price: unitPrice,
         qty: 1,
         assignedIds: new Set<string>(),
+        manuallySet: false,
       }))
       return [...prev.slice(0, index), ...expanded, ...prev.slice(index + 1)]
     })
