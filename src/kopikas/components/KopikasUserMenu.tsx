@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useKopikasAuth } from '../app/KopikasAuthProvider'
-import { GoogleLogin } from '@react-oauth/google'
-import { logger } from '@/lib/logger'
+import { KopikasSignInButton } from './KopikasSignInButton'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,25 +11,10 @@ import {
 import { LogOut } from 'lucide-react'
 
 export function KopikasUserMenu() {
-  const { user, signInWithGoogle, signOut } = useKopikasAuth()
+  const { user, signOut } = useKopikasAuth()
 
   if (!user) {
-    return (
-      <GoogleLogin
-        onSuccess={(response) => {
-          if (response.credential) {
-            signInWithGoogle(response.credential)
-          }
-        }}
-        onError={() => {
-          logger.error('Google Sign-In failed')
-        }}
-        size="medium"
-        type="icon"
-        shape="circle"
-        theme="outline"
-      />
-    )
+    return <KopikasSignInButton type="icon" />
   }
 
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
