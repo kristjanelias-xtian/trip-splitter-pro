@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo } from 'react'
-import type { WalletTransaction } from '../types'
-import { getCategoryEmoji } from '../lib/kopikasCategories'
+import type { WalletTransaction, KopikasCategory } from '../types'
+import { getCategoryEmoji, KOPIKAS_CATEGORIES } from '../lib/kopikasCategories'
+import { useWalletContext } from '../contexts/WalletContext'
+import { usePet } from '../hooks/usePet'
+import { getXpForAction } from '../lib/xpCalculator'
 import { supabase } from '@/lib/supabase'
-import { Wallet, Receipt, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { Wallet, Receipt, X, ChevronDown, ChevronRight, Check } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 
 interface TransactionListProps {
@@ -97,8 +100,22 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
 }
 
 export function TransactionList({ transactions, limit }: TransactionListProps) {
+  const { updateTransactionCategory } = useWalletContext()
+  const { awardXp } = usePet()
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [editingTx, setEditingTx] = useState<WalletTransaction | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const handleCategorySelect = async (category: KopikasCategory) => {
+    if (!editingTx || !editingTx.category) return
+    const oldCategory = editingTx.category
+    setEditingTx(null)
+    if (oldCategory === category) return
+    const success = await updateTransactionCategory(editingTx.id, oldCategory, category, editingTx.description)
+    if (success) {
+      await awardXp(getXpForAction('correct_category'))
+    }
+  }
 
   const entries = useMemo(() => {
     const grouped = buildGroupedList(transactions)
@@ -131,9 +148,11 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
             return (
               <li
                 key={tx.id}
-                className={`flex items-center gap-3 py-3 px-1 ${tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
+                className={`flex items-center gap-3 py-3 px-1 ${tx.type === 'expense' || tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
                 onClick={() => {
-                  if (tx.receipt_image_path) {
+                  if (tx.type === 'expense' && tx.category) {
+                    setEditingTx(tx)
+                  } else if (tx.receipt_image_path) {
                     setReceiptUrl(getReceiptUrl(tx.receipt_image_path))
                   }
                 }}
@@ -199,7 +218,14 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
               {isExpanded && (
                 <div className="ml-4 border-l-2 border-border pl-3 mb-2">
                   {entry.items.map(tx => (
-                    <div key={tx.id} className="flex items-center gap-2 py-1.5">
+                    <div
+                      key={tx.id}
+                      className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors px-1 -mx-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (tx.category) setEditingTx(tx)
+                      }}
+                    >
                       <span className="text-sm shrink-0">{getCategoryEmoji(tx.category!)}</span>
                       <p className="text-sm truncate flex-1 text-muted-foreground">{tx.description || 'Kulu'}</p>
                       <span className="text-sm tabular-nums text-muted-foreground">{formatAmount(tx.amount)}</span>
@@ -223,6 +249,45 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
           )
         })}
       </ul>
+
+      {/* Category edit sheet */}
+      <Sheet open={!!editingTx} onOpenChange={(open) => { if (!open) setEditingTx(null) }}>
+        <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '75dvh' }}>
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="w-8" />
+            <SheetTitle>Muuda kategooriat</SheetTitle>
+            <button onClick={() => setEditingTx(null)} aria-label="Close"
+              className="rounded-full w-8 h-8 flex items-center justify-center border border-border hover:bg-muted transition-colors">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          {editingTx && (
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+              <p className="text-sm text-muted-foreground mb-4 text-center">
+                {editingTx.description || 'Kulu'}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {KOPIKAS_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.key}
+                    onClick={() => handleCategorySelect(cat.key)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors relative
+                      ${editingTx.category === cat.key
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:bg-muted'}`}
+                  >
+                    <span className="text-2xl">{cat.emoji}</span>
+                    <span className="text-xs">{cat.label}</span>
+                    {editingTx.category === cat.key && (
+                      <Check size={14} className="absolute top-1.5 right-1.5 text-primary" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Receipt image viewer */}
       <Sheet open={!!receiptUrl} onOpenChange={(open) => { if (!open) setReceiptUrl(null) }}>
