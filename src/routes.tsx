@@ -71,6 +71,7 @@ export function AppRoutes() {
       </Route>
 
       {/* Kopikas routes — outside Spl1t layouts */}
+      <Route path="kopikas" element={<Navigate to="/" replace />} />
       <Route path="kopikas/create" element={<ErrorBoundary><CreateWallet /></ErrorBoundary>} />
       <Route path="kopikas/:walletCode" element={<KopikasLayout />}>
         <Route index element={<ErrorBoundary><KopikasHome /></ErrorBoundary>} />
