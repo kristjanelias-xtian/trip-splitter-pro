@@ -20,6 +20,7 @@ import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
 import { QuickHistoryPage } from './pages/QuickHistoryPage'
 import { KopikasLayout } from './kopikas/components/KopikasLayout'
 import { KopikasParentLayout } from './kopikas/components/KopikasParentLayout'
+import { KopikasAuthBridge } from './kopikas/components/KopikasAuthBridge'
 import { KopikasHome } from './kopikas/pages/KopikasHome'
 import { Analytics } from './kopikas/pages/Analytics'
 import { PetDetail } from './kopikas/pages/PetDetail'
@@ -72,8 +73,8 @@ export function AppRoutes() {
       </Route>
 
       {/* Kopikas routes — outside Spl1t layouts */}
-      <Route path="kopikas" element={<ErrorBoundary><WalletList /></ErrorBoundary>} />
-      <Route path="kopikas/create" element={<ErrorBoundary><CreateWallet /></ErrorBoundary>} />
+      <Route path="kopikas" element={<ErrorBoundary><KopikasAuthBridge><WalletList /></KopikasAuthBridge></ErrorBoundary>} />
+      <Route path="kopikas/create" element={<ErrorBoundary><KopikasAuthBridge><CreateWallet /></KopikasAuthBridge></ErrorBoundary>} />
       <Route path="kopikas/:walletCode" element={<KopikasLayout />}>
         <Route index element={<ErrorBoundary><KopikasHome /></ErrorBoundary>} />
         <Route path="analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
