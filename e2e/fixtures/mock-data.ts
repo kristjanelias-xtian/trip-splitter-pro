@@ -142,3 +142,68 @@ export const mockQuickUserPreferences = {
   preferred_mode: 'quick' as const,
   default_trip_id: MOCK_TRIP_ID,
 }
+
+// ─── Kopikas mock data ──────────────────────────────────────────────────
+export const MOCK_WALLET_ID = 'e2e-wall-0001-0001-0001-000000000001'
+export const MOCK_WALLET_CODE = 'test-wallet-Ab1234'
+
+export const mockWallet = {
+  id: MOCK_WALLET_ID,
+  wallet_code: MOCK_WALLET_CODE,
+  name: 'Mari',
+  currency: 'EUR',
+  created_by: MOCK_USER_ID,
+  created_at: '2026-03-01T00:00:00.000Z',
+}
+
+export const mockWalletMember = {
+  id: 'e2e-wmem-0001-0001-0001-000000000001',
+  wallet_id: MOCK_WALLET_ID,
+  user_id: MOCK_USER_ID,
+  role: 'parent',
+}
+
+export const mockWalletPet = {
+  wallet_id: MOCK_WALLET_ID,
+  name: 'Blob',
+  level: 2,
+  xp: 150,
+  starter_emoji: '🫧',
+  last_weekly_xp_check: null,
+  last_streak_xp_check: null,
+  created_at: '2026-03-01T00:00:00.000Z',
+  updated_at: '2026-03-15T00:00:00.000Z',
+}
+
+export const mockWalletTransactions = [
+  {
+    id: 'e2e-wtx-0001',
+    wallet_id: MOCK_WALLET_ID,
+    type: 'allowance',
+    amount: 20,
+    description: 'Nädala taskuraha',
+    category: null,
+    receipt_image_path: null,
+    created_at: '2026-03-10T10:00:00.000Z',
+  },
+  {
+    id: 'e2e-wtx-0002',
+    wallet_id: MOCK_WALLET_ID,
+    type: 'expense',
+    amount: 3.5,
+    description: 'Jäätis',
+    category: 'sweets',
+    receipt_image_path: null,
+    created_at: '2026-03-12T14:00:00.000Z',
+  },
+  {
+    id: 'e2e-wtx-0003',
+    wallet_id: MOCK_WALLET_ID,
+    type: 'expense',
+    amount: 5,
+    description: 'Vihik ja pliiatsid',
+    category: 'school',
+    receipt_image_path: null,
+    created_at: '2026-03-14T09:00:00.000Z',
+  },
+]

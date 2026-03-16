@@ -11,6 +11,10 @@ import {
   mockExpense,
   mockUserPreferences,
   mockQuickUserPreferences,
+  mockWallet,
+  mockWalletMember,
+  mockWalletPet,
+  mockWalletTransactions,
 } from './mock-data'
 
 type Mode = 'full' | 'quick'
@@ -184,6 +188,47 @@ function handlePostgREST(
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
 
     case 'invitations':
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+
+    // --- Kopikas tables ---
+    case 'wallets':
+      // .single() query (by wallet_code) → single object
+      if (url.includes('wallet_code')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockWallet),
+        })
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([mockWallet]),
+      })
+
+    case 'wallet_members':
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([mockWalletMember]),
+      })
+
+    case 'wallet_transactions':
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockWalletTransactions),
+      })
+
+    case 'wallet_pets':
+      // .single() query → single object
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockWalletPet),
+      })
+
+    case 'wallet_category_corrections':
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
 
     default:
