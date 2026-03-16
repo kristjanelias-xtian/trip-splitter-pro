@@ -8,7 +8,7 @@ import { PetSpeechBubble } from '../components/PetSpeechBubble'
 import { TransactionList } from '../components/TransactionList'
 import { ManualAddSheet } from '../components/ManualAddSheet'
 import { ScanFlow } from '../components/ScanFlow'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ScanLine, PencilLine, BarChart3 } from 'lucide-react'
 
 export function KopikasHome() {
   const { walletCode } = useParams<{ walletCode: string }>()
@@ -61,23 +61,29 @@ export function KopikasHome() {
       <div className="grid grid-cols-3 gap-3 mb-8">
         <button
           onClick={() => setScanOpen(true)}
-          className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
+          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
         >
-          <span className="text-2xl">📸</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <ScanLine size={20} className="text-primary" />
+          </div>
           <span className="text-xs font-medium">Skanni</span>
         </button>
         <button
           onClick={() => setManualAddOpen(true)}
-          className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
+          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
         >
-          <span className="text-2xl">✏️</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <PencilLine size={20} className="text-primary" />
+          </div>
           <span className="text-xs font-medium">Lisa</span>
         </button>
         <button
           onClick={() => navigate(`/kopikas/${walletCode}/analytics`)}
-          className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
+          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
         >
-          <span className="text-2xl">📊</span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <BarChart3 size={20} className="text-primary" />
+          </div>
           <span className="text-xs font-medium">Ülevaade</span>
         </button>
       </div>
