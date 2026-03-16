@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 export interface KopikasAuthContextValue {
   user: User | null
   loading: boolean
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: (credential: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -33,10 +33,10 @@ export function KopikasAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+  const signInWithGoogle = async (credential: string) => {
+    const { error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      token: credential,
     })
     if (error) {
       logger.error('Google sign-in failed', { error: error.message })

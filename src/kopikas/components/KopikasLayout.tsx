@@ -19,7 +19,7 @@ function KopikasInner() {
   return (
     <PetProvider walletId={wallet?.id ?? null} transactions={transactions}>
       <div className="min-h-screen bg-background text-foreground">
-        <main className="pb-16">
+        <main className="pb-16 pwa-safe-top">
           <Outlet />
         </main>
         <KopikasTabBar />
