@@ -1,3 +1,6 @@
+-- Enable moddatetime extension (idempotent)
+CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
+
 -- Kopikas: kid's pocket money tracker tables
 --
 -- Access model mirrors trip-splitter: wallet_code in the URL is the access
@@ -151,7 +154,7 @@ CREATE POLICY "wallet_pets_update" ON wallet_pets
 CREATE TRIGGER wallet_pets_updated_at
   BEFORE UPDATE ON wallet_pets
   FOR EACH ROW
-  EXECUTE FUNCTION moddatetime(updated_at);
+  EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 -- ============================================================
 -- wallet_category_corrections
