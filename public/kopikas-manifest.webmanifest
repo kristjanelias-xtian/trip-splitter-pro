@@ -1,0 +1,29 @@
+{
+  "name": "Kopikas",
+  "short_name": "Kopikas",
+  "description": "Lapse taskuraha, mänguliselt",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1308",
+  "theme_color": "#d97706",
+  "icons": [
+    {
+      "src": "/kopikas-favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/kopikas-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/kopikas-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

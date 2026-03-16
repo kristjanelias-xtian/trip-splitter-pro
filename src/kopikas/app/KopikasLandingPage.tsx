@@ -8,8 +8,8 @@ export function KopikasLandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="py-6 px-4 text-center">
-        <h1 className="text-2xl font-bold text-primary">Kopikas</h1>
+      <header className="py-6 px-4 flex justify-center">
+        <img src="/kopikas-logo.png" alt="Kopikas" className="h-10" />
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 max-w-lg mx-auto">
