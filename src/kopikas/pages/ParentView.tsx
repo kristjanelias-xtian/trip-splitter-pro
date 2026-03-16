@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { usePet } from '../hooks/usePet'
-import { useAuth } from '@/contexts/AuthContext'
+import { useKopikasAuth } from '../app/KopikasAuthProvider'
 import { TransactionList } from '../components/TransactionList'
 import { EmojiBarChart } from '../components/EmojiBarChart'
 import { Pet } from '../components/Pet'
@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react'
 export function ParentView() {
   const { wallet, transactions, balance, loading: walletLoading } = useWallet()
   const { pet, mood } = usePet()
-  const { user } = useAuth()
+  const { user } = useKopikasAuth()
   const [allowanceOpen, setAllowanceOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [isMember, setIsMember] = useState<boolean | null>(null)

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { NavLink, useParams } from 'react-router-dom'
 import { usePet } from '../hooks/usePet'
+import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { Home, BarChart3, Heart, type LucideIcon } from 'lucide-react'
 
 export function KopikasTabBar() {
   const { walletCode } = useParams<{ walletCode: string }>()
   const { pet } = usePet()
-  const base = `/kopikas/${walletCode}`
+  const basePath = useKopikasBasePath()
+  const base = `${basePath}/${walletCode}`
   const petLabel = pet?.name || 'Kopikas'
 
   return (
