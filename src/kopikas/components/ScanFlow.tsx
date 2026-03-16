@@ -8,6 +8,7 @@ import { getCategoryEmoji } from '../lib/kopikasCategories'
 import { getXpForAction } from '../lib/xpCalculator'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
+import { logger } from '@/lib/logger'
 import type { KopikasCategory } from '../types'
 import { X, Camera, ArrowLeft, Loader2 } from 'lucide-react'
 
@@ -75,7 +76,8 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
         category: (item.category as KopikasCategory) || 'other',
       })))
       setStep('review')
-    } catch {
+    } catch (err) {
+      logger.error('Receipt scan failed', { error: err instanceof Error ? err.message : String(err) })
       setError('Hmm, ma ei saanud aru. Proovi uuesti! 📸')
     } finally {
       setProcessing(false)
