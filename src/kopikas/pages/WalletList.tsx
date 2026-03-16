@@ -62,7 +62,7 @@ export function WalletList() {
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(-1)}
               className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors"
               aria-label="Tagasi"
             >

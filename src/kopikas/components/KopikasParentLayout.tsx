@@ -21,7 +21,7 @@ function ParentInner() {
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
           <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
             <button
-              onClick={() => navigate('/', { state: { fromTrip: true } })}
+              onClick={() => navigate('/kopikas')}
               className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors"
               aria-label="Tagasi"
             >
