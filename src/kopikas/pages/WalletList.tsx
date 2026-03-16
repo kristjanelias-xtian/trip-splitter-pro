@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
 import type { Wallet } from '../types'
-import { ArrowLeft, Loader2, Plus } from 'lucide-react'
+import { Loader2, Plus } from 'lucide-react'
 
 export function WalletList() {
   const { user, loading: authLoading } = useAuth()
-  const navigate = useNavigate()
   const [wallets, setWallets] = useState<Wallet[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -60,16 +59,7 @@ export function WalletList() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors"
-              aria-label="Tagasi"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="font-semibold text-lg">Kopikas</h1>
-          </div>
+          <h1 className="font-semibold text-lg">Kopikas</h1>
           {user && (
             <Link
               to="/kopikas/create"
