@@ -83,6 +83,12 @@ describe('calculateMood', () => {
     expect(result.signals.loggingConsistency).toBe(0)
   })
 
+  it('logging consistency returns 0.5 when only allowances exist (no expenses ever)', () => {
+    const allowance = tx({ type: 'allowance', amount: 50, category: null, created_at: day(0) })
+    const result = calculateMood([allowance], now)
+    expect(result.signals.loggingConsistency).toBeCloseTo(0.5)
+  })
+
   it('category diversity returns ~0.67 for 2 balanced categories', () => {
     const allowance = tx({ type: 'allowance', amount: 50, category: null, created_at: day(6) })
     const expenses = [

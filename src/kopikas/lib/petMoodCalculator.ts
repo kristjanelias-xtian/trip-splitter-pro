@@ -73,9 +73,13 @@ function loggingConsistencySignal(transactions: WalletTransaction[], now: Date):
   // No transactions at all → neutral default
   if (transactions.length === 0) return 0.5
 
+  // Has transactions but no expenses ever (e.g. only allowances) → neutral
+  const allExpenses = transactions.filter((t) => t.type === 'expense')
+  if (allExpenses.length === 0) return 0.5
+
   const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000)
-  const recentExpenses = transactions.filter(
-    (t) => t.type === 'expense' && new Date(t.created_at) >= sevenDaysAgo
+  const recentExpenses = allExpenses.filter(
+    (t) => new Date(t.created_at) >= sevenDaysAgo
   )
 
   if (recentExpenses.length === 0) return 0

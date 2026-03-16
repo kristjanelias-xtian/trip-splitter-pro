@@ -9,7 +9,7 @@ function pickMessage(mood: MoodResult): string {
   const { signals } = mood
 
   // Priority order: specific concerns first, then positive feedback
-  if (signals.loggingConsistency < 0.3) {
+  if (signals.loggingConsistency === 0) {
     return 'Ma igatsen sind... Lisa midagi! 😴'
   }
   if (signals.categoryDiversity < 0.3) {
