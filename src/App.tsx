@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import './i18n'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -14,6 +15,23 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { useToast } from './hooks/use-toast'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
+const KopikasApp = lazy(() => import('./kopikas/app/KopikasApp').then(m => ({ default: m.KopikasApp })))
+
+function isKopikasHost(): boolean {
+  const host = window.location.hostname
+  if (host.startsWith('kopikas.')) return true
+  if (host === 'localhost' || host === '127.0.0.1') {
+    if (new URLSearchParams(window.location.search).get('app') === 'kopikas') {
+      localStorage.setItem('kopikas:dev-mode', 'true')
+      return true
+    }
+    return localStorage.getItem('kopikas:dev-mode') === 'true'
+  }
+  return false
+}
+
+const isKopikas = isKopikasHost()
 
 /** Listens for unhandled promise rejections and shows a toast */
 function UnhandledErrorToaster() {
@@ -78,7 +96,7 @@ function BirthdayGreeting() {
   )
 }
 
-function App() {
+function SplitApp() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
@@ -100,4 +118,19 @@ function App() {
   )
 }
 
-export default App
+function AppRoot() {
+  if (isKopikas) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen bg-[hsl(30,10%,8%)]">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        </div>
+      }>
+        <KopikasApp />
+      </Suspense>
+    )
+  }
+  return <SplitApp />
+}
+
+export default AppRoot

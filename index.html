@@ -4,10 +4,23 @@
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem('spl1t:theme');
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (stored === 'dark' || (!stored || stored === 'system') && prefersDark) {
-            document.documentElement.classList.add('dark');
+          var isKopikas = location.hostname.startsWith('kopikas.') ||
+            new URLSearchParams(location.search).get('app') === 'kopikas' ||
+            localStorage.getItem('kopikas:dev-mode') === 'true';
+          if (isKopikas) {
+            document.documentElement.classList.add('dark', 'kopikas-theme');
+            document.title = 'Kopikas';
+            document.querySelectorAll('meta[name="theme-color"]').forEach(function(m) {
+              m.setAttribute('content', '#d97706');
+            });
+            var appleName = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (appleName) appleName.setAttribute('content', 'Kopikas');
+          } else {
+            var stored = localStorage.getItem('spl1t:theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'dark' || (!stored || stored === 'system') && prefersDark) {
+              document.documentElement.classList.add('dark');
+            }
           }
         } catch (e) {}
       })();

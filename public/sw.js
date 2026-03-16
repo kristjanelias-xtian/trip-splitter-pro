@@ -34,6 +34,9 @@ self.addEventListener('fetch', function (event) {
     return
   }
 
+  // Kopikas domain — never redirect any routes
+  if (self.location.hostname.startsWith('kopikas.')) return
+
   // Kopikas routes are never redirected — they are their own entry point
   if (url.pathname.startsWith('/kopikas/')) return
 
