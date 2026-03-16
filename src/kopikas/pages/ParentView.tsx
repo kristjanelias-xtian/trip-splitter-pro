@@ -1,23 +1,39 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
 import { usePet } from '../hooks/usePet'
 import { useKopikasAuth } from '../app/KopikasAuthProvider'
+import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { TransactionList } from '../components/TransactionList'
 import { EmojiBarChart } from '../components/EmojiBarChart'
 import { Pet } from '../components/Pet'
 import { AllowanceForm } from '../components/AllowanceForm'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 
 export function ParentView() {
-  const { wallet, transactions, balance, loading: walletLoading } = useWallet()
+  const { wallet, transactions, balance, loading: walletLoading, deleteWallet } = useWallet()
   const { pet, mood } = usePet()
   const { user } = useKopikasAuth()
+  const navigate = useNavigate()
+  const basePath = useKopikasBasePath()
   const [allowanceOpen, setAllowanceOpen] = useState(false)
   const [joining, setJoining] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [isMember, setIsMember] = useState<boolean | null>(null)
 
   // Check if current user is a wallet member
@@ -142,6 +158,45 @@ export function ParentView() {
         <h2 className="font-semibold mb-3">Viimased tehingud</h2>
         <TransactionList transactions={transactions} limit={20} />
       </div>
+
+      {/* Delete wallet */}
+      {wallet.created_by === user.id && (
+        <div className="pt-4 border-t border-border">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 size={16} />
+                Kustuta rahakott
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Kustuta rahakott?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  See kustutab rahakoti &quot;{wallet.name}&quot; koos kõigi tehingute ja lemmikuga. Seda ei saa tagasi võtta.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Tühista</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    setDeleting(true)
+                    const success = await deleteWallet()
+                    if (success) {
+                      navigate(basePath)
+                    }
+                    setDeleting(false)
+                  }}
+                >
+                  {deleting ? 'Kustutan...' : 'Kustuta'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
 
       <AllowanceForm open={allowanceOpen} onClose={() => setAllowanceOpen(false)} />
     </div>
