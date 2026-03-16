@@ -33,6 +33,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
   const [items, setItems] = useState<ScannedItem[]>([])
   const [processing, setProcessing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [receiptImagePath, setReceiptImagePath] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editingCategory, setEditingCategory] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -69,6 +70,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
         throw new Error('No items found')
       }
 
+      setReceiptImagePath(parsed.receipt_image_path || null)
       setItems(parsed.items.map((item: { name?: string; price?: number; qty?: number; category?: string }) => ({
         name: item.name || 'Tundmatu',
         price: Number(item.price) || 0,
@@ -111,7 +113,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
     setSubmitting(true)
 
     try {
-      // Create one transaction per item
+      // Create one transaction per item (all share the same receipt image)
       for (const item of items) {
         await addTransaction({
           wallet_id: wallet.id,
@@ -119,6 +121,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
           amount: item.price,
           description: item.name,
           category: item.category,
+          receipt_image_path: receiptImagePath ?? undefined,
         })
       }
 
@@ -140,6 +143,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
       setItems([])
       setError(null)
       setEditingCategory(null)
+      setReceiptImagePath(null)
     }, 300)
   }
 

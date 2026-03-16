@@ -151,10 +151,35 @@ Rules:
 
     const parsed = JSON.parse(jsonStr)
 
+    // Upload receipt image to storage
+    let receiptImagePath: string | null = null
+    try {
+      const imageData = image.replace(/^data:image\/\w+;base64,/, '')
+      const imageBytes = Uint8Array.from(atob(imageData), c => c.charCodeAt(0))
+      const receiptId = crypto.randomUUID()
+      const storagePath = `${wallet.id}/${receiptId}.jpg`
+
+      const { error: uploadError } = await supabase.storage
+        .from('kopikas-receipts')
+        .upload(storagePath, imageBytes, { contentType: 'image/jpeg' })
+
+      if (uploadError) {
+        logger.error('Failed to upload receipt image', { error: uploadError.message })
+      } else {
+        receiptImagePath = storagePath
+      }
+    } catch (uploadErr) {
+      logger.error('Receipt image upload error', { error: uploadErr instanceof Error ? uploadErr.message : String(uploadErr) })
+    }
+
+    // Add receipt path to response
+    parsed.receipt_image_path = receiptImagePath
+
     const duration = performance.now() - requestStart
     logger.info('Receipt processed', {
       wallet_id: wallet.id,
       items: parsed.items?.length ?? 0,
+      receipt_image_path: receiptImagePath,
       duration_ms: Math.round(duration),
     })
     metrics.push([{ name: 'receipts_processed', value: 1, labels: { service_name: 'process-kopikas-receipt' }, type: 'counter' }])
