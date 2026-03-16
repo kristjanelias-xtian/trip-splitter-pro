@@ -37,8 +37,9 @@ describe('xpCalculator', () => {
       return {
         id: crypto.randomUUID(), wallet_id: 'w1', type: 'expense',
         amount: 5, description: null, category: 'food',
-        receipt_image_path: null, created_at: day(0), ...overrides,
-      }
+        receipt_image_path: null, receipt_batch_id: null, vendor: null,
+        created_at: day(0), ...overrides,
+      } as WalletTransaction
     }
 
     it('awards under-budget bonus when balance > 0 after full week', () => {

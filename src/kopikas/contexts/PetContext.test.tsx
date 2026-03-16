@@ -41,9 +41,11 @@ function makeTransaction(overrides: Partial<WalletTransaction> = {}): WalletTran
     description: 'candy',
     category: 'sweets',
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: new Date().toISOString(),
     ...overrides,
-  }
+  } as WalletTransaction
 }
 
 function TestConsumer() {

@@ -15,9 +15,11 @@ function tx(overrides: Partial<WalletTransaction>): WalletTransaction {
     description: null,
     category: 'food',
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: day(0),
     ...overrides,
-  }
+  } as WalletTransaction
 }
 
 describe('calculateMood', () => {

@@ -111,9 +111,11 @@ export function buildWalletTransaction(
     description: `Transaction ${id}`,
     category: 'food',
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: '2026-03-15T10:00:00Z',
     ...overrides,
-  }
+  } as WalletTransaction
 }
 
 export function buildWalletPet(overrides: Partial<WalletPet> = {}): WalletPet {
