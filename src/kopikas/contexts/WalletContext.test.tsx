@@ -34,6 +34,8 @@ const sampleTransactions: WalletTransaction[] = [
     description: 'Weekly allowance',
     category: null,
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: '2025-01-07T10:00:00Z',
   },
   {
@@ -44,6 +46,8 @@ const sampleTransactions: WalletTransaction[] = [
     description: 'Sweets',
     category: 'sweets',
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: '2025-01-08T12:00:00Z',
   },
   {
@@ -54,6 +58,8 @@ const sampleTransactions: WalletTransaction[] = [
     description: 'Bonus',
     category: null,
     receipt_image_path: null,
+    receipt_batch_id: null,
+    vendor: null,
     created_at: '2025-01-09T10:00:00Z',
   },
 ]
@@ -244,6 +250,8 @@ describe('WalletContext', () => {
       description: 'Birthday money',
       category: null,
       receipt_image_path: null,
+      receipt_batch_id: null,
+      vendor: null,
       created_at: new Date().toISOString(),
     }
 

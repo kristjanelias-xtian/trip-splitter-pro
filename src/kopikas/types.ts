@@ -30,6 +30,8 @@ export interface WalletTransaction {
   description: string | null
   category: KopikasCategory | null
   receipt_image_path: string | null
+  receipt_batch_id: string | null
+  vendor: string | null
   created_at: string
 }
 
@@ -40,6 +42,8 @@ export interface CreateTransactionInput {
   description?: string
   category?: KopikasCategory
   receipt_image_path?: string
+  receipt_batch_id?: string
+  vendor?: string
 }
 
 export interface WalletPet {

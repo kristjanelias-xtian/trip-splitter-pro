@@ -34,6 +34,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
   const [processing, setProcessing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [receiptImagePath, setReceiptImagePath] = useState<string | null>(null)
+  const [merchant, setMerchant] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editingCategory, setEditingCategory] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -71,6 +72,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
       }
 
       setReceiptImagePath(parsed.receipt_image_path || null)
+      setMerchant(parsed.merchant || null)
       setItems(parsed.items.map((item: { name?: string; price?: number; qty?: number; category?: string }) => ({
         name: item.name || 'Tundmatu',
         price: Number(item.price) || 0,
@@ -113,7 +115,10 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
     setSubmitting(true)
 
     try {
-      // Create one transaction per item (all share the same receipt image)
+      // All items from one scan share a batch ID for grouping
+      const batchId = crypto.randomUUID()
+
+      // Create one transaction per item (all share the same receipt image + batch)
       for (const item of items) {
         await addTransaction({
           wallet_id: wallet.id,
@@ -122,6 +127,8 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
           description: item.name,
           category: item.category,
           receipt_image_path: receiptImagePath ?? undefined,
+          receipt_batch_id: batchId,
+          vendor: merchant ?? undefined,
         })
       }
 
@@ -144,6 +151,7 @@ export function ScanFlow({ open, onClose }: ScanFlowProps) {
       setError(null)
       setEditingCategory(null)
       setReceiptImagePath(null)
+      setMerchant(null)
     }, 300)
   }
 

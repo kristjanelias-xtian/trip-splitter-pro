@@ -144,6 +144,8 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       description: input.description ?? null,
       category: input.category ?? null,
       receipt_image_path: input.receipt_image_path ?? null,
+      receipt_batch_id: input.receipt_batch_id ?? null,
+      vendor: input.vendor ?? null,
       created_at: new Date().toISOString(),
     }
     setTransactions((prev) => [optimisticTx, ...prev])
