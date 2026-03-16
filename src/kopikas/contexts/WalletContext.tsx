@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { useAbortController } from '@/hooks/useAbortController'
-import type { Wallet, WalletTransaction, CreateTransactionInput } from '../types'
+import type { Wallet, WalletTransaction, CreateTransactionInput, KopikasCategory } from '../types'
 
 interface WalletContextValue {
   wallet: Wallet | null
@@ -14,6 +14,7 @@ interface WalletContextValue {
   balance: number
   lastAllowance: WalletTransaction | null
   addTransaction: (input: CreateTransactionInput) => Promise<WalletTransaction | null>
+  updateTransactionCategory: (txId: string, oldCategory: KopikasCategory, newCategory: KopikasCategory, description: string | null) => Promise<boolean>
   deleteWallet: () => Promise<boolean>
   refreshTransactions: () => Promise<void>
   clearError: () => void
@@ -185,6 +186,59 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }
   }
 
+  const updateTransactionCategory = async (
+    txId: string,
+    oldCategory: KopikasCategory,
+    newCategory: KopikasCategory,
+    description: string | null,
+  ): Promise<boolean> => {
+    if (!wallet || oldCategory === newCategory) return false
+
+    // Optimistic update
+    setTransactions((prev) =>
+      prev.map((tx) => tx.id === txId ? { ...tx, category: newCategory } : tx)
+    )
+
+    try {
+      const { error: updateError } = await withTimeout(
+        (supabase.from('wallet_transactions' as any) as any)
+          .update({ category: newCategory })
+          .eq('id', txId),
+        15000,
+        'Kategooria muutmine aegus.'
+      ) as { error: any }
+
+      if (updateError) {
+        logger.error('Failed to update transaction category', { tx_id: txId, error: updateError.message })
+        setError('Kategooria muutmine ebaõnnestus.')
+        // Roll back
+        setTransactions((prev) =>
+          prev.map((tx) => tx.id === txId ? { ...tx, category: oldCategory } : tx)
+        )
+        return false
+      }
+
+      // Log correction for AI learning (fire and forget)
+      ;(supabase.from('wallet_category_corrections' as any) as any)
+        .insert({
+          wallet_id: wallet.id,
+          item_description: description || '',
+          original_category: oldCategory,
+          corrected_category: newCategory,
+        })
+        .then(() => {})
+
+      return true
+    } catch (err) {
+      logger.error('Failed to update transaction category', { tx_id: txId, error: err instanceof Error ? err.message : String(err) })
+      setError('Kategooria muutmine ebaõnnestus.')
+      setTransactions((prev) =>
+        prev.map((tx) => tx.id === txId ? { ...tx, category: oldCategory } : tx)
+      )
+      return false
+    }
+  }
+
   const deleteWallet = async (): Promise<boolean> => {
     if (!wallet) return false
     try {
@@ -218,6 +272,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     balance,
     lastAllowance,
     addTransaction,
+    updateTransactionCategory,
     deleteWallet,
     refreshTransactions,
     clearError,
