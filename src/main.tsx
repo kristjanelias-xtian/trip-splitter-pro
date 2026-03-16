@@ -45,7 +45,7 @@ const isStandalone =
   ('standalone' in navigator && (navigator as unknown as { standalone: boolean }).standalone === true) ||
   window.matchMedia('(display-mode: standalone)').matches
 
-if (isStandalone && window.location.pathname.startsWith('/t/')) {
+if (isStandalone && window.location.pathname.startsWith('/t/') && !window.location.pathname.startsWith('/kopikas/')) {
   window.location.replace('/')
 } else {
   ReactDOM.createRoot(document.getElementById('root')!).render(

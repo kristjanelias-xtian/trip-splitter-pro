@@ -25,6 +25,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import { useMyTripBalances } from '@/hooks/useMyTripBalances'
 import { motion } from 'framer-motion'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { KopikasHomeSection } from '@/kopikas/components/KopikasHomeSection'
 
 const DEMO_TRIP_CODE = 'livigno-2025'
 
@@ -449,6 +450,9 @@ export function HomePage() {
         <div>
           {isAuthenticated ? renderAuthenticatedTrips() : renderLocalTrips()}
         </div>
+
+        {/* Kopikas section — authenticated parents */}
+        {user && <KopikasHomeSection userId={user.id} />}
 
         {/* Footer: theme toggle (for anon users) + What's New */}
         <div className="mt-8 flex flex-col items-center gap-3">

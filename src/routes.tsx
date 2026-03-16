@@ -18,6 +18,14 @@ import { AdminAllTripsPage } from './pages/AdminAllTripsPage'
 import { TripNotFoundPage } from './pages/TripNotFoundPage'
 import { QuickGroupDetailPage } from './pages/QuickGroupDetailPage'
 import { QuickHistoryPage } from './pages/QuickHistoryPage'
+import { KopikasLayout } from './kopikas/components/KopikasLayout'
+import { KopikasParentLayout } from './kopikas/components/KopikasParentLayout'
+import { KopikasHome } from './kopikas/pages/KopikasHome'
+import { Analytics } from './kopikas/pages/Analytics'
+import { PetDetail } from './kopikas/pages/PetDetail'
+import { History } from './kopikas/pages/History'
+import { ParentView } from './kopikas/pages/ParentView'
+import { CreateWallet } from './kopikas/pages/CreateWallet'
 import { useUserPreferences } from './contexts/UserPreferencesContext'
 import { useAuth } from './contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
@@ -60,6 +68,18 @@ export function AppRoutes() {
       <Route path="/t/:tripCode/quick" element={<QuickLayout />}>
         <Route index element={<ErrorBoundary><QuickGroupDetailPage /></ErrorBoundary>} />
         <Route path="history" element={<ErrorBoundary><QuickHistoryPage /></ErrorBoundary>} />
+      </Route>
+
+      {/* Kopikas routes — outside Spl1t layouts */}
+      <Route path="kopikas/create" element={<ErrorBoundary><CreateWallet /></ErrorBoundary>} />
+      <Route path="kopikas/:walletCode" element={<KopikasLayout />}>
+        <Route index element={<ErrorBoundary><KopikasHome /></ErrorBoundary>} />
+        <Route path="analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
+        <Route path="pet" element={<ErrorBoundary><PetDetail /></ErrorBoundary>} />
+        <Route path="history" element={<ErrorBoundary><History /></ErrorBoundary>} />
+      </Route>
+      <Route path="kopikas/:walletCode/parent" element={<KopikasParentLayout />}>
+        <Route index element={<ErrorBoundary><ParentView /></ErrorBoundary>} />
       </Route>
 
       {/* Full Mode routes */}
