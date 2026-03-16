@@ -61,7 +61,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
           .order('created_at', { ascending: false })
           .abortSignal(signal),
         15000,
-        'Loading wallet transactions timed out. Please check your connection and try again.'
+        'Tehingute laadimine aegus. Kontrolli ühendust ja proovi uuesti.'
       )
 
       if (signal.aborted) return
@@ -69,7 +69,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       if (fetchError) {
         logger.error('Failed to fetch wallet transactions', { wallet_id: walletId, error: fetchError.message })
         setTransactions([])
-        setError('Failed to load transactions.')
+        setError('Tehingute laadimine ebaõnnestus.')
       } else {
         setTransactions((data as WalletTransaction[]) || [])
       }
@@ -77,7 +77,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       if ((err as any)?.name === 'AbortError' || signal.aborted) return
       logger.error('Failed to fetch wallet transactions', { wallet_id: walletId, error: err instanceof Error ? err.message : String(err) })
       setTransactions([])
-      setError('Failed to load transactions.')
+      setError('Tehingute laadimine ebaõnnestus.')
     }
   }
 
@@ -94,7 +94,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
           .single()
           .abortSignal(signal),
         15000,
-        'Loading wallet timed out. Please check your connection and try again.'
+        'Rahakoti laadimine aegus. Kontrolli ühendust ja proovi uuesti.'
       )
 
       if (signal.aborted) return
@@ -102,7 +102,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       if (fetchError) {
         logger.error('Failed to fetch wallet', { wallet_code: walletCode, error: fetchError.message })
         setWallet(null)
-        setError('Wallet not found.')
+        setError('Rahakotti ei leitud.')
         setLoading(false)
         return
       }
@@ -114,7 +114,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       if ((err as any)?.name === 'AbortError' || signal.aborted) return
       logger.error('Failed to fetch wallet', { wallet_code: walletCode, error: err instanceof Error ? err.message : String(err) })
       setWallet(null)
-      setError('Failed to load wallet.')
+      setError('Rahakoti laadimine ebaõnnestus.')
     } finally {
       if (!signal.aborted) {
         setLoading(false)
@@ -157,13 +157,13 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
           .single()
           .abortSignal(controller.signal),
         15000,
-        'Adding transaction timed out. Please check your connection and try again.',
+        'Tehingu lisamine aegus. Kontrolli ühendust ja proovi uuesti.',
         controller
       )
 
       if (insertError) {
         logger.error('Failed to add wallet transaction', { wallet_id: input.wallet_id, error: insertError.message })
-        setError('Failed to add transaction.')
+        setError('Tehingu lisamine ebaõnnestus.')
         // Roll back optimistic insert
         setTransactions((prev) => prev.filter((tx) => tx.id !== optimisticId))
         return null
@@ -175,7 +175,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
       return savedTx
     } catch (err) {
       logger.error('Failed to add wallet transaction', { wallet_id: input.wallet_id, error: err instanceof Error ? err.message : String(err) })
-      setError('Failed to add transaction.')
+      setError('Tehingu lisamine ebaõnnestus.')
       // Roll back optimistic insert
       setTransactions((prev) => prev.filter((tx) => tx.id !== optimisticId))
       return null
