@@ -230,7 +230,7 @@ describe('WalletContext', () => {
       expect(screen.getByTestId('loading').textContent).toBe('false')
     })
 
-    expect(screen.getByTestId('error').textContent).toBe('Wallet not found.')
+    expect(screen.getByTestId('error').textContent).toBe('Rahakotti ei leitud.')
     expect(screen.getByTestId('wallet-name').textContent).toBe('none')
   })
 

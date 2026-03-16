@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useKopikasAuth } from '../app/KopikasAuthProvider'
+import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
@@ -9,7 +10,8 @@ import type { Wallet } from '../types'
 import { Loader2, Plus } from 'lucide-react'
 
 export function WalletList() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useKopikasAuth()
+  const basePath = useKopikasBasePath()
   const [wallets, setWallets] = useState<Wallet[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -62,7 +64,7 @@ export function WalletList() {
           <h1 className="font-semibold text-lg">Kopikas</h1>
           {user && (
             <Link
-              to="/kopikas/create"
+              to={`${basePath}/create`}
               className="rounded-full w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground"
               aria-label="Loo uus"
             >
@@ -88,7 +90,7 @@ export function WalletList() {
             <p className="text-lg font-medium mb-2">Sul pole veel rahakotte</p>
             <p className="text-sm text-muted-foreground mb-6">Loo oma lapsele taskuraha rahakott</p>
             <Link
-              to="/kopikas/create"
+              to={`${basePath}/create`}
               className="inline-block px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium"
             >
               Loo rahakott
@@ -104,13 +106,13 @@ export function WalletList() {
                 </div>
                 <div className="flex border-t border-border divide-x divide-border">
                   <Link
-                    to={`/kopikas/${w.wallet_code}`}
+                    to={`${basePath}/${w.wallet_code}`}
                     className="flex-1 py-2.5 text-center text-sm font-medium text-primary hover:bg-muted/50 transition-colors"
                   >
                     Lapse vaade
                   </Link>
                   <Link
-                    to={`/kopikas/${w.wallet_code}/parent`}
+                    to={`${basePath}/${w.wallet_code}/parent`}
                     className="flex-1 py-2.5 text-center text-sm font-medium text-primary hover:bg-muted/50 transition-colors"
                   >
                     Vanema vaade

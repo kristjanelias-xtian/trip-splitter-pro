@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useKopikasAuth } from '../app/KopikasAuthProvider'
+import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { supabase } from '@/lib/supabase'
 import { withTimeout } from '@/lib/fetchWithTimeout'
 import { generateTripCode } from '@/lib/tripCodeGenerator'
@@ -10,8 +11,9 @@ import { STARTER_EMOJIS } from '../types'
 import { ArrowLeft } from 'lucide-react'
 
 export function CreateWallet() {
-  const { user } = useAuth()
+  const { user } = useKopikasAuth()
   const navigate = useNavigate()
+  const basePath = useKopikasBasePath()
   const [kidName, setKidName] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +65,7 @@ export function CreateWallet() {
         'Lemmiku loomine aegus'
       )
 
-      navigate(`/kopikas/${walletCode}/parent`)
+      navigate(`${basePath}/${walletCode}/parent`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Rahakoti loomine ebaõnnestus'
       setError(msg)

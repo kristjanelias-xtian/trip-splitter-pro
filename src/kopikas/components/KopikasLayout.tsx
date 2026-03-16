@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { KopikasRouteGuard } from './KopikasRouteGuard'
+import { KopikasAuthBridge } from './KopikasAuthBridge'
 import { PetProvider } from '../contexts/PetContext'
 import { KopikasTabBar } from './KopikasTabBar'
 import { NamePetSheet } from './NamePetSheet'
@@ -13,14 +14,6 @@ function KopikasInner() {
 
   useEffect(() => {
     document.title = 'Kopikas'
-  }, [])
-
-  useEffect(() => {
-    // Default to dark mode for Kopikas (optimized for pet visuals)
-    if (!localStorage.getItem('spl1t:theme')) {
-      localStorage.setItem('spl1t:theme', 'dark')
-      document.documentElement.classList.add('dark')
-    }
   }, [])
 
   return (
@@ -40,7 +33,9 @@ export function KopikasLayout() {
   return (
     <ErrorBoundary>
       <KopikasRouteGuard>
-        <KopikasInner />
+        <KopikasAuthBridge>
+          <KopikasInner />
+        </KopikasAuthBridge>
       </KopikasRouteGuard>
     </ErrorBoundary>
   )

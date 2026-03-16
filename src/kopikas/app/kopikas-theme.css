@@ -1,0 +1,39 @@
+/* Kopikas — Amber/Gold theme (dark only) */
+.kopikas-theme {
+  --background: 30 10% 8%;
+  --foreground: 40 20% 95%;
+
+  --card: 30 10% 11%;
+  --card-foreground: 40 20% 95%;
+
+  --popover: 30 10% 11%;
+  --popover-foreground: 40 20% 95%;
+
+  --primary: 43 96% 56%;
+  --primary-foreground: 30 10% 8%;
+
+  --secondary: 43 60% 30%;
+  --secondary-foreground: 40 20% 95%;
+
+  --muted: 30 10% 15%;
+  --muted-foreground: 40 10% 55%;
+
+  --accent: 43 96% 56%;
+  --accent-foreground: 30 10% 8%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 40 20% 95%;
+
+  --border: 40 10% 18%;
+  --input: 40 10% 18%;
+  --ring: 43 96% 56%;
+
+  --positive: 142 71% 55%;
+  --positive-foreground: 30 10% 8%;
+  --negative: 0 84% 60%;
+  --negative-foreground: 40 20% 95%;
+
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.40);
+  --shadow-soft-md: 0 4px 12px rgba(0, 0, 0, 0.50);
+  --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.60);
+}
