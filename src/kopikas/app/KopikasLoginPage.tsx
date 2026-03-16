@@ -18,8 +18,8 @@ export function KopikasLoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">Kopikas</h1>
+      <div className="flex flex-col items-center mb-8">
+        <img src="/kopikas-logo.png" alt="Kopikas" className="h-12 mb-3" />
         <p className="text-muted-foreground">Lapse taskuraha, mänguliselt</p>
       </div>
 

@@ -15,6 +15,15 @@
             });
             var appleName = document.querySelector('meta[name="apple-mobile-web-app-title"]');
             if (appleName) appleName.setAttribute('content', 'Kopikas');
+            // Swap icons and manifest for Kopikas
+            var favicon32 = document.querySelector('link[rel="icon"][sizes="32x32"]');
+            if (favicon32) favicon32.href = '/kopikas-favicon.png';
+            var favicon16 = document.querySelector('link[rel="icon"][sizes="16x16"]');
+            if (favicon16) favicon16.href = '/kopikas-favicon.png';
+            var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+            if (appleIcon) appleIcon.href = '/kopikas-apple-touch-icon.png';
+            var manifest = document.querySelector('link[rel="manifest"]');
+            if (manifest) manifest.href = '/kopikas-manifest.webmanifest';
           } else {
             var stored = localStorage.getItem('spl1t:theme');
             var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
