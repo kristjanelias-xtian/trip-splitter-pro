@@ -64,7 +64,7 @@ export function Pet({ mood, level, size = 'md' }: PetProps) {
   const eyeColor = lvl <= 2 ? '#5c4a2a' : '#78350f'
 
   return (
-    <div className="relative inline-flex flex-col items-center">
+    <div className={`relative inline-flex flex-col items-center ${animation}`}>
       {/* Crown for level 4+ */}
       {level >= 4 && (
         <span className="z-10" style={{ fontSize: s(16, px), marginBottom: s(-4, px) }}>👑</span>
@@ -72,7 +72,7 @@ export function Pet({ mood, level, size = 'md' }: PetProps) {
 
       {/* Main body */}
       <div
-        className={`rounded-full ${animation}
+        className={`rounded-full
           flex items-center justify-center relative
           ${level >= 5 ? 'ring-2 ring-amber-400/30' : ''}
           ${mood === 'worried' ? 'scale-95 opacity-85' : ''}
