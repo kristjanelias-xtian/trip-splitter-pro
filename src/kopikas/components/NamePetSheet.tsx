@@ -37,7 +37,7 @@ export function NamePetSheet() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-          <Pet mood={mood.tier} level={1} starterEmoji={pet.starter_emoji} size="lg" />
+          <Pet mood={mood.tier} level={1} size="lg" />
 
           <input
             type="text"

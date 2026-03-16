@@ -80,9 +80,9 @@ export interface CategoryCorrection {
 }
 
 export const PET_LEVELS = [
-  { level: 1, xpNeeded: 0, description: 'Väike klõmps, lihtsad silmad' },
-  { level: 2, xpNeeded: 100, description: 'Natuke suurem, sai suu' },
-  { level: 3, xpNeeded: 300, description: 'Punased põsed, kerge sära' },
+  { level: 1, xpNeeded: 0, description: 'Väike põrsas, uudishimulikud silmad' },
+  { level: 2, xpNeeded: 100, description: 'Natuke särtsakam, sai suu' },
+  { level: 3, xpNeeded: 300, description: 'Metallikläige, punased põsed' },
   { level: 4, xpNeeded: 600, description: 'Sai krooni!' },
   { level: 5, xpNeeded: 1000, description: 'Täis sära, sädemeid ja ilu!' },
 ] as const
