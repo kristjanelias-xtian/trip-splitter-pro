@@ -8,6 +8,7 @@ import { withTimeout } from '@/lib/fetchWithTimeout'
 import { logger } from '@/lib/logger'
 import type { Wallet } from '../types'
 import { Loader2, Plus } from 'lucide-react'
+import { KopikasUserMenu } from '../components/KopikasUserMenu'
 
 export function WalletList() {
   const { user, loading: authLoading } = useKopikasAuth()
@@ -62,15 +63,18 @@ export function WalletList() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <img src="/kopikas-logo.png" alt="Kopikas" className="h-7" />
-          {user && (
-            <Link
-              to={`${basePath}/create`}
-              className="rounded-full w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground"
-              aria-label="Loo uus"
-            >
-              <Plus className="w-4 h-4" />
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            <KopikasUserMenu />
+            {user && (
+              <Link
+                to={`${basePath}/create`}
+                className="rounded-full w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground"
+                aria-label="Loo uus"
+              >
+                <Plus className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
