@@ -77,7 +77,7 @@ export function CreateWallet() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur pwa-safe-top">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
           <button onClick={() => navigate(-1)}
             className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors">

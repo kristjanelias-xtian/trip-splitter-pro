@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useKopikasAuth } from './KopikasAuthProvider'
 import { Pet } from '../components/Pet'
+import { GoogleLogin } from '@react-oauth/google'
+import { logger } from '@/lib/logger'
 import { ScanLine, Heart, Users } from 'lucide-react'
 
 export function KopikasLandingPage() {
@@ -8,7 +10,7 @@ export function KopikasLandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="py-6 px-4 flex justify-center">
+      <header className="py-6 px-4 flex justify-center pwa-safe-top">
         <img src="/kopikas-logo.png" alt="Kopikas" className="h-10" />
       </header>
 
@@ -54,12 +56,19 @@ export function KopikasLandingPage() {
           </div>
         </div>
 
-        <button
-          onClick={signInWithGoogle}
-          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium mb-4"
-        >
-          Alusta — logi sisse
-        </button>
+        <GoogleLogin
+          onSuccess={(response) => {
+            if (response.credential) {
+              signInWithGoogle(response.credential)
+            }
+          }}
+          onError={() => {
+            logger.error('Google Sign-In failed')
+          }}
+          size="large"
+          theme="outline"
+          text="signin_with"
+        />
 
         <p className="text-xs text-muted-foreground text-center">
           Oled laps? Küsi oma linki vanemalt.

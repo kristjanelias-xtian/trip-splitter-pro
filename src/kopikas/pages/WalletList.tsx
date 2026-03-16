@@ -60,7 +60,7 @@ export function WalletList() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur pwa-safe-top">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <img src="/kopikas-logo.png" alt="Kopikas" className="h-7" />
           <div className="flex items-center gap-2">
