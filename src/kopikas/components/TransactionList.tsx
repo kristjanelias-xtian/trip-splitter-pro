@@ -14,17 +14,29 @@ interface TransactionListProps {
   limit?: number
 }
 
-function relativeDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / 86400000)
+function toDateKey(dateStr: string): string {
+  return new Date(dateStr).toISOString().slice(0, 10)
+}
 
-  if (diffDays === 0) return 'Täna'
-  if (diffDays === 1) return 'Eile'
-  if (diffDays < 7) return `${diffDays} päeva tagasi`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} nädalat tagasi`
-  return `${Math.floor(diffDays / 30)} kuud tagasi`
+function formatDateLabel(dateKey: string): string {
+  const now = new Date()
+  const date = new Date(dateKey + 'T12:00:00')
+  const todayKey = toDateKey(now.toISOString())
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayKey = toDateKey(yesterday.toISOString())
+
+  if (dateKey === todayKey) return 'Täna'
+  if (dateKey === yesterdayKey) return 'Eile'
+
+  return date.toLocaleDateString('et-EE', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+interface DayGroup {
+  dateKey: string
+  entries: ListEntry[]
+  spent: number
+  received: number
 }
 
 function formatAmount(amount: number): string {
@@ -143,6 +155,28 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
     return limit ? grouped.slice(0, limit) : grouped
   }, [transactions, limit])
 
+  const dayGroups = useMemo(() => {
+    const groups = new Map<string, { entries: ListEntry[]; spent: number; received: number }>()
+    for (const entry of entries) {
+      const dateStr = entry.kind === 'single' ? entry.tx.created_at : entry.date
+      const key = toDateKey(dateStr)
+      if (!groups.has(key)) groups.set(key, { entries: [], spent: 0, received: 0 })
+      const group = groups.get(key)!
+      group.entries.push(entry)
+      if (entry.kind === 'single') {
+        if (entry.tx.type === 'allowance') group.received += entry.tx.amount
+        else group.spent += entry.tx.amount
+      } else {
+        group.spent += entry.total
+      }
+    }
+    // Sort date keys descending (newest first)
+    const sorted: DayGroup[] = [...groups.entries()]
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([dateKey, g]) => ({ dateKey, ...g }))
+    return sorted
+  }, [entries])
+
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev)
@@ -160,116 +194,132 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
     )
   }
 
-  return (
-    <>
-      <ul className="divide-y divide-border">
-        {entries.map(entry => {
-          if (entry.kind === 'single') {
-            const tx = entry.tx
-            return (
-              <li
+  const renderEntry = (entry: ListEntry) => {
+    if (entry.kind === 'single') {
+      const tx = entry.tx
+      return (
+        <li
+          key={tx.id}
+          className={`flex items-center gap-3 py-3 px-1 ${tx.type === 'expense' || tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
+          onClick={() => {
+            if (tx.type === 'expense' && tx.category) {
+              openEditSheet(tx)
+            } else if (tx.receipt_image_path) {
+              setReceiptUrl(getReceiptUrl(tx.receipt_image_path))
+            }
+          }}
+        >
+          <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center">
+            {tx.type === 'allowance'
+              ? <Wallet size={18} className="text-green-500" />
+              : <span className="text-lg">{getCategoryEmoji(tx.category!)}</span>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm truncate">
+              {tx.description || (tx.type === 'allowance' ? 'Taskuraha' : 'Kulu')}
+            </p>
+            {tx.receipt_image_path && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Receipt size={12} className="text-muted-foreground" />
+              </p>
+            )}
+          </div>
+          <span className={`text-sm font-medium tabular-nums ${
+            tx.type === 'allowance' ? 'text-green-500' : 'text-foreground'
+          }`}>
+            {tx.type === 'allowance' ? '+' : '-'}{formatAmount(tx.amount)}
+          </span>
+        </li>
+      )
+    }
+
+    // Receipt group
+    const isExpanded = expandedGroups.has(entry.groupKey)
+    return (
+      <li key={entry.groupKey} className="py-1">
+        <div
+          className="flex items-center gap-3 py-3 px-1 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
+          onClick={() => toggleGroup(entry.groupKey)}
+        >
+          <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-muted">
+            <Receipt size={16} className="text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {entry.vendor || 'Kviitung'}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              {entry.items.length} kirjet
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium tabular-nums">
+              -{formatAmount(entry.total)}
+            </span>
+            {isExpanded
+              ? <ChevronDown size={16} className="text-muted-foreground" />
+              : <ChevronRight size={16} className="text-muted-foreground" />
+            }
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="ml-4 border-l-2 border-border pl-3 mb-2">
+            {entry.items.map(tx => (
+              <div
                 key={tx.id}
-                className={`flex items-center gap-3 py-3 px-1 ${tx.type === 'expense' || tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
-                onClick={() => {
-                  if (tx.type === 'expense' && tx.category) {
-                    openEditSheet(tx)
-                  } else if (tx.receipt_image_path) {
-                    setReceiptUrl(getReceiptUrl(tx.receipt_image_path))
-                  }
+                className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors px-1 -mx-1"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (tx.category) openEditSheet(tx)
                 }}
               >
-                <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center">
-                  {tx.type === 'allowance'
-                    ? <Wallet size={18} className="text-green-500" />
-                    : <span className="text-lg">{getCategoryEmoji(tx.category!)}</span>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm truncate">
-                    {tx.description || (tx.type === 'allowance' ? 'Taskuraha' : 'Kulu')}
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {relativeDate(tx.created_at)}
-                    {tx.receipt_image_path && <Receipt size={12} className="text-muted-foreground" />}
-                  </p>
-                </div>
-                <span className={`text-sm font-medium tabular-nums ${
-                  tx.type === 'allowance' ? 'text-green-500' : 'text-foreground'
-                }`}>
-                  {tx.type === 'allowance' ? '+' : '-'}{formatAmount(tx.amount)}
-                </span>
-              </li>
-            )
-          }
-
-          // Receipt group
-          const isExpanded = expandedGroups.has(entry.groupKey)
-          return (
-            <li key={entry.groupKey} className="py-1">
-              {/* Group header */}
-              <div
-                className="flex items-center gap-3 py-3 px-1 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
-                onClick={() => toggleGroup(entry.groupKey)}
-              >
-                <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-muted">
-                  <Receipt size={16} className="text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {entry.vendor || 'Kviitung'}
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {relativeDate(entry.date)}
-                    <span className="text-muted-foreground/60">·</span>
-                    {entry.items.length} kirjet
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium tabular-nums">
-                    -{formatAmount(entry.total)}
-                  </span>
-                  {isExpanded
-                    ? <ChevronDown size={16} className="text-muted-foreground" />
-                    : <ChevronRight size={16} className="text-muted-foreground" />
-                  }
-                </div>
+                <span className="text-sm shrink-0">{getCategoryEmoji(tx.category!)}</span>
+                <p className="text-sm truncate flex-1 text-muted-foreground">{tx.description || 'Kulu'}</p>
+                <span className="text-sm tabular-nums text-muted-foreground">{formatAmount(tx.amount)}</span>
               </div>
+            ))}
+            {entry.receiptImagePath && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setReceiptUrl(getReceiptUrl(entry.receiptImagePath!))
+                }}
+                className="flex items-center gap-1.5 text-xs text-primary hover:underline mt-1 mb-1"
+              >
+                <Receipt size={12} />
+                Vaata kviitungit
+              </button>
+            )}
+          </div>
+        )}
+      </li>
+    )
+  }
 
-              {/* Expanded items */}
-              {isExpanded && (
-                <div className="ml-4 border-l-2 border-border pl-3 mb-2">
-                  {entry.items.map(tx => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors px-1 -mx-1"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (tx.category) openEditSheet(tx)
-                      }}
-                    >
-                      <span className="text-sm shrink-0">{getCategoryEmoji(tx.category!)}</span>
-                      <p className="text-sm truncate flex-1 text-muted-foreground">{tx.description || 'Kulu'}</p>
-                      <span className="text-sm tabular-nums text-muted-foreground">{formatAmount(tx.amount)}</span>
-                    </div>
-                  ))}
-                  {entry.receiptImagePath && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setReceiptUrl(getReceiptUrl(entry.receiptImagePath!))
-                      }}
-                      className="flex items-center gap-1.5 text-xs text-primary hover:underline mt-1 mb-1"
-                    >
-                      <Receipt size={12} />
-                      Vaata kviitungit
-                    </button>
-                  )}
-                </div>
-              )}
-            </li>
-          )
-        })}
-      </ul>
+  return (
+    <>
+      <div className="space-y-1">
+        {dayGroups.map(day => (
+          <div key={day.dateKey}>
+            {/* Day header */}
+            <div className="flex items-center justify-between py-2 px-1">
+              <span className="text-xs font-medium text-muted-foreground">
+                {formatDateLabel(day.dateKey)}
+              </span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {day.spent > 0 && <span>-{formatAmount(day.spent)}</span>}
+                {day.spent > 0 && day.received > 0 && <span className="mx-1">·</span>}
+                {day.received > 0 && <span className="text-green-500">+{formatAmount(day.received)}</span>}
+              </span>
+            </div>
+            <ul className="divide-y divide-border">
+              {day.entries.map(renderEntry)}
+            </ul>
+          </div>
+        ))}
+      </div>
 
       {/* Transaction edit sheet */}
       <Sheet open={!!editingTx} onOpenChange={(open) => { if (!open) setEditingTx(null) }}>
