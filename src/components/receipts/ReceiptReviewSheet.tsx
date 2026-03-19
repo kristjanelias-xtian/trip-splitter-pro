@@ -190,7 +190,7 @@ export function ReceiptReviewSheet({
   const [submitting, setSubmitting] = useState(false)
   const [showAllItems, setShowAllItems] = useState(true)
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
-  const [showThumbnail, setShowThumbnail] = useState(false)
+  const [showThumbnail, setShowThumbnail] = useState(true)
 
   // Currency options: trip's known currencies + extracted currency if not already present
   const currencyOptions = useMemo(() => {

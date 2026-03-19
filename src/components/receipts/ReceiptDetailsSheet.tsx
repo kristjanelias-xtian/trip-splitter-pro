@@ -7,6 +7,7 @@ import { ReceiptTask } from '@/types/receipt'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { ResponsiveOverlay } from '@/components/ui/ResponsiveOverlay'
+import { useParticipantContext } from '@/contexts/ParticipantContext'
 
 interface ReceiptDetailsSheetProps {
   open: boolean
@@ -18,11 +19,14 @@ interface ReceiptDetailsSheetProps {
 
 export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, onReprocess }: ReceiptDetailsSheetProps) {
   const { t } = useTranslation()
+  const { participants } = useParticipantContext()
   const items = task.extracted_items ?? []
   const currency = task.extracted_currency ?? '—'
+  const scanner = participants.find(p => p.user_id === task.created_by)
+  const scannerName = scanner?.nickname || scanner?.name || null
 
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
-  const [showThumbnail, setShowThumbnail] = useState(false)
+  const [showThumbnail, setShowThumbnail] = useState(true)
 
   useEffect(() => {
     if (!open || !task.receipt_image_path) {
@@ -84,6 +88,12 @@ export function ReceiptDetailsSheet({ open, onOpenChange, task, canReprocess, on
               />
             )}
           </div>
+        )}
+
+        {scannerName && (
+          <p className="text-xs text-muted-foreground">
+            {t('receipt.scannedBy', { name: scannerName })}
+          </p>
         )}
 
         {items.length === 0 ? (
