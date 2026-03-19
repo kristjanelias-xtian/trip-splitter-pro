@@ -512,7 +512,8 @@
     "imageTooLarge": "Pilt on liiga suur. Palun kasuta selgemat, väiksemat fotot.",
     "receiptError": "Kviitungi viga",
     "toggleAll": "Lülita kõik",
-    "splitItem": "Jaga {{count}} eraldi artikliks"
+    "splitItem": "Jaga {{count}} eraldi artikliks",
+    "scannedBy": "Skaneeris {{name}}"
   },
   "participants": {
     "addParticipants": "Lisa osalejaid",

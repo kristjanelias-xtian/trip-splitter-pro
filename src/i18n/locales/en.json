@@ -512,7 +512,8 @@
     "imageTooLarge": "Image is too large. Please use a clearer, smaller photo.",
     "receiptError": "Receipt error",
     "toggleAll": "Toggle all",
-    "splitItem": "Split into {{count}} individual items"
+    "splitItem": "Split into {{count}} individual items",
+    "scannedBy": "Scanned by {{name}}"
   },
   "participants": {
     "addParticipants": "Add Participants",
