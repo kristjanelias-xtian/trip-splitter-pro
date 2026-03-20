@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { buildShortNameMap } from '@/lib/participantUtils'
+import { ReactionBar } from '@/components/reactions/ReactionBar'
 
 interface ExpenseCardProps {
   expense: Expense
@@ -119,6 +120,8 @@ export function ExpenseCard({ expense, onEdit, onDelete, onViewReceipt }: Expens
                     {t(`expenses.category${expense.category}`)}
                   </Badge>
                 </div>
+
+                <ReactionBar expenseId={expense.id} />
 
                 {expense.comment && (
                   <p className="text-xs text-muted-foreground italic bg-accent/10 px-2 py-1 rounded">
