@@ -53,7 +53,7 @@ Inline reaction bar below the existing metadata row (date + category badge) on `
 **3. Not logged in / not linked to trip:**
 - Reaction pills visible (read-only) with counts, slightly dimmed
 - No "+" button
-- Tapping a pill does nothing (or optionally shows a "Sign in to react" nudge)
+- Tapping a pill does nothing — no login nudge (keep it simple)
 
 ### Emoji Picker
 
@@ -61,12 +61,16 @@ Inline reaction bar below the existing metadata row (date + category badge) on `
 - Shows all 6 emoji in a single row
 - Tap an emoji → reaction added (INSERT), popover closes
 - If the user already reacted with that emoji, it's dimmed/disabled in the picker
+- If all 6 emoji are already used, hide the "+" button (nothing left to pick)
 - Click outside → popover closes
+- Uses Radix `Popover` (consistent with ReactionPopover)
 
-### Who Reacted (tooltip)
+### Who Reacted (Popover)
 
-- **Mobile:** tap a reaction pill → tooltip appears above the pill showing participant short names (from `buildShortNameMap`). If the current user has reacted with that emoji, tooltip includes a "Remove" link. Tap elsewhere → dismisses.
-- **Desktop:** hover → tooltip with names. If it's the user's reaction, tooltip includes "Remove" link.
+Uses Radix `Popover` (not `Tooltip` — Radix Tooltip does not respond to taps on mobile).
+
+- **Mobile:** tap a reaction pill → popover appears above the pill showing participant short names (from `buildShortNameMap`). If the current user has reacted with that emoji, popover includes a "Remove" link. Tap elsewhere → dismisses.
+- **Desktop:** same popover on click (consistent cross-platform behavior).
 
 ### Interaction Flow
 
@@ -76,11 +80,11 @@ Inline reaction bar below the existing metadata row (date + category badge) on `
 3. Pill appears or count increments; pill gets "yours" highlight
 
 **Viewing who reacted:**
-1. Tap (mobile) / hover (desktop) any reaction pill → tooltip with names
-2. If it's your reaction, tooltip shows "Remove" link
+1. Click/tap any reaction pill → popover with names
+2. If it's your reaction, popover shows "Remove" link
 
 **Removing a reaction:**
-1. Tap pill → tooltip with names + "Remove"
+1. Click/tap pill → popover with names + "Remove"
 2. Tap "Remove" → reaction deleted, count decrements
 3. If count reaches 0, pill disappears
 
@@ -104,13 +108,14 @@ type ReactionMap = Map<string, ExpenseReactions>
 interface ExpenseReactions {
   [emoji: string]: {
     count: number
-    participants: string[]  // participant IDs
-    myReaction: boolean     // current user has reacted with this emoji
+    participantIds: string[]  // participant IDs who reacted
   }
 }
 ```
 
-**Query:** Single fetch joining `expense_reactions` with `expenses` filtered by `trip_id`. Wrapped in `withTimeout(..., 15000)`.
+Components derive `myReaction` by checking if the current user's participant ID is in `participantIds` — no stale boolean to maintain.
+
+**Query:** Single Supabase query: `supabase.from('expense_reactions').select('id, expense_id, participant_id, emoji, created_at, expenses!inner(trip_id)').eq('expenses.trip_id', tripId)`. The join goes `expense_reactions` → `expenses.trip_id` since `expense_reactions` has no direct `trip_id` column. The select lists explicit columns to avoid leaking the full expenses join shape. Wrapped in `withTimeout(..., 15000)`.
 
 **No real-time subscriptions** — reactions are not time-critical. Updated on page load/refresh, consistent with how expenses work.
 
@@ -128,15 +133,16 @@ interface ExpenseReactions {
 - Props: `onSelect(emoji)`, `alreadyReacted: string[]`
 - Dims emoji the user has already used
 
-**`ReactionTooltip`** (`src/components/reactions/ReactionTooltip.tsx`)
-- Shows participant names for a given reaction
+**`ReactionPopover`** (`src/components/reactions/ReactionPopover.tsx`)
+- Uses Radix `Popover` to show participant names for a given reaction
+- Props: `participantIds: string[]`, `emoji: string`, `canRemove: boolean`, `onRemove()`
 - Conditional "Remove" link if current user is in the list
 
 ### Integration Point
 
-`ExpenseCard.tsx` — add `<ReactionBar expenseId={expense.id} />` after the date/category row, before the comment block.
+`src/components/ExpenseCard.tsx` — add `<ReactionBar expenseId={expense.id} />` after the date/category row, before the comment block.
 
-`ExpenseContext` provider tree — wrap `ReactionContext` inside it (or as a sibling within the trip route layout).
+`ReactionContext` is placed as a sibling provider alongside `ExpenseContext` in the trip route layout (`src/components/Layout.tsx`). It depends on `trip_id` from `useCurrentTrip()` (not on `ExpenseContext`). Error handling: optimistic rollback is silent (no toast) — low-stakes feature.
 
 ## Database Migration
 
