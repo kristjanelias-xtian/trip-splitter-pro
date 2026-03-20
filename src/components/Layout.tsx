@@ -19,7 +19,6 @@ import { ActivityProvider } from '@/contexts/ActivityContext'
 import { StayProvider } from '@/contexts/StayContext'
 import { ShoppingProvider } from '@/contexts/ShoppingContext'
 import { ReceiptProvider } from '@/contexts/ReceiptContext'
-import { ReactionProvider } from '@/contexts/ReactionContext'
 import { Toaster } from '@/components/ui/toaster'
 import { getTripGradientPattern } from '@/services/tripGradientService'
 import { SignInButton } from '@/components/auth/SignInButton'
@@ -255,7 +254,6 @@ export function Layout() {
         <LayoutPullIndicator />
         <ParticipantProvider>
           <ExpenseProvider>
-            <ReactionProvider>
             <SettlementProvider>
               <MealProvider>
                 <ActivityProvider>
@@ -270,7 +268,6 @@ export function Layout() {
                 </ActivityProvider>
               </MealProvider>
             </SettlementProvider>
-            </ReactionProvider>
           </ExpenseProvider>
         </ParticipantProvider>
       </main>
