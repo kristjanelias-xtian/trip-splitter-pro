@@ -4,6 +4,7 @@ import type { Expense, ExpenseDistribution } from '@/types/expense'
 import type { Settlement } from '@/types/settlement'
 import type { Event } from '@/types/trip'
 import type { Wallet, WalletTransaction, WalletPet } from '@/kopikas/types'
+import type { Reaction } from '@/types/reaction'
 
 let _id = 0
 function nextId(): string {
@@ -129,6 +130,18 @@ export function buildWalletPet(overrides: Partial<WalletPet> = {}): WalletPet {
     last_streak_xp_check: null,
     created_at: '2026-03-01T00:00:00Z',
     updated_at: '2026-03-15T00:00:00Z',
+    ...overrides,
+  }
+}
+
+export function buildReaction(overrides: Partial<Reaction> = {}): Reaction {
+  const id = overrides.id ?? nextId()
+  return {
+    id,
+    expense_id: 'expense-1',
+    participant_id: 'participant-1',
+    emoji: '🔥',
+    created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   }
 }
