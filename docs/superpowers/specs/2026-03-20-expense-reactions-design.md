@@ -126,7 +126,7 @@ Components derive `myReaction` by checking if the current user's participant ID 
 - Reads from `ReactionContext`
 - Renders pills + "+" button (or read-only pills for unauthenticated users)
 - Uses `useMyParticipant()` to determine if user can react
-- Uses `buildShortNameMap` for tooltip names
+- Uses `buildShortNameMap` for names in the who-reacted popover
 
 **`ReactionPicker`** (`src/components/reactions/ReactionPicker.tsx`)
 - Popover with the 6 emoji
@@ -142,7 +142,7 @@ Components derive `myReaction` by checking if the current user's participant ID 
 
 `src/components/ExpenseCard.tsx` — add `<ReactionBar expenseId={expense.id} />` after the date/category row, before the comment block.
 
-`ReactionContext` is placed as a sibling provider alongside `ExpenseContext` in the trip route layout (`src/components/Layout.tsx`). It depends on `trip_id` from `useCurrentTrip()` (not on `ExpenseContext`). Error handling: optimistic rollback is silent (no toast) — low-stakes feature.
+`ReactionContext` provider is added inside `Layout.tsx`, nested inside `ParticipantProvider` (since `ReactionBar` uses `useMyParticipant()`). It depends on `trip_id` from `useCurrentTrip()` (not on `ExpenseContext`). Error handling: optimistic rollback is silent (no toast) — low-stakes feature.
 
 ## Database Migration
 
@@ -156,7 +156,7 @@ Single migration file adding:
 ## Scope Boundaries
 
 **In scope:**
-- Reactions on ExpenseCard in Full mode ExpensesPage
+- Reactions on ExpenseCard in Full mode ExpensesPage (not DashboardPage — `TopExpensesList` is a summary view without reaction support)
 - ReactionContext with optimistic updates
 - Emoji picker popover
 - Who-reacted tooltip with remove action
