@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useKopikasAuth } from './KopikasAuthProvider'
 import { KopikasLandingPage } from './KopikasLandingPage'
@@ -17,6 +18,21 @@ import { Loader2 } from 'lucide-react'
 
 function KopikasHomePage() {
   const { user, loading } = useKopikasAuth()
+  const navigate = useNavigate()
+
+  // In standalone PWA mode, auto-redirect to the last visited wallet
+  // so the kid doesn't land on the landing page with no address bar
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as any).standalone === true
+    if (!isStandalone) return
+
+    const lastWallet = localStorage.getItem('kopikas:last-wallet')
+    if (lastWallet) {
+      navigate(`/${lastWallet}`, { replace: true })
+    }
+  }, [navigate])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
