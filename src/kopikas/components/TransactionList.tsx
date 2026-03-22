@@ -6,7 +6,8 @@ import { useWalletContext } from '../contexts/WalletContext'
 import { usePet } from '../hooks/usePet'
 import { getXpForAction } from '../lib/xpCalculator'
 import { supabase } from '@/lib/supabase'
-import { Wallet, Receipt, X, ChevronDown, ChevronRight, Check } from 'lucide-react'
+import { Wallet, Receipt, X, ChevronDown, ChevronRight, Check, Trash2 } from 'lucide-react'
+import { DatePicker } from './DatePicker'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 
 interface TransactionListProps {
@@ -112,16 +113,20 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
 }
 
 export function TransactionList({ transactions, limit }: TransactionListProps) {
-  const { updateTransactionCategory, updateTransactionAmount } = useWalletContext()
+  const { updateTransactionCategory, updateTransactionAmount, updateTransactionDate, deleteTransaction } = useWalletContext()
   const { awardXp } = usePet()
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [editingTx, setEditingTx] = useState<WalletTransaction | null>(null)
   const [editAmount, setEditAmount] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [editDate, setEditDate] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const openEditSheet = (tx: WalletTransaction) => {
     setEditingTx(tx)
     setEditAmount(tx.amount.toFixed(2))
+    setEditDate(tx.purchase_date ?? tx.created_at.slice(0, 10))
+    setConfirmDelete(false)
   }
 
   const handleAmountSave = async () => {
@@ -148,6 +153,20 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
     if (success) {
       await awardXp(getXpForAction('correct_category'))
     }
+  }
+
+  const handleDateSave = async (newDate: string) => {
+    if (!editingTx) return
+    const oldDate = editingTx.purchase_date ?? editingTx.created_at.slice(0, 10)
+    if (newDate === oldDate) return
+    setEditDate(newDate)
+    await updateTransactionDate(editingTx.id, newDate)
+  }
+
+  const handleDelete = async () => {
+    if (!editingTx) return
+    await deleteTransaction(editingTx.id)
+    setEditingTx(null)
   }
 
   const entries = useMemo(() => {
@@ -325,7 +344,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
 
       {/* Transaction edit sheet */}
       <Sheet open={!!editingTx} onOpenChange={(open) => { if (!open) setEditingTx(null) }}>
-        <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '75dvh' }}>
+        <SheetContent side="bottom" hideClose className="flex flex-col p-0 rounded-t-2xl" style={{ height: '92dvh' }}>
           <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="w-8" />
             <SheetTitle>Muuda tehingut</SheetTitle>
@@ -363,6 +382,12 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                 </div>
               </div>
 
+              {/* Date picker */}
+              <div className="mb-4">
+                <label className="text-xs text-muted-foreground mb-1 block">Kuupäev</label>
+                <DatePicker selected={editDate} onSelect={handleDateSave} />
+              </div>
+
               {/* Category picker */}
               <label className="text-xs text-muted-foreground mb-2 block">Kategooria</label>
               <div className="grid grid-cols-3 gap-2">
@@ -382,6 +407,35 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                     )}
                   </button>
                 ))}
+              </div>
+
+              {/* Delete */}
+              <div className="mt-6 pt-4 border-t border-border">
+                {!confirmDelete ? (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    Kustuta tehing
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-red-500">Kindel?</span>
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-sm font-medium"
+                    >
+                      Jah, kustuta
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="px-3 py-1.5 rounded-lg border border-border text-sm"
+                    >
+                      Ei
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
