@@ -56,7 +56,7 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
   // Pre-compute how many transactions share each grouping key
   const keyCounts = new Map<string, number>()
   for (const tx of transactions) {
-    const key = tx.receipt_batch_id ?? tx.receipt_image_path
+    const key = tx.purchase_group_id ?? tx.receipt_batch_id ?? tx.receipt_image_path
     if (key) keyCounts.set(key, (keyCounts.get(key) ?? 0) + 1)
   }
 
@@ -64,7 +64,7 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
   const ungrouped: WalletTransaction[] = []
 
   for (const tx of transactions) {
-    const key = tx.receipt_batch_id ?? tx.receipt_image_path
+    const key = tx.purchase_group_id ?? tx.receipt_batch_id ?? tx.receipt_image_path
     if (key && (keyCounts.get(key) ?? 0) > 1) {
       const existing = batchMap.get(key)
       if (existing) {
@@ -92,7 +92,7 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
       groupKey,
       vendor,
       total,
-      date: items[0].created_at,
+      date: items[0].purchase_date ?? items[0].created_at,
       receiptImagePath,
       items: sortedItems,
     })
@@ -103,8 +103,8 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
   // Merge and sort by date descending
   entries.push(...groupEntries, ...singleEntries)
   entries.sort((a, b) => {
-    const dateA = a.kind === 'single' ? a.tx.created_at : a.date
-    const dateB = b.kind === 'single' ? b.tx.created_at : b.date
+    const dateA = a.kind === 'single' ? (a.tx.purchase_date ?? a.tx.created_at) : a.date
+    const dateB = b.kind === 'single' ? (b.tx.purchase_date ?? b.tx.created_at) : b.date
     return dateB.localeCompare(dateA)
   })
 
@@ -158,8 +158,10 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
   const dayGroups = useMemo(() => {
     const groups = new Map<string, { entries: ListEntry[]; spent: number; received: number }>()
     for (const entry of entries) {
-      const dateStr = entry.kind === 'single' ? entry.tx.created_at : entry.date
-      const key = toDateKey(dateStr)
+      const dateStr = entry.kind === 'single'
+        ? (entry.tx.purchase_date ?? entry.tx.created_at.slice(0, 10))
+        : (entry.items[0]?.purchase_date ?? entry.date.slice(0, 10))
+      const key = dateStr.slice(0, 10) // already YYYY-MM-DD for purchase_date
       if (!groups.has(key)) groups.set(key, { entries: [], spent: 0, received: 0 })
       const group = groups.get(key)!
       group.entries.push(entry)

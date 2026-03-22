@@ -2,11 +2,14 @@
 import type { WalletTransaction, WalletPet } from '../types'
 import { PET_LEVELS } from '../types'
 
-type XpAction = 'log_expense' | 'correct_category'
+type XpAction = 'log_expense' | 'correct_category' | 'weekly_under_budget' | 'create_savings_goal' | 'reach_savings_goal'
 
 const XP_AWARDS: Record<XpAction, number> = {
   log_expense: 10,
   correct_category: 5,
+  weekly_under_budget: 50,
+  create_savings_goal: 15,
+  reach_savings_goal: 100,
 }
 
 export function getXpForAction(action: XpAction): number {

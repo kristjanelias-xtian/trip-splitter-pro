@@ -8,6 +8,7 @@ import type { WalletPet, WalletTransaction, MoodResult } from '../types'
 import { STARTER_EMOJIS } from '../types'
 import { calculateMood } from '../lib/petMoodCalculator'
 import { getLevelForXp, checkWeeklyBonuses } from '../lib/xpCalculator'
+import { useBudget } from './BudgetContext'
 
 interface PetContextValue {
   pet: WalletPet | null
@@ -32,7 +33,8 @@ export function PetProvider({ walletId, transactions, children }: PetProviderPro
   const [loading, setLoading] = useState(false)
   const { newSignal, cancel } = useAbortController()
 
-  const mood = useMemo(() => calculateMood(transactions, new Date()), [transactions])
+  const { budgetState } = useBudget()
+  const mood = useMemo(() => calculateMood(transactions, new Date(), budgetState ?? undefined), [transactions, budgetState])
   const isNamed = pet?.name != null
 
   const checkAndAwardBonuses = async (currentPet?: WalletPet | null) => {

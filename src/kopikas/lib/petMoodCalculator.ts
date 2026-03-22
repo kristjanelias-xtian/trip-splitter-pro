@@ -1,6 +1,15 @@
-import type { WalletTransaction, MoodResult, MoodTier } from '../types'
+import type { WalletTransaction, MoodResult, MoodTier, BudgetState } from '../types'
 
-function balanceHealthSignal(transactions: WalletTransaction[], now: Date): number {
+function balanceHealthSignal(transactions: WalletTransaction[], now: Date, budgetState?: BudgetState): number {
+  // Budget-aware mode: use weekly remaining / effective budget ratio
+  if (budgetState && budgetState.effectiveBudget > 0) {
+    const ratio = budgetState.weeklyRemaining / budgetState.effectiveBudget
+    if (ratio >= 0.5) return 1
+    if (ratio <= 0) return 0
+    return ratio / 0.5 // linear 0..1 between 0% and 50%
+  }
+
+  // Legacy mode: balance / lastAllowance ratio
   const allowances = transactions.filter((t) => t.type === 'allowance')
   if (allowances.length === 0) return 0.5
 
@@ -107,8 +116,8 @@ function scoreToTier(score: number): MoodTier {
   return 'worried'
 }
 
-export function calculateMood(transactions: WalletTransaction[], now: Date): MoodResult {
-  const balanceHealth = balanceHealthSignal(transactions, now)
+export function calculateMood(transactions: WalletTransaction[], now: Date, budgetState?: BudgetState): MoodResult {
+  const balanceHealth = balanceHealthSignal(transactions, now, budgetState)
   const categoryDiversity = categoryDiversitySignal(transactions, now)
   const loggingConsistency = loggingConsistencySignal(transactions, now)
 
