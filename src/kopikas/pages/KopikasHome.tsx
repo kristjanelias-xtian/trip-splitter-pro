@@ -6,7 +6,7 @@ import { usePet } from '../hooks/usePet'
 import { Pet } from '../components/Pet'
 import { PetSpeechBubble } from '../components/PetSpeechBubble'
 import { TransactionList } from '../components/TransactionList'
-import { ManualAddSheet } from '../components/ManualAddSheet'
+import { PurchaseWizard } from '../components/PurchaseWizard'
 import { ScanFlow } from '../components/ScanFlow'
 import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { Loader2, ScanLine, PencilLine, BarChart3 } from 'lucide-react'
@@ -17,7 +17,7 @@ export function KopikasHome() {
   const { pet, mood, loading: petLoading } = usePet()
   const navigate = useNavigate()
   const basePath = useKopikasBasePath()
-  const [manualAddOpen, setManualAddOpen] = useState(false)
+  const [purchaseOpen, setPurchaseOpen] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
 
   if (walletLoading || petLoading) {
@@ -71,7 +71,7 @@ export function KopikasHome() {
           <span className="text-xs font-medium">Skanni</span>
         </button>
         <button
-          onClick={() => setManualAddOpen(true)}
+          onClick={() => setPurchaseOpen(true)}
           className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
         >
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -104,7 +104,7 @@ export function KopikasHome() {
         <TransactionList transactions={transactions} limit={10} />
       </div>
 
-      <ManualAddSheet open={manualAddOpen} onClose={() => setManualAddOpen(false)} />
+      <PurchaseWizard open={purchaseOpen} onClose={() => setPurchaseOpen(false)} />
       <ScanFlow open={scanOpen} onClose={() => setScanOpen(false)} />
     </div>
   )
