@@ -3,12 +3,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
 import { usePet } from '../hooks/usePet'
+import { useBudget } from '../contexts/BudgetContext'
 import { useKopikasAuth } from '../app/KopikasAuthProvider'
 import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { TransactionList } from '../components/TransactionList'
 import { EmojiBarChart } from '../components/EmojiBarChart'
 import { Pet } from '../components/Pet'
 import { AllowanceForm } from '../components/AllowanceForm'
+import { BudgetConfig } from '../components/BudgetConfig'
+import { WithdrawalApproval } from '../components/WithdrawalApproval'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +34,9 @@ export function ParentView() {
   const { user } = useKopikasAuth()
   const navigate = useNavigate()
   const basePath = useKopikasBasePath()
+  const { budget, budgetState, pendingWithdrawal, goals } = useBudget()
   const [allowanceOpen, setAllowanceOpen] = useState(false)
+  const [budgetConfigOpen, setBudgetConfigOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -137,11 +142,77 @@ export function ParentView() {
 
   return (
     <div className="space-y-6">
+      {/* Pending withdrawal approval */}
+      {pendingWithdrawal && (
+        <WithdrawalApproval withdrawal={pendingWithdrawal} walletName={wallet.name} />
+      )}
+
       {/* Balance */}
       <div className="text-center">
         <p className="text-sm text-muted-foreground mb-1">{wallet.name}</p>
         <p className="text-4xl font-bold tabular-nums">€{balance.toFixed(2)}</p>
       </div>
+
+      {/* Budget config */}
+      {budget ? (
+        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
+          <div>
+            <p className="font-medium tabular-nums">€{budget.weekly_amount.toFixed(2)} / nädal</p>
+          </div>
+          <button onClick={() => setBudgetConfigOpen(true)}
+            className="text-sm text-primary font-medium hover:underline">
+            Muuda
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => setBudgetConfigOpen(true)}
+          className="w-full py-3 rounded-xl border border-dashed border-border text-muted-foreground font-medium hover:bg-muted/50 transition-colors">
+          Seadista eelarve
+        </button>
+      )}
+
+      {/* Weekly summary */}
+      {budget && budgetState && (
+        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+          <p className="text-sm">
+            Sel nädalal: <span className="font-medium tabular-nums">€{budgetState.weekSpending.toFixed(2)}</span> kulutatud / <span className="font-medium tabular-nums">€{budgetState.effectiveBudget.toFixed(2)}</span> eelarvest
+          </p>
+          <p className="text-sm">
+            Hoiupõrsas: <span className="font-medium tabular-nums">€{budgetState.totalSavings.toFixed(2)}</span>
+          </p>
+          {budgetState.debt > 0 && (
+            <p className="text-sm text-destructive">
+              Võlg: <span className="font-medium tabular-nums">€{budgetState.debt.toFixed(2)}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Savings goals (read-only) */}
+      {goals.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3">Säästueesmärgid</h2>
+          <div className="space-y-2">
+            {goals.filter(g => !g.completed_at).map(goal => {
+              const savingsTotal = budgetState?.totalSavings ?? 0
+              const progress = Math.min(1, savingsTotal / goal.target_amount)
+              return (
+                <div key={goal.id} className="p-3 rounded-xl border border-border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{goal.emoji} {goal.name}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      €{Math.min(savingsTotal, goal.target_amount).toFixed(2)} / €{goal.target_amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress * 100}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Share child link */}
       <button onClick={handleShare}
@@ -223,6 +294,7 @@ export function ParentView() {
       )}
 
       <AllowanceForm open={allowanceOpen} onClose={() => setAllowanceOpen(false)} />
+      <BudgetConfig open={budgetConfigOpen} onClose={() => setBudgetConfigOpen(false)} />
     </div>
   )
 }
