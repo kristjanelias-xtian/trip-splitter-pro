@@ -3,11 +3,13 @@ import { useState, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
 import { usePet } from '../hooks/usePet'
+import { useBudget } from '../contexts/BudgetContext'
 import { Pet } from '../components/Pet'
 import { PetSpeechBubble } from '../components/PetSpeechBubble'
 import { TransactionList } from '../components/TransactionList'
 import { PurchaseWizard } from '../components/PurchaseWizard'
 import { ScanFlow } from '../components/ScanFlow'
+import { SavingsSheet } from '../components/SavingsSheet'
 import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { Loader2, ScanLine, PencilLine, BarChart3 } from 'lucide-react'
 import type { KopikasCategory } from '../types'
@@ -24,11 +26,13 @@ export function KopikasHome() {
   const { walletCode } = useParams<{ walletCode: string }>()
   const { wallet, transactions, balance, lastAllowance, loading: walletLoading } = useWallet()
   const { pet, mood, loading: petLoading } = usePet()
+  const { budget, budgetState } = useBudget()
   const navigate = useNavigate()
   const basePath = useKopikasBasePath()
   const [purchaseOpen, setPurchaseOpen] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
   const [scanData, setScanData] = useState<ScanData | undefined>()
+  const [savingsOpen, setSavingsOpen] = useState(false)
 
   const handleScanComplete = useCallback((data: ScanData) => {
     setScanData(data)
@@ -67,17 +71,71 @@ export function KopikasHome() {
         </p>
       </div>
 
-      {/* Balance */}
-      <div className="text-center mb-8">
-        <p className="text-4xl font-bold tabular-nums">
-          €{balance.toFixed(2)}
-        </p>
-        {lastAllowance && (
-          <p className="text-sm text-muted-foreground mt-1">
-            €{lastAllowance.amount.toFixed(2)}-st alles
+      {/* Balance / Budget display */}
+      {budget !== null && budgetState ? (
+        <div className="text-center mb-8">
+          <p className={`text-4xl font-bold tabular-nums ${
+            budgetState.weeklyRemaining / budgetState.effectiveBudget > 0.5
+              ? 'text-green-500'
+              : budgetState.weeklyRemaining / budgetState.effectiveBudget >= 0.3
+                ? 'text-primary'
+                : 'text-red-500'
+          }`}>
+            €{budgetState.weeklyRemaining.toFixed(2)}
           </p>
-        )}
-      </div>
+          <p className="text-sm text-muted-foreground mt-1">Sel nädalal alles</p>
+
+          {/* Progress bar */}
+          <div className="mx-auto mt-3 max-w-[200px]">
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  budgetState.weekSpending / budgetState.effectiveBudget > 0.7
+                    ? 'bg-red-500'
+                    : 'bg-primary'
+                }`}
+                style={{ width: `${Math.min(100, (budgetState.weekSpending / budgetState.effectiveBudget) * 100)}%` }}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            €{budgetState.weekSpending.toFixed(2)} kulutatud / €{budgetState.effectiveBudget.toFixed(2)}
+          </p>
+
+          {/* Debt indicator */}
+          {budgetState.debt > 0 && (
+            <p className="text-xs text-red-500 mt-1">
+              Eelmise nädala võlg: -€{budgetState.debt.toFixed(2)}
+            </p>
+          )}
+
+          {/* Savings chip */}
+          <div className="mt-4">
+            <button
+              onClick={() => setSavingsOpen(true)}
+              className="bg-muted rounded-2xl px-5 py-2.5 inline-flex items-center gap-2"
+            >
+              <span>🐷</span>
+              <div className="text-left">
+                <div className="font-semibold">€{budgetState.totalSavings.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">Hoiupõrsas</div>
+              </div>
+              <span className="text-muted-foreground">›</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center mb-8">
+          <p className="text-4xl font-bold tabular-nums">
+            €{balance.toFixed(2)}
+          </p>
+          {lastAllowance && (
+            <p className="text-sm text-muted-foreground mt-1">
+              €{lastAllowance.amount.toFixed(2)}-st alles
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="grid grid-cols-3 gap-3 mb-8">
@@ -126,6 +184,7 @@ export function KopikasHome() {
 
       <PurchaseWizard open={purchaseOpen} onClose={handlePurchaseClose} initialData={scanData} />
       <ScanFlow open={scanOpen} onClose={() => setScanOpen(false)} onScanComplete={handleScanComplete} />
+      <SavingsSheet open={savingsOpen} onClose={() => setSavingsOpen(false)} />
     </div>
   )
 }
