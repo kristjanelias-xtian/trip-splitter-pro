@@ -16,6 +16,9 @@ interface WalletContextValue {
   addTransaction: (input: CreateTransactionInput) => Promise<WalletTransaction | null>
   updateTransactionCategory: (txId: string, oldCategory: KopikasCategory, newCategory: KopikasCategory, description: string | null) => Promise<boolean>
   updateTransactionAmount: (txId: string, newAmount: number) => Promise<boolean>
+  updateTransactionDate: (txId: string, newDate: string) => Promise<boolean>
+  updateTransactionGroup: (txIds: string[], vendor: string, purchaseDate: string) => Promise<boolean>
+  deleteTransaction: (txId: string) => Promise<boolean>
   deleteWallet: () => Promise<boolean>
   refreshTransactions: () => Promise<void>
   clearError: () => void
@@ -281,6 +284,106 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }
   }
 
+  const updateTransactionDate = async (txId: string, newDate: string): Promise<boolean> => {
+    const oldTx = transactions.find(t => t.id === txId)
+    if (!oldTx) return false
+
+    setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, purchase_date: newDate } : tx))
+
+    try {
+      const { error: updateError } = await withTimeout(
+        (supabase.from('wallet_transactions' as any) as any)
+          .update({ purchase_date: newDate })
+          .eq('id', txId),
+        15000,
+        'Kuupäeva muutmine aegus.'
+      ) as { error: any }
+
+      if (updateError) {
+        logger.error('Failed to update transaction date', { txId, error: updateError.message })
+        setTransactions(prev => prev.map(tx => tx.id === txId ? oldTx : tx))
+        setError('Kuupäeva muutmine ebaõnnestus.')
+        return false
+      }
+      return true
+    } catch (err) {
+      logger.error('Failed to update transaction date', { txId, error: err instanceof Error ? err.message : String(err) })
+      setTransactions(prev => prev.map(tx => tx.id === txId ? oldTx : tx))
+      setError('Kuupäeva muutmine ebaõnnestus.')
+      return false
+    }
+  }
+
+  const updateTransactionGroup = async (txIds: string[], vendor: string, purchaseDate: string): Promise<boolean> => {
+    const groupId = crypto.randomUUID()
+    const oldTxs = transactions.filter(t => txIds.includes(t.id))
+
+    setTransactions(prev => prev.map(tx =>
+      txIds.includes(tx.id) ? { ...tx, purchase_group_id: groupId, vendor, purchase_date: purchaseDate } : tx
+    ))
+
+    try {
+      for (const txId of txIds) {
+        const { error: updateError } = await withTimeout(
+          (supabase.from('wallet_transactions' as any) as any)
+            .update({ purchase_group_id: groupId, vendor, purchase_date: purchaseDate })
+            .eq('id', txId),
+          15000,
+          'Grupi muutmine aegus.'
+        ) as { error: any }
+
+        if (updateError) {
+          logger.error('Failed to update transaction group', { txId, error: updateError.message })
+          setTransactions(prev => prev.map(tx => {
+            const old = oldTxs.find(o => o.id === tx.id)
+            return old ? old : tx
+          }))
+          setError('Grupi muutmine ebaõnnestus.')
+          return false
+        }
+      }
+      return true
+    } catch (err) {
+      logger.error('Failed to update transaction group', { error: err instanceof Error ? err.message : String(err) })
+      setTransactions(prev => prev.map(tx => {
+        const old = oldTxs.find(o => o.id === tx.id)
+        return old ? old : tx
+      }))
+      setError('Grupi muutmine ebaõnnestus.')
+      return false
+    }
+  }
+
+  const deleteTransaction = async (txId: string): Promise<boolean> => {
+    const oldTx = transactions.find(t => t.id === txId)
+    if (!oldTx) return false
+
+    setTransactions(prev => prev.filter(tx => tx.id !== txId))
+
+    try {
+      const { error: deleteError } = await withTimeout(
+        (supabase.from('wallet_transactions' as any) as any)
+          .delete()
+          .eq('id', txId),
+        15000,
+        'Tehingu kustutamine aegus.'
+      ) as { error: any }
+
+      if (deleteError) {
+        logger.error('Failed to delete transaction', { txId, error: deleteError.message })
+        setTransactions(prev => [oldTx, ...prev])
+        setError('Tehingu kustutamine ebaõnnestus.')
+        return false
+      }
+      return true
+    } catch (err) {
+      logger.error('Failed to delete transaction', { txId, error: err instanceof Error ? err.message : String(err) })
+      setTransactions(prev => [oldTx, ...prev])
+      setError('Tehingu kustutamine ebaõnnestus.')
+      return false
+    }
+  }
+
   const deleteWallet = async (): Promise<boolean> => {
     if (!wallet) return false
     try {
@@ -316,6 +419,9 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     addTransaction,
     updateTransactionCategory,
     updateTransactionAmount,
+    updateTransactionDate,
+    updateTransactionGroup,
+    deleteTransaction,
     deleteWallet,
     refreshTransactions,
     clearError,
