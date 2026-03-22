@@ -32,6 +32,8 @@ export interface WalletTransaction {
   receipt_image_path: string | null
   receipt_batch_id: string | null
   vendor: string | null
+  purchase_date: string | null
+  purchase_group_id: string | null
   created_at: string
 }
 
@@ -44,6 +46,8 @@ export interface CreateTransactionInput {
   receipt_image_path?: string
   receipt_batch_id?: string
   vendor?: string
+  purchase_date?: string
+  purchase_group_id?: string
 }
 
 export interface WalletPet {
@@ -77,6 +81,54 @@ export interface CategoryCorrection {
   original_category: string
   corrected_category: string
   created_at: string
+}
+
+// Budget
+export interface WalletBudget {
+  wallet_id: string
+  weekly_amount: number
+  start_date: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+// Savings ledger entry
+export type SavingsType = 'auto_save' | 'withdrawal' | 'overspend'
+export type SavingsStatus = 'completed' | 'pending_approval' | 'denied'
+
+export interface WalletSavingsEntry {
+  id: string
+  wallet_id: string
+  amount: number
+  type: SavingsType
+  description: string | null
+  status: SavingsStatus
+  approved_by: string | null
+  week_start: string | null
+  created_at: string
+}
+
+// Savings goals
+export interface WalletSavingsGoal {
+  id: string
+  wallet_id: string
+  name: string
+  emoji: string
+  target_amount: number
+  completed_at: string | null
+  created_at: string
+}
+
+// Budget calculator output
+export interface BudgetState {
+  effectiveBudget: number
+  weekSpending: number
+  weeklyRemaining: number
+  debt: number
+  totalSavings: number
+  currentWeekStart: Date
+  currentWeekEnd: Date
 }
 
 export const PET_LEVELS = [

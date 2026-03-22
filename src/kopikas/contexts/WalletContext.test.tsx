@@ -36,6 +36,8 @@ const sampleTransactions: WalletTransaction[] = [
     receipt_image_path: null,
     receipt_batch_id: null,
     vendor: null,
+    purchase_date: null,
+    purchase_group_id: null,
     created_at: '2025-01-07T10:00:00Z',
   },
   {
@@ -48,6 +50,8 @@ const sampleTransactions: WalletTransaction[] = [
     receipt_image_path: null,
     receipt_batch_id: null,
     vendor: null,
+    purchase_date: null,
+    purchase_group_id: null,
     created_at: '2025-01-08T12:00:00Z',
   },
   {
@@ -60,6 +64,8 @@ const sampleTransactions: WalletTransaction[] = [
     receipt_image_path: null,
     receipt_batch_id: null,
     vendor: null,
+    purchase_date: null,
+    purchase_group_id: null,
     created_at: '2025-01-09T10:00:00Z',
   },
 ]
@@ -252,6 +258,8 @@ describe('WalletContext', () => {
       receipt_image_path: null,
       receipt_batch_id: null,
       vendor: null,
+      purchase_date: null,
+      purchase_group_id: null,
       created_at: new Date().toISOString(),
     }
 
