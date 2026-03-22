@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { KopikasRouteGuard } from './KopikasRouteGuard'
 import { KopikasAuthBridge } from './KopikasAuthBridge'
+import { BudgetProvider } from '../contexts/BudgetContext'
 import { PetProvider } from '../contexts/PetContext'
 import { KopikasTabBar } from './KopikasTabBar'
 import { NamePetSheet } from './NamePetSheet'
@@ -23,6 +24,7 @@ function KopikasInner() {
   }, [])
 
   return (
+    <BudgetProvider>
     <PetProvider walletId={wallet?.id ?? null} transactions={transactions}>
       <div className="min-h-screen bg-background text-foreground">
         {user && (
@@ -45,6 +47,7 @@ function KopikasInner() {
         <NamePetSheet />
       </div>
     </PetProvider>
+    </BudgetProvider>
   )
 }
 
