@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
 import { usePet } from '../hooks/usePet'
@@ -10,6 +10,15 @@ import { PurchaseWizard } from '../components/PurchaseWizard'
 import { ScanFlow } from '../components/ScanFlow'
 import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { Loader2, ScanLine, PencilLine, BarChart3 } from 'lucide-react'
+import type { KopikasCategory } from '../types'
+
+type ScanData = {
+  amount: number
+  vendor: string
+  items: Array<{ description: string; amount: number; category: KopikasCategory }>
+  receiptImagePath?: string
+  receiptBatchId?: string
+}
 
 export function KopikasHome() {
   const { walletCode } = useParams<{ walletCode: string }>()
@@ -19,6 +28,17 @@ export function KopikasHome() {
   const basePath = useKopikasBasePath()
   const [purchaseOpen, setPurchaseOpen] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
+  const [scanData, setScanData] = useState<ScanData | undefined>()
+
+  const handleScanComplete = useCallback((data: ScanData) => {
+    setScanData(data)
+    setPurchaseOpen(true)
+  }, [])
+
+  const handlePurchaseClose = useCallback(() => {
+    setPurchaseOpen(false)
+    setScanData(undefined)
+  }, [])
 
   if (walletLoading || petLoading) {
     return (
@@ -104,8 +124,8 @@ export function KopikasHome() {
         <TransactionList transactions={transactions} limit={10} />
       </div>
 
-      <PurchaseWizard open={purchaseOpen} onClose={() => setPurchaseOpen(false)} />
-      <ScanFlow open={scanOpen} onClose={() => setScanOpen(false)} />
+      <PurchaseWizard open={purchaseOpen} onClose={handlePurchaseClose} initialData={scanData} />
+      <ScanFlow open={scanOpen} onClose={() => setScanOpen(false)} onScanComplete={handleScanComplete} />
     </div>
   )
 }
