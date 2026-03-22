@@ -4,7 +4,7 @@ ALTER TABLE wallet_transactions
   ADD COLUMN IF NOT EXISTS purchase_group_id UUID;
 
 -- Weekly budget config (one per wallet)
-CREATE TABLE wallet_budgets (
+CREATE TABLE IF NOT EXISTS wallet_budgets (
   wallet_id UUID PRIMARY KEY REFERENCES wallets(id) ON DELETE CASCADE,
   weekly_amount DECIMAL NOT NULL CHECK (weekly_amount > 0),
   start_date DATE NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE wallet_budgets (
 );
 
 -- Savings ledger
-CREATE TABLE wallet_savings (
+CREATE TABLE IF NOT EXISTS wallet_savings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   wallet_id UUID NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
   amount DECIMAL NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE wallet_savings (
 );
 
 -- Savings goals
-CREATE TABLE wallet_savings_goals (
+CREATE TABLE IF NOT EXISTS wallet_savings_goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   wallet_id UUID NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -37,32 +37,43 @@ CREATE TABLE wallet_savings_goals (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- RLS: wallet_budgets
+-- RLS: wallet_budgets (idempotent — drop if exists, then create)
 ALTER TABLE wallet_budgets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view budgets" ON wallet_budgets;
 CREATE POLICY "Anyone can view budgets" ON wallet_budgets FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Auth users can insert budgets" ON wallet_budgets;
 CREATE POLICY "Auth users can insert budgets" ON wallet_budgets FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Auth users can update budgets" ON wallet_budgets;
 CREATE POLICY "Auth users can update budgets" ON wallet_budgets FOR UPDATE USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Auth users can delete budgets" ON wallet_budgets;
 CREATE POLICY "Auth users can delete budgets" ON wallet_budgets FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- RLS: wallet_savings
 ALTER TABLE wallet_savings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view savings" ON wallet_savings;
 CREATE POLICY "Anyone can view savings" ON wallet_savings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Anon can request withdrawals" ON wallet_savings;
 CREATE POLICY "Anon can request withdrawals" ON wallet_savings FOR INSERT
   WITH CHECK (type = 'withdrawal' AND status = 'pending_approval');
+DROP POLICY IF EXISTS "Auth users can insert savings" ON wallet_savings;
 CREATE POLICY "Auth users can insert savings" ON wallet_savings FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Auth users can update savings" ON wallet_savings;
 CREATE POLICY "Auth users can update savings" ON wallet_savings FOR UPDATE
   USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Auth users can delete savings" ON wallet_savings;
 CREATE POLICY "Auth users can delete savings" ON wallet_savings FOR DELETE
   USING (auth.uid() IS NOT NULL);
 
 -- RLS: wallet_savings_goals
 ALTER TABLE wallet_savings_goals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view goals" ON wallet_savings_goals;
 CREATE POLICY "Anyone can view goals" ON wallet_savings_goals FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Anyone can insert goals" ON wallet_savings_goals;
 CREATE POLICY "Anyone can insert goals" ON wallet_savings_goals FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Anyone can update goals" ON wallet_savings_goals;
 CREATE POLICY "Anyone can update goals" ON wallet_savings_goals FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Anyone can delete goals" ON wallet_savings_goals;
 CREATE POLICY "Anyone can delete goals" ON wallet_savings_goals FOR DELETE USING (true);
 
--- Auto-update timestamp on wallet_budgets
-CREATE TRIGGER handle_updated_at BEFORE UPDATE ON wallet_budgets
-  FOR EACH ROW EXECUTE PROCEDURE moddatetime(updated_at);
+-- Note: moddatetime trigger added in 048_fix_moddatetime_trigger.sql
