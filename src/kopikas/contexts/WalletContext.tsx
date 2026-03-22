@@ -51,6 +51,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
   useEffect(() => {
     if (walletCode && !loading) {
       localStorage.setItem(`kopikas:balance:${walletCode}`, String(balance))
+      localStorage.setItem('kopikas:last-wallet', walletCode)
     }
   }, [walletCode, balance, loading])
 
