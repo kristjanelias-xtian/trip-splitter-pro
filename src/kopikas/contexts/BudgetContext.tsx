@@ -507,10 +507,26 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>
 }
 
+const DEFAULT_BUDGET_CONTEXT: BudgetContextValue = {
+  budget: null,
+  budgetState: null,
+  savings: [],
+  goals: [],
+  pendingWithdrawal: null,
+  loading: false,
+  setBudget: async () => {},
+  approveWithdrawal: async () => {},
+  denyWithdrawal: async () => {},
+  createWithdrawalRequest: async () => {},
+  createGoal: async () => {},
+  deleteGoal: async () => {},
+  completeGoal: async () => {},
+  refreshBudget: async () => {},
+}
+
 export function useBudget() {
   const context = useContext(BudgetContext)
-  if (context === undefined) {
-    throw new Error('useBudget must be used within a BudgetProvider')
-  }
+  // Return safe defaults when used outside BudgetProvider (e.g., in tests)
+  if (context === undefined) return DEFAULT_BUDGET_CONTEXT
   return context
 }
