@@ -144,9 +144,9 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
   }
 
   const handleCategorySelect = async (category: KopikasCategory) => {
-    if (!editingTx || !editingTx.category) return
+    if (!editingTx) return
     if (editingTx.category === category) return
-    const oldCategory = editingTx.category
+    const oldCategory = editingTx.category ?? 'other'
     // Update local state so the selection is visible immediately
     setEditingTx({ ...editingTx, category })
     const success = await updateTransactionCategory(editingTx.id, oldCategory, category, editingTx.description)
@@ -223,7 +223,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
           key={tx.id}
           className={`flex items-center gap-3 py-3 px-1 ${tx.type === 'expense' || tx.receipt_image_path ? 'cursor-pointer hover:bg-muted/50 rounded-lg transition-colors' : ''}`}
           onClick={() => {
-            if (tx.type === 'expense' && tx.category) {
+            if (tx.type === 'expense') {
               openEditSheet(tx)
             } else if (tx.receipt_image_path) {
               setReceiptUrl(getReceiptUrl(tx.receipt_image_path))
@@ -293,7 +293,7 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                 className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors px-1 -mx-1"
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (tx.category) openEditSheet(tx)
+                  openEditSheet(tx)
                 }}
               >
                 <span className="text-sm shrink-0">{getCategoryEmoji(tx.category!)}</span>
