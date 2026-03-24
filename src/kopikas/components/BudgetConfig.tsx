@@ -62,7 +62,7 @@ export function BudgetConfig({ open, onClose }: BudgetConfigProps) {
           <p className="text-sm text-muted-foreground">
             {budget
               ? `Eelarve algab: ${budget.start_date}`
-              : 'Eelarve algab järgmisel esmaspäeval'}
+              : 'Eelarve algab kohe (sellest nädalast)'}
           </p>
         </div>
 

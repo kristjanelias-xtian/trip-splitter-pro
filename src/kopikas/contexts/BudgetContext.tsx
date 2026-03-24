@@ -33,12 +33,12 @@ const BudgetContext = createContext<BudgetContextValue | undefined>(undefined)
 /**
  * Returns YYYY-MM-DD for next Monday, or today if today is Monday.
  */
-function getNextMonday(): string {
+/** Returns the Monday of the current week so budget takes effect immediately */
+function getCurrentMonday(): string {
   const now = new Date()
   const day = now.getUTCDay() // 0=Sun, 1=Mon, ..., 6=Sat
-  if (day === 1) return now.toISOString().slice(0, 10)
-  const diff = day === 0 ? 1 : 8 - day
-  now.setUTCDate(now.getUTCDate() + diff)
+  const diff = day === 0 ? 6 : day - 1 // how many days since Monday
+  now.setUTCDate(now.getUTCDate() - diff)
   return now.toISOString().slice(0, 10)
 }
 
@@ -251,7 +251,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       const newBudget: WalletBudget = {
         wallet_id: walletId,
         weekly_amount: weeklyAmount,
-        start_date: getNextMonday(),
+        start_date: getCurrentMonday(),
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
