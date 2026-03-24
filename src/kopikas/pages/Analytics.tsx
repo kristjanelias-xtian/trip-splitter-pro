@@ -36,10 +36,15 @@ export function Analytics() {
       })
     }
 
-    // month: rolling 30 days
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - 30)
-    return transactions.filter(t => new Date(t.created_at) >= cutoff)
+    // month: 1st to last day of current calendar month
+    const now = new Date()
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    return transactions.filter(t => {
+      const d = getTransactionDate(t)
+      return d >= monthStart && d <= monthEnd
+    })
   }, [transactions, range])
 
   const totalSpending = useMemo(() => {
