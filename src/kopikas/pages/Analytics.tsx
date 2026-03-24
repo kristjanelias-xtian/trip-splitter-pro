@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { EmojiBarChart } from '../components/EmojiBarChart'
+import { getWeekStart } from '../lib/budgetCalculator'
 
 type TimeRange = 'week' | 'month' | 'all'
 
@@ -11,10 +12,8 @@ const RANGE_LABELS: Record<TimeRange, string> = {
   all: 'Kõik',
 }
 
-const RANGE_DAYS: Record<TimeRange, number> = {
-  week: 7,
-  month: 30,
-  all: Infinity,
+function getTransactionDate(t: { purchase_date: string | null; created_at: string }): string {
+  return t.purchase_date ?? t.created_at.slice(0, 10)
 }
 
 export function Analytics() {
@@ -23,8 +22,23 @@ export function Analytics() {
 
   const filtered = useMemo(() => {
     if (range === 'all') return transactions
+
+    if (range === 'week') {
+      // Mon–Sun of current week (matches budget week)
+      const monday = getWeekStart(new Date())
+      const mondayKey = monday.toISOString().slice(0, 10)
+      const sunday = new Date(monday)
+      sunday.setDate(sunday.getDate() + 6)
+      const sundayKey = sunday.toISOString().slice(0, 10)
+      return transactions.filter(t => {
+        const d = getTransactionDate(t)
+        return d >= mondayKey && d <= sundayKey
+      })
+    }
+
+    // month: rolling 30 days
     const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - RANGE_DAYS[range])
+    cutoff.setDate(cutoff.getDate() - 30)
     return transactions.filter(t => new Date(t.created_at) >= cutoff)
   }, [transactions, range])
 
