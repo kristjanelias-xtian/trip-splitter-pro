@@ -16,6 +16,7 @@ interface WalletContextValue {
   addTransaction: (input: CreateTransactionInput) => Promise<WalletTransaction | null>
   updateTransactionCategory: (txId: string, oldCategory: KopikasCategory, newCategory: KopikasCategory, description: string | null) => Promise<boolean>
   updateTransactionAmount: (txId: string, newAmount: number) => Promise<boolean>
+  updateTransactionDescription: (txId: string, newDescription: string) => Promise<boolean>
   updateTransactionDate: (txId: string, newDate: string) => Promise<boolean>
   updateTransactionGroup: (txIds: string[], vendor: string, purchaseDate: string) => Promise<boolean>
   deleteTransaction: (txId: string) => Promise<boolean>
@@ -285,6 +286,36 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     }
   }
 
+  const updateTransactionDescription = async (txId: string, newDescription: string): Promise<boolean> => {
+    const oldTx = transactions.find(t => t.id === txId)
+    if (!oldTx) return false
+
+    setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, description: newDescription } : tx))
+
+    try {
+      const { error: updateError } = await withTimeout(
+        (supabase.from('wallet_transactions' as any) as any)
+          .update({ description: newDescription })
+          .eq('id', txId),
+        15000,
+        'Kirjelduse muutmine aegus.'
+      ) as { error: any }
+
+      if (updateError) {
+        logger.error('Failed to update transaction description', { txId, error: updateError.message })
+        setTransactions(prev => prev.map(tx => tx.id === txId ? oldTx : tx))
+        setError('Kirjelduse muutmine ebaõnnestus.')
+        return false
+      }
+      return true
+    } catch (err) {
+      logger.error('Failed to update transaction description', { txId, error: err instanceof Error ? err.message : String(err) })
+      setTransactions(prev => prev.map(tx => tx.id === txId ? oldTx : tx))
+      setError('Kirjelduse muutmine ebaõnnestus.')
+      return false
+    }
+  }
+
   const updateTransactionDate = async (txId: string, newDate: string): Promise<boolean> => {
     const oldTx = transactions.find(t => t.id === txId)
     if (!oldTx) return false
@@ -420,6 +451,7 @@ export function WalletProvider({ walletCode, children }: WalletProviderProps) {
     addTransaction,
     updateTransactionCategory,
     updateTransactionAmount,
+    updateTransactionDescription,
     updateTransactionDate,
     updateTransactionGroup,
     deleteTransaction,

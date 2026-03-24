@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import type { WalletTransaction, KopikasCategory } from '../types'
 import { getCategoryEmoji, KOPIKAS_CATEGORIES } from '../lib/kopikasCategories'
 import { useWalletContext } from '../contexts/WalletContext'
 import { usePet } from '../hooks/usePet'
 import { getXpForAction } from '../lib/xpCalculator'
+import { inferKopikasCategory } from '../lib/categoryInference'
 import { supabase } from '@/lib/supabase'
 import { Wallet, Receipt, X, ChevronDown, ChevronRight, Check, Trash2 } from 'lucide-react'
 import { DatePicker } from './DatePicker'
@@ -113,18 +114,21 @@ function buildGroupedList(transactions: WalletTransaction[]): ListEntry[] {
 }
 
 export function TransactionList({ transactions, limit }: TransactionListProps) {
-  const { updateTransactionCategory, updateTransactionAmount, updateTransactionDate, deleteTransaction } = useWalletContext()
+  const { updateTransactionCategory, updateTransactionAmount, updateTransactionDescription, updateTransactionDate, deleteTransaction } = useWalletContext()
   const { awardXp } = usePet()
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [editingTx, setEditingTx] = useState<WalletTransaction | null>(null)
   const [editAmount, setEditAmount] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [editDescription, setEditDescription] = useState('')
   const [editDate, setEditDate] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const openEditSheet = (tx: WalletTransaction) => {
     setEditingTx(tx)
     setEditAmount(tx.amount.toFixed(2))
+    setEditDescription(tx.description ?? '')
     setEditDate(tx.purchase_date ?? tx.created_at.slice(0, 10))
     setConfirmDelete(false)
   }
@@ -153,6 +157,26 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
     if (success) {
       await awardXp(getXpForAction('correct_category'))
     }
+  }
+
+  const handleDescriptionChange = (value: string) => {
+    setEditDescription(value)
+    if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current)
+    descriptionDebounceRef.current = setTimeout(() => {
+      if (!editingTx) return
+      // Re-infer category from updated description
+      const inferred = inferKopikasCategory(value)
+      if (inferred && editingTx) {
+        setEditingTx(prev => prev ? { ...prev, category: inferred } : prev)
+      }
+    }, 300)
+  }
+
+  const handleDescriptionSave = async () => {
+    if (!editingTx) return
+    const trimmed = editDescription.trim()
+    if (trimmed === (editingTx.description ?? '')) return
+    await updateTransactionDescription(editingTx.id, trimmed)
   }
 
   const handleDateSave = async (newDate: string) => {
@@ -355,9 +379,18 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
           </div>
           {editingTx && (
             <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
-              <p className="text-sm text-muted-foreground mb-3 text-center">
-                {editingTx.description || 'Kulu'}
-              </p>
+              {/* Description edit */}
+              <div className="mb-4">
+                <label className="text-xs text-muted-foreground mb-1 block">Kirjeldus</label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  onBlur={handleDescriptionSave}
+                  placeholder="Kulu"
+                  className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm"
+                />
+              </div>
 
               {/* Amount edit */}
               <div className="mb-4">
