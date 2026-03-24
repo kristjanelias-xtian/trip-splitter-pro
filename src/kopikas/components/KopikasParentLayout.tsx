@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { KopikasRouteGuard } from './KopikasRouteGuard'
 import { KopikasAuthBridge } from './KopikasAuthBridge'
 import { PetProvider } from '../contexts/PetContext'
+import { BudgetProvider } from '../contexts/BudgetContext'
 import { useWallet } from '../hooks/useWallet'
 import { useKopikasBasePath } from '../hooks/useKopikasBasePath'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -20,6 +21,7 @@ function ParentInner() {
   }, [])
 
   return (
+    <BudgetProvider>
     <PetProvider walletId={wallet?.id ?? null} transactions={transactions}>
       <div className="min-h-screen bg-background text-foreground">
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur pwa-safe-top">
@@ -42,6 +44,7 @@ function ParentInner() {
         </main>
       </div>
     </PetProvider>
+    </BudgetProvider>
   )
 }
 
