@@ -8,6 +8,33 @@ import { logger } from '@/lib/logger'
 import type { KopikasCategory } from '../types'
 import { X, Camera, Loader2 } from 'lucide-react'
 
+/** Resize image to fit within maxDim, returns data URL (JPEG). */
+function resizeImage(file: File, maxDim: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height)
+        width = Math.round(width * scale)
+        height = Math.round(height * scale)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+      URL.revokeObjectURL(img.src)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error('Image load failed'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 interface ScanFlowProps {
   open: boolean
   onClose: () => void
@@ -34,13 +61,8 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
     setError(null)
 
     try {
-      // Convert to base64
-      const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
+      // Resize image to max 1600px to keep payload small for the edge function
+      const base64 = await resizeImage(file, 1600)
 
       // Call edge function
       const { data, error: fnError } = await withTimeout(
@@ -54,7 +76,7 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
       if (fnError) throw fnError
 
       const parsed = typeof data === 'string' ? JSON.parse(data) : data
-      if (!parsed.items || parsed.items.length === 0) {
+      if (!parsed?.items || parsed.items.length === 0) {
         throw new Error('No items found')
       }
 
@@ -80,8 +102,11 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
 
       resetAndClose()
     } catch (err) {
-      logger.error('Receipt scan failed', { error: err instanceof Error ? err.message : String(err) })
-      setError('Hmm, ma ei saanud aru. Proovi uuesti!')
+      const msg = err instanceof Error ? err.message : String(err)
+      logger.error('Receipt scan failed', { error: msg, wallet_code: wallet.wallet_code })
+      setError(msg === 'No items found'
+        ? 'Ei leidnud kviitungilt midagi. Proovi uuesti!'
+        : 'Hmm, midagi läks valesti. Proovi uuesti!')
     } finally {
       setProcessing(false)
     }

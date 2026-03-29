@@ -12,7 +12,7 @@ const corsHeaders = {
 const logger = createLogger('process-kopikas-receipt')
 const metrics = createMetrics('process-kopikas-receipt')
 
-const KOPIKAS_CATEGORIES = ['sweets', 'food', 'clothes', 'beauty', 'fun', 'school', 'gifts', 'charity', 'other']
+const KOPIKAS_CATEGORIES = ['sweets', 'snack', 'food', 'clothes', 'beauty', 'fun', 'school', 'gifts', 'charity', 'other']
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -58,7 +58,11 @@ Deno.serve(async (req) => {
       )
     }
 
-    logger.info('Processing receipt', { wallet_id: wallet.id })
+    // Extract media type from data URL (e.g. "data:image/jpeg;base64,..." → "image/jpeg")
+    const mimeMatch = image.match(/^data:(image\/\w+);base64,/)
+    const mediaType = mimeMatch?.[1] ?? 'image/jpeg'
+
+    logger.info('Processing receipt', { wallet_id: wallet.id, media_type: mediaType, image_size: image.length })
 
     // Fetch correction history for this wallet (few-shot examples for AI)
     const { data: corrections } = await supabase
@@ -90,7 +94,8 @@ Categories (pick one PER ITEM based on what the item is):
 ${KOPIKAS_CATEGORIES.join(', ')}
 
 Category guidance:
-- sweets: candy, chocolate, ice cream, chips, cookies, gummy bears
+- sweets: candy, chocolate, ice cream, cookies, gummy bears, lollipops
+- snack: chips, crackers, nuts, popcorn, granola bars, pretzels
 - food: meals, pizza, drinks, groceries, coffee, juice, bread, milk
 - clothes: shirts, pants, shoes, hats, socks, dresses
 - beauty: lipstick, cream, perfume, nail polish, shampoo
@@ -124,7 +129,7 @@ Rules:
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: 'image/jpeg',
+                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
                 data: image.replace(/^data:image\/\w+;base64,/, ''),
               },
             },
@@ -157,11 +162,12 @@ Rules:
       const imageData = image.replace(/^data:image\/\w+;base64,/, '')
       const imageBytes = Uint8Array.from(atob(imageData), c => c.charCodeAt(0))
       const receiptId = crypto.randomUUID()
-      const storagePath = `${wallet.id}/${receiptId}.jpg`
+      const ext = mediaType === 'image/png' ? 'png' : 'jpg'
+      const storagePath = `${wallet.id}/${receiptId}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('kopikas-receipts')
-        .upload(storagePath, imageBytes, { contentType: 'image/jpeg' })
+        .upload(storagePath, imageBytes, { contentType: mediaType })
 
       if (uploadError) {
         logger.error('Failed to upload receipt image', { error: uploadError.message })
