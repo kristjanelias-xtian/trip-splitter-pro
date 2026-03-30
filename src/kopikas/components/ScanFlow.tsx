@@ -64,12 +64,11 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
       // Resize image to max 1600px to keep payload small for the edge function
       const base64 = await resizeImage(file, 1600)
 
-      // Call edge function — kids are unauthenticated, so skip sending
-      // the session JWT (gateway rejects malformed/missing tokens)
+      // Call edge function — deployed with --no-verify-jwt since kids
+      // are unauthenticated (wallet_code is the access control)
       const { data, error: fnError } = await withTimeout(
         supabase.functions.invoke('process-kopikas-receipt', {
           body: { wallet_code: wallet.wallet_code, image: base64 },
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
         }),
         55000,
         'Kviitungi töötlemine aegus. Proovi uuesti!'
