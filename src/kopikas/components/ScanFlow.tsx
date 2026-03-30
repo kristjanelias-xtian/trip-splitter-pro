@@ -74,12 +74,29 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
       )
 
       if (fnError) {
-        let message = 'Receipt processing failed'
+        let message = fnError.message ?? 'Receipt processing failed'
         try {
-          const body = await (fnError as any).context?.json?.()
-          message = body?.error ?? fnError.message ?? message
-        } catch {
-          message = fnError.message ?? message
+          const ctx = (fnError as any).context
+          if (ctx && typeof ctx.text === 'function') {
+            const status = ctx.status
+            const text = await ctx.text()
+            logger.error('Edge function non-2xx', {
+              status,
+              statusText: ctx.statusText,
+              body: text?.slice(0, 500),
+              wallet_code: wallet.wallet_code,
+            })
+            try {
+              const body = JSON.parse(text)
+              message = body?.error ?? `HTTP ${status}: ${text.slice(0, 200)}`
+            } catch {
+              message = `HTTP ${status}: ${text?.slice(0, 200) || ctx.statusText}`
+            }
+          }
+        } catch (extractErr) {
+          logger.error('Failed to extract error details', {
+            extractError: extractErr instanceof Error ? extractErr.message : String(extractErr),
+          })
         }
         throw new Error(message)
       }
