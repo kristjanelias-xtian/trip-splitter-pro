@@ -34,11 +34,23 @@ export const onRequest: PagesFunction = async (context) => {
     'content="#d97706"'
   )
 
-  // Swap manifest
-  html = html.replace(
-    'href="/manifest.webmanifest"',
-    'href="/kopikas-manifest.webmanifest"'
-  )
+  // Swap manifest — inject data-start-url for wallet routes so the
+  // client-side script bakes the wallet path into the dynamic manifest
+  const urlPath = new URL(context.request.url).pathname
+  const isWalletRoute = urlPath !== '/' && urlPath !== '/login' && urlPath !== '/create'
+    && !urlPath.endsWith('/parent')
+  if (isWalletRoute) {
+    const safeUrl = urlPath.replace(/[^a-zA-Z0-9/\-_]/g, '')
+    html = html.replace(
+      'href="/manifest.webmanifest"',
+      `href="/kopikas-manifest.webmanifest" data-start-url="${safeUrl}"`
+    )
+  } else {
+    html = html.replace(
+      'href="/manifest.webmanifest"',
+      'href="/kopikas-manifest.webmanifest"'
+    )
+  }
 
   // Swap icons
   html = html.replace(
