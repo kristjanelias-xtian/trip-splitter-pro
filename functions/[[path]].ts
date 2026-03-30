@@ -2,12 +2,38 @@
 // so iOS reads "Kopikas" instead of "Spl1t" at Add to Home Screen time.
 
 export const onRequest: PagesFunction = async (context) => {
+  const url = new URL(context.request.url)
+  const hostname = url.hostname
+
+  // Serve dynamic Kopikas manifest with custom start_url when ?start= is present
+  if (hostname.startsWith('kopikas.') && url.pathname === '/kopikas-manifest.webmanifest' && url.searchParams.has('start')) {
+    const startUrl = '/' + url.searchParams.get('start')!.replace(/^\/+/, '').replace(/[^a-zA-Z0-9/\-_]/g, '')
+    const manifest = {
+      name: 'Kopikas',
+      short_name: 'Kopikas',
+      description: 'Lapse taskuraha, mänguliselt',
+      start_url: startUrl,
+      scope: '/',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#1a1308',
+      theme_color: '#d97706',
+      icons: [
+        { src: '/kopikas-favicon.png', sizes: '32x32', type: 'image/png' },
+        { src: '/kopikas-icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/kopikas-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      ],
+    }
+    return new Response(JSON.stringify(manifest), {
+      headers: { 'Content-Type': 'application/manifest+json' },
+    })
+  }
+
   const response = await context.next()
   const contentType = response.headers.get('content-type') || ''
 
   // Only rewrite HTML responses on kopikas.* hostname
   if (!contentType.includes('text/html')) return response
-  const hostname = new URL(context.request.url).hostname
   if (!hostname.startsWith('kopikas.')) return response
 
   let html = await response.text()
@@ -34,16 +60,16 @@ export const onRequest: PagesFunction = async (context) => {
     'content="#d97706"'
   )
 
-  // Swap manifest — inject data-start-url for wallet routes so the
-  // client-side script bakes the wallet path into the dynamic manifest
-  const urlPath = new URL(context.request.url).pathname
+  // Swap manifest — on wallet routes, add ?start= so iOS fetches a
+  // dynamic manifest with start_url pointing to the wallet path
+  const urlPath = url.pathname
   const isWalletRoute = urlPath !== '/' && urlPath !== '/login' && urlPath !== '/create'
     && !urlPath.endsWith('/parent')
   if (isWalletRoute) {
     const safeUrl = urlPath.replace(/[^a-zA-Z0-9/\-_]/g, '')
     html = html.replace(
       'href="/manifest.webmanifest"',
-      `href="/kopikas-manifest.webmanifest" data-start-url="${safeUrl}"`
+      `href="/kopikas-manifest.webmanifest?start=${encodeURIComponent(safeUrl)}"`
     )
   } else {
     html = html.replace(
