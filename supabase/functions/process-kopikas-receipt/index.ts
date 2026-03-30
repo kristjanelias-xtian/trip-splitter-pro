@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import Anthropic from 'npm:@anthropic-ai/sdk@0.32.1'
+import Anthropic from 'npm:@anthropic-ai/sdk@0.80.0'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { createLogger } from '../_shared/logger.ts'
 import { createMetrics } from '../_shared/metrics.ts'
@@ -202,8 +202,9 @@ Rules:
     })
     metrics.push([{ name: 'receipt_errors', value: 1, labels: { service_name: 'process-kopikas-receipt' }, type: 'counter' }])
 
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
-      JSON.stringify({ error: "Receipt processing failed" }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     )
   }

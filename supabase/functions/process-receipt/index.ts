@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import Anthropic from 'npm:@anthropic-ai/sdk@0.32.1'
+import Anthropic from 'npm:@anthropic-ai/sdk@0.80.0'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { createLogger } from '../_shared/logger.ts'
 import { createMetrics } from '../_shared/metrics.ts'
