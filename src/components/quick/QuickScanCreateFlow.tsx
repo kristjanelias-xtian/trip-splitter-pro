@@ -231,6 +231,9 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
           .then(({ error: markErr }) => {
             if (markErr) logger.warn('Failed to mark receipt task as failed', { task_id: task.id, error: markErr.message })
           })
+        setError('Failed to process receipt. Please try again.')
+        setStep('camera')
+        return
       }
 
       await refreshPendingReceipts()
