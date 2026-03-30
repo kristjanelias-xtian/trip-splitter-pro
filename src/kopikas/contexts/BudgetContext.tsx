@@ -172,10 +172,10 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     return cancel
   }, [walletId])
 
-  // --- Catch-up logic: process completed weeks (parent sessions only) ---
+  // --- Catch-up logic: process completed weeks ---
 
   useEffect(() => {
-    if (loading || !budget || !walletId || !user) return
+    if (loading || !budget || !walletId) return
 
     const entries = processCompletedWeeks(
       budget.weekly_amount,
@@ -217,7 +217,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     }
 
     insertEntries()
-  }, [loading, budget, walletId, user]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, budget, walletId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Actions ---
 
