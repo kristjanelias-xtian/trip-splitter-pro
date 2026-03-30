@@ -36,28 +36,16 @@
             if (appleIcon) appleIcon.href = '/kopikas-apple-touch-icon.png';
             var manifest = document.querySelector('link[rel="manifest"]');
             if (manifest) {
+              // Use a real URL (not blob:) so iOS Safari fetches it at "Add to Home Screen" time.
+              // The Pages Function intercepts ?start= and returns manifest JSON with that start_url.
               var path = location.pathname;
               var isWalletRoute = path !== '/' && path !== '/login' && path !== '/create'
                 && !path.endsWith('/parent');
-              var startUrl = manifest.getAttribute('data-start-url') || (isWalletRoute ? path : '/');
-              var manifestData = {
-                name: 'Kopikas',
-                short_name: 'Kopikas',
-                description: 'Lapse taskuraha, mänguliselt',
-                start_url: startUrl,
-                scope: '/',
-                display: 'standalone',
-                orientation: 'portrait',
-                background_color: '#1a1308',
-                theme_color: '#d97706',
-                icons: [
-                  { src: '/kopikas-favicon.png', sizes: '32x32', type: 'image/png' },
-                  { src: '/kopikas-icon-192.png', sizes: '192x192', type: 'image/png' },
-                  { src: '/kopikas-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
-                ]
-              };
-              var blob = new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' });
-              manifest.href = URL.createObjectURL(blob);
+              var manifestUrl = '/kopikas-manifest.webmanifest';
+              if (isWalletRoute) {
+                manifestUrl += '?start=' + encodeURIComponent(path);
+              }
+              manifest.href = manifestUrl;
             }
           } else {
             var stored = localStorage.getItem('spl1t:theme');
