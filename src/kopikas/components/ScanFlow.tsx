@@ -73,9 +73,21 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
         'Kviitungi töötlemine aegus. Proovi uuesti!'
       )
 
-      if (fnError) throw fnError
+      if (fnError) {
+        let message = 'Receipt processing failed'
+        try {
+          const body = await (fnError as any).context?.json?.()
+          message = body?.error ?? fnError.message ?? message
+        } catch {
+          message = fnError.message ?? message
+        }
+        throw new Error(message)
+      }
 
       const parsed = typeof data === 'string' ? JSON.parse(data) : data
+      if (parsed?.error) {
+        throw new Error(parsed.error)
+      }
       if (!parsed?.items || parsed.items.length === 0) {
         throw new Error('No items found')
       }
@@ -104,9 +116,11 @@ export function ScanFlow({ open, onClose, onScanComplete }: ScanFlowProps) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('Receipt scan failed', { error: msg, wallet_code: wallet.wallet_code })
-      setError(msg === 'No items found'
-        ? 'Ei leidnud kviitungilt midagi. Proovi uuesti!'
-        : 'Hmm, midagi läks valesti. Proovi uuesti!')
+      if (msg === 'No items found') {
+        setError('Ei leidnud kviitungilt midagi. Proovi uuesti!')
+      } else {
+        setError(`Hmm, midagi läks valesti: ${msg}`)
+      }
     } finally {
       setProcessing(false)
     }
