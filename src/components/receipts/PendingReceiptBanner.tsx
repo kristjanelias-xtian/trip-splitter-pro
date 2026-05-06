@@ -71,6 +71,7 @@ export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismi
                       currency: task.extracted_currency ?? defaultCurrency,
                       imagePath: task.receipt_image_path ?? null,
                       category: task.extracted_category ?? null,
+                      mappedItems: task.mapped_items,
                     })
                   }
                 >
