@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Users, ChevronDown, ChevronUp, AlertCircle, SplitSquareHorizontal, Image } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronUp, AlertCircle, Image } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'
@@ -24,10 +24,14 @@ import { useTripContext } from '@/contexts/TripContext'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { ExtractedItem, MappedItem } from '@/types/receipt'
-import { IndividualsDistribution, ExpenseCategory } from '@/types/expense'
-import { Participant } from '@/types/participant'
+import { ExtractedItem, MappedItem, LegacyMappedItem } from '@/types/receipt'
+import { ExpenseCategory } from '@/types/expense'
 import { buildShortNameMap } from '@/lib/participantUtils'
+import { ensureItemIds, normalizeMappedItems, mappedItemsToAllocations, allocationsToMappedItems } from '@/lib/mappedItemsAdapter'
+import { buildReceiptDistribution, distributeEvenly, type Allocations } from '@/lib/receiptDistribution'
+import { useReceiptAllocationView, useReceiptCarryForward } from '@/hooks/useReceiptAllocationView'
+import { ItemRow } from './ItemRow'
+import { PersonRow } from './PersonRow'
 
 interface ReceiptReviewSheetProps {
   open: boolean
@@ -40,97 +44,17 @@ interface ReceiptReviewSheetProps {
   imagePath?: string | null
   extractedCategory?: string | null
   existingExpenseId?: string
-  mappedItems?: MappedItem[] | null
+  mappedItems?: (MappedItem | LegacyMappedItem)[] | null
   onDone: () => void
 }
 
-// Participant chip color palette (consistent across rerenders)
-const CHIP_COLORS = [
-  { on: 'bg-blue-500 text-white',    off: 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700' },
-  { on: 'bg-emerald-500 text-white', off: 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700' },
-  { on: 'bg-violet-500 text-white',  off: 'bg-violet-100 text-violet-700 border border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700' },
-  { on: 'bg-amber-500 text-white',   off: 'bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700' },
-  { on: 'bg-rose-500 text-white',    off: 'bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700' },
-  { on: 'bg-cyan-500 text-white',    off: 'bg-cyan-100 text-cyan-700 border border-cyan-300 dark:bg-cyan-900/40 dark:text-cyan-300 dark:border-cyan-700' },
-  { on: 'bg-fuchsia-500 text-white', off: 'bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-300 dark:bg-fuchsia-900/40 dark:text-fuchsia-300 dark:border-fuchsia-700' },
-  { on: 'bg-teal-500 text-white',    off: 'bg-teal-100 text-teal-700 border border-teal-300 dark:bg-teal-900/40 dark:text-teal-300 dark:border-teal-700' },
-]
-
-function getChipColor(index: number, assigned: boolean) {
-  if (!assigned) return 'bg-muted text-muted-foreground border border-border'
-  return CHIP_COLORS[index % CHIP_COLORS.length].on
-}
-
-
 interface EditableItem {
+  id: string
   name: string
-  price: string // string for controlled input
+  nameOriginal?: string
+  price: string
   qty: number
-  assignedIds: Set<string>
   manuallySet: boolean
-}
-
-function buildDistribution(
-  editableItems: EditableItem[],
-  confirmedTotal: number,
-  tipAmount: number
-): { distribution: IndividualsDistribution; totalAmount: number } {
-  const rawShares: Record<string, number> = {}
-
-  for (const item of editableItems) {
-    const price = parseFloat(item.price) || 0
-    const assignedArr = Array.from(item.assignedIds)
-    if (assignedArr.length === 0 || price === 0) continue
-    const sharePerPerson = price / assignedArr.length
-    for (const pid of assignedArr) {
-      rawShares[pid] = (rawShares[pid] ?? 0) + sharePerPerson
-    }
-  }
-
-  const includedIds = Object.keys(rawShares)
-  if (includedIds.length === 0) {
-    return {
-      distribution: { type: 'individuals', participants: [], splitMode: 'amount', participantSplits: [] },
-      totalAmount: confirmedTotal + tipAmount,
-    }
-  }
-
-  const rawTotal = Object.values(rawShares).reduce((a, b) => a + b, 0)
-  const scaleFactor = rawTotal > 0 ? confirmedTotal / rawTotal : 1
-
-  // Scale shares to match confirmed_total
-  const participantSplits = includedIds.map(pid => ({
-    participantId: pid,
-    value: Math.round(rawShares[pid] * scaleFactor * 100) / 100,
-  }))
-
-  // Fix rounding on last participant
-  const sumScaled = participantSplits.reduce((a, b) => a + b.value, 0)
-  const roundingAdj = Math.round((confirmedTotal - sumScaled) * 100) / 100
-  participantSplits[participantSplits.length - 1].value += roundingAdj
-
-  // Add tip equally
-  const totalAmount = confirmedTotal + tipAmount
-  if (tipAmount > 0) {
-    const tipPerPerson = Math.round((tipAmount / includedIds.length) * 100) / 100
-    for (const split of participantSplits) {
-      split.value = Math.round((split.value + tipPerPerson) * 100) / 100
-    }
-    // Fix tip rounding
-    const sumWithTip = participantSplits.reduce((a, b) => a + b.value, 0)
-    const tipAdj = Math.round((totalAmount - sumWithTip) * 100) / 100
-    participantSplits[participantSplits.length - 1].value += tipAdj
-  }
-
-  return {
-    distribution: {
-      type: 'individuals',
-      participants: includedIds,
-      splitMode: 'amount',
-      participantSplits,
-    },
-    totalAmount,
-  }
 }
 
 export function ReceiptReviewSheet({
@@ -159,7 +83,6 @@ export function ReceiptReviewSheet({
   const { user } = useAuth()
   const { toast } = useToast()
 
-  // Surface receipt context errors as toasts
   useEffect(() => {
     if (receiptError) {
       toast({ title: t('receipt.receiptError'), description: receiptError, variant: 'destructive' })
@@ -175,8 +98,11 @@ export function ReceiptReviewSheet({
     [baseCurrency, currentTrip?.exchange_rates]
   )
 
-  // Editable items state
   const [editableItems, setEditableItems] = useState<EditableItem[]>([])
+  const [allocations, setAllocations] = useState<Allocations>(new Map())
+  const [view, setView] = useReceiptAllocationView()
+  const [carryForward, setCarryForward] = useReceiptCarryForward()
+  const [expandedPersonIds, setExpandedPersonIds] = useState<Set<string>>(new Set())
   const [confirmedTotal, setConfirmedTotal] = useState('')
   const [tipAmount, setTipAmount] = useState('0')
   const [paidBy, setPaidBy] = useState('')
@@ -192,45 +118,39 @@ export function ReceiptReviewSheet({
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null)
   const [showThumbnail, setShowThumbnail] = useState(true)
 
-  // Currency options: trip's known currencies + extracted currency if not already present
   const currencyOptions = useMemo(() => {
     const opts = [...knownCurrencies]
     if (activeCurrency && !opts.includes(activeCurrency)) opts.push(activeCurrency)
     return opts
   }, [knownCurrencies, activeCurrency])
 
-  // True when user has selected a currency not yet in the trip's exchange rates
   const currencyIsUnknown =
     activeCurrency !== baseCurrency && !knownCurrencies.includes(activeCurrency)
-
   const exchangeRateFloat = parseFloat(exchangeRate)
 
-  // Reset state when sheet opens with new data
   useEffect(() => {
     if (!open) return
 
     const defaultPayerId = adultParticipants.find(p => p.user_id === user?.id)?.id ?? adultParticipants[0]?.id ?? ''
-
-    // When editing an existing expense, restore payer and category from it
     const existingExpense = existingExpenseId ? getExpenseById(existingExpenseId) : undefined
 
-    // Build a map of item_index → participant_ids from saved mapped_items
-    const mappedItemsByIndex = new Map<number, Set<string>>()
-    if (mappedItems) {
-      for (const mi of mappedItems) {
-        mappedItemsByIndex.set(mi.item_index, new Set(mi.participant_ids))
-      }
-    }
+    const withIds = ensureItemIds(initialItems)
+    const normalizedMapped: MappedItem[] = mappedItems ? normalizeMappedItems(mappedItems, initialItems) : []
+    const initialAllocs = mappedItemsToAllocations(normalizedMapped)
+    const allocatedItemIds = new Set(normalizedMapped.map(m => m.itemId))
 
     setEditableItems(
-      initialItems.map((item, index) => ({
+      withIds.map(item => ({
+        id: item.id,
         name: item.name,
+        nameOriginal: item.nameOriginal,
         price: item.price.toFixed(2),
         qty: item.qty,
-        assignedIds: mappedItemsByIndex.get(index) ?? new Set<string>(),
-        manuallySet: mappedItemsByIndex.has(index),
+        manuallySet: allocatedItemIds.has(item.id),
       }))
     )
+    setAllocations(initialAllocs)
+    setExpandedPersonIds(new Set())
     setConfirmedTotal(extractedTotal != null ? extractedTotal.toFixed(2) : '')
     setTipAmount('0')
     setPaidBy(existingExpense?.paid_by ?? defaultPayerId)
@@ -245,7 +165,6 @@ export function ReceiptReviewSheet({
     setShowAllItems(true)
   }, [open, taskId])
 
-  // Generate signed URL for receipt image when sheet opens
   useEffect(() => {
     if (!open || !imagePath) {
       setReceiptImageUrl(null)
@@ -264,70 +183,78 @@ export function ReceiptReviewSheet({
       })
   }, [open, imagePath])
 
-  // Toggle a participant for an item, cascading to subsequent unmodified items
-  const toggleParticipant = (itemIndex: number, participantId: string) => {
-    setEditableItems(prev => {
-      const next = [...prev]
-      const toggled = new Set(next[itemIndex].assignedIds)
-      if (toggled.has(participantId)) {
-        toggled.delete(participantId)
-      } else {
-        toggled.add(participantId)
-      }
-      next[itemIndex] = { ...next[itemIndex], assignedIds: toggled, manuallySet: true }
-      // Cascade to subsequent unmodified items
-      for (let i = itemIndex + 1; i < next.length; i++) {
-        if (!next[i].manuallySet) {
-          next[i] = { ...next[i], assignedIds: new Set(toggled) }
+  const applyCountChange = (itemId: string, participantId: string, delta: number) => {
+    const item = editableItems.find(i => i.id === itemId)
+    if (!item) return
+
+    setAllocations(prev => {
+      const next: Allocations = new Map()
+      for (const [k, v] of prev) next.set(k, new Map(v))
+      const inner = next.get(itemId) ?? new Map<string, number>()
+      const current = inner.get(participantId) ?? 0
+      const totalSoFar = Array.from(inner.values()).reduce((a, b) => a + b, 0)
+      let newCount = Math.max(0, current + delta)
+      const proposedTotal = totalSoFar - current + newCount
+      if (proposedTotal > item.qty) newCount = current + (item.qty - totalSoFar)
+      if (newCount === current) return prev
+      if (newCount === 0) inner.delete(participantId)
+      else inner.set(participantId, newCount)
+      next.set(itemId, inner)
+
+      if (carryForward) {
+        const sourceSet = Array.from(inner.keys())
+        const itemIndex = editableItems.findIndex(i => i.id === itemId)
+        for (let i = itemIndex + 1; i < editableItems.length; i++) {
+          const target = editableItems[i]
+          if (target.manuallySet) continue
+          const distributed = distributeEvenly(sourceSet, target.qty)
+          next.set(target.id, distributed)
         }
       }
+
       return next
     })
-  }
 
-  // Toggle all participants for an item, cascading to subsequent unmodified items
-  const toggleAll = (itemIndex: number) => {
-    setEditableItems(prev => {
-      const next = [...prev]
-      const allIds = participants.map(p => p.id)
-      const allAssigned = allIds.every(id => next[itemIndex].assignedIds.has(id))
-      const newIds = allAssigned ? new Set<string>() : new Set(allIds)
-      next[itemIndex] = { ...next[itemIndex], assignedIds: newIds, manuallySet: true }
-      // Cascade to subsequent unmodified items
-      for (let i = itemIndex + 1; i < next.length; i++) {
-        if (!next[i].manuallySet) {
-          next[i] = { ...next[i], assignedIds: new Set(newIds) }
-        }
-      }
-      return next
-    })
-  }
-
-  // Split a qty>1 item into individual rows so each unit can be assigned separately
-  const expandItem = (index: number) => {
-    setEditableItems(prev => {
-      const item = prev[index]
-      if (item.qty <= 1) return prev
-      const unitPrice = (parseFloat(item.price) / item.qty).toFixed(2)
-      const expanded = Array.from({ length: item.qty }, () => ({
-        name: item.name,
-        price: unitPrice,
-        qty: 1,
-        assignedIds: new Set<string>(),
-        manuallySet: false,
-      }))
-      return [...prev.slice(0, index), ...expanded, ...prev.slice(index + 1)]
-    })
-  }
-
-  const updateItemName = (index: number, name: string) => {
-    setEditableItems(prev => prev.map((item, i) => (i === index ? { ...item, name } : item)))
-  }
-
-  const updateItemPrice = (index: number, price: string) => {
     setEditableItems(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, price: price.replace(',', '.') } : item
+      prev.map(i => (i.id === itemId && !i.manuallySet ? { ...i, manuallySet: true } : i))
+    )
+  }
+
+  const applyAssignEvenly = (itemId: string) => {
+    const item = editableItems.find(i => i.id === itemId)
+    if (!item) return
+    const ids = participants.map(p => p.id)
+    const distributed = distributeEvenly(ids, item.qty)
+
+    setAllocations(prev => {
+      const next: Allocations = new Map()
+      for (const [k, v] of prev) next.set(k, new Map(v))
+      next.set(itemId, distributed)
+
+      if (carryForward) {
+        const itemIndex = editableItems.findIndex(i => i.id === itemId)
+        for (let i = itemIndex + 1; i < editableItems.length; i++) {
+          const target = editableItems[i]
+          if (target.manuallySet) continue
+          next.set(target.id, distributeEvenly(ids, target.qty))
+        }
+      }
+      return next
+    })
+
+    setEditableItems(prev =>
+      prev.map(i => (i.id === itemId && !i.manuallySet ? { ...i, manuallySet: true } : i))
+    )
+  }
+
+  const updateItemName = (id: string, name: string) => {
+    setEditableItems(prev => prev.map(item => (item.id === id ? { ...item, name, manuallySet: true } : item)))
+  }
+
+  const updateItemPrice = (id: string, price: string) => {
+    setEditableItems(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, price: price.replace(',', '.'), manuallySet: true } : item
       )
     )
   }
@@ -341,12 +268,25 @@ export function ReceiptReviewSheet({
   const tipFloat = parseFloat(tipAmount) || 0
   const totalExpense = totalFloat + tipFloat
 
-  const unassignedItems = editableItems.filter(item => item.assignedIds.size === 0 && parseFloat(item.price) > 0)
+  const underAssignedItems = editableItems.filter(item => {
+    const inner = allocations.get(item.id)
+    const total = inner ? Array.from(inner.values()).reduce((a, b) => a + b, 0) : 0
+    return total < item.qty && parseFloat(item.price) > 0
+  })
+
+  const totalUnits = editableItems.reduce((sum, i) => sum + (parseFloat(i.price) > 0 ? i.qty : 0), 0)
+  const assignedUnits = editableItems.reduce((sum, i) => {
+    if (parseFloat(i.price) <= 0) return sum
+    const inner = allocations.get(i.id)
+    const t = inner ? Array.from(inner.values()).reduce((a, b) => a + b, 0) : 0
+    return sum + Math.min(t, i.qty)
+  }, 0)
+
   const canSubmit =
     paidBy &&
     totalFloat > 0 &&
-    unassignedItems.length === 0 &&
-    editableItems.some(item => item.assignedIds.size > 0) &&
+    underAssignedItems.length === 0 &&
+    editableItems.some(item => (allocations.get(item.id)?.size ?? 0) > 0) &&
     (!currencyIsUnknown || (exchangeRateFloat > 0))
 
   const handleSubmit = async () => {
@@ -354,7 +294,6 @@ export function ReceiptReviewSheet({
     setSubmitting(true)
 
     try {
-      // If the currency is new to this trip, save its exchange rate first
       if (currencyIsUnknown && exchangeRateFloat > 0) {
         const updatedRates = {
           ...(currentTrip.exchange_rates ?? {}),
@@ -363,7 +302,18 @@ export function ReceiptReviewSheet({
         await updateTrip(currentTrip.id, { exchange_rates: updatedRates })
       }
 
-      const { distribution, totalAmount } = buildDistribution(editableItems, totalFloat, tipFloat)
+      const distributable = editableItems.map(item => ({
+        id: item.id,
+        price: parseFloat(item.price) || 0,
+        qty: item.qty,
+      }))
+
+      const { distribution, totalAmount } = buildReceiptDistribution({
+        items: distributable,
+        allocations,
+        confirmedTotal: totalFloat,
+        tipAmount: tipFloat,
+      })
 
       const description = merchantName.trim()
         ? `Receipt: ${merchantName.trim()}`
@@ -400,19 +350,12 @@ export function ReceiptReviewSheet({
         expenseId = expense.id
       }
 
-      // Save item-to-participant mappings so they can be restored on "Edit mapping"
-      const mappedItemsToSave: MappedItem[] = editableItems
-        .map((item, index) => ({
-          item_index: index,
-          participant_ids: Array.from(item.assignedIds),
-        }))
-        .filter(mi => mi.participant_ids.length > 0)
-
+      const mappedItemsToSave: MappedItem[] = allocationsToMappedItems(allocations)
       await completeReceiptTask(taskId, expenseId, mappedItemsToSave)
 
       toast({
         title: existingExpenseId ? t('receipt.receiptUpdated') : t('receipt.receiptAdded'),
-        description: `${description} — ${activeCurrency} ${totalAmount.toFixed(2)}`,
+        description: `${description} - ${activeCurrency} ${totalAmount.toFixed(2)}`,
       })
 
       onOpenChange(false)
@@ -425,9 +368,28 @@ export function ReceiptReviewSheet({
     }
   }
 
+  const personViewItems = useMemo(
+    () => editableItems.map(i => ({
+      id: i.id,
+      name: i.name,
+      nameOriginal: i.nameOriginal,
+      price: parseFloat(i.price) || 0,
+      qty: i.qty,
+    })),
+    [editableItems]
+  )
+
+  const togglePersonExpand = (pid: string) => {
+    setExpandedPersonIds(prev => {
+      const next = new Set(prev)
+      if (next.has(pid)) next.delete(pid)
+      else next.add(pid)
+      return next
+    })
+  }
+
   const body = (
     <div className="px-4 py-3 space-y-4">
-      {/* Receipt image thumbnail (collapsible) */}
       {receiptImageUrl && (
         <div className="border border-border rounded-lg overflow-hidden">
           <button
@@ -450,7 +412,6 @@ export function ReceiptReviewSheet({
         </div>
       )}
 
-      {/* Merchant + Category */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor="merchant" className="text-xs">{t('receipt.merchant')}</Label>
@@ -481,7 +442,6 @@ export function ReceiptReviewSheet({
         </div>
       </div>
 
-      {/* Paid by */}
       <div className="space-y-1">
         <Label htmlFor="paidby" className="text-xs">{t('expenses.paidBy')}</Label>
         <Select value={paidBy} onValueChange={setPaidBy}>
@@ -496,7 +456,6 @@ export function ReceiptReviewSheet({
         </Select>
       </div>
 
-      {/* Items */}
       <div className="space-y-2">
         <button
           className="flex items-center justify-between w-full text-sm font-medium text-foreground"
@@ -507,38 +466,94 @@ export function ReceiptReviewSheet({
         </button>
 
         {showAllItems && (
-          <div className="space-y-3">
-            {editableItems.map((item, i) => (
-              <ItemRow
-                key={i}
-                index={i}
-                item={item}
-                participants={participants}
-                shortNames={shortNames}
-                onNameChange={name => updateItemName(i, name)}
-                onPriceChange={price => updateItemPrice(i, price)}
-                onToggleParticipant={pid => toggleParticipant(i, pid)}
-                onToggleAll={() => toggleAll(i)}
-                onExpand={item.qty > 1 ? () => expandItem(i) : undefined}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex rounded-full border border-border p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setView('by-item')}
+                  className={`px-3 py-1 rounded-full ${view === 'by-item' ? 'bg-foreground text-background' : 'text-muted-foreground'}`}
+                >
+                  By Item
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('by-person')}
+                  className={`px-3 py-1 rounded-full ${view === 'by-person' ? 'bg-foreground text-background' : 'text-muted-foreground'}`}
+                >
+                  By Person
+                </button>
+              </div>
+              {view === 'by-item' ? (
+                <label className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={carryForward}
+                    onChange={e => setCarryForward(e.target.checked)}
+                    className="rounded"
+                  />
+                  Carry forward
+                </label>
+              ) : (
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {assignedUnits} of {totalUnits} assigned
+                </span>
+              )}
+            </div>
+
+            {view === 'by-item' ? (
+              <div className="space-y-3">
+                {editableItems.map((item, i) => (
+                  <ItemRow
+                    key={item.id}
+                    index={i}
+                    item={item}
+                    counts={allocations.get(item.id) ?? new Map()}
+                    participants={participants}
+                    shortNames={shortNames}
+                    onNameChange={name => updateItemName(item.id, name)}
+                    onPriceChange={price => updateItemPrice(item.id, price)}
+                    onCountChange={(pid, delta) => applyCountChange(item.id, pid, delta)}
+                    onAssignEvenly={() => applyAssignEvenly(item.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {participants.map(p => {
+                  const myCounts = new Map<string, number>()
+                  for (const [iid, inner] of allocations) {
+                    const c = inner.get(p.id)
+                    if (c && c > 0) myCounts.set(iid, c)
+                  }
+                  return (
+                    <PersonRow
+                      key={p.id}
+                      participant={p}
+                      items={personViewItems}
+                      myCounts={myCounts}
+                      allCounts={allocations}
+                      currency={activeCurrency}
+                      expanded={expandedPersonIds.has(p.id)}
+                      onToggleExpand={() => togglePersonExpand(p.id)}
+                      onCountChange={(itemId, delta) => applyCountChange(itemId, p.id, delta)}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Unassigned warning */}
-      {unassignedItems.length > 0 && (
+      {underAssignedItems.length > 0 && (
         <div className="flex items-start gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>
-            {t('receipt.unassignedWarning', { count: unassignedItems.length })}
-          </span>
+          <span>{underAssignedItems.length} item(s) still have unassigned units</span>
         </div>
       )}
 
-      {/* Totals */}
       <div className="border border-border rounded-lg p-3 space-y-3">
-        {/* Currency selector */}
         <div className="space-y-1">
           <Label htmlFor="receipt-currency" className="text-xs">{t('receipt.currency')}</Label>
           <Select value={activeCurrency} onValueChange={setActiveCurrency}>
@@ -553,7 +568,6 @@ export function ReceiptReviewSheet({
           </Select>
         </div>
 
-        {/* Exchange rate prompt for unknown currencies */}
         {currencyIsUnknown && (
           <div className="space-y-2">
             <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
@@ -633,7 +647,7 @@ export function ReceiptReviewSheet({
           t('receipt.addExpenseButton', { action: existingExpenseId ? t('common.update') : t('common.add'), currency: activeCurrency, amount: totalExpense.toFixed(2) })
         )}
       </Button>
-      {!canSubmit && totalFloat > 0 && unassignedItems.length > 0 && (
+      {!canSubmit && totalFloat > 0 && underAssignedItems.length > 0 && (
         <p className="text-xs text-muted-foreground text-center mt-2">
           {t('receipt.assignAllToSubmit')}
         </p>
@@ -654,103 +668,5 @@ export function ReceiptReviewSheet({
     >
       {body}
     </ResponsiveOverlay>
-  )
-}
-
-interface ItemRowProps {
-  index: number
-  item: EditableItem
-  participants: Participant[]
-  shortNames: Map<string, string>
-  onNameChange: (name: string) => void
-  onPriceChange: (price: string) => void
-  onToggleParticipant: (pid: string) => void
-  onToggleAll: () => void
-  onExpand?: () => void
-}
-
-function ItemRow({
-  index,
-  item,
-  participants,
-  shortNames,
-  onNameChange,
-  onPriceChange,
-  onToggleParticipant,
-  onToggleAll,
-  onExpand,
-}: ItemRowProps) {
-  const { t } = useTranslation()
-  const allAssigned = participants.length > 0 && participants.every(p => item.assignedIds.has(p.id))
-
-  return (
-    <div className={`border border-border rounded-lg p-3 space-y-2 ${index % 2 !== 0 ? 'bg-muted/25' : ''}`}>
-      {/* Name + Price */}
-      <div className="flex gap-2 items-center">
-        <Input
-          value={item.name}
-          onChange={e => onNameChange(e.target.value)}
-          placeholder={t('receipt.itemNamePlaceholder')}
-          className="flex-1 h-8 text-sm"
-          style={{ fontSize: '1rem' }}
-        />
-        {item.qty > 1 && onExpand && (
-          <button
-            type="button"
-            onClick={onExpand}
-            className="shrink-0 flex items-center gap-0.5 text-xs text-muted-foreground border border-border rounded px-1.5 py-1 hover:bg-accent"
-            title={t('receipt.splitItem', { count: item.qty })}
-          >
-            <SplitSquareHorizontal size={12} />
-            ×{item.qty}
-          </button>
-        )}
-        <Input
-          inputMode="decimal"
-          value={item.price}
-          onChange={e => onPriceChange(e.target.value)}
-          placeholder="0.00"
-          className="w-24 h-8 text-sm text-right"
-          style={{ fontSize: '1rem' }}
-        />
-      </div>
-
-      {/* Participant chips */}
-      <div className="flex flex-wrap gap-1.5 items-center">
-        {participants.map((p, pi) => {
-          const assigned = item.assignedIds.has(p.id)
-          return (
-            <button
-              key={p.id}
-              onClick={() => onToggleParticipant(p.id)}
-              className={[
-                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
-                getChipColor(pi, assigned),
-              ].join(' ')}
-              title={p.name}
-            >
-              {shortNames.get(p.id) || p.name}
-            </button>
-          )
-        })}
-
-        {/* "All" shortcut */}
-        {participants.length > 1 && (
-          <button
-            onClick={onToggleAll}
-            className={[
-              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors border',
-              allAssigned
-                ? 'bg-foreground text-background border-foreground'
-                : 'bg-muted text-muted-foreground border-border',
-            ].join(' ')}
-            title={t('receipt.toggleAll')}
-          >
-            <Users size={10} />
-            {t('common.all')}
-          </button>
-        )}
-      </div>
-    </div>
   )
 }

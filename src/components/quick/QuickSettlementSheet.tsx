@@ -7,6 +7,7 @@ import { useExpenseContext } from '@/contexts/ExpenseContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useSettlementContext } from '@/contexts/SettlementContext'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
+import { MappedItem, LegacyMappedItem } from '@/types/receipt'
 import { useMyParticipant } from '@/hooks/useMyParticipant'
 import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement, SettlementTransaction } from '@/services/settlementOptimizer'
@@ -212,7 +213,7 @@ export function QuickSettlementSheet({ open, onOpenChange }: QuickSettlementShee
         confirmed_total: number | null
         tip_amount: number
         currency: string | null
-        mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
+        mapped_items: (MappedItem | LegacyMappedItem)[] | null
         debtor_participant_ids: string[]
       }> = []
 

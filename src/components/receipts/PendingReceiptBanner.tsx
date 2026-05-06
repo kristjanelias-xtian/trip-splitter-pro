@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ReceiptTask, ExtractedItem, MappedItem } from '@/types/receipt'
+import { ReceiptTask, ExtractedItem, MappedItem, LegacyMappedItem } from '@/types/receipt'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 
 export interface ReceiptReviewData {
@@ -14,7 +14,7 @@ export interface ReceiptReviewData {
   imagePath: string | null
   category: string | null
   existingExpenseId?: string
-  mappedItems?: MappedItem[] | null
+  mappedItems?: (MappedItem | LegacyMappedItem)[] | null
 }
 
 interface PendingReceiptBannerProps {
