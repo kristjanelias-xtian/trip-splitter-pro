@@ -18,22 +18,24 @@ Return ONLY valid JSON with this exact structure:
 {
   "merchant": "store name or null if truly not found",
   "date": "2026-02-22",
-  "items": [{"name": "item name", "price": 12.50, "qty": 1}],
+  "items": [{"name": "translated item name", "nameOriginal": "verbatim from receipt", "price": 12.50, "qty": 1}],
   "subtotal": 25.00,
   "total": 27.50,
   "currency": "USD",
   "category": "Food"
 }
 Rules:
-- merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. If truly no business name is readable anywhere, invent a short creative name (2–4 words) that evokes the vibe of the items ordered — e.g. "The Wandering Wok" for Thai food, "Mystery Grill" for a barbecue spot, "Island Bites" for tropical drinks. Never return null.
+- merchant: Scan the entire receipt, especially the header area at the top, for the business name, restaurant name, store name, or brand. It may appear as large text, a logo caption, a subtitle, or small print. If you see a name in both Latin and non-Latin script (e.g. Thai, Arabic, Chinese), return the Latin version. If the name is only in a non-Latin script, return a romanised/transliterated version of it. If truly no business name is readable anywhere, invent a short creative name (2-4 words) that evokes the vibe of the items ordered - e.g. "The Wandering Wok" for Thai food, "Mystery Grill" for a barbecue spot, "Island Bites" for tropical drinks. Never return null.
 - date: The date printed on the receipt as an ISO date string (YYYY-MM-DD). If no date is visible, use null.
+- items[].nameOriginal: the line item name EXACTLY as printed on the receipt. If the original is in a non-Latin script, romanise/transliterate it (do not translate it).
+- items[].name: the line item translated/normalized into the target language given by the caller (see "Target language" below). If the original is already in the target language, name and nameOriginal are identical. Do not invent items - only translate names that actually appear on the receipt.
 - price is the total price for that line (qty * unit price), as a number
 - qty defaults to 1 if not shown
 - currency is the 3-letter ISO code (default "USD" if unclear)
 - If a value cannot be read, use null
 - Do NOT include tax lines as items — include them in total but not subtotal
 - DO include service charges, tips, and gratuities as separate line items (name them "Service Charge", "Tip", etc.)
-- category: one of "Food", "Accommodation", "Transport", "Activities", "Training", or "Other". Infer from the merchant name and items. Examples: restaurants/cafes/groceries → "Food", hotels/hostels/Airbnb → "Accommodation", Grab/Uber/taxi/bus/train/flights → "Transport", tours/parks/museums → "Activities". Default to "Other" if unclear.
+- category: one of "Food", "Accommodation", "Transport", "Activities", "Training", or "Other". Infer from the merchant name and items. Examples: restaurants/cafes/groceries -> "Food", hotels/hostels/Airbnb -> "Accommodation", Grab/Uber/taxi/bus/train/flights -> "Transport", tours/parks/museums -> "Activities". Default to "Other" if unclear.
 - Return ONLY the JSON object, no other text`
 
 Deno.serve(async (req) => {
@@ -70,7 +72,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { receipt_task_id, image_base64, mime_type } = await req.json()
+    const { receipt_task_id, image_base64, mime_type, target_language } = await req.json()
+    const targetLang = (typeof target_language === 'string' && /^[a-z]{2}(-[A-Z]{2})?$/.test(target_language)) ? target_language : 'en'
 
     if (!receipt_task_id || !image_base64) {
       return new Response(
@@ -147,7 +150,7 @@ Deno.serve(async (req) => {
           },
           {
             type: 'text',
-            text: 'Please extract all line items from this receipt. Pay special attention to the business or restaurant name at the top of the receipt — include it even if it is in a non-Latin script.',
+            text: `Please extract all line items from this receipt. Pay special attention to the business or restaurant name at the top of the receipt — include it even if it is in a non-Latin script. Target language for translated item names: ${targetLang}.`,
           },
         ],
       }],
@@ -165,7 +168,7 @@ Deno.serve(async (req) => {
     let extracted: {
       merchant?: string | null
       date?: string | null
-      items?: Array<{ name: string; price: number; qty: number }>
+      items?: Array<{ name: string; nameOriginal?: string; price: number; qty: number }>
       subtotal?: number | null
       total?: number | null
       currency?: string | null
@@ -194,11 +197,19 @@ Deno.serve(async (req) => {
       )
     }
 
-    const items = (extracted.items ?? []).slice(0, 100).map(item => ({
-      name: (item.name ?? 'Unknown item').slice(0, 200),
-      price: typeof item.price === 'number' ? item.price : 0,
-      qty: typeof item.qty === 'number' ? item.qty : 1,
-    }))
+    const items = (extracted.items ?? []).slice(0, 100).map((item: { name?: string; nameOriginal?: string; price?: number; qty?: number }) => {
+      const name = (item.name ?? 'Unknown item').slice(0, 200)
+      const nameOriginal = typeof item.nameOriginal === 'string' && item.nameOriginal.length > 0
+        ? item.nameOriginal.slice(0, 200)
+        : name
+      return {
+        id: crypto.randomUUID(),
+        name,
+        nameOriginal,
+        price: typeof item.price === 'number' ? item.price : 0,
+        qty: typeof item.qty === 'number' ? item.qty : 1,
+      }
+    })
 
     const extractedTotal = typeof extracted.total === 'number' ? extracted.total : null
     const extractedCurrency = extracted.currency ?? 'USD'

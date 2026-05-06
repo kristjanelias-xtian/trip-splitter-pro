@@ -190,6 +190,7 @@ export function QuickScanCreateFlow({ open, onOpenChange }: QuickScanCreateFlowP
             receipt_task_id: task.id,
             image_base64: base64,
             mime_type: 'image/jpeg',
+            target_language: navigator.language?.split('-')[0] ?? 'en',
           },
         }),
       ])

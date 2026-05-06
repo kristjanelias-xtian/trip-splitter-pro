@@ -12,6 +12,7 @@ import { useSettlementContext } from '@/contexts/SettlementContext'
 import { PageLoadingState } from '@/components/PageLoadingState'
 import { PageErrorState } from '@/components/PageErrorState'
 import { useReceiptContext } from '@/contexts/ReceiptContext'
+import { MappedItem, LegacyMappedItem } from '@/types/receipt'
 import { calculateBalances, buildEntityMap } from '@/services/balanceCalculator'
 import { calculateOptimalSettlement } from '@/services/settlementOptimizer'
 import { exportSettlementPlanToPDF } from '@/services/pdfExport'
@@ -258,7 +259,7 @@ export function SettlementsPage() {
       confirmed_total: number | null
       tip_amount: number
       currency: string | null
-      mapped_items: Array<{ item_index: number; participant_ids: string[] }> | null
+      mapped_items: (MappedItem | LegacyMappedItem)[] | null
       debtor_participant_ids: string[]
     }> = []
 
