@@ -16,7 +16,7 @@ interface ReceiptContextType {
   clearError: () => void
   createReceiptTask: (tripId: string, imagePath?: string) => Promise<ReceiptTask>
   updateReceiptTask: (id: string, updates: ReceiptTaskUpdate) => Promise<boolean>
-  completeReceiptTask: (id: string, expenseId: string, mappedItems?: MappedItem[]) => Promise<boolean>
+  completeReceiptTask: (id: string, expenseId: string, mappedItems?: MappedItem[], tipAmount?: number) => Promise<boolean>
   reopenReceiptTask: (id: string) => Promise<boolean>
   dismissReceiptTask: (id: string) => Promise<boolean>
   refreshPendingReceipts: () => Promise<void>
@@ -181,7 +181,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const completeReceiptTask = async (id: string, expenseId: string, mappedItems?: MappedItem[]): Promise<boolean> => {
+  const completeReceiptTask = async (id: string, expenseId: string, mappedItems?: MappedItem[], tipAmount?: number): Promise<boolean> => {
     try {
       const completeController = new AbortController()
       const { error: updateError } = await withTimeout(
@@ -191,6 +191,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
             status: 'complete',
             expense_id: expenseId,
             ...(mappedItems ? { mapped_items: mappedItems } : {}),
+            ...(tipAmount !== undefined ? { tip_amount: tipAmount } : {}),
             updated_at: new Date().toISOString(),
           } as Record<string, unknown>)
           .eq('id', id)

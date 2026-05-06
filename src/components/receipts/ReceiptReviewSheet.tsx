@@ -45,6 +45,7 @@ interface ReceiptReviewSheetProps {
   extractedCategory?: string | null
   existingExpenseId?: string
   mappedItems?: (MappedItem | LegacyMappedItem)[] | null
+  savedTipAmount?: number | null
   onDone: () => void
 }
 
@@ -69,6 +70,7 @@ export function ReceiptReviewSheet({
   extractedCategory,
   existingExpenseId,
   mappedItems,
+  savedTipAmount,
   onDone,
 }: ReceiptReviewSheetProps) {
   const { t } = useTranslation()
@@ -152,7 +154,7 @@ export function ReceiptReviewSheet({
     setAllocations(initialAllocs)
     setExpandedPersonIds(new Set())
     setConfirmedTotal(extractedTotal != null ? extractedTotal.toFixed(2) : '')
-    setTipAmount('0')
+    setTipAmount(savedTipAmount != null && savedTipAmount > 0 ? savedTipAmount.toFixed(2) : '0')
     setPaidBy(existingExpense?.paid_by ?? defaultPayerId)
     setMerchantName(merchant ?? '')
     setCategory(
@@ -351,7 +353,7 @@ export function ReceiptReviewSheet({
       }
 
       const mappedItemsToSave: MappedItem[] = allocationsToMappedItems(allocations)
-      await completeReceiptTask(taskId, expenseId, mappedItemsToSave)
+      await completeReceiptTask(taskId, expenseId, mappedItemsToSave, tipFloat)
 
       toast({
         title: existingExpenseId ? t('receipt.receiptUpdated') : t('receipt.receiptAdded'),

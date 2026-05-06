@@ -109,6 +109,7 @@ export function ExpensesPage() {
       category: task.extracted_category ?? null,
       existingExpenseId: task.expense_id ?? undefined,
       mappedItems: task.mapped_items,
+      savedTipAmount: task.tip_amount,
     })
   }
 
@@ -355,6 +356,7 @@ export function ExpensesPage() {
           extractedCategory={receiptReviewData.category}
           existingExpenseId={receiptReviewData.existingExpenseId}
           mappedItems={receiptReviewData.mappedItems}
+          savedTipAmount={receiptReviewData.savedTipAmount}
           onDone={() => setReceiptReviewData(null)}
         />
       )}

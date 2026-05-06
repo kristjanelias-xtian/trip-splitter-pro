@@ -15,6 +15,7 @@ export interface ReceiptReviewData {
   category: string | null
   existingExpenseId?: string
   mappedItems?: (MappedItem | LegacyMappedItem)[] | null
+  savedTipAmount?: number | null
 }
 
 interface PendingReceiptBannerProps {
@@ -72,6 +73,7 @@ export function PendingReceiptBanner({ tasks, defaultCurrency, onReview, onDismi
                       imagePath: task.receipt_image_path ?? null,
                       category: task.extracted_category ?? null,
                       mappedItems: task.mapped_items,
+                      savedTipAmount: task.tip_amount,
                     })
                   }
                 >

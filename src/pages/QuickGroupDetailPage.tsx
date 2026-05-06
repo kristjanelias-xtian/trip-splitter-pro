@@ -315,6 +315,7 @@ export function QuickGroupDetailPage() {
           currency={receiptReviewData.currency}
           imagePath={receiptReviewData.imagePath}
           extractedCategory={receiptReviewData.category}
+          savedTipAmount={receiptReviewData.savedTipAmount}
           onDone={() => setReceiptReviewData(null)}
         />
       )}
