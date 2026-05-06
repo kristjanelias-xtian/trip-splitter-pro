@@ -59,7 +59,7 @@ export function ItemRow({
   const isSingleQty = item.qty === 1
 
   return (
-    <div className={`border border-border rounded-lg p-3 space-y-2 ${index % 2 !== 0 ? 'bg-muted/25' : ''}`}>
+    <div data-testid="item-row" className={`border border-border rounded-lg p-3 space-y-2 ${index % 2 !== 0 ? 'bg-muted/25' : ''}`}>
       <div className="flex gap-2 items-center">
         <div className="flex-1 space-y-0.5">
           <Input
