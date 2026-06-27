@@ -93,6 +93,41 @@ describe('applyPlan — full handover to a new person', () => {
   })
 })
 
+describe('applyPlan — add with backfill', () => {
+  const newPerson = { id: 'n', trip_id: 'trip-1', name: 'Newcomer', is_adult: true }
+  function snap() {
+    return {
+      participants: [buildParticipant({ id: 'a' }), buildParticipant({ id: 'b' })],
+      expenses: [buildExpense({ id: 'e1', paid_by: 'a', amount: 90, distribution: { type: 'individuals', participants: ['a', 'b'] } })],
+      settlements: [],
+    }
+  }
+
+  it('adds the participant with no backfill', () => {
+    const next = applyPlan(snap(), { op: 'add', newParticipant: newPerson, backfill: [] })
+    expect(next.participants.map(p => p.id).sort()).toEqual(['a', 'b', 'n'])
+    expect(next.expenses[0].distribution.participants.sort()).toEqual(['a', 'b'])
+  })
+
+  it('equal backfill appends the newcomer to the split', () => {
+    const next = applyPlan(snap(), { op: 'add', newParticipant: newPerson, backfill: [{ expenseId: 'e1', mode: 'equal' }] })
+    expect(next.expenses[0].distribution.participants.sort()).toEqual(['a', 'b', 'n'])
+    expect(next.expenses[0].distribution.splitMode ?? 'equal').toBe('equal')
+  })
+
+  it('amount backfill gives the newcomer a fixed slice and scales the rest', () => {
+    const next = applyPlan(snap(), { op: 'add', newParticipant: newPerson, backfill: [{ expenseId: 'e1', mode: 'amount', amount: 30 }] })
+    const d = next.expenses[0].distribution
+    expect(d.splitMode).toBe('amount')
+    // original a=45,b=45 scaled to total 60 -> 30 each; newcomer 30; sum 90
+    expect(d.participantSplits).toEqual([
+      { participantId: 'a', value: 30 },
+      { participantId: 'b', value: 30 },
+      { participantId: 'n', value: 30 },
+    ])
+  })
+})
+
 describe('applyPlan — share reallocation', () => {
   function eqSnap() {
     return {

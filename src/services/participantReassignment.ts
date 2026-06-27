@@ -159,9 +159,42 @@ function applyShares(d: ExpenseDistribution, sourceId: string, choice: SharesCho
   }
 }
 
-// Placeholder replaced in Task 4.
-function applyAdd(snapshot: Snapshot, _plan: Extract<ReassignmentPlan, { op: 'add' }>): Snapshot {
-  return snapshot
+function applyAdd(snapshot: Snapshot, plan: Extract<ReassignmentPlan, { op: 'add' }>): Snapshot {
+  const participants = snapshot.participants.some(p => p.id === plan.newParticipant.id)
+    ? snapshot.participants.map(p => ({ ...p }))
+    : [...snapshot.participants.map(p => ({ ...p })), asParticipant(plan.newParticipant)]
+
+  const byId = new Map(plan.backfill.map(b => [b.expenseId, b]))
+  const newId = plan.newParticipant.id
+
+  const expenses = snapshot.expenses.map(e => {
+    const b = byId.get(e.id)
+    if (!b || distributionIncludes(e.distribution, newId)) return e
+    if (b.mode === 'equal') {
+      return { ...e, distribution: { ...e.distribution, participants: [...e.distribution.participants, newId] } }
+    }
+    // amount mode
+    const a = b.amount ?? 0
+    const shares = participantShares(e.distribution, e.amount)
+    const sum = Array.from(shares.values()).reduce((x, y) => x + y, 0)
+    const targetForOthers = Math.max(0, e.amount - a)
+    const participantSplits = Array.from(shares, ([participantId, value]) => ({
+      participantId,
+      value: sum === 0 ? 0 : (value * targetForOthers) / sum,
+    }))
+    participantSplits.push({ participantId: newId, value: a })
+    return {
+      ...e,
+      distribution: {
+        ...e.distribution,
+        participants: [...e.distribution.participants, newId],
+        splitMode: 'amount' as const,
+        participantSplits,
+      },
+    }
+  })
+
+  return { participants, expenses, settlements: snapshot.settlements }
 }
 
 export function applyPlan(snapshot: Snapshot, plan: ReassignmentPlan): Snapshot {
