@@ -63,7 +63,9 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
   const [handover, setHandover] = useState<Handover>('full')
 
   // Per-bucket destinations (reallocate mode). Default to the primary target.
-  const primaryTarget = targetKind === 'new' ? newId : existingTargetId
+  // Remove mode never introduces a new participant, so the new-id fallback only
+  // applies when replacing - otherwise buckets must route to an existing target.
+  const primaryTarget = effectiveMode === 'replace' && targetKind === 'new' ? newId : existingTargetId
   const [sharesTargetId, setSharesTargetId] = useState('')
   const [settlementsChoice, setSettlementsChoice] = useState('')
   const [paidTargetId, setPaidTargetId] = useState('')
@@ -106,8 +108,9 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
         backfill,
       }
     }
+    // Remove never introduces a replacement participant - only replace does.
     const newParticipant =
-      targetKind === 'new'
+      effectiveMode === 'replace' && targetKind === 'new'
         ? { id: newId, trip_id: currentTrip!.id, name: newName.trim(), is_adult: true }
         : undefined
     if (handover === 'full') {

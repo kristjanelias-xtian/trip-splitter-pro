@@ -9,6 +9,7 @@ import {
   mockParticipant,
   mockParticipant2,
   mockExpense,
+  mockSettlement,
   mockUserPreferences,
   mockQuickUserPreferences,
   mockWallet,
@@ -20,10 +21,21 @@ import {
 type Mode = 'full' | 'quick'
 
 /**
+ * Captures the most recent POST body sent to each PostgREST RPC (keyed by RPC
+ * name). The broad Supabase route below records into this object and fulfills
+ * the call with `null`, so tests can assert on the payload without registering
+ * their own competing route (route precedence differs across chromium/webkit).
+ */
+export type RpcCapture = Record<string, unknown>
+
+/**
  * Intercept all Supabase HTTP requests and return mock data.
  * Call this BEFORE navigating to any page.
+ *
+ * @param rpcCapture optional object the interceptor writes RPC bodies into,
+ *   keyed by RPC name (e.g. `rpcCapture['reassign_participant']`).
  */
-export async function setupSupabaseInterceptor(page: Page, mode: Mode = 'full') {
+export async function setupSupabaseInterceptor(page: Page, mode: Mode = 'full', rpcCapture?: RpcCapture) {
   const prefs = mode === 'quick' ? mockQuickUserPreferences : mockUserPreferences
   const projectRef = getProjectRef()
 
@@ -52,6 +64,9 @@ export async function setupSupabaseInterceptor(page: Page, mode: Mode = 'full') 
   await page.route(pattern, (route) => {
     const url = route.request().url()
     const method = route.request().method()
+
+    // RPC calls (/rest/v1/rpc/*) are handled by a dedicated RegExp route
+    // registered below - see the note there.
 
     // --- Auth endpoints ---
     if (url.includes('/auth/v1/token')) {
@@ -86,6 +101,22 @@ export async function setupSupabaseInterceptor(page: Page, mode: Mode = 'full') 
 
     // Fallback — unknown Supabase endpoint
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+  })
+
+  // Dedicated RPC route, registered after (so it wins) and matched by RegExp.
+  // The broad `${url}/**` glob does not reliably intercept the RPC POST on
+  // webkit; a RegExp on the path matches consistently across browsers.
+  await page.route(/\/rest\/v1\/rpc\//, (route) => {
+    const url = route.request().url()
+    const rpcName = url.split('/rest/v1/rpc/')[1]?.split('?')[0] ?? ''
+    if (rpcCapture) {
+      try {
+        rpcCapture[rpcName] = route.request().postDataJSON()
+      } catch {
+        rpcCapture[rpcName] = route.request().postData() ?? null
+      }
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: 'null' })
   })
 }
 
@@ -144,7 +175,11 @@ function handlePostgREST(
       })
 
     case 'settlements':
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([mockSettlement]),
+      })
 
     case 'meals':
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })

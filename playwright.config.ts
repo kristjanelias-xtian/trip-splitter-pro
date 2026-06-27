@@ -14,6 +14,11 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     navigationTimeout: 45_000,
+    // The app registers a service worker (index.html -> /sw.js). On webkit the
+    // SW intercepts fetches and Playwright's page.route does NOT see SW-handled
+    // requests, so the Supabase mock is bypassed. Block SWs so route mocking
+    // works consistently across chromium and webkit.
+    serviceWorkers: 'block',
   },
 
   projects: [
