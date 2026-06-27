@@ -92,3 +92,47 @@ describe('applyPlan — full handover to a new person', () => {
     expect(applyPlan(s, plan).settlements).toEqual([])
   })
 })
+
+describe('applyPlan — share reallocation', () => {
+  function eqSnap() {
+    return {
+      participants: [buildParticipant({ id: 'a' }), buildParticipant({ id: 'b' }), buildParticipant({ id: 'c' })],
+      expenses: [buildExpense({ id: 'e1', paid_by: 'b', amount: 900, distribution: { type: 'individuals', participants: ['a', 'b', 'c'] } })],
+      settlements: [],
+    }
+  }
+  const base = { op: 'remove', sourceId: 'a', remove: true,
+    settlements: { kind: 'delete' }, paid: { kind: 'transfer', targetId: 'b' } } as const
+
+  it('redistribute on an equal split just drops the source from the list (others re-divide)', () => {
+    const next = applyPlan(eqSnap(), { ...base, shares: { kind: 'redistribute' } })
+    expect(next.expenses[0].distribution.participants.sort()).toEqual(['b', 'c'])
+    expect(next.expenses[0].distribution.splitMode ?? 'equal').toBe('equal')
+  })
+
+  it('drop on an equal split freezes remaining shares to amount mode (payer absorbs the gap)', () => {
+    const next = applyPlan(eqSnap(), { ...base, shares: { kind: 'drop' } })
+    const d = next.expenses[0].distribution
+    expect(d.splitMode).toBe('amount')
+    // each remaining keeps the original 900/3 = 300 share; total allocated 600 < 900
+    expect(d.participantSplits).toEqual([
+      { participantId: 'b', value: 300 },
+      { participantId: 'c', value: 300 },
+    ])
+  })
+
+  it('redistribute on a percentage split renormalizes remaining to 100', () => {
+    const snap = {
+      participants: [buildParticipant({ id: 'a' }), buildParticipant({ id: 'b' }), buildParticipant({ id: 'c' })],
+      expenses: [buildExpense({ id: 'e1', paid_by: 'b', amount: 100,
+        distribution: { type: 'individuals', participants: ['a', 'b', 'c'], splitMode: 'percentage',
+          participantSplits: [{ participantId: 'a', value: 50 }, { participantId: 'b', value: 30 }, { participantId: 'c', value: 20 }] } })],
+      settlements: [],
+    }
+    const d = applyPlan(snap, { ...base, shares: { kind: 'redistribute' } }).expenses[0].distribution
+    expect(d.participantSplits).toEqual([
+      { participantId: 'b', value: 60 },
+      { participantId: 'c', value: 40 },
+    ])
+  })
+})

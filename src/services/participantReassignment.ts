@@ -113,10 +113,50 @@ function transferInDistribution(d: ExpenseDistribution, from: string, to: string
   return { ...d, participants, participantSplits }
 }
 
-// Shares handling — transfer here; redistribute/drop added in Task 3.
-function applyShares(d: ExpenseDistribution, sourceId: string, choice: SharesChoice, _amount: number): ExpenseDistribution {
+// Absolute per-participant shares (in the expense's own currency).
+function participantShares(d: ExpenseDistribution, amount: number): Map<string, number> {
+  const mode = d.splitMode ?? 'equal'
+  const m = new Map<string, number>()
+  if (mode === 'equal') {
+    const per = d.participants.length ? amount / d.participants.length : 0
+    for (const pid of d.participants) m.set(pid, per)
+  } else {
+    for (const s of d.participantSplits ?? []) {
+      const v = mode === 'percentage' ? (amount * s.value) / 100 : s.value
+      m.set(s.participantId, (m.get(s.participantId) ?? 0) + v)
+    }
+  }
+  return m
+}
+
+function applyShares(d: ExpenseDistribution, sourceId: string, choice: SharesChoice, amount: number): ExpenseDistribution {
   if (choice.kind === 'transfer') return transferInDistribution(d, sourceId, choice.targetId)
-  return d // redistribute/drop implemented in Task 3
+
+  const mode = d.splitMode ?? 'equal'
+
+  if (choice.kind === 'redistribute') {
+    if (mode === 'equal') {
+      // Remove source; remaining re-divide automatically.
+      return { ...d, participants: d.participants.filter(p => p !== sourceId) }
+    }
+    // percentage/amount: drop source's split, renormalize the rest to the original total.
+    const remaining = (d.participantSplits ?? []).filter(s => s.participantId !== sourceId)
+    const sum = remaining.reduce((a, s) => a + s.value, 0)
+    const targetTotal = mode === 'percentage' ? 100 : amount
+    const scaled = sum === 0 ? remaining : remaining.map(s => ({ participantId: s.participantId, value: (s.value * targetTotal) / sum }))
+    return { ...d, participants: d.participants.filter(p => p !== sourceId), participantSplits: scaled }
+  }
+
+  // drop: source's share vanishes; remaining keep their absolute amounts (payer absorbs the gap).
+  const shares = participantShares(d, amount)
+  shares.delete(sourceId)
+  const participantSplits = Array.from(shares, ([participantId, value]) => ({ participantId, value }))
+  return {
+    ...d,
+    participants: d.participants.filter(p => p !== sourceId),
+    splitMode: 'amount',
+    participantSplits,
+  }
 }
 
 // Placeholder replaced in Task 4.
