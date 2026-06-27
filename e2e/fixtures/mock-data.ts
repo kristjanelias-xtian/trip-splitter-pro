@@ -7,8 +7,10 @@
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
-// Load .env.local the same way Vite does
+// Load env the same way Vite does: .env.local takes precedence over .env.
+// dotenv does not override already-set keys, so load .env.local first.
 config({ path: resolve(process.cwd(), '.env.local') })
+config({ path: resolve(process.cwd(), '.env') })
 
 export const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? ''
 export const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY ?? ''
@@ -29,6 +31,7 @@ export const MOCK_TRIP_CODE = 'test-trip-abc123'
 export const MOCK_PARTICIPANT_ID = 'e2e-part-0001-0001-0001-000000000001'
 export const MOCK_PARTICIPANT_2_ID = 'e2e-part-0002-0002-0002-000000000002'
 export const MOCK_EXPENSE_ID = 'e2e-exp-0001-0001-0001-000000000001'
+export const MOCK_SETTLEMENT_ID = 'e2e-setl-0001-0001-0001-000000000001'
 
 // ─── Mock objects ───────────────────────────────────────────────────────
 
@@ -129,6 +132,23 @@ export const mockExpense = {
   meal_id: null,
   created_at: '2025-06-02T12:00:00.000Z',
   updated_at: '2025-06-02T12:00:00.000Z',
+}
+
+// Settlement: participant2 (Other Person) paid participant1 (Test User).
+// Used by the participant-reassignment E2E so the Remove flow has a settlement
+// destination to resolve (footprint.settlementsFrom is non-empty for participant2).
+export const mockSettlement = {
+  id: MOCK_SETTLEMENT_ID,
+  trip_id: MOCK_TRIP_ID,
+  from_participant_id: MOCK_PARTICIPANT_2_ID,
+  to_participant_id: MOCK_PARTICIPANT_ID,
+  amount: 10.0,
+  currency: 'EUR',
+  settlement_date: '2025-06-03',
+  note: null,
+  created_by: MOCK_USER_ID,
+  created_at: '2025-06-03T12:00:00.000Z',
+  updated_at: '2025-06-03T12:00:00.000Z',
 }
 
 export const mockUserPreferences = {
