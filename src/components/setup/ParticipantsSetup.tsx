@@ -2,10 +2,12 @@
 import { useState, useMemo, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby, MoreHorizontal } from 'lucide-react'
+import { X, UserPlus, Mail, Pencil, Check, UserCheck, Users, ChevronRight, Plus, Send, Baby, MoreHorizontal, Settings2 } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/lib/adminAuth'
+import { ManageMemberFlow } from '@/components/setup/ManageMemberFlow'
 import { useTripContacts, TripContact } from '@/hooks/useTripContacts'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -91,6 +93,10 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   const [isAdult, setIsAdult] = useState(true)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Creator/admin-only participant management flow
+  const canManage = !!currentTrip?.created_by && (user?.id === currentTrip.created_by || isAdminUser(user?.id))
+  const [manageSourceId, setManageSourceId] = useState<string | null>(null)
 
   // Per-participant inline email editing
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
@@ -474,6 +480,12 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                     {sentInviteIds.has(participant.id) ? t('participants.inviteSent') : t('participants.sendInvite')}
                   </DropdownMenuItem>
                 )}
+                {canManage && (
+                  <DropdownMenuItem onClick={() => setManageSourceId(participant.id)}>
+                    <Settings2 size={14} className="mr-2" />
+                    {t('participants.manage')}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => handleDelete(participant.id)}
                   className="text-destructive focus:text-destructive"
@@ -530,6 +542,17 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
                 ) : (
                   <Send size={15} className="text-muted-foreground" />
                 )}
+              </Button>
+            )}
+            {canManage && (
+              <Button
+                onClick={() => setManageSourceId(participant.id)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title={t('participants.manage')}
+              >
+                <Settings2 size={15} className="text-muted-foreground" />
               </Button>
             )}
             <Button
@@ -946,6 +969,15 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {canManage && manageSourceId && (
+        <ManageMemberFlow
+          open={!!manageSourceId}
+          onClose={() => setManageSourceId(null)}
+          mode="replace"
+          sourceParticipantId={manageSourceId}
+        />
       )}
     </motion.div>
   )

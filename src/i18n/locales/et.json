@@ -541,6 +541,7 @@
     "nicknameLabel": "Hüüdnimi: {{name}}",
     "nicknamePlaceholder": "Lühike nimi / hüüdnimi",
     "setGroup": "Määra grupp",
+    "manage": "Halda",
     "groupLabel": "Grupp: {{name}}",
     "groupPlaceholder": "Jagatud rahakoti grupp (nt Perekond Tamm)",
     "setEmail": "Määra e-post",

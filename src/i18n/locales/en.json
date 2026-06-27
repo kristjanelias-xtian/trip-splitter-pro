@@ -541,6 +541,7 @@
     "nicknameLabel": "Nickname: {{name}}",
     "nicknamePlaceholder": "Short name / nickname",
     "setGroup": "Set group",
+    "manage": "Manage",
     "groupLabel": "Group: {{name}}",
     "groupPlaceholder": "Shared wallet group (e.g., The Smiths)",
     "setEmail": "Set email",
