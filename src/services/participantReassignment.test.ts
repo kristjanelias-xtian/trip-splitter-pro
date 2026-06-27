@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, it, expect } from 'vitest'
-import { buildFootprint, applyPlan } from './participantReassignment'
+import { buildFootprint, applyPlan, buildWriteDiff } from './participantReassignment'
 import type { NewParticipant, ReassignmentPlan } from './participantReassignment'
 import { buildParticipant, buildExpense, buildSettlement } from '@/test/factories'
 
@@ -125,6 +125,42 @@ describe('applyPlan — add with backfill', () => {
       { participantId: 'b', value: 30 },
       { participantId: 'n', value: 30 },
     ])
+  })
+})
+
+describe('buildWriteDiff', () => {
+  it('emits inserts, updates and deletes for the Krissu-style replace', () => {
+    const snapshot = {
+      participants: [buildParticipant({ id: 'krissu', name: 'Krissu' }), buildParticipant({ id: 'mart' }), buildParticipant({ id: 'martin' })],
+      expenses: [buildExpense({ id: 'e1', paid_by: 'mart', amount: 900, distribution: { type: 'individuals', participants: ['krissu', 'mart'] } })],
+      settlements: [buildSettlement({ id: 's1', from_participant_id: 'krissu', to_participant_id: 'mart', amount: 750 })],
+    }
+    const diff = buildWriteDiff(snapshot, {
+      op: 'replace', sourceId: 'krissu', remove: true,
+      newParticipant: { id: 'madis', trip_id: 'trip-1', name: 'Madis Maran', is_adult: true },
+      shares: { kind: 'transfer', targetId: 'madis' },
+      settlements: { kind: 'transfer', targetId: 'martin' },
+      paid: { kind: 'transfer', targetId: 'martin' },
+    })
+    expect(diff.insertParticipant?.id).toBe('madis')
+    expect(diff.insertParticipant?.user_id).toBeNull()
+    expect(diff.updateExpenses).toEqual([{ id: 'e1', distribution: { type: 'individuals', participants: ['madis', 'mart'] } }])
+    expect(diff.updateSettlements).toEqual([{ id: 's1', from_participant_id: 'martin' }])
+    expect(diff.deleteParticipantId).toBe('krissu')
+    expect(diff.deleteSettlements).toEqual([])
+  })
+
+  it('lists collapsed settlements as deletions', () => {
+    const snapshot = {
+      participants: [buildParticipant({ id: 'a' }), buildParticipant({ id: 'b' })],
+      expenses: [],
+      settlements: [buildSettlement({ id: 's1', from_participant_id: 'a', to_participant_id: 'b' })],
+    }
+    const diff = buildWriteDiff(snapshot, {
+      op: 'remove', sourceId: 'a', remove: true,
+      shares: { kind: 'drop' }, settlements: { kind: 'transfer', targetId: 'b' }, paid: { kind: 'transfer', targetId: 'b' },
+    })
+    expect(diff.deleteSettlements).toEqual(['s1'])
   })
 })
 

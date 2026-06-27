@@ -197,6 +197,54 @@ function applyAdd(snapshot: Snapshot, plan: Extract<ReassignmentPlan, { op: 'add
   return { participants, expenses, settlements: snapshot.settlements }
 }
 
+export function buildWriteDiff(snapshot: Snapshot, plan: ReassignmentPlan): WriteDiff {
+  const next = applyPlan(snapshot, plan)
+
+  const origExpenses = new Map(snapshot.expenses.map(e => [e.id, e]))
+  const updateExpenses: WriteDiff['updateExpenses'] = []
+  for (const e of next.expenses) {
+    const o = origExpenses.get(e.id)
+    if (!o) continue
+    const patch: { id: string; paid_by?: string; distribution?: ExpenseDistribution } = { id: e.id }
+    let changed = false
+    if (e.paid_by !== o.paid_by) { patch.paid_by = e.paid_by; changed = true }
+    if (JSON.stringify(e.distribution) !== JSON.stringify(o.distribution)) { patch.distribution = e.distribution; changed = true }
+    if (changed) updateExpenses.push(patch)
+  }
+
+  const origSettlements = new Map(snapshot.settlements.map(s => [s.id, s]))
+  const nextSettlementIds = new Set(next.settlements.map(s => s.id))
+  const updateSettlements: WriteDiff['updateSettlements'] = []
+  for (const s of next.settlements) {
+    const o = origSettlements.get(s.id)
+    if (!o) continue
+    const patch: { id: string; from_participant_id?: string; to_participant_id?: string } = { id: s.id }
+    let changed = false
+    if (s.from_participant_id !== o.from_participant_id) { patch.from_participant_id = s.from_participant_id; changed = true }
+    if (s.to_participant_id !== o.to_participant_id) { patch.to_participant_id = s.to_participant_id; changed = true }
+    if (changed) updateSettlements.push(patch)
+  }
+  const deleteSettlements = snapshot.settlements.filter(s => !nextSettlementIds.has(s.id)).map(s => s.id)
+
+  const origIds = new Set(snapshot.participants.map(p => p.id))
+  const nextIds = new Set(next.participants.map(p => p.id))
+  const inserted = next.participants.find(p => !origIds.has(p.id))
+  const deleted = snapshot.participants.find(p => !nextIds.has(p.id))
+
+  return {
+    insertParticipant: inserted
+      ? {
+          id: inserted.id, trip_id: inserted.trip_id, name: inserted.name, is_adult: inserted.is_adult,
+          email: inserted.email ?? null, user_id: inserted.user_id ?? null, wallet_group: inserted.wallet_group ?? null,
+        }
+      : null,
+    updateExpenses,
+    updateSettlements,
+    deleteSettlements,
+    deleteParticipantId: deleted ? deleted.id : null,
+  }
+}
+
 export function applyPlan(snapshot: Snapshot, plan: ReassignmentPlan): Snapshot {
   if (plan.op === 'add') {
     return applyAdd(snapshot, plan)
