@@ -542,6 +542,8 @@
     "nicknamePlaceholder": "Lühike nimi / hüüdnimi",
     "setGroup": "Määra grupp",
     "manage": "Halda",
+    "addMemberSplit": "Lisa liige ja jaga kulud",
+    "removeFromTrip": "Eemalda reisilt",
     "groupLabel": "Grupp: {{name}}",
     "groupPlaceholder": "Jagatud rahakoti grupp (nt Perekond Tamm)",
     "setEmail": "Määra e-post",

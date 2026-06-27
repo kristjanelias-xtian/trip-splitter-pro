@@ -53,6 +53,10 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
   const newId = newIdRef.current
 
   const [step, setStep] = useState<Step>('choose')
+  // effectiveMode lets a replace-entry switch to the remove UI in-flow without
+  // changing the mode prop (so callers stay simple and the E2E suite can reach
+  // remove from the per-row "Manage" entry point).
+  const [effectiveMode, setEffectiveMode] = useState(mode)
   const [targetKind, setTargetKind] = useState<TargetKind>('new')
   const [newName, setNewName] = useState('')
   const [existingTargetId, setExistingTargetId] = useState('')
@@ -95,7 +99,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
   }, [snap.expenses, backfillSel])
 
   function buildPlan(): ReassignmentPlan {
-    if (mode === 'add') {
+    if (effectiveMode === 'add') {
       return {
         op: 'add',
         newParticipant: { id: newId, trip_id: currentTrip!.id, name: newName.trim(), is_adult: true },
@@ -108,7 +112,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
         : undefined
     if (handover === 'full') {
       return {
-        op: mode,
+        op: effectiveMode,
         sourceId: sourceParticipantId!,
         remove: true,
         newParticipant,
@@ -118,7 +122,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
       }
     }
     return {
-      op: mode,
+      op: effectiveMode,
       sourceId: sourceParticipantId!,
       remove: true,
       newParticipant,
@@ -137,18 +141,20 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
   const hasSettlements = !!footprint && (footprint.settlementsFrom.length > 0 || footprint.settlementsTo.length > 0)
   const hasPaid = !!footprint && footprint.paidExpenses.length > 0
   const removeUnresolved =
-    mode === 'remove' &&
+    effectiveMode === 'remove' &&
     ((hasSettlements && !settlementsChoice) || (hasPaid && !paidTargetId))
 
   const confirmDisabled =
     submitting ||
-    (mode !== 'add' && handover === 'reallocate' && targetKind === 'existing' && !existingTargetId) ||
-    (mode !== 'add' && targetKind === 'new' && !newName.trim()) ||
-    (mode === 'add' && !newName.trim()) ||
+    (effectiveMode !== 'add' && handover === 'reallocate' && targetKind === 'existing' && !existingTargetId) ||
+    (effectiveMode !== 'add' && effectiveMode !== 'remove' && targetKind === 'new' && !newName.trim()) ||
+    (effectiveMode === 'add' && !newName.trim()) ||
     removeUnresolved
 
-  // Preview balances (before vs after applying the plan).
-  const preview = useMemo(() => {
+  // Preview balances (before vs after applying the plan). Only needed on the
+  // preview step, so computed inline (cheap) rather than memoised — this avoids
+  // a stale closure over buildPlan / snap / currency / rates / trackingMode.
+  function computePreview(): { id: string; name: string; before: number; after: number; delta: number }[] {
     if (step !== 'preview' || !currentTrip) return []
     let plan: ReassignmentPlan
     try {
@@ -170,8 +176,8 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
       if (Math.abs(a - b) > 0.005) rows.push({ id, name, before: b, after: a, delta: a - b })
     }
     return rows
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }
+  const preview = computePreview()
 
   const handleConfirm = async () => {
     setError(null)
@@ -189,7 +195,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
   }
 
   const title =
-    mode === 'add' ? 'Add a person' : mode === 'remove' ? 'Remove person' : 'Manage person'
+    effectiveMode === 'add' ? 'Add a person' : effectiveMode === 'remove' ? 'Remove person' : 'Manage person'
 
   const footer =
     step === 'choose' ? (
@@ -216,7 +222,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
       {step === 'choose' && (
         <div className="space-y-5">
           {/* Target picker (replace mode only) */}
-          {mode === 'replace' && (
+          {effectiveMode === 'replace' && (
             <div className="space-y-3">
               <Label>Who takes over?</Label>
               <div className="flex gap-2">
@@ -237,6 +243,15 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
                   An existing person
                 </Button>
               </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={() => setEffectiveMode('remove')}
+              >
+                Remove from trip
+              </Button>
 
               {targetKind === 'new' && (
                 <div className="space-y-2">
@@ -270,7 +285,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
           )}
 
           {/* Handover mode (replace/remove) */}
-          {mode !== 'add' && (
+          {effectiveMode !== 'add' && (
             <div className="space-y-3">
               <Label>How should their items move?</Label>
               <div className="flex gap-2">
@@ -343,7 +358,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
                 </div>
               )}
 
-              {mode === 'remove' && removeUnresolved && (
+              {effectiveMode === 'remove' && removeUnresolved && (
                 <p className="text-sm text-muted-foreground">
                   Reassign this person&apos;s settlements and paid expenses before removing them.
                 </p>
@@ -352,7 +367,7 @@ export function ManageMemberFlow({ open, onClose, mode, sourceParticipantId }: M
           )}
 
           {/* add mode: name + backfill checklist */}
-          {mode === 'add' && (
+          {effectiveMode === 'add' && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="mm-add-name">New person name</Label>

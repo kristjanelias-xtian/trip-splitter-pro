@@ -542,6 +542,8 @@
     "nicknamePlaceholder": "Short name / nickname",
     "setGroup": "Set group",
     "manage": "Manage",
+    "addMemberSplit": "Add member and split costs",
+    "removeFromTrip": "Remove from trip",
     "groupLabel": "Group: {{name}}",
     "groupPlaceholder": "Shared wallet group (e.g., The Smiths)",
     "setEmail": "Set email",

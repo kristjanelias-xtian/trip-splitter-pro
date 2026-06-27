@@ -97,6 +97,7 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
   // Creator/admin-only participant management flow
   const canManage = !!currentTrip?.created_by && (user?.id === currentTrip.created_by || isAdminUser(user?.id))
   const [manageSourceId, setManageSourceId] = useState<string | null>(null)
+  const [addFlowOpen, setAddFlowOpen] = useState(false)
 
   // Per-participant inline email editing
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
@@ -943,6 +944,17 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
             <CardTitle>{t('participants.participantsCount', { count: participants.length })}</CardTitle>
           </CardHeader>
           <CardContent>
+            {canManage && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mb-4"
+                onClick={() => setAddFlowOpen(true)}
+              >
+                <UserPlus size={16} className="mr-2" />
+                {t('participants.addMemberSplit')}
+              </Button>
+            )}
             <div className="space-y-4">
               {participantGroups.map((group, groupIndex) => (
                 <div key={group.label ?? '__ungrouped'}>
@@ -977,6 +989,14 @@ export function ParticipantsSetup({ onComplete: _onComplete, hasSetup: _hasSetup
           onClose={() => setManageSourceId(null)}
           mode="replace"
           sourceParticipantId={manageSourceId}
+        />
+      )}
+
+      {canManage && addFlowOpen && (
+        <ManageMemberFlow
+          open={addFlowOpen}
+          onClose={() => setAddFlowOpen(false)}
+          mode="add"
         />
       )}
     </motion.div>
