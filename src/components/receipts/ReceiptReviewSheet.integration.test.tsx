@@ -167,6 +167,17 @@ describe('ReceiptReviewSheet -- shared single-qty items (issue #783)', () => {
     fireEvent.click(within(wineRow).getByText(/Everyone equally/i))
     expect(within(wineRow).getByText('Split between 3 people')).toBeInTheDocument()
   })
+
+  it('"Everyone equally" toggles off on a second click (deselects everyone)', () => {
+    renderSheet()
+    const wineRow = getItemRow('Wine')
+    const btn = within(wineRow).getByText(/Everyone equally/i)
+    fireEvent.click(btn)
+    expect(within(wineRow).getByText('Split between 3 people')).toBeInTheDocument()
+    // Second click clears the allocation -> no sharers, progress chip hidden.
+    fireEvent.click(within(getItemRow('Wine')).getByText(/Everyone equally/i))
+    expect(within(getItemRow('Wine')).queryByText('Split between 3 people')).not.toBeInTheDocument()
+  })
 })
 
 describe('ReceiptReviewSheet -- view toggle', () => {

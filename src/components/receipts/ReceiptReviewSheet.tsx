@@ -227,19 +227,22 @@ export function ReceiptReviewSheet({
     const item = editableItems.find(i => i.id === itemId)
     if (!item) return
     const ids = participants.map(p => p.id)
-    const distributed = distributeEvenly(ids)
+    // Toggle: if everyone already shares this item, a second click clears it.
+    const inner = allocations.get(itemId)
+    const everyoneSelected = ids.length > 0 && ids.every(id => (inner?.get(id) ?? 0) > 0)
+    const apply = (): Map<string, number> => (everyoneSelected ? new Map() : distributeEvenly(ids))
 
     setAllocations(prev => {
       const next: Allocations = new Map()
       for (const [k, v] of prev) next.set(k, new Map(v))
-      next.set(itemId, distributed)
+      next.set(itemId, apply())
 
       if (carryForward) {
         const itemIndex = editableItems.findIndex(i => i.id === itemId)
         for (let i = itemIndex + 1; i < editableItems.length; i++) {
           const target = editableItems[i]
           if (target.manuallySet) continue
-          next.set(target.id, distributeEvenly(ids))
+          next.set(target.id, apply())
         }
       }
       return next

@@ -59,6 +59,7 @@ export function ItemRow({
   const showProgress = assigned
   const showOriginal = !!item.nameOriginal && item.nameOriginal !== item.name
   const isSingleQty = item.qty === 1
+  const everyoneSelected = participants.length > 0 && participants.every(p => (counts.get(p.id) ?? 0) > 0)
 
   return (
     <div data-testid="item-row" className={`border border-border rounded-lg p-3 space-y-2 ${index % 2 !== 0 ? 'bg-muted/25' : ''}`}>
@@ -148,7 +149,13 @@ export function ItemRow({
           <button
             type="button"
             onClick={onAssignEvenly}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground hover:bg-accent"
+            aria-pressed={everyoneSelected}
+            className={[
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors',
+              everyoneSelected
+                ? 'bg-foreground text-background border-foreground'
+                : 'border-border bg-muted text-muted-foreground hover:bg-accent',
+            ].join(' ')}
           >
             <Users size={10} />
             Everyone equally
