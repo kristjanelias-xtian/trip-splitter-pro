@@ -57,7 +57,7 @@ describe('PersonRow', () => {
     expect(screen.getByText('Bread')).toBeInTheDocument()
   })
 
-  it('shows "fully assigned" when an item has no remaining units globally', () => {
+  it('shows who an item is shared by when the user is not on it', () => {
     const allCounts = new Map([['i2', new Map([['bob', 1]])]])
     render(
       <PersonRow
@@ -71,10 +71,28 @@ describe('PersonRow', () => {
         onCountChange={() => {}}
       />
     )
-    expect(screen.getByText(/fully assigned/i)).toBeInTheDocument()
+    expect(screen.getByText(/shared by 1/i)).toBeInTheDocument()
   })
 
-  it('disables the + button on items with no remaining units (and the user has none of them)', () => {
+  it('shows the participant proportional share for a shared item', () => {
+    // Bread price 4 shared by alice + bob -> alice owes 2.00
+    const allCounts = new Map([['i2', new Map([['alice', 1], ['bob', 1]])]])
+    render(
+      <PersonRow
+        participant={mkParticipant('alice', 'Alice')}
+        items={items}
+        myCounts={new Map([['i2', 1]])}
+        allCounts={allCounts}
+        currency="EUR"
+        expanded={true}
+        onToggleExpand={() => {}}
+        onCountChange={() => {}}
+      />
+    )
+    expect(screen.getByText(/EUR 2\.00 . split 2 ways/i)).toBeInTheDocument()
+  })
+
+  it('never disables the + button (any number of people can share an item)', () => {
     const allCounts = new Map([['i2', new Map([['bob', 1]])]])
     render(
       <PersonRow
@@ -89,7 +107,7 @@ describe('PersonRow', () => {
       />
     )
     const plus = screen.getByLabelText(/Increment Bread for Alice/i)
-    expect(plus).toBeDisabled()
+    expect(plus).not.toBeDisabled()
   })
 
   it('calls onCountChange when + is clicked', () => {

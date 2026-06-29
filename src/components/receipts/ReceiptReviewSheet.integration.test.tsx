@@ -141,6 +141,34 @@ describe('ReceiptReviewSheet -- multi-qty regression', () => {
   })
 })
 
+describe('ReceiptReviewSheet -- shared single-qty items (issue #783)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    localStorage.setItem('spl1t:receipt-carry-forward', 'false')
+    localStorage.setItem('spl1t:receipt-allocation-view', 'by-item')
+  })
+
+  it('lets multiple people share a qty=1 item (Bread), not just the first', () => {
+    renderSheet()
+    const breadRow = getItemRow('Bread') // qty=1 -> chip toggle mode
+
+    // Select Alice, then Bob, then Carol on the same single-unit item.
+    fireEvent.click(within(breadRow).getByText('Alice'))
+    fireEvent.click(within(breadRow).getByText('Bob'))
+    fireEvent.click(within(breadRow).getByText('Carol'))
+
+    // All three must remain selected -> "Split between 3 people".
+    expect(within(breadRow).getByText('Split between 3 people')).toBeInTheDocument()
+  })
+
+  it('"Everyone equally" on a qty>1 item selects every participant', () => {
+    renderSheet()
+    const wineRow = getItemRow('Wine') // qty=2, has the "Everyone equally" button
+    fireEvent.click(within(wineRow).getByText(/Everyone equally/i))
+    expect(within(wineRow).getByText('Split between 3 people')).toBeInTheDocument()
+  })
+})
+
 describe('ReceiptReviewSheet -- view toggle', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -183,15 +211,15 @@ describe('ReceiptReviewSheet -- carry-forward semantics', () => {
     renderSheet()
 
     // Assign Alice to beer (qty=3). Items are ordered: beer, bread, wine.
-    // Carry-forward should distribute alice across bread (qty=1) and wine (qty=2).
+    // Carry-forward copies the source participant set onto later items with an
+    // equal share weight of 1 each.
     const beerRow = getItemRow('Beer')
     fireEvent.click(within(beerRow).getByLabelText(/Increment Alice/i))
 
-    // wine has qty=2, with only alice in the source set:
-    // distributeEvenly(['alice'], 2) -> alice gets 2
+    // wine inherits the {alice} set with weight 1 (proportional shares, not units).
     await waitFor(() => {
       const wineRow = getItemRow('Wine')
-      expect(within(wineRow).getByText('2')).toBeInTheDocument()
+      expect(within(wineRow).getByText('1')).toBeInTheDocument()
     })
   })
 
@@ -236,7 +264,7 @@ describe('ReceiptReviewSheet -- legacy mapped_items load', () => {
     const breadRow = getItemRow('Bread')
     // Bread has qty=1, so it uses chip-toggle mode (isSingleQty).
     // The carol chip will show as selected (on=true via getChipColor).
-    // The count display is not shown for single-qty; verify via "1 of 1 assigned" progress chip.
-    expect(within(breadRow).getByText('1 of 1 assigned')).toBeInTheDocument()
+    // The count display is not shown for single-qty; verify via the sharer chip.
+    expect(within(breadRow).getByText('Assigned to 1 person')).toBeInTheDocument()
   })
 })

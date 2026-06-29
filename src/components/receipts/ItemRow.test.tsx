@@ -65,7 +65,7 @@ describe('ItemRow', () => {
     expect(screen.queryByText('Borscht')).not.toBeInTheDocument()
   })
 
-  it('shows progress chip with assigned/qty', () => {
+  it('shows how many people an item is split between', () => {
     const counts = new Map([['alice', 1], ['bob', 1]])
     render(
       <ItemRow
@@ -80,10 +80,10 @@ describe('ItemRow', () => {
         onAssignEvenly={noop}
       />
     )
-    expect(screen.getByText('2 of 4 assigned')).toBeInTheDocument()
+    expect(screen.getByText('Split between 2 people')).toBeInTheDocument()
   })
 
-  it('disables the + button when item is fully assigned', () => {
+  it('never disables the + button — weights are uncapped so anyone can share', () => {
     const counts = new Map([['alice', 4]])
     render(
       <ItemRow
@@ -99,7 +99,7 @@ describe('ItemRow', () => {
       />
     )
     const plus = screen.getAllByLabelText(/Increment/i)
-    plus.forEach(btn => expect(btn).toBeDisabled())
+    plus.forEach(btn => expect(btn).not.toBeDisabled())
   })
 
   it('disables the - button when count is 0 for that participant', () => {

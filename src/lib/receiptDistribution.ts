@@ -16,21 +16,26 @@ export function pricePerUnit(item: { price: number; qty: number }): number {
 }
 
 /**
- * Distribute `qty` units across `participantIds` as evenly as possible.
- * Floor across, remainder lumped onto participants in alphabetical id order.
- * Returns Map<participantId, count> with only positive entries.
+ * Assign an equal share weight (1) to every participant.
+ * Counts are per-item share weights, not capped unit allocations, so an
+ * item is always split proportionally across whoever shares it. Giving
+ * everyone a weight of 1 means "split this item equally" regardless of qty
+ * (so a single shared pizza splits across the whole table).
+ * Returns Map<participantId, weight> with only positive entries.
  */
-export function distributeEvenly(participantIds: string[], qty: number): Map<string, number> {
+export function distributeEvenly(participantIds: string[]): Map<string, number> {
   const result = new Map<string, number>()
-  if (participantIds.length === 0 || qty <= 0) return result
-  const sorted = [...participantIds].sort()
-  const base = Math.floor(qty / sorted.length)
-  const remainder = qty - base * sorted.length
-  for (let i = 0; i < sorted.length; i++) {
-    const count = base + (i < remainder ? 1 : 0)
-    if (count > 0) result.set(sorted[i], count)
-  }
+  for (const id of participantIds) result.set(id, 1)
   return result
+}
+
+/**
+ * A participant's cost share of one item: their weight as a fraction of the
+ * item's total weight, times the item price. Returns 0 when nobody shares it.
+ */
+export function itemShare(price: number, weight: number, sumWeights: number): number {
+  if (sumWeights <= 0 || weight <= 0) return 0
+  return (price * weight) / sumWeights
 }
 
 export function totalAssigned(perParticipant: Map<string, number>): number {
@@ -66,11 +71,11 @@ export function buildReceiptDistribution({
 
   for (const item of items) {
     const perPersonMap = allocations.get(item.id)
-    if (!perPersonMap || perPersonMap.size === 0 || item.price === 0 || item.qty === 0) continue
-    const unit = pricePerUnit(item)
-    for (const [pid, count] of perPersonMap) {
-      if (count <= 0) continue
-      rawShares[pid] = (rawShares[pid] ?? 0) + unit * count
+    if (!perPersonMap || perPersonMap.size === 0 || item.price === 0) continue
+    const sumWeights = totalAssigned(perPersonMap)
+    for (const [pid, weight] of perPersonMap) {
+      if (weight <= 0) continue
+      rawShares[pid] = (rawShares[pid] ?? 0) + itemShare(item.price, weight, sumWeights)
     }
   }
 
