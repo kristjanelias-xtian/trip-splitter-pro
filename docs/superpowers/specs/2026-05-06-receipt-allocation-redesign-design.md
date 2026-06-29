@@ -44,9 +44,9 @@ type Allocations = Map<ItemId, Map<ParticipantId, number>>
 //                  ^itemId   ^who got how many units of that item
 ```
 
-**Invariant:** `sum(counts) <= item.qty` for every item. Going over is blocked at the UI; under is allowed mid-edit but blocks submit.
+**Invariant (superseded — see Addendum 2026-06-29):** ~~`sum(counts) <= item.qty` for every item. Going over is blocked at the UI; under is allowed mid-edit but blocks submit.~~ Counts are now uncapped per-item **share weights**; an item is complete once it has at least one sharer.
 
-**Distribution math:** `pricePerUnit = item.price / item.qty`. Each participant's share for a line = `count * pricePerUnit`. Sum over all items → final per-person totals fed into `buildDistribution`.
+**Distribution math (superseded):** ~~`pricePerUnit = item.price / item.qty`. Each participant's share for a line = `count * pricePerUnit`.~~ Now per-item proportional: `share_p = item.price * weight_p / sum(weights for that item)`. Sum over all items → per-person totals fed into `buildDistribution`. (For a fully-assigned multi-qty item this is numerically identical to the old `count * pricePerUnit`.)
 
 ## UI — By-Item View
 
@@ -64,10 +64,10 @@ Each item is one row, regardless of qty.
 +---------------------------------------------+
 ```
 
-- **Stepper** per participant: `-` decrement disabled at 0, `+` disabled when item is full (`assigned == qty`).
+- **Stepper** per participant: `-` decrement disabled at 0; `+` is never disabled (weights are uncapped — see Addendum).
 - For `qty == 1`, the stepper collapses to a tap-to-toggle chip — same density as the current UI on simple receipts.
-- **"Everyone equally"** distributes qty across all current participants: floor across, remainder lumped on first participant alphabetically (deterministic).
-- **Progress chip:** amber while `0 < assigned < qty`, green at `assigned == qty`, hidden when `assigned == 0`.
+- **"Everyone equally"** assigns weight 1 to every current participant (splits the line equally regardless of qty).
+- **Progress chip:** green "Assigned to 1 person" / "Split between N people" once a line has a sharer; hidden when nobody shares it.
 - **Inline name editing** preserved.
 - **No expansion.** `expandItem()` deleted.
 
@@ -94,8 +94,8 @@ Tap to expand a person:
     Bread              fully assigned  (-)
 ```
 
-- **"X left"** = `item.qty - sum(allAllocationsForItem)`. Disables `+` at 0.
-- **Sheet header chip** shows global progress: "10 of 12 units assigned".
+- ~~**"X left"** = `item.qty - sum(allAllocationsForItem)`. Disables `+` at 0.~~ (Superseded: rows now show each person's proportional share, e.g. `EUR 2.00 . split 3 ways`; `+` is never disabled.)
+- **Sheet header chip** shows global progress: "N of M items assigned" (per-item, not per-unit — see Addendum).
 - **No carry-forward in this view** — concept doesn't apply. Toggle is hidden.
 - Translated names rendered the same way as By-Item view.
 
@@ -244,3 +244,21 @@ Recomputed from data: any item with `count > 0` for any participant is `manually
 - A receipt scanned in French shows French original + English translation (for an `en` browser) inline.
 - Re-editing a receipt saved before this change loads with prior allocations intact.
 - Submit blocks with a clear error when any item is under-assigned.
+
+---
+
+## Addendum 2026-06-29 — Proportional share weights (fixes #783)
+
+**Problem.** The counter model treated `count` as a capped unit allocation with the invariant `sum(counts) <= item.qty`. For a `qty == 1` item this means only ONE participant can ever be assigned — `distributeEvenly([a,b,c], 1)` gives the single unit to the alphabetical first, and `applyCountChange` clamps away any second participant. A restaurant bill where every line is `qty 1` and the table shares each dish (the common case, e.g. trip `f1-red-bull-ring-uWu3wA`) could not be split at all. "Everyone equally" silently assigned one person.
+
+Worse, the old global-scaling distribution math gave *wrong* per-person amounts on **mixed** receipts (some lines shared, some not), because it normalized total cost across the whole receipt instead of per line.
+
+**Fix.** `count` is reinterpreted as a per-item **share weight**, with no upper bound:
+
+- Per-line share: `share_p = item.price * weight_p / sum(weights on that line)` (`itemShare` in `receiptDistribution.ts`). Fully-assigned multi-qty lines are numerically unchanged.
+- `distributeEvenly(ids)` assigns weight 1 to everyone (qty-independent).
+- The `sum(counts) <= qty` UI clamp is removed; `+` is never disabled.
+- A line is "assigned" when it has >= 1 sharer (not `sum == qty`); submit blocks only on priced lines with zero sharers.
+- `ItemRow`/`PersonRow` show "Split between N people" and each person's proportional amount instead of "X of Y units".
+
+Tests: `receiptDistribution.test.ts` (mixed-receipt proportional split, `itemShare`), `ItemRow`/`PersonRow` tests, and integration tests for sharing a `qty=1` item across multiple people and "Everyone equally".

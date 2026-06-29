@@ -52,9 +52,11 @@ export function ItemRow({
   onAssignEvenly,
 }: ItemRowProps) {
   const { t } = useTranslation()
-  const assigned = Array.from(counts.values()).reduce((a, b) => a + b, 0)
-  const fullyAssigned = assigned >= item.qty
-  const showProgress = assigned > 0
+  // Counts are per-item share weights; an item is "assigned" once at least one
+  // person shares it. Its cost then splits proportionally across the sharers.
+  const sharerCount = Array.from(counts.values()).filter(c => c > 0).length
+  const assigned = sharerCount > 0
+  const showProgress = assigned
   const showOriginal = !!item.nameOriginal && item.nameOriginal !== item.name
   const isSingleQty = item.qty === 1
 
@@ -89,8 +91,8 @@ export function ItemRow({
       </div>
 
       {showProgress && (
-        <div className={`text-xs font-medium ${fullyAssigned ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-          {`${assigned} of ${item.qty} assigned`}
+        <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          {sharerCount === 1 ? 'Assigned to 1 person' : `Split between ${sharerCount} people`}
         </div>
       )}
 
@@ -134,8 +136,7 @@ export function ItemRow({
                 type="button"
                 aria-label={`Increment ${p.name}`}
                 onClick={() => onCountChange(p.id, 1)}
-                disabled={fullyAssigned}
-                className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-white/20 disabled:opacity-30 hover:bg-white/30"
+                className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
               >
                 <Plus size={10} />
               </button>

@@ -194,10 +194,11 @@ export function ReceiptReviewSheet({
       for (const [k, v] of prev) next.set(k, new Map(v))
       const inner = next.get(itemId) ?? new Map<string, number>()
       const current = inner.get(participantId) ?? 0
-      const totalSoFar = Array.from(inner.values()).reduce((a, b) => a + b, 0)
-      let newCount = Math.max(0, current + delta)
-      const proposedTotal = totalSoFar - current + newCount
-      if (proposedTotal > item.qty) newCount = current + (item.qty - totalSoFar)
+      // Counts are per-item share weights, not capped unit allocations, so any
+      // number of people can share an item (a single pizza splits across the
+      // table). No upper bound — increasing a weight just grows that person's
+      // proportional share of the line.
+      const newCount = Math.max(0, current + delta)
       if (newCount === current) return prev
       if (newCount === 0) inner.delete(participantId)
       else inner.set(participantId, newCount)
@@ -209,7 +210,7 @@ export function ReceiptReviewSheet({
         for (let i = itemIndex + 1; i < editableItems.length; i++) {
           const target = editableItems[i]
           if (target.manuallySet) continue
-          const distributed = distributeEvenly(sourceSet, target.qty)
+          const distributed = distributeEvenly(sourceSet)
           next.set(target.id, distributed)
         }
       }
@@ -226,7 +227,7 @@ export function ReceiptReviewSheet({
     const item = editableItems.find(i => i.id === itemId)
     if (!item) return
     const ids = participants.map(p => p.id)
-    const distributed = distributeEvenly(ids, item.qty)
+    const distributed = distributeEvenly(ids)
 
     setAllocations(prev => {
       const next: Allocations = new Map()
@@ -238,7 +239,7 @@ export function ReceiptReviewSheet({
         for (let i = itemIndex + 1; i < editableItems.length; i++) {
           const target = editableItems[i]
           if (target.manuallySet) continue
-          next.set(target.id, distributeEvenly(ids, target.qty))
+          next.set(target.id, distributeEvenly(ids))
         }
       }
       return next
@@ -270,18 +271,18 @@ export function ReceiptReviewSheet({
   const tipFloat = parseFloat(tipAmount) || 0
   const totalExpense = totalFloat + tipFloat
 
+  // A priced item is "unassigned" only when nobody shares it. Each item's cost
+  // is split proportionally across whoever is on it, so qty no longer gates
+  // completeness — one sharer is enough.
   const underAssignedItems = editableItems.filter(item => {
     const inner = allocations.get(item.id)
-    const total = inner ? Array.from(inner.values()).reduce((a, b) => a + b, 0) : 0
-    return total < item.qty && parseFloat(item.price) > 0
+    return (inner?.size ?? 0) === 0 && parseFloat(item.price) > 0
   })
 
-  const totalUnits = editableItems.reduce((sum, i) => sum + (parseFloat(i.price) > 0 ? i.qty : 0), 0)
+  const totalUnits = editableItems.reduce((sum, i) => sum + (parseFloat(i.price) > 0 ? 1 : 0), 0)
   const assignedUnits = editableItems.reduce((sum, i) => {
     if (parseFloat(i.price) <= 0) return sum
-    const inner = allocations.get(i.id)
-    const t = inner ? Array.from(inner.values()).reduce((a, b) => a + b, 0) : 0
-    return sum + Math.min(t, i.qty)
+    return sum + ((allocations.get(i.id)?.size ?? 0) > 0 ? 1 : 0)
   }, 0)
 
   const canSubmit =
@@ -551,7 +552,7 @@ export function ReceiptReviewSheet({
       {underAssignedItems.length > 0 && (
         <div className="flex items-start gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{underAssignedItems.length} item(s) still have unassigned units</span>
+          <span>{underAssignedItems.length} item(s) not assigned to anyone</span>
         </div>
       )}
 
