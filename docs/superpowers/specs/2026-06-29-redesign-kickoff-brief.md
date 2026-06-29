@@ -39,7 +39,10 @@ Each gets its own spec → plan → execution cycle. Order matters (later depend
 
 ## Recommended process for the fresh session
 
-1. Use the **`frontend-design` skill** + the brainstorming **Visual Companion** to generate **2-3 distinct visual directions** (palette, type, a sample screen each — e.g. Dashboard + Quick view). Look, compare, pick one. (Note: there is no separate "Claude Design" product to open; the `frontend-design` skill IS the design engine, and the Visual Companion is the live mock/compare surface.)
+1. Generate **2-3 distinct visual directions** (palette, type, a sample screen each — e.g. Dashboard + Quick view), then look, compare, pick one. Two valid ways to produce them:
+   - **The Claude Design feature in the Claude apps** (claude.ai / desktop) — Claude Code in the terminal cannot open or drive that surface, so do the exploration there and bring the chosen direction back into the repo as screenshots, a token list, and/or generated component code.
+   - **In-repo:** the **`frontend-design` skill** (the design engine available to Claude Code) + the brainstorming **Visual Companion** (live mock/compare surface).
+   Whichever path, the deliverable that enters the repo is the same: a chosen direction concrete enough to write tokens from.
 2. Once a direction is chosen, write the **design-system spec** (sub-project 1): the concrete token set + component intent.
 3. Run that spec through `writing-plans` → execute token + component layers first (subagent-driven works well; that pattern is proven in this repo — see `docs/superpowers/plans/2026-06-27-participant-reassignment.md`).
 4. Then page-by-page, each behind visual-regression review.
