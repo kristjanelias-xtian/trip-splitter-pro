@@ -39,6 +39,7 @@ Each gets its own spec → plan → execution cycle. Order matters (later depend
 
 ## Recommended process for the fresh session
 
+0. **Capture reference screenshots first.** Grab the current hot-path screens as the structural/content reference for the design tool: **Quick balance view** (with quick actions), **balances/dashboard**, **add-expense** sheet, **receipt review** sheet. Capture at **phone width** (true mobile density) plus **at least one dark-mode** shot. Easiest source is the public demo trip — `split.xtian.me/t/livigno-2025` (no login). Hand these to the design tool framed as *"keep the content and structure; redesign the visual language"* — do NOT give it the codebase (that is for the implementation phase here). Claude Code can produce clean, consistent shots via browser automation (Playwright / Chrome DevTools MCP) at the start of this fresh session if you prefer that over phone captures.
 1. Generate **2-3 distinct visual directions** (palette, type, a sample screen each — e.g. Dashboard + Quick view), then look, compare, pick one. Two valid ways to produce them:
    - **The Claude Design feature in the Claude apps** (claude.ai / desktop) — Claude Code in the terminal cannot open or drive that surface, so do the exploration there and bring the chosen direction back into the repo as screenshots, a token list, and/or generated component code.
    - **In-repo:** the **`frontend-design` skill** (the design engine available to Claude Code) + the brainstorming **Visual Companion** (live mock/compare surface).
@@ -78,6 +79,6 @@ High-traffic components to prioritize: `BalanceCard`, the expense wizard (`Mobil
 
 ## First step in the fresh session
 
-> Open a fresh session, point it at this brief, and say: "Brainstorm the visual design direction for the Spl1t reskin per `docs/superpowers/specs/2026-06-29-redesign-kickoff-brief.md` — generate 2-3 directions to compare, then we'll write the design-system spec (sub-project 1)."
+> Open a fresh session, point it at this brief, and say: "Capture reference screenshots of the demo trip (`split.xtian.me/t/livigno-2025`) for the Spl1t reskin per `docs/superpowers/specs/2026-06-29-redesign-kickoff-brief.md`, then brainstorm the visual direction — generate 2-3 directions to compare, then we'll write the design-system spec (sub-project 1)."
 
 That session should invoke `brainstorming` (for direction selection) and `frontend-design` (to produce the directions), then write the **design-system / token spec** as the first real deliverable.
