@@ -88,7 +88,7 @@ git branch -d fix/description
 ### Newer tables
 - `user_profiles` — `bank_account_holder`, `bank_iban` (migration 008/012)
 - `user_preferences` — per-user `preferred_mode` (`quick`|`full`) + `default_trip_id` (migration 010) + `theme_preference` (`light`|`dark`|`system`, migration 037)
-- `activities` — activity planner: date, time_slot (morning/afternoon/evening), title, link, responsible_participant_id (migration 016)
+- `activities` — activity planner: date, time_slot (morning/afternoon/evening), optional `start_time TIME` (migration 052 — orders activities within a slot; timed first, untimed after), title, link, responsible_participant_id (migration 016)
 - `stays` — accommodation: name, link, comment, check_in_date, check_out_date, latitude, longitude (migrations 017–018)
 
 **Real-time:** Shopping list uses Supabase real-time subscriptions. Other contexts use optimistic updates only.
@@ -511,6 +511,7 @@ Required on a **physical iPhone (Safari only)** before merging PRs that touch bo
 | Sheet vanishes during scan flow | `QuickScanCreateFlow` creates trip with today's date → `ConditionalHomePage` detects active trip → redirects, unmounting sheet | `ConditionalHomePage` skips redirect when `document.querySelector('[role="dialog"][data-state="open"]')` is truthy (PR #498, selector fixed PR #534) |
 | Sheet header scrolls away | `overflow-y-auto` on SheetContent or missing `shrink-0` on header | Use flex structure: `shrink-0` header + `flex-1 overflow-y-auto` content. See Bottom Sheet Standard. |
 | Two X buttons on sheet | Radix default absolute X + custom close button | Pass `hideClose` to `SheetContent` to suppress Radix default |
+| Transient timeout shows global "Unexpected error" toast | A context mutation called fire-and-forget (unawaited/uncaught) lets a `withTimeout` rejection reach `window.unhandledrejection` in `main.tsx` | Wrap the `withTimeout` call in try/catch and handle a thrown timeout the same as a returned `{ error }` (roll back optimistic state + `logger.error`). Applies to any fire-and-forget mutation, e.g. `ReactionContext` (#759). |
 | Sheet height wrong on iOS | Using `vh` instead of `dvh` | Always use `dvh`. `vh` does not recalculate when iOS keyboard opens. |
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
 | iOS scroll lock in bottom sheets | `overscroll-behavior: contain` on scroll containers causes iOS Safari to stop routing scroll events after user reaches a boundary | `useIOSScrollFix` hook — nudges `scrollTop` 1px from boundaries on `touchstart`. Applied to all sheet scroll containers via `ref={scrollRef}`. No-op on non-iOS. |
