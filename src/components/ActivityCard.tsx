@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Trash2, MapPin, User, ExternalLink } from 'lucide-react'
+import { Trash2, MapPin, User, ExternalLink, Clock } from 'lucide-react'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
 import type { Activity } from '@/types/activity'
@@ -54,7 +54,15 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           onClick={() => setShowEditForm(true)}
         >
           <div className="flex items-start justify-between mb-1">
-            <h4 className="font-semibold text-foreground">{activity.title}</h4>
+            <div className="min-w-0">
+              {activity.start_time && (
+                <div className="flex items-center gap-1 text-xs font-medium text-violet-700 dark:text-violet-300 mb-0.5">
+                  <Clock size={12} className="shrink-0" />
+                  <span>{activity.start_time.slice(0, 5)}</span>
+                </div>
+              )}
+              <h4 className="font-semibold text-foreground">{activity.title}</h4>
+            </div>
             <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
               <Button
                 onClick={() => setShowDeleteConfirm(true)}

@@ -56,6 +56,8 @@ export function ActivityForm({
 
   const [formData, setFormData] = useState({
     title: activity?.title || '',
+    // TIME comes back from the DB as HH:MM:SS; <input type="time"> needs HH:MM
+    start_time: activity?.start_time ? activity.start_time.slice(0, 5) : '',
     description: activity?.description || '',
     location: activity?.location || '',
     link: activity?.link || '',
@@ -94,6 +96,7 @@ export function ActivityForm({
       if (activity) {
         const updateData: UpdateActivityInput = {
           title: formData.title.trim(),
+          start_time: formData.start_time || null,
           description: formData.description.trim() || undefined,
           location: formData.location.trim() || undefined,
           link: formData.link.trim() || undefined,
@@ -111,6 +114,7 @@ export function ActivityForm({
           trip_id: currentTrip.id,
           activity_date: date,
           time_slot: timeSlot,
+          start_time: formData.start_time || null,
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           location: formData.location.trim() || undefined,
@@ -161,6 +165,17 @@ export function ActivityForm({
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder={t('planner.activityTitlePlaceholder')}
           required
+          disabled={submitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="activity-start-time">{t('planner.activityTimeOptional')}</Label>
+        <Input
+          type="time"
+          id="activity-start-time"
+          value={formData.start_time}
+          onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
           disabled={submitting}
         />
       </div>

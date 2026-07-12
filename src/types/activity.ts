@@ -6,6 +6,7 @@ export interface Activity {
   trip_id: string
   activity_date: string // YYYY-MM-DD
   time_slot: ActivityTimeSlot
+  start_time?: string | null // HH:MM (24h), optional — orders activities within a slot
   title: string
   description?: string | null
   location?: string | null
@@ -19,6 +20,7 @@ export interface CreateActivityInput {
   trip_id: string
   activity_date: string
   time_slot: ActivityTimeSlot
+  start_time?: string | null
   title: string
   description?: string
   location?: string
@@ -27,6 +29,7 @@ export interface CreateActivityInput {
 }
 
 export interface UpdateActivityInput {
+  start_time?: string | null
   title?: string
   description?: string
   location?: string
