@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
+import { Clock, X } from 'lucide-react'
 import { useCurrentTrip } from '@/hooks/useCurrentTrip'
 import { useActivityContext } from '@/contexts/ActivityContext'
 import { useParticipantContext } from '@/contexts/ParticipantContext'
@@ -63,6 +64,11 @@ export function ActivityForm({
     link: activity?.link || '',
     responsible_participant_id: activity?.responsible_participant_id || 'none',
   })
+
+  // Native <input type="time"> renders the current time when empty on iOS Safari,
+  // which makes an unset optional time look like a real value (see #793). Only show
+  // the input once a time exists or the user explicitly taps "Add time".
+  const [showTimeInput, setShowTimeInput] = useState(!!formData.start_time)
 
   if (!currentTrip) return null
 
@@ -171,13 +177,42 @@ export function ActivityForm({
 
       <div className="space-y-2">
         <Label htmlFor="activity-start-time">{t('planner.activityTimeOptional')}</Label>
-        <Input
-          type="time"
-          id="activity-start-time"
-          value={formData.start_time}
-          onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-          disabled={submitting}
-        />
+        {showTimeInput ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="time"
+              id="activity-start-time"
+              value={formData.start_time}
+              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+              disabled={submitting}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={t('planner.clearTime')}
+              disabled={submitting}
+              onClick={() => {
+                setFormData({ ...formData, start_time: '' })
+                setShowTimeInput(false)
+              }}
+            >
+              <X size={16} />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={submitting}
+            onClick={() => setShowTimeInput(true)}
+            className="w-full justify-start text-muted-foreground font-normal"
+          >
+            <Clock size={16} className="mr-2" />
+            {t('planner.addTime')}
+          </Button>
+        )}
       </div>
 
       <div className="space-y-2">
