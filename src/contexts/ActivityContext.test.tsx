@@ -89,4 +89,47 @@ describe('ActivityContext', () => {
       'Morning Yoga,Afternoon Hike,Evening Tour'
     )
   })
+
+  it('orders activities within a slot by start_time, untimed last (#789)', async () => {
+    mockCurrentTrip.currentTrip = { id: 'trip-1' }
+    mockCurrentTrip.tripCode = 'test-trip-Ab1234'
+
+    const sameSlot: Activity[] = [
+      {
+        id: 'b1', trip_id: 'trip-1', activity_date: '2025-07-01',
+        time_slot: 'morning', title: 'No Time',
+        created_at: '2025-07-01', updated_at: '2025-07-01',
+      },
+      {
+        id: 'b2', trip_id: 'trip-1', activity_date: '2025-07-01',
+        time_slot: 'morning', title: 'Later', start_time: '10:30:00',
+        created_at: '2025-07-01', updated_at: '2025-07-01',
+      },
+      {
+        id: 'b3', trip_id: 'trip-1', activity_date: '2025-07-01',
+        time_slot: 'morning', title: 'Earlier', start_time: '08:15:00',
+        created_at: '2025-07-01', updated_at: '2025-07-01',
+      },
+    ]
+
+    mockSupabase.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          order: () => ({ abortSignal: () => Promise.resolve({ data: sameSlot, error: null }) }),
+        }),
+      }),
+    })
+
+    render(
+      <ActivityProvider>
+        <TestConsumer />
+      </ActivityProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false')
+    })
+
+    expect(screen.getByTestId('order').textContent).toBe('Earlier,Later,No Time')
+  })
 })

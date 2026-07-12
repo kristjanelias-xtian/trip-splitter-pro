@@ -335,6 +335,7 @@
     "deleteActivityConfirm": "Are you sure you want to delete \"{{title}}\"?",
     "activityTitle": "Activity Title",
     "activityTitlePlaceholder": "e.g., Temple visit, Island hopping",
+    "activityTimeOptional": "Time (Optional)",
     "activityDescriptionOptional": "Description (Optional)",
     "activityDescriptionPlaceholder": "Notes, details, booking info...",
     "activityLocationOptional": "Location (Optional)",

@@ -27,7 +27,15 @@ const TIME_SLOT_ORDER = { morning: 0, afternoon: 1, evening: 2 }
 function sortActivities(a: Activity, b: Activity): number {
   const dateCompare = a.activity_date.localeCompare(b.activity_date)
   if (dateCompare !== 0) return dateCompare
-  return (TIME_SLOT_ORDER[a.time_slot] ?? 0) - (TIME_SLOT_ORDER[b.time_slot] ?? 0)
+  const slotCompare = (TIME_SLOT_ORDER[a.time_slot] ?? 0) - (TIME_SLOT_ORDER[b.time_slot] ?? 0)
+  if (slotCompare !== 0) return slotCompare
+  // Within a slot: timed activities first (chronological), untimed after (#789)
+  const at = a.start_time
+  const bt = b.start_time
+  if (at && bt) return at.localeCompare(bt)
+  if (at) return -1
+  if (bt) return 1
+  return 0
 }
 
 export function ActivityProvider({ children }: { children: ReactNode }) {
