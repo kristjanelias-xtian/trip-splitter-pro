@@ -516,6 +516,7 @@ Required on a **physical iPhone (Safari only)** before merging PRs that touch bo
 | Infinite re-render crash with Radix Checkbox | Controlled `checked` prop without `onCheckedChange` causes internal `useControllableState` state cycles | Never use Radix Checkbox as display-only. Use a plain `<span>` styled to match instead. |
 | iOS scroll lock in bottom sheets | `overscroll-behavior: contain` on scroll containers causes iOS Safari to stop routing scroll events after user reaches a boundary | `useIOSScrollFix` hook — nudges `scrollTop` 1px from boundaries on `touchstart`. Applied to all sheet scroll containers via `ref={scrollRef}`. No-op on non-iOS. |
 | "text/html is not a valid JavaScript MIME type" | New deploy changed JS chunk hashes; browser's cached HTML references old chunks; CDN returns SPA fallback HTML | `ErrorBoundary` auto-detects and reloads once (`sessionStorage` guard). If still broken, shows "New version available" card. No code fix needed — just a deploy artifact. |
+| Empty optional time/date field shows the current time/date (iOS) | Native `<input type="time">` / `<input type="date">` render the *current* clock time/date when empty on iOS Safari — an unset value looks like a real one (#793) | Don't leave a bare empty native time/date input on iOS. Gate it behind an "Add time" affordance (empty → button; set → input + clear ×), as in `ActivityForm`. |
 
 ---
 
