@@ -336,6 +336,8 @@
     "activityTitle": "Tegevuse pealkiri",
     "activityTitlePlaceholder": "nt Templite külastus, Saarte retk",
     "activityTimeOptional": "Kellaaeg (valikuline)",
+    "addTime": "Lisa kellaaeg",
+    "clearTime": "Eemalda kellaaeg",
     "activityDescriptionOptional": "Kirjeldus (valikuline)",
     "activityDescriptionPlaceholder": "Märkmed, üksikasjad, broneeringu info...",
     "activityLocationOptional": "Asukoht (valikuline)",

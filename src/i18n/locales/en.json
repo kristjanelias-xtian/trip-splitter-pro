@@ -336,6 +336,8 @@
     "activityTitle": "Activity Title",
     "activityTitlePlaceholder": "e.g., Temple visit, Island hopping",
     "activityTimeOptional": "Time (Optional)",
+    "addTime": "Add time",
+    "clearTime": "Clear time",
     "activityDescriptionOptional": "Description (Optional)",
     "activityDescriptionPlaceholder": "Notes, details, booking info...",
     "activityLocationOptional": "Location (Optional)",
