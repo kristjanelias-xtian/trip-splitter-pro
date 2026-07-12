@@ -96,20 +96,28 @@ export function ReactionProvider({ children }: { children: ReactNode }) {
     const next = [...rawRef.current, optimisticReaction]
     applyRaw(next)
 
-    const result = await withTimeout<{ error: unknown }>(
-      (supabase.from('expense_reactions' as any) as any).insert({
-        expense_id: expenseId,
-        participant_id: participantId,
-        emoji,
-      }),
-      15000,
-      'Adding reaction timed out'
-    )
-    const { error } = result as { error: { message: string } | null }
+    try {
+      const result = await withTimeout<{ error: unknown }>(
+        (supabase.from('expense_reactions' as any) as any).insert({
+          expense_id: expenseId,
+          participant_id: participantId,
+          emoji,
+        }),
+        15000,
+        'Adding reaction timed out'
+      )
+      const { error } = result as { error: { message: string } | null }
 
-    if (error) {
-      logger.error('Failed to add reaction', { error })
-      // Roll back
+      if (error) {
+        logger.error('Failed to add reaction', { error })
+        // Roll back
+        applyRaw(rawRef.current.filter(r => r.id !== optimisticReaction.id))
+      }
+    } catch (err) {
+      // withTimeout rejects on timeout; handle it like a returned error so the
+      // fire-and-forget caller (ReactionBar) never produces an unhandled
+      // rejection / global "Unexpected error" toast. (#759)
+      logger.error('Failed to add reaction', { error: err })
       applyRaw(rawRef.current.filter(r => r.id !== optimisticReaction.id))
     }
   }, [applyRaw])
@@ -122,19 +130,26 @@ export function ReactionProvider({ children }: { children: ReactNode }) {
 
     applyRaw(rawRef.current.filter(r => r.id !== toRemove.id))
 
-    const result = await withTimeout<{ error: unknown }>(
-      (supabase
-        .from('expense_reactions' as any) as any)
-        .delete()
-        .match({ expense_id: expenseId, participant_id: participantId, emoji }),
-      15000,
-      'Removing reaction timed out'
-    )
-    const { error } = result as { error: { message: string } | null }
+    try {
+      const result = await withTimeout<{ error: unknown }>(
+        (supabase
+          .from('expense_reactions' as any) as any)
+          .delete()
+          .match({ expense_id: expenseId, participant_id: participantId, emoji }),
+        15000,
+        'Removing reaction timed out'
+      )
+      const { error } = result as { error: { message: string } | null }
 
-    if (error) {
-      logger.error('Failed to remove reaction', { error })
-      // Roll back
+      if (error) {
+        logger.error('Failed to remove reaction', { error })
+        // Roll back
+        applyRaw([...rawRef.current, toRemove])
+      }
+    } catch (err) {
+      // withTimeout rejects on timeout; handle it like a returned error so the
+      // fire-and-forget caller never produces an unhandled rejection. (#759)
+      logger.error('Failed to remove reaction', { error: err })
       applyRaw([...rawRef.current, toRemove])
     }
   }, [applyRaw])
