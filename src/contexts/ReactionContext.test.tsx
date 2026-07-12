@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { ReactionProvider, useReactionContext } from './ReactionContext'
 
 const mockCurrentTrip = vi.hoisted(() => ({
@@ -29,6 +29,9 @@ const mockSupabase = vi.hoisted(() => {
 })
 
 vi.mock('@/lib/supabase', () => ({ supabase: mockSupabase }))
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), setContext: vi.fn() },
+}))
 vi.mock('@/hooks/useCurrentTrip', () => ({
   useCurrentTrip: () => mockCurrentTrip,
 }))
@@ -119,5 +122,73 @@ describe('ReactionContext', () => {
       expect(screen.getByTestId('fire-count')).toHaveTextContent('2')
       expect(screen.getByTestId('fire-participants')).toHaveTextContent('2')
     })
+  })
+
+  // Regression: a timeout rejects the withTimeout promise. addReaction is called
+  // fire-and-forget from ReactionBar, so a thrown timeout must be caught (no
+  // unhandled rejection / global "Unexpected error" toast) and the optimistic
+  // reaction rolled back. (#759)
+  it('rolls back and does not reject when adding a reaction times out', async () => {
+    mockCurrentTrip.currentTrip = { id: 'trip-1' }
+    mockSupabase.chainable.eq.mockResolvedValueOnce({ data: [], error: null })
+    mockSupabase.chainable.insert.mockImplementationOnce(() =>
+      Promise.reject(new Error('Adding reaction timed out'))
+    )
+
+    let addReactionFn: (e: string, p: string, emoji: string) => Promise<void> = async () => {}
+    function AddConsumer() {
+      const { reactions, addReaction } = useReactionContext()
+      addReactionFn = addReaction
+      return <span data-testid="fire-count">{reactions.get('e1')?.['🔥']?.count ?? 0}</span>
+    }
+
+    render(
+      <ReactionProvider>
+        <AddConsumer />
+      </ReactionProvider>
+    )
+
+    await waitFor(() => expect(screen.getByTestId('fire-count')).toHaveTextContent('0'))
+
+    // Must resolve (not reject) despite the underlying timeout
+    await act(async () => {
+      await expect(addReactionFn('e1', 'p1', '🔥')).resolves.toBeUndefined()
+    })
+
+    // Optimistic reaction rolled back after the timeout
+    expect(screen.getByTestId('fire-count')).toHaveTextContent('0')
+  })
+
+  it('rolls back and does not reject when removing a reaction times out', async () => {
+    mockCurrentTrip.currentTrip = { id: 'trip-1' }
+    mockSupabase.chainable.eq.mockResolvedValueOnce({
+      data: [{ id: 'r1', expense_id: 'e1', participant_id: 'p1', emoji: '🔥', created_at: '2026-01-01' }],
+      error: null,
+    })
+    mockSupabase.chainable.match.mockImplementationOnce(() =>
+      Promise.reject(new Error('Removing reaction timed out'))
+    )
+
+    let removeReactionFn: (e: string, p: string, emoji: string) => Promise<void> = async () => {}
+    function RemoveConsumer() {
+      const { reactions, removeReaction } = useReactionContext()
+      removeReactionFn = removeReaction
+      return <span data-testid="fire-count">{reactions.get('e1')?.['🔥']?.count ?? 0}</span>
+    }
+
+    render(
+      <ReactionProvider>
+        <RemoveConsumer />
+      </ReactionProvider>
+    )
+
+    await waitFor(() => expect(screen.getByTestId('fire-count')).toHaveTextContent('1'))
+
+    await act(async () => {
+      await expect(removeReactionFn('e1', 'p1', '🔥')).resolves.toBeUndefined()
+    })
+
+    // Removal timed out → reaction restored
+    expect(screen.getByTestId('fire-count')).toHaveTextContent('1')
   })
 })
